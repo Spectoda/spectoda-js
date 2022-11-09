@@ -1,6 +1,6 @@
-/* 
+/*
  *  DSP.js - a comprehensive digital signal processing  library for javascript
- * 
+ *
  *  Created by Corban Brook <corbanbrook@gmail.com> on 2010-01-01.
  *  Copyright 2010 Corban Brook. All rights reserved.
  *
@@ -50,7 +50,7 @@ var DSP = {
   FWBW: 3,
 
   // Math
-  TWO_PI: 2 * Math.PI
+  TWO_PI: 2 * Math.PI,
 };
 
 // // Setup arrays for platforms which do not support byte arrays
@@ -78,7 +78,6 @@ var DSP = {
 // setupTypedArray("Int32Array", "WebGLIntArray");
 // setupTypedArray("Uint16Array", "WebGLUnsignedShortArray");
 // setupTypedArray("Uint8Array", "WebGLUnsignedByteArray");
-
 
 ////////////////////////////////////////////////////////////////////////////////
 //                            DSP UTILITY FUNCTIONS                           //
@@ -130,7 +129,10 @@ DSP.interleave = function (left, right) {
  * @returns an Array containing left and right channels
  */
 DSP.deinterleave = (function () {
-  var left, right, mix, deinterleaveChannel = [];
+  var left,
+    right,
+    mix,
+    deinterleaveChannel = [];
 
   deinterleaveChannel[DSP.MIX] = function (buffer) {
     for (var i = 0, len = buffer.length / 2; i < len; i++) {
@@ -166,7 +168,7 @@ DSP.deinterleave = (function () {
 
     return deinterleaveChannel[channel](buffer);
   };
-}());
+})();
 
 /**
  * Separates a channel from a stereo-interleaved sample buffer
@@ -201,15 +203,15 @@ DSP.mixSampleBuffers = function (sampleBuffer1, sampleBuffer2, negate, volumeCor
 };
 
 // Biquad filter types
-DSP.LPF = 0;                // H(s) = 1 / (s^2 + s/Q + 1)
-DSP.HPF = 1;                // H(s) = s^2 / (s^2 + s/Q + 1)
+DSP.LPF = 0; // H(s) = 1 / (s^2 + s/Q + 1)
+DSP.HPF = 1; // H(s) = s^2 / (s^2 + s/Q + 1)
 DSP.BPF_CONSTANT_SKIRT = 2; // H(s) = s / (s^2 + s/Q + 1)  (constant skirt gain, peak gain = Q)
-DSP.BPF_CONSTANT_PEAK = 3;  // H(s) = (s/Q) / (s^2 + s/Q + 1)      (constant 0 dB peak gain)
-DSP.NOTCH = 4;              // H(s) = (s^2 + 1) / (s^2 + s/Q + 1)
-DSP.APF = 5;                // H(s) = (s^2 - s/Q + 1) / (s^2 + s/Q + 1)
-DSP.PEAKING_EQ = 6;         // H(s) = (s^2 + s*(A/Q) + 1) / (s^2 + s/(A*Q) + 1)
-DSP.LOW_SHELF = 7;          // H(s) = A * (s^2 + (sqrt(A)/Q)*s + A)/(A*s^2 + (sqrt(A)/Q)*s + 1)
-DSP.HIGH_SHELF = 8;         // H(s) = A * (A*s^2 + (sqrt(A)/Q)*s + 1)/(s^2 + (sqrt(A)/Q)*s + A)
+DSP.BPF_CONSTANT_PEAK = 3; // H(s) = (s/Q) / (s^2 + s/Q + 1)      (constant 0 dB peak gain)
+DSP.NOTCH = 4; // H(s) = (s^2 + 1) / (s^2 + s/Q + 1)
+DSP.APF = 5; // H(s) = (s^2 - s/Q + 1) / (s^2 + s/Q + 1)
+DSP.PEAKING_EQ = 6; // H(s) = (s^2 + s*(A/Q) + 1) / (s^2 + s/(A*Q) + 1)
+DSP.LOW_SHELF = 7; // H(s) = A * (s^2 + (sqrt(A)/Q)*s + A)/(A*s^2 + (sqrt(A)/Q)*s + 1)
+DSP.HIGH_SHELF = 8; // H(s) = A * (A*s^2 + (sqrt(A)/Q)*s + 1)/(s^2 + (sqrt(A)/Q)*s + A)
 
 // Biquad filter parameter types
 DSP.Q = 1;
@@ -232,7 +234,7 @@ DSP.Peak = function (buffer) {
   var peak = 0;
 
   for (var i = 0, n = buffer.length; i < n; i++) {
-    peak = (Math.abs(buffer[i]) > peak) ? Math.abs(buffer[i]) : peak;
+    peak = Math.abs(buffer[i]) > peak ? Math.abs(buffer[i]) : peak;
   }
 
   return peak;
@@ -242,7 +244,7 @@ DSP.Peak = function (buffer) {
 function FourierTransform(bufferSize, sampleRate) {
   this.bufferSize = bufferSize;
   this.sampleRate = sampleRate;
-  this.bandwidth = 2 / bufferSize * sampleRate / 2;
+  this.bandwidth = ((2 / bufferSize) * sampleRate) / 2;
 
   this.spectrum = new Float64Array(bufferSize / 2);
   this.real = new Float64Array(bufferSize);
@@ -298,15 +300,15 @@ function FourierTransform(bufferSize, sampleRate) {
 function DFT(bufferSize, sampleRate) {
   FourierTransform.call(this, bufferSize, sampleRate);
 
-  var N = bufferSize / 2 * bufferSize;
+  var N = (bufferSize / 2) * bufferSize;
   var TWO_PI = 2 * Math.PI;
 
   this.sinTable = new Float64Array(N);
   this.cosTable = new Float64Array(N);
 
   for (var i = 0; i < N; i++) {
-    this.sinTable[i] = Math.sin(i * TWO_PI / bufferSize);
-    this.cosTable[i] = Math.cos(i * TWO_PI / bufferSize);
+    this.sinTable[i] = Math.sin((i * TWO_PI) / bufferSize);
+    this.cosTable[i] = Math.cos((i * TWO_PI) / bufferSize);
   }
 }
 
@@ -339,7 +341,6 @@ DFT.prototype.forward = function (buffer) {
 
   return this.calculateSpectrum();
 };
-
 
 /**
  * FFT is a class for calculating the Discrete Fourier Transform of a signal
@@ -398,8 +399,12 @@ FFT.prototype.forward = function (buffer) {
 
   var k = Math.floor(Math.log(bufferSize) / Math.LN2);
 
-  if (Math.pow(2, k) !== bufferSize) { throw "Invalid buffer size, must be a power of 2."; }
-  if (bufferSize !== buffer.length) { throw "Supplied buffer is not the same size as defined FFT. FFT Size: " + bufferSize + " Buffer Size: " + buffer.length; }
+  if (Math.pow(2, k) !== bufferSize) {
+    throw "Invalid buffer size, must be a power of 2.";
+  }
+  if (bufferSize !== buffer.length) {
+    throw "Supplied buffer is not the same size as defined FFT. FFT Size: " + bufferSize + " Buffer Size: " + buffer.length;
+  }
 
   var halfSize = 1,
     phaseShiftStepReal,
@@ -431,8 +436,8 @@ FFT.prototype.forward = function (buffer) {
 
       while (i < bufferSize) {
         off = i + halfSize;
-        tr = (currentPhaseShiftReal * real[off]) - (currentPhaseShiftImag * imag[off]);
-        ti = (currentPhaseShiftReal * imag[off]) + (currentPhaseShiftImag * real[off]);
+        tr = currentPhaseShiftReal * real[off] - currentPhaseShiftImag * imag[off];
+        ti = currentPhaseShiftReal * imag[off] + currentPhaseShiftImag * real[off];
 
         real[off] = real[i] - tr;
         imag[off] = imag[i] - ti;
@@ -443,8 +448,8 @@ FFT.prototype.forward = function (buffer) {
       }
 
       tmpReal = currentPhaseShiftReal;
-      currentPhaseShiftReal = (tmpReal * phaseShiftStepReal) - (currentPhaseShiftImag * phaseShiftStepImag);
-      currentPhaseShiftImag = (tmpReal * phaseShiftStepImag) + (currentPhaseShiftImag * phaseShiftStepReal);
+      currentPhaseShiftReal = tmpReal * phaseShiftStepReal - currentPhaseShiftImag * phaseShiftStepImag;
+      currentPhaseShiftImag = tmpReal * phaseShiftStepImag + currentPhaseShiftImag * phaseShiftStepReal;
     }
 
     halfSize = halfSize << 1;
@@ -501,8 +506,8 @@ FFT.prototype.inverse = function (real, imag) {
 
       while (i < bufferSize) {
         off = i + halfSize;
-        tr = (currentPhaseShiftReal * real[off]) - (currentPhaseShiftImag * imag[off]);
-        ti = (currentPhaseShiftReal * imag[off]) + (currentPhaseShiftImag * real[off]);
+        tr = currentPhaseShiftReal * real[off] - currentPhaseShiftImag * imag[off];
+        ti = currentPhaseShiftReal * imag[off] + currentPhaseShiftImag * real[off];
 
         real[off] = real[i] - tr;
         imag[off] = imag[i] - ti;
@@ -513,8 +518,8 @@ FFT.prototype.inverse = function (real, imag) {
       }
 
       tmpReal = currentPhaseShiftReal;
-      currentPhaseShiftReal = (tmpReal * phaseShiftStepReal) - (currentPhaseShiftImag * phaseShiftStepImag);
-      currentPhaseShiftImag = (tmpReal * phaseShiftStepImag) + (currentPhaseShiftImag * phaseShiftStepReal);
+      currentPhaseShiftReal = tmpReal * phaseShiftStepReal - currentPhaseShiftImag * phaseShiftStepImag;
+      currentPhaseShiftImag = tmpReal * phaseShiftStepImag + currentPhaseShiftImag * phaseShiftStepReal;
     }
 
     halfSize = halfSize << 1;
@@ -563,7 +568,9 @@ function RFFT(bufferSize, sampleRate) {
     var bufferSize = this.bufferSize,
       halfSize = bufferSize >>> 1,
       nm1 = bufferSize - 1,
-      i = 1, r = 0, h;
+      i = 1,
+      r = 0,
+      h;
 
     dest[0] = source[0];
 
@@ -575,7 +582,7 @@ function RFFT(bufferSize, sampleRate) {
       i++;
 
       h = halfSize << 1;
-      while (h = h >> 1, !((r ^= h) & h));
+      while (((h = h >> 1), !((r ^= h) & h)));
 
       if (r >= i) {
         dest[i] = source[r];
@@ -593,7 +600,9 @@ function RFFT(bufferSize, sampleRate) {
     var bufferSize = this.bufferSize,
       halfSize = bufferSize >>> 1,
       nm1 = bufferSize - 1,
-      i = 1, r = 0, h;
+      i = 1,
+      r = 0,
+      h;
 
     this.reverseTable[0] = 0;
 
@@ -606,7 +615,7 @@ function RFFT(bufferSize, sampleRate) {
       i++;
 
       h = halfSize << 1;
-      while (h = h >> 1, !((r ^= h) & h));
+      while (((h = h >> 1), !((r ^= h) & h)));
 
       if (r >= i) {
         this.reverseTable[i] = r;
@@ -624,7 +633,6 @@ function RFFT(bufferSize, sampleRate) {
   this.generateReverseTable();
 }
 
-
 // Ordering of output:
 //
 // trans[0]     = re[0] (==zero frequency, purely real)
@@ -636,7 +644,7 @@ function RFFT(bufferSize, sampleRate) {
 // trans[n/2+1] = im[n/2-1]
 // trans[n/2+2] = im[n/2-2]
 //             ...
-// trans[n-1]   = im[1] 
+// trans[n-1]   = im[1]
 
 RFFT.prototype.forward = function (buffer) {
   var n = this.bufferSize,
@@ -646,13 +654,32 @@ RFFT.prototype.forward = function (buffer) {
     sqrt = Math.sqrt,
     i = n >>> 1,
     bSi = 2 / n,
-    n2, n4, n8, nn,
-    t1, t2, t3, t4,
-    i1, i2, i3, i4, i5, i6, i7, i8,
-    st1, cc1, ss1, cc3, ss3,
+    n2,
+    n4,
+    n8,
+    nn,
+    t1,
+    t2,
+    t3,
+    t4,
+    i1,
+    i2,
+    i3,
+    i4,
+    i5,
+    i6,
+    i7,
+    i8,
+    st1,
+    cc1,
+    ss1,
+    cc3,
+    ss3,
     e,
     a,
-    rval, ival, mag;
+    rval,
+    ival,
+    mag;
 
   this.reverseBinPermute(x, buffer);
 
@@ -751,7 +778,8 @@ RFFT.prototype.forward = function (buffer) {
       cc3 = 4 * cc1 * (cc1 * cc1 - 0.75);
       ss3 = 4 * ss1 * (0.75 - ss1 * ss1);
 
-      ix = 0; id = n2 << 1;
+      ix = 0;
+      id = n2 << 1;
       do {
         for (i0 = ix; i0 < n; i0 += id) {
           i1 = i0 + j;
@@ -804,7 +832,6 @@ RFFT.prototype.forward = function (buffer) {
 
         ix = (id << 1) - n2;
         id = id << 2;
-
       } while (ix < n);
     }
   }
@@ -894,7 +921,7 @@ Sampler.prototype.generate = function () {
     switch (this.loopMode) {
       case DSP.OFF:
         this.playhead = Math.round(this.samplesProcessed * this.step + playStartSamples);
-        if (this.playhead < (this.playEnd * this.samples.length)) {
+        if (this.playhead < this.playEnd * this.samples.length) {
           this.signal[i] = this.samples[this.playhead] * this.amplitude;
         } else {
           this.signal[i] = 0;
@@ -902,26 +929,26 @@ Sampler.prototype.generate = function () {
         break;
 
       case DSP.FW:
-        this.playhead = Math.round((this.samplesProcessed * this.step) % loopWidth + playStartSamples);
-        if (this.playhead < (this.playEnd * this.samples.length)) {
+        this.playhead = Math.round(((this.samplesProcessed * this.step) % loopWidth) + playStartSamples);
+        if (this.playhead < this.playEnd * this.samples.length) {
           this.signal[i] = this.samples[this.playhead] * this.amplitude;
         }
         break;
 
       case DSP.BW:
         this.playhead = playEndSamples - Math.round((this.samplesProcessed * this.step) % loopWidth);
-        if (this.playhead < (this.playEnd * this.samples.length)) {
+        if (this.playhead < this.playEnd * this.samples.length) {
           this.signal[i] = this.samples[this.playhead] * this.amplitude;
         }
         break;
 
       case DSP.FWBW:
-        if (Math.floor(this.samplesProcessed * this.step / loopWidth) % 2 === 0) {
-          this.playhead = Math.round((this.samplesProcessed * this.step) % loopWidth + playStartSamples);
+        if (Math.floor((this.samplesProcessed * this.step) / loopWidth) % 2 === 0) {
+          this.playhead = Math.round(((this.samplesProcessed * this.step) % loopWidth) + playStartSamples);
         } else {
           this.playhead = playEndSamples - Math.round((this.samplesProcessed * this.step) % loopWidth);
         }
-        if (this.playhead < (this.playEnd * this.samples.length)) {
+        if (this.playhead < this.playEnd * this.samples.length) {
           this.signal[i] = this.samples[this.playhead] * this.amplitude;
         }
         break;
@@ -997,15 +1024,15 @@ function Oscillator(type, frequency, amplitude, bufferSize, sampleRate) {
     var waveTableHz = 1 / waveTableTime;
 
     for (var i = 0; i < this.waveTableLength; i++) {
-      Oscillator.waveTable[this.func][i] = this.func(i * waveTableHz / this.sampleRate);
+      Oscillator.waveTable[this.func][i] = this.func((i * waveTableHz) / this.sampleRate);
     }
   };
 
-  if (typeof Oscillator.waveTable === 'undefined') {
+  if (typeof Oscillator.waveTable === "undefined") {
     Oscillator.waveTable = {};
   }
 
-  if (typeof Oscillator.waveTable[this.func] === 'undefined') {
+  if (typeof Oscillator.waveTable[this.func] === "undefined") {
     this.generateWaveTable();
   }
 
@@ -1080,7 +1107,7 @@ Oscillator.prototype.valueAt = function (offset) {
 
 Oscillator.prototype.generate = function () {
   var frameOffset = this.frameCount * this.bufferSize;
-  var step = this.waveTableLength * this.frequency / this.sampleRate;
+  var step = (this.waveTableLength * this.frequency) / this.sampleRate;
   var offset;
 
   for (var i = 0; i < this.bufferSize; i++) {
@@ -1199,7 +1226,6 @@ ADSR.prototype.process = function (buffer) {
   return buffer;
 };
 
-
 ADSR.prototype.isActive = function () {
   if (this.samplesProcessed > this.release || this.samplesProcessed === -1) {
     return false;
@@ -1223,17 +1249,13 @@ function IIRFilter(type, cutoff, resonance, sampleRate) {
   }
 }
 
-IIRFilter.prototype.__defineGetter__('cutoff',
-  function () {
-    return this.func.cutoff;
-  }
-);
+IIRFilter.prototype.__defineGetter__("cutoff", function () {
+  return this.func.cutoff;
+});
 
-IIRFilter.prototype.__defineGetter__('resonance',
-  function () {
-    return this.func.resonance;
-  }
-);
+IIRFilter.prototype.__defineGetter__("resonance", function () {
+  return this.func.resonance;
+});
 
 IIRFilter.prototype.set = function (cutoff, resonance) {
   this.func.calcCoeff(cutoff, resonance);
@@ -1259,7 +1281,7 @@ IIRFilter.LP12 = function (cutoff, resonance, sampleRate) {
   this.envelope = false;
 
   this.calcCoeff = function (cutoff, resonance) {
-    this.w = 2.0 * Math.PI * cutoff / this.sampleRate;
+    this.w = (2.0 * Math.PI * cutoff) / this.sampleRate;
     this.q = 1.0 - this.w / (2.0 * (resonance + 0.5 / (1.0 + this.w)) + this.w - 2.0);
     this.r = this.q * this.q;
     this.c = this.r + 1.0 - 2.0 * Math.cos(this.w) * this.q;
@@ -1291,7 +1313,7 @@ IIRFilter.LP12 = function (cutoff, resonance, sampleRate) {
       */
 
       if (this.envelope) {
-        buffer[i] = (buffer[i] * (1 - this.envelope.value())) + (this.vibraPos * this.envelope.value());
+        buffer[i] = buffer[i] * (1 - this.envelope.value()) + this.vibraPos * this.envelope.value();
         this.envelope.samplesProcessed++;
       } else {
         buffer[i] = this.vibraPos;
@@ -1314,7 +1336,7 @@ function IIRFilter2(type, cutoff, resonance, sampleRate) {
   this.f[0] = 0.0; // lp
   this.f[1] = 0.0; // hp
   this.f[2] = 0.0; // bp
-  this.f[3] = 0.0; // br 
+  this.f[3] = 0.0; // br
 
   this.calcCoeff = function (cutoff, resonance) {
     this.freq = 2 * Math.sin(Math.PI * Math.min(0.25, cutoff / (this.sampleRate * 2)));
@@ -1346,7 +1368,7 @@ IIRFilter2.prototype.process = function (buffer) {
     output += 0.5 * f[this.type];
 
     if (this.envelope) {
-      buffer[i] = (buffer[i] * (1 - this.envelope.value())) + (output * this.envelope.value());
+      buffer[i] = buffer[i] * (1 - this.envelope.value()) + output * this.envelope.value();
       this.envelope.samplesProcessed++;
     } else {
       buffer[i] = output;
@@ -1365,8 +1387,6 @@ IIRFilter2.prototype.addEnvelope = function (envelope) {
 IIRFilter2.prototype.set = function (cutoff, resonance) {
   this.calcCoeff(cutoff, resonance);
 };
-
-
 
 function WindowFunction(type, alpha) {
   this.alpha = alpha;
@@ -1425,11 +1445,11 @@ WindowFunction.prototype.process = function (buffer) {
 };
 
 WindowFunction.Bartlett = function (length, index) {
-  return 2 / (length - 1) * ((length - 1) / 2 - Math.abs(index - (length - 1) / 2));
+  return (2 / (length - 1)) * ((length - 1) / 2 - Math.abs(index - (length - 1) / 2));
 };
 
 WindowFunction.BartlettHann = function (length, index) {
-  return 0.62 - 0.48 * Math.abs(index / (length - 1) - 0.5) - 0.38 * Math.cos(DSP.TWO_PI * index / (length - 1));
+  return 0.62 - 0.48 * Math.abs(index / (length - 1) - 0.5) - 0.38 * Math.cos((DSP.TWO_PI * index) / (length - 1));
 };
 
 WindowFunction.Blackman = function (length, index, alpha) {
@@ -1437,27 +1457,27 @@ WindowFunction.Blackman = function (length, index, alpha) {
   var a1 = 0.5;
   var a2 = alpha / 2;
 
-  return a0 - a1 * Math.cos(DSP.TWO_PI * index / (length - 1)) + a2 * Math.cos(4 * Math.PI * index / (length - 1));
+  return a0 - a1 * Math.cos((DSP.TWO_PI * index) / (length - 1)) + a2 * Math.cos((4 * Math.PI * index) / (length - 1));
 };
 
 WindowFunction.Cosine = function (length, index) {
-  return Math.cos(Math.PI * index / (length - 1) - Math.PI / 2);
+  return Math.cos((Math.PI * index) / (length - 1) - Math.PI / 2);
 };
 
 WindowFunction.Gauss = function (length, index, alpha) {
-  return Math.pow(Math.E, -0.5 * Math.pow((index - (length - 1) / 2) / (alpha * (length - 1) / 2), 2));
+  return Math.pow(Math.E, -0.5 * Math.pow((index - (length - 1) / 2) / ((alpha * (length - 1)) / 2), 2));
 };
 
 WindowFunction.Hamming = function (length, index) {
-  return 0.54 - 0.46 * Math.cos(DSP.TWO_PI * index / (length - 1));
+  return 0.54 - 0.46 * Math.cos((DSP.TWO_PI * index) / (length - 1));
 };
 
 WindowFunction.Hann = function (length, index) {
-  return 0.5 * (1 - Math.cos(DSP.TWO_PI * index / (length - 1)));
+  return 0.5 * (1 - Math.cos((DSP.TWO_PI * index) / (length - 1)));
 };
 
 WindowFunction.Lanczos = function (length, index) {
-  var x = 2 * index / (length - 1) - 1;
+  var x = (2 * index) / (length - 1) - 1;
   return Math.sin(Math.PI * x) / (Math.PI * x);
 };
 
@@ -1466,11 +1486,11 @@ WindowFunction.Rectangular = function (length, index) {
 };
 
 WindowFunction.Triangular = function (length, index) {
-  return 2 / length * (length / 2 - Math.abs(index - (length - 1) / 2));
+  return (2 / length) * (length / 2 - Math.abs(index - (length - 1) / 2));
 };
 
 function sinh(arg) {
-  // Returns the hyperbolic sine of the number, defined as (exp(number) - exp(-number))/2 
+  // Returns the hyperbolic sine of the number, defined as (exp(number) - exp(-number))/2
   //
   // version: 1004.2314
   // discuss at: http://phpjs.org/functions/sinh    // +   original by: Onno Marsman
@@ -1479,9 +1499,9 @@ function sinh(arg) {
   return (Math.exp(arg) - Math.exp(-arg)) / 2;
 }
 
-/* 
+/*
  *  Biquad filter
- * 
+ *
  *  Created by Ricard Marxer <email@ricardmarxer.com> on 2010-05-23.
  *  Copyright 2010 Ricard Marxer. All rights reserved.
  *
@@ -1490,7 +1510,7 @@ function sinh(arg) {
 // http://www.musicdsp.org/files/Audio-EQ-Cookbook.txt
 function Biquad(type, sampleRate) {
   this.Fs = sampleRate;
-  this.type = type;  // type of the filter
+  this.type = type; // type of the filter
   this.parameterType = DSP.Q; // type of the parameter
 
   this.x_1_l = 0;
@@ -1518,22 +1538,22 @@ function Biquad(type, sampleRate) {
   this.a1a0 = this.a1 / this.a0;
   this.a2a0 = this.a2 / this.a0;
 
-  this.f0 = 3000;   // "wherever it's happenin', man."  Center Frequency or
+  this.f0 = 3000; // "wherever it's happenin', man."  Center Frequency or
   // Corner Frequency, or shelf midpoint frequency, depending
   // on which filter type.  The "significant frequency".
 
   this.dBgain = 12; // used only for peaking and shelving filters
 
-  this.Q = 1;       // the EE kind of definition, except for peakingEQ in which A*Q is
+  this.Q = 1; // the EE kind of definition, except for peakingEQ in which A*Q is
   // the classic EE Q.  That adjustment in definition was made so that
   // a boost of N dB followed by a cut of N dB for identical Q and
   // f0/Fs results in a precisely flat unity gain filter or "wire".
 
-  this.BW = -3;     // the bandwidth in octaves (between -3 dB frequencies for BPF
+  this.BW = -3; // the bandwidth in octaves (between -3 dB frequencies for BPF
   // and notch or between midpoint (dBgain/2) gain frequencies for
   // peaking EQ
 
-  this.S = 1;       // a "shelf slope" parameter (for shelving EQ only).  When S = 1,
+  this.S = 1; // a "shelf slope" parameter (for shelving EQ only).  When S = 1,
   // the shelf slope is as steep as it can be and remain monotonically
   // increasing or decreasing gain with frequency.  The shelf slope, in
   // dB/octave, remains proportional to S for all other values for a
@@ -1586,12 +1606,12 @@ function Biquad(type, sampleRate) {
   this.recalculateCoefficients = function () {
     var A;
     if (type === DSP.PEAKING_EQ || type === DSP.LOW_SHELF || type === DSP.HIGH_SHELF) {
-      A = Math.pow(10, (this.dBgain / 40));  // for peaking and shelving EQ filters only
+      A = Math.pow(10, this.dBgain / 40); // for peaking and shelving EQ filters only
     } else {
-      A = Math.sqrt(Math.pow(10, (this.dBgain / 20)));
+      A = Math.sqrt(Math.pow(10, this.dBgain / 20));
     }
 
-    var w0 = DSP.TWO_PI * this.f0 / this.Fs;
+    var w0 = (DSP.TWO_PI * this.f0) / this.Fs;
 
     var cosw0 = Math.cos(w0);
     var sinw0 = Math.sin(w0);
@@ -1604,11 +1624,11 @@ function Biquad(type, sampleRate) {
         break;
 
       case DSP.BW:
-        alpha = sinw0 * sinh(Math.LN2 / 2 * this.BW * w0 / sinw0);
+        alpha = sinw0 * sinh(((Math.LN2 / 2) * this.BW * w0) / sinw0);
         break;
 
       case DSP.S:
-        alpha = sinw0 / 2 * Math.sqrt((A + 1 / A) * (1 / this.S - 1) + 2);
+        alpha = (sinw0 / 2) * Math.sqrt((A + 1 / A) * (1 / this.S - 1) + 2);
         break;
     }
 
@@ -1624,7 +1644,7 @@ function Biquad(type, sampleRate) {
     var coeff;
 
     switch (this.type) {
-      case DSP.LPF:       // H(s) = 1 / (s^2 + s/Q + 1)
+      case DSP.LPF: // H(s) = 1 / (s^2 + s/Q + 1)
         this.b0 = (1 - cosw0) / 2;
         this.b1 = 1 - cosw0;
         this.b2 = (1 - cosw0) / 2;
@@ -1633,7 +1653,7 @@ function Biquad(type, sampleRate) {
         this.a2 = 1 - alpha;
         break;
 
-      case DSP.HPF:       // H(s) = s^2 / (s^2 + s/Q + 1)
+      case DSP.HPF: // H(s) = s^2 / (s^2 + s/Q + 1)
         this.b0 = (1 + cosw0) / 2;
         this.b1 = -(1 + cosw0);
         this.b2 = (1 + cosw0) / 2;
@@ -1642,7 +1662,7 @@ function Biquad(type, sampleRate) {
         this.a2 = 1 - alpha;
         break;
 
-      case DSP.BPF_CONSTANT_SKIRT:       // H(s) = s / (s^2 + s/Q + 1)  (constant skirt gain, peak gain = Q)
+      case DSP.BPF_CONSTANT_SKIRT: // H(s) = s / (s^2 + s/Q + 1)  (constant skirt gain, peak gain = Q)
         this.b0 = sinw0 / 2;
         this.b1 = 0;
         this.b2 = -sinw0 / 2;
@@ -1651,7 +1671,7 @@ function Biquad(type, sampleRate) {
         this.a2 = 1 - alpha;
         break;
 
-      case DSP.BPF_CONSTANT_PEAK:       // H(s) = (s/Q) / (s^2 + s/Q + 1)      (constant 0 dB peak gain)
+      case DSP.BPF_CONSTANT_PEAK: // H(s) = (s/Q) / (s^2 + s/Q + 1)      (constant 0 dB peak gain)
         this.b0 = alpha;
         this.b1 = 0;
         this.b2 = -alpha;
@@ -1660,7 +1680,7 @@ function Biquad(type, sampleRate) {
         this.a2 = 1 - alpha;
         break;
 
-      case DSP.NOTCH:     // H(s) = (s^2 + 1) / (s^2 + s/Q + 1)
+      case DSP.NOTCH: // H(s) = (s^2 + 1) / (s^2 + s/Q + 1)
         this.b0 = 1;
         this.b1 = -2 * cosw0;
         this.b2 = 1;
@@ -1669,7 +1689,7 @@ function Biquad(type, sampleRate) {
         this.a2 = 1 - alpha;
         break;
 
-      case DSP.APF:       // H(s) = (s^2 - s/Q + 1) / (s^2 + s/Q + 1)
+      case DSP.APF: // H(s) = (s^2 - s/Q + 1) / (s^2 + s/Q + 1)
         this.b0 = 1 - alpha;
         this.b1 = -2 * cosw0;
         this.b2 = 1 + alpha;
@@ -1678,7 +1698,7 @@ function Biquad(type, sampleRate) {
         this.a2 = 1 - alpha;
         break;
 
-      case DSP.PEAKING_EQ:  // H(s) = (s^2 + s*(A/Q) + 1) / (s^2 + s/(A*Q) + 1)
+      case DSP.PEAKING_EQ: // H(s) = (s^2 + s*(A/Q) + 1) / (s^2 + s/(A*Q) + 1)
         this.b0 = 1 + alpha * A;
         this.b1 = -2 * cosw0;
         this.b2 = 1 - alpha * A;
@@ -1687,24 +1707,24 @@ function Biquad(type, sampleRate) {
         this.a2 = 1 - alpha / A;
         break;
 
-      case DSP.LOW_SHELF:   // H(s) = A * (s^2 + (sqrt(A)/Q)*s + A)/(A*s^2 + (sqrt(A)/Q)*s + 1)
-        coeff = sinw0 * Math.sqrt((A ^ 2 + 1) * (1 / this.S - 1) + 2 * A);
-        this.b0 = A * ((A + 1) - (A - 1) * cosw0 + coeff);
-        this.b1 = 2 * A * ((A - 1) - (A + 1) * cosw0);
-        this.b2 = A * ((A + 1) - (A - 1) * cosw0 - coeff);
-        this.a0 = (A + 1) + (A - 1) * cosw0 + coeff;
-        this.a1 = -2 * ((A - 1) + (A + 1) * cosw0);
-        this.a2 = (A + 1) + (A - 1) * cosw0 - coeff;
+      case DSP.LOW_SHELF: // H(s) = A * (s^2 + (sqrt(A)/Q)*s + A)/(A*s^2 + (sqrt(A)/Q)*s + 1)
+        coeff = sinw0 * Math.sqrt((A ^ (2 + 1)) * (1 / this.S - 1) + 2 * A);
+        this.b0 = A * (A + 1 - (A - 1) * cosw0 + coeff);
+        this.b1 = 2 * A * (A - 1 - (A + 1) * cosw0);
+        this.b2 = A * (A + 1 - (A - 1) * cosw0 - coeff);
+        this.a0 = A + 1 + (A - 1) * cosw0 + coeff;
+        this.a1 = -2 * (A - 1 + (A + 1) * cosw0);
+        this.a2 = A + 1 + (A - 1) * cosw0 - coeff;
         break;
 
-      case DSP.HIGH_SHELF:   // H(s) = A * (A*s^2 + (sqrt(A)/Q)*s + 1)/(s^2 + (sqrt(A)/Q)*s + A)
-        coeff = sinw0 * Math.sqrt((A ^ 2 + 1) * (1 / this.S - 1) + 2 * A);
-        this.b0 = A * ((A + 1) + (A - 1) * cosw0 + coeff);
-        this.b1 = -2 * A * ((A - 1) + (A + 1) * cosw0);
-        this.b2 = A * ((A + 1) + (A - 1) * cosw0 - coeff);
-        this.a0 = (A + 1) - (A - 1) * cosw0 + coeff;
-        this.a1 = 2 * ((A - 1) - (A + 1) * cosw0);
-        this.a2 = (A + 1) - (A - 1) * cosw0 - coeff;
+      case DSP.HIGH_SHELF: // H(s) = A * (A*s^2 + (sqrt(A)/Q)*s + 1)/(s^2 + (sqrt(A)/Q)*s + A)
+        coeff = sinw0 * Math.sqrt((A ^ (2 + 1)) * (1 / this.S - 1) + 2 * A);
+        this.b0 = A * (A + 1 + (A - 1) * cosw0 + coeff);
+        this.b1 = -2 * A * (A - 1 + (A + 1) * cosw0);
+        this.b2 = A * (A + 1 + (A - 1) * cosw0 - coeff);
+        this.a0 = A + 1 - (A - 1) * cosw0 + coeff;
+        this.a1 = 2 * (A - 1 - (A + 1) * cosw0);
+        this.a2 = A + 1 - (A - 1) * cosw0 - coeff;
         break;
     }
 
@@ -1758,9 +1778,9 @@ function Biquad(type, sampleRate) {
   };
 }
 
-/* 
+/*
  *  Magnitude to decibels
- * 
+ *
  *  Created by Ricard Marxer <email@ricardmarxer.com> on 2010-05-23.
  *  Copyright 2010 Ricard Marxer. All rights reserved.
  *
@@ -1784,9 +1804,9 @@ DSP.mag2db = function (buffer) {
   return result;
 };
 
-/* 
+/*
  *  Frequency response
- * 
+ *
  *  Created by Ricard Marxer <email@ricardmarxer.com> on 2010-05-23.
  *  Copyright 2010 Ricard Marxer. All rights reserved.
  *
@@ -1805,7 +1825,7 @@ DSP.freqz = function (b, a, w) {
   if (!w) {
     w = Float64Array(200);
     for (i = 0; i < w.length; i++) {
-      w[i] = DSP.TWO_PI / w.length * i - Math.PI;
+      w[i] = (DSP.TWO_PI / w.length) * i - Math.PI;
     }
   }
 
@@ -1834,12 +1854,12 @@ DSP.freqz = function (b, a, w) {
   return result;
 };
 
-/* 
+/*
  *  Graphical Equalizer
  *
  *  Implementation of a graphic equalizer with a configurable bands-per-octave
  *  and minimum and maximum frequencies
- * 
+ *
  *  Created by Ricard Marxer <email@ricardmarxer.com> on 2010-05-23.
  *  Copyright 2010 Ricard Marxer. All rights reserved.
  *
@@ -1857,11 +1877,11 @@ function GraphicalEq(sampleRate) {
   this.calculateFreqzs = true;
 
   this.recalculateFilters = function () {
-    var bandCount = Math.round(Math.log(this.maxFreq / this.minFreq) * this.bandsPerOctave / Math.LN2);
+    var bandCount = Math.round((Math.log(this.maxFreq / this.minFreq) * this.bandsPerOctave) / Math.LN2);
 
     this.filters = [];
     for (var i = 0; i < bandCount; i++) {
-      var freq = this.minFreq * (Math.pow(2, i / this.bandsPerOctave));
+      var freq = this.minFreq * Math.pow(2, i / this.bandsPerOctave);
       var newFilter = new Biquad(DSP.PEAKING_EQ, this.FS);
       newFilter.setDbGain(0);
       newFilter.setBW(1 / this.bandsPerOctave);
@@ -1887,7 +1907,7 @@ function GraphicalEq(sampleRate) {
   };
 
   this.setBandGain = function (bandIndex, gain) {
-    if (bandIndex < 0 || bandIndex > (this.filters.length - 1)) {
+    if (bandIndex < 0 || bandIndex > this.filters.length - 1) {
       throw "The band index of the graphical equalizer is out of bounds.";
     }
 
@@ -1904,14 +1924,14 @@ function GraphicalEq(sampleRate) {
       return;
     }
 
-    if (bandIndex < 0 || bandIndex > (this.filters.length - 1)) {
+    if (bandIndex < 0 || bandIndex > this.filters.length - 1) {
       throw "The band index of the graphical equalizer is out of bounds. " + bandIndex + " is out of [" + 0 + ", " + this.filters.length - 1 + "]";
     }
 
     if (!this.w) {
       this.w = Float64Array(400);
       for (var i = 0; i < this.w.length; i++) {
-        this.w[i] = Math.PI / this.w.length * i;
+        this.w[i] = (Math.PI / this.w.length) * i;
       }
     }
 
@@ -2016,10 +2036,10 @@ MultiDelay.prototype.process = function (samples) {
 
   for (var i = 0; i < samples.length; i++) {
     // delayBufferSamples could contain initial NULL's, return silence in that case
-    var delaySample = (this.delayBufferSamples[this.delayOutputPointer] === null ? 0.0 : this.delayBufferSamples[this.delayOutputPointer]);
+    var delaySample = this.delayBufferSamples[this.delayOutputPointer] === null ? 0.0 : this.delayBufferSamples[this.delayOutputPointer];
 
     // Mix normal audio data with delayed audio
-    var sample = (delaySample * this.delayVolume) + samples[i];
+    var sample = delaySample * this.delayVolume + samples[i];
 
     // Add audio data with the delay in the delay buffer
     this.delayBufferSamples[this.delayInputPointer] = sample;
@@ -2047,7 +2067,7 @@ MultiDelay.prototype.process = function (samples) {
  * Copyright 2010 Almer Thie. All rights reserved.
  * Example: See usage in Reverb class
  *
- * This is a delay that does NOT feeds it's own delayed signal back into its 
+ * This is a delay that does NOT feeds it's own delayed signal back into its
  * circular buffer, neither does it return the original signal. Also known as
  * an AllPassFilter(?).
  *
@@ -2106,7 +2126,6 @@ SingleDelay.prototype.process = function (samples) {
   var outputSamples = new Float64Array(samples.length);
 
   for (var i = 0; i < samples.length; i++) {
-
     // Add audio data with the delay in the delay buffer
     this.delayBufferSamples[this.delayInputPointer] = samples[i];
 
@@ -2170,14 +2189,14 @@ function Reverb(maxDelayInSamplesSize, delayInSamples, masterVolume, mixVolume, 
   var i, delayMultiply;
 
   for (i = 0; i < this.NR_OF_SINGLEDELAYS; i++) {
-    delayMultiply = 1.0 + (i / 7.0); // 1.0, 1.1, 1.2...
+    delayMultiply = 1.0 + i / 7.0; // 1.0, 1.1, 1.2...
     this.singleDelays[i] = new SingleDelay(maxDelayInSamplesSize, Math.round(this.delayInSamples * delayMultiply), this.delayVolume);
   }
 
   this.multiDelays = [];
 
   for (i = 0; i < this.NR_OF_MULTIDELAYS; i++) {
-    delayMultiply = 1.0 + (i / 10.0); // 1.0, 1.1, 1.2... 
+    delayMultiply = 1.0 + i / 10.0; // 1.0, 1.1, 1.2...
     this.multiDelays[i] = new MultiDelay(maxDelayInSamplesSize, Math.round(this.delayInSamples * delayMultiply), this.masterVolume, this.delayVolume);
   }
 }
@@ -2193,12 +2212,12 @@ Reverb.prototype.setDelayInSamples = function (delayInSamples) {
   var i, delayMultiply;
 
   for (i = 0; i < this.NR_OF_SINGLEDELAYS; i++) {
-    delayMultiply = 1.0 + (i / 7.0); // 1.0, 1.1, 1.2...
+    delayMultiply = 1.0 + i / 7.0; // 1.0, 1.1, 1.2...
     this.singleDelays[i].setDelayInSamples(Math.round(this.delayInSamples * delayMultiply));
   }
 
   for (i = 0; i < this.NR_OF_MULTIDELAYS; i++) {
-    delayMultiply = 1.0 + (i / 10.0); // 1.0, 1.1, 1.2...
+    delayMultiply = 1.0 + i / 10.0; // 1.0, 1.1, 1.2...
     this.multiDelays[i].setDelayInSamples(Math.round(this.delayInSamples * delayMultiply));
   }
 };

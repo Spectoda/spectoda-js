@@ -4,7 +4,6 @@ import { TimeTrack } from "./TimeTrack.js";
 import { TnglReader } from "./TnglReader.js";
 import { DEVICE_FLAGS, NETWORK_FLAGS, TangleInterface } from "./TangleInterface.js";
 
-
 /////////////////////////////////////////////////////////////////////////////////////
 
 var simulatedFails = false;
@@ -55,7 +54,7 @@ class FlutterConnection {
       window.addEventListener("#resolve", e => {
         // @ts-ignore
         const value = e.detail.value;
-        logging.debug("Triggered #resolve:", typeof(value), value);
+        logging.debug("Triggered #resolve:", typeof value, value);
 
         // @ts-ignore
         window.flutterConnection.resolve(value);
@@ -64,7 +63,7 @@ class FlutterConnection {
       window.addEventListener("#reject", e => {
         // @ts-ignore
         const value = e.detail.value;
-        logging.debug("Triggered #reject:", typeof(value), value);
+        logging.debug("Triggered #reject:", typeof value, value);
 
         // @ts-ignore
         window.flutterConnection.reject(value);
@@ -73,7 +72,7 @@ class FlutterConnection {
       window.addEventListener("#emit", e => {
         // @ts-ignore
         const event = e.detail.value;
-        logging.debug("Triggered #emit:", typeof(event), event);
+        logging.debug("Triggered #emit:", typeof event, event);
 
         // @ts-ignore
         window.flutterConnection.emit(event);
@@ -82,13 +81,11 @@ class FlutterConnection {
       window.addEventListener("#process", e => {
         // @ts-ignore
         const bytes = e.detail.value;
-        logging.debug("Triggered #process:", typeof(bytes), bytes);
+        logging.debug("Triggered #process:", typeof bytes, bytes);
 
         // @ts-ignore
         window.flutterConnection.process(bytes);
       });
-      
-      
     } else {
       logging.debug("flutter_inappwebview in window NOT detected");
       logging.info("Simulating Flutter Functions");
@@ -905,12 +902,12 @@ criteria example:
         reject(e);
       }
     })
-    .then(() => {
-      return this.disconnect();
-    })
-    .finally(() => {
-      this.#interfaceReference.releaseWakeLock();
-    });
+      .then(() => {
+        return this.disconnect();
+      })
+      .finally(() => {
+        this.#interfaceReference.releaseWakeLock();
+      });
   }
 
   destroy() {

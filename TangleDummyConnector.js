@@ -5,7 +5,6 @@ import { DEVICE_FLAGS } from "./TangleInterface.js";
 import { TnglReader } from "./TnglReader.js";
 import { TnglWriter } from "./TnglWriter.js";
 
-
 /////////////////////////////////////////////////////////////////////////////////////
 
 // Connector connects the application with one Tangle Device, that is then in a
@@ -19,7 +18,7 @@ export class TangleDummyConnector {
 
   constructor(interfaceReference, enableErrors = false, dummyFWVersion = "DUMMY_0.0.0_00000000") {
     this.type = enableErrors ? "edummy" : "dummy";
-    
+
     this.#interfaceReference = interfaceReference;
     this.#enableErrors = enableErrors;
     this.#FWVersion = dummyFWVersion;

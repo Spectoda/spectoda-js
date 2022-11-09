@@ -1,5 +1,3 @@
-
-
 import { logging } from "./Logging.js";
 import { mapValue, uint8ArrayToHexString } from "./functions.js";
 import { TnglWriter } from "./TnglWriter.js";
@@ -345,19 +343,13 @@ export class TnglCompiler {
     if (total >= 2147483647) {
       this.#tnglWriter.writeFlag(TNGL_FLAGS.TIMESTAMP_MAX);
       return;
-    }
-
-    else if (total <= -2147483648) {
+    } else if (total <= -2147483648) {
       this.#tnglWriter.writeFlag(TNGL_FLAGS.TIMESTAMP_MIN);
       return;
-    }
-
-    else if (total === 0) {
+    } else if (total === 0) {
       this.#tnglWriter.writeFlag(TNGL_FLAGS.TIMESTAMP_ZERO);
       return;
-    } 
-    
-    else {
+    } else {
       this.#tnglWriter.writeFlag(TNGL_FLAGS.TIMESTAMP);
       this.#tnglWriter.writeInt32(total);
       return;

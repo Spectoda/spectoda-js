@@ -48,7 +48,7 @@ export function getClockTimestamp() {
 }
 
 export function sleep(ms) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
+  return new Promise(resolve => setTimeout(resolve, ms));
 }
 
 // The MIT License (MIT)
@@ -75,20 +75,19 @@ export function sleep(ms) {
 export const createNanoEvents = () => ({
   events: {},
   emit(event, ...args) {
-    (this.events[event] || []).forEach((i) => {
+    (this.events[event] || []).forEach(i => {
       let res = i(...args);
     });
   },
   on(event, cb) {
     (this.events[event] = this.events[event] || []).push(cb);
-    return () =>
-      (this.events[event] = (this.events[event] || []).filter((i) => i !== cb));
+    return () => (this.events[event] = (this.events[event] || []).filter(i => i !== cb));
   },
 });
 
 /////////////////////////////////////////////// == 0.7 == ///////////////////////////////////////////////////
 
-export const getSeconds = (str) => {
+export const getSeconds = str => {
   let seconds = 0;
   let months = str.match(/(\d+)\s*M/);
   let days = str.match(/(\d+)\s*D/);
@@ -127,8 +126,7 @@ export function mapValue(x, in_min, in_max, out_min, out_max) {
     x = maximum;
   }
 
-  let result =
-    ((x - in_min) * (out_max - out_min)) / (in_max - in_min) + out_min;
+  let result = ((x - in_min) * (out_max - out_min)) / (in_max - in_min) + out_min;
 
   minimum = Math.min(out_min, out_max);
   maximum = Math.max(out_min, out_max);
@@ -165,9 +163,7 @@ export function colorToBytes(color_hex_code) {
     return [0, 0, 0];
   }
 
-  let reg = color_hex_code.match(
-    /#([0-9a-f][0-9a-f])([0-9a-f][0-9a-f])([0-9a-f][0-9a-f])/i
-  );
+  let reg = color_hex_code.match(/#([0-9a-f][0-9a-f])([0-9a-f][0-9a-f])([0-9a-f][0-9a-f])/i);
   if (!reg) {
     console.error('Wrong color code: "' + color_hex_code + '"');
     return [0, 0, 0];
@@ -181,13 +177,7 @@ export function colorToBytes(color_hex_code) {
 }
 
 export function percentageToBytes(percentage_float) {
-  const value = mapValue(
-    percentage_float,
-    -100.0,
-    100.0,
-    -2147483647,
-    2147483647
-  );
+  const value = mapValue(percentage_float, -100.0, 100.0, -2147483647, 2147483647);
   return toBytes(Math.floor(value), 4);
 }
 
@@ -209,9 +199,8 @@ export function numberToBytes(value, byteCount) {
 // Macbook M1, Safari:              Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/14.1.2 Safari/605.1.15
 // Android Spectoda Connect         Mozilla/5.0 (Linux; Android 11; Pixel 2 XL Build/RP1A.201005.004.A1; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/104.0.5112.97 Mobile Safari/537.36
 // Android Google Chrome            Mozilla/5.0 (Linux; Android 11; Pixel 2 XL) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/104.0.0.0 Mobile Safari/537.36
-// IPhone SE Spectoda Connect       Mozilla/5.0 (iPhone; CPU iPhone OS 15_6_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148         
+// IPhone SE Spectoda Connect       Mozilla/5.0 (iPhone; CPU iPhone OS 15_6_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148
 // IPhone SE Safari                 Mozilla/5.0 (iPhone; CPU iPhone OS 15_6_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/15.6.1 Mobile/15E148 Safari/604.1
-        
 
 const tangleConnectDetected = "tangleConnect" in window;
 export function detectTangleConnect() {
@@ -223,8 +212,7 @@ export function detectSpectodaConnect() {
   return spectodaConnectDetected;
 }
 
-const androidDetected =
-  navigator.userAgent.toLowerCase().indexOf("android") > -1;
+const androidDetected = navigator.userAgent.toLowerCase().indexOf("android") > -1;
 export function detectAndroid() {
   return androidDetected;
 }
@@ -234,14 +222,12 @@ export function detectIPhone() {
   return iphoneDetected;
 }
 
-const macintoshDetected =
-  navigator.userAgent.toLowerCase().indexOf("macintosh") > -1;
+const macintoshDetected = navigator.userAgent.toLowerCase().indexOf("macintosh") > -1;
 export function detectMacintosh() {
   return macintoshDetected;
 }
 
-const windowsDetected =
-  navigator.userAgent.toLowerCase().indexOf("windows") > -1;
+const windowsDetected = navigator.userAgent.toLowerCase().indexOf("windows") > -1;
 export function detectWindows() {
   return windowsDetected;
 }
@@ -261,9 +247,7 @@ export function detectBluefy() {
   return bluefyDetected;
 }
 
-const safariDetected =
-  navigator.userAgent.toLowerCase().indexOf("safari") > -1 &&
-  navigator.userAgent.toLowerCase().indexOf("chrome") == -1;
+const safariDetected = navigator.userAgent.toLowerCase().indexOf("safari") > -1 && navigator.userAgent.toLowerCase().indexOf("chrome") == -1;
 export function detectSafari() {
   return safariDetected && !tangleConnectDetected && !spectodaConnectDetected;
 }
@@ -276,14 +260,11 @@ export function computeTnglFingerprint(tngl_bytes, tngl_label) {
   let body = new Uint8Array(tngl_bytes);
 
   return crypto.subtle
-    .importKey("raw", enc.encode(tngl_label), algorithm, false, [
-      "sign",
-      "verify",
-    ])
-    .then((key) => {
+    .importKey("raw", enc.encode(tngl_label), algorithm, false, ["sign", "verify"])
+    .then(key => {
       return crypto.subtle.sign(algorithm.name, key, body);
     })
-    .then((signature) => {
+    .then(signature => {
       // let digest = btoa(String.fromCharCode(...new Uint8Array(signature)));
       // console.info(digest);
       return new Uint8Array(signature);
@@ -310,9 +291,7 @@ export function hexStringToUint8Array(hexString, arrayLength) {
 }
 
 export function uint8ArrayToHexString(bytes) {
-  return [...new Uint8Array(bytes)]
-    .map((x) => x.toString(16).padStart(2, "0"))
-    .join("");
+  return [...new Uint8Array(bytes)].map(x => x.toString(16).padStart(2, "0")).join("");
 }
 
 export function czechHackyToEnglish(string) {
@@ -350,17 +329,7 @@ export function czechHackyToEnglish(string) {
 // Detect iOS browsers < version 10
 const oldIOS = () =>
   typeof navigator !== "undefined" &&
-  parseFloat(
-    (
-      "" +
-      (/CPU.*OS ([0-9_]{3,4})[0-9_]{0,1}|(CPU like).*AppleWebKit.*Mobile/i.exec(
-        navigator.userAgent
-      ) || [0, ""])[1]
-    )
-      .replace("undefined", "3_2")
-      .replace("_", ".")
-      .replace("_", "")
-  ) < 10 &&
+  parseFloat(("" + (/CPU.*OS ([0-9_]{3,4})[0-9_]{0,1}|(CPU like).*AppleWebKit.*Mobile/i.exec(navigator.userAgent) || [0, ""])[1]).replace("undefined", "3_2").replace("_", ".").replace("_", "")) < 10 &&
   !window.MSStream;
 
 // Detect native Wake Lock API support
@@ -423,7 +392,7 @@ class NoSleep {
     if (nativeWakeLock()) {
       return navigator.wakeLock
         .request("screen")
-        .then((wakeLock) => {
+        .then(wakeLock => {
           this._wakeLock = wakeLock;
           this.enabled = true;
           console.info("Wake Lock active.");
@@ -434,7 +403,7 @@ class NoSleep {
             console.info("Wake Lock released.");
           });
         })
-        .catch((err) => {
+        .catch(err => {
           this.enabled = false;
           console.error(`${err.name}, ${err.message}`);
           throw err;
@@ -547,7 +516,7 @@ export function hexStringToArray(str) {
     return [];
   }
   var arr = str.match(/[0-9a-f]{2}/gi); // convert into array of hex pairs
-  arr = arr.map((x) => parseInt(x, 16)); // convert hex pairs into ints (bytes)
+  arr = arr.map(x => parseInt(x, 16)); // convert hex pairs into ints (bytes)
   return new Uint8Array(arr);
 }
 
@@ -603,21 +572,11 @@ export function validateTimestamp(value) {
 
   value = value.trim();
 
-  if (
-    value == "inf" ||
-    value == "Inf" ||
-    value == "infinity" ||
-    value == "Infinity"
-  ) {
+  if (value == "inf" || value == "Inf" || value == "infinity" || value == "Infinity") {
     return [2147483647, "Infinity"];
   }
 
-  if (
-    value == "-inf" ||
-    value == "-Inf" ||
-    value == "-infinity" ||
-    value == "-Infinity"
-  ) {
+  if (value == "-inf" || value == "-Inf" || value == "-infinity" || value == "-Infinity") {
     return [-2147483648, "-Infinity"];
   }
 

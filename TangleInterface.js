@@ -200,8 +200,8 @@ export class TangleInterface {
     this.#lastUpdateTime = new Date().getTime();
     this.#lastUpdatePercentage = 0;
 
-    this.onConnected = e => { };
-    this.onDisconnected = e => { };
+    this.onConnected = e => {};
+    this.onDisconnected = e => {};
 
     // this.#otaStart = new Date().getTime();
 
@@ -264,28 +264,28 @@ export class TangleInterface {
       // @ts-ignore
 
       /** @type {HTMLBodyElement} */ document.querySelector("body").addEventListener("click", function (e) {
-      e.preventDefault();
+        e.preventDefault();
 
-      (function (e, d, w) {
-        if (!e.composedPath) {
-          e.composedPath = function () {
-            if (this.path) {
+        (function (e, d, w) {
+          if (!e.composedPath) {
+            e.composedPath = function () {
+              if (this.path) {
+                return this.path;
+              }
+              var target = this.target;
+
+              this.path = [];
+              while (target.parentNode !== null) {
+                this.path.push(target);
+                target = target.parentNode;
+              }
+              this.path.push(d, w);
               return this.path;
-            }
-            var target = this.target;
-
-            this.path = [];
-            while (target.parentNode !== null) {
-              this.path.push(target);
-              target = target.parentNode;
-            }
-            this.path.push(d, w);
-            return this.path;
-          };
-        }
-      })(Event.prototype, document, window);
-      // @ts-ignore
-      const path = e.path || (e.composedPath && e.composedPath());
+            };
+          }
+        })(Event.prototype, document, window);
+        // @ts-ignore
+        const path = e.path || (e.composedPath && e.composedPath());
 
         // @ts-ignore
         for (let el of path) {
@@ -385,7 +385,6 @@ export class TangleInterface {
   }
 
   assignConnector(connector_type) {
-    
     if (!connector_type) {
       connector_type = "none";
     }
@@ -981,7 +980,7 @@ export class TangleInterface {
                 this.#disconnectQuery = new Query();
                 await this.connector
                   .request([DEVICE_FLAGS.FLAG_DEVICE_DISCONNECT_REQUEST], false)
-                  .catch(() => { })
+                  .catch(() => {})
                   .then(() => {
                     return this.connector.disconnect();
                   })
@@ -1100,7 +1099,7 @@ export class TangleInterface {
               case Query.TYPE_FIRMWARE_UPDATE:
                 try {
                   await this.requestWakeLock();
-                } catch { }
+                } catch {}
                 await this.connector
                   .updateFW(item.a)
                   .then(response => {
@@ -1119,7 +1118,7 @@ export class TangleInterface {
                 this.#reconection = false;
                 await this.connector
                   .request([DEVICE_FLAGS.FLAG_DEVICE_DISCONNECT_REQUEST], false)
-                  .catch(() => { })
+                  .catch(() => {})
                   .then(() => {
                     return this.connector.disconnect();
                   })
@@ -1224,7 +1223,7 @@ export class TangleInterface {
                 logging.verbose("FLAG_TIMESTAMP_EVENT");
                 event_value = tangleBytes.readInt32();
                 event_type = "timestamp";
-                log_value_postfix = "ms"
+                log_value_postfix = "ms";
                 break;
 
               case NETWORK_FLAGS.FLAG_EMIT_LAZY_COLOR_EVENT:
@@ -1385,7 +1384,7 @@ export class TangleInterface {
       }
     }
 
-    logging.info(emitted_events_log.join('\n'));
+    logging.info(emitted_events_log.join("\n"));
   }
 }
 

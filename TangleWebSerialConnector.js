@@ -119,7 +119,6 @@ export class TangleWebSerialConnector {
     while (true) {
       // try {
       let { value, done } = await this.#receiveStreamReader.read().catch(e => {
-        
         if (e.toString().includes("break condition")) {
           logging.warn(e);
 
