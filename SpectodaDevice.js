@@ -45,6 +45,12 @@ export class SpectodaDevice {
   #reconnectRC;
 
   constructor(connectorType = "default", reconnectionInterval = 1000) {
+
+    // nextjs
+    if (typeof window === 'undefined') {
+      return;
+    }
+
     this.timeline = new TimeTrack(0, true);
 
     this.#uuidCounter = Math.floor(Math.random() * 0xffffffff);
@@ -750,7 +756,8 @@ export class SpectodaDevice {
     }
 
     if (tngl_bytes === null) {
-      tngl_bytes = new TnglCodeParser().parseTnglCode(tngl_code);
+      const parser = new TnglCodeParser();
+      tngl_bytes = parser.parseTnglCode(tngl_code);
     }
 
     const timeline_flags = this.timeline.paused() ? 0b00010000 : 0b00000000; // flags: [reserved,reserved,reserved,timeline_paused,reserved,reserved,reserved,reserved]

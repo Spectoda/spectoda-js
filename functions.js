@@ -202,42 +202,44 @@ export function numberToBytes(value, byteCount) {
 // IPhone SE Spectoda Connect       Mozilla/5.0 (iPhone; CPU iPhone OS 15_6_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148
 // IPhone SE Safari                 Mozilla/5.0 (iPhone; CPU iPhone OS 15_6_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/15.6.1 Mobile/15E148 Safari/604.1
 
-const spectodaConnectDetected = "flutter_inappwebview" in window;
+const spectodaConnectDetected = typeof window !== "undefined" && "flutter_inappwebview" in window;
 export function detectSpectodaConnect() {
   return spectodaConnectDetected;
 }
 
-const androidDetected = navigator.userAgent.toLowerCase().indexOf("android") > -1;
+const navigatorUserAgent = typeof window !== "undefined" ? "" : navigator.userAgent.toLowerCase();
+
+const androidDetected = navigatorUserAgent.indexOf("android") > -1;
 export function detectAndroid() {
   return androidDetected;
 }
 
-const iphoneDetected = navigator.userAgent.toLowerCase().indexOf("iphone") > -1;
+const iphoneDetected = navigatorUserAgent.indexOf("iphone") > -1;
 export function detectIPhone() {
   return iphoneDetected;
 }
 
-const macintoshDetected = navigator.userAgent.toLowerCase().indexOf("macintosh") > -1;
+const macintoshDetected = navigatorUserAgent.indexOf("macintosh") > -1;
 export function detectMacintosh() {
   return macintoshDetected;
 }
 
-const windowsDetected = navigator.userAgent.toLowerCase().indexOf("windows") > -1;
+const windowsDetected = navigatorUserAgent.indexOf("windows") > -1;
 export function detectWindows() {
   return windowsDetected;
 }
 
-const linuxDetected = navigator.userAgent.toLowerCase().indexOf("linux") > -1;
+const linuxDetected = navigatorUserAgent.indexOf("linux") > -1;
 export function detectLinux() {
   return linuxDetected;
 }
 
-const chromeDetected = navigator.userAgent.toLowerCase().indexOf("chrome") > -1;
+const chromeDetected = navigatorUserAgent.indexOf("chrome") > -1;
 export function detectChrome() {
   return chromeDetected && !spectodaConnectDetected;
 }
 
-const safariDetected = navigator.userAgent.toLowerCase().indexOf("safari") > -1 && navigator.userAgent.toLowerCase().indexOf("chrome") == -1;
+const safariDetected = navigatorUserAgent.indexOf("safari") > -1 && navigatorUserAgent.indexOf("chrome") == -1;
 export function detectSafari() {
   return safariDetected && !spectodaConnectDetected;
 }
@@ -332,6 +334,10 @@ const { webm, mp4 } = {
 
 class NoSleep {
   constructor() {
+    // nextjs
+    if (typeof window === "undefined") {
+      return;
+    }
     this.enabled = false;
     if (nativeWakeLock()) {
       this._wakeLock = null;
@@ -345,6 +351,7 @@ class NoSleep {
     } else if (oldIOS()) {
       this.noSleepTimer = null;
     } else {
+      logging.error("NoSleep is not available");
       // Set up no sleep video element
       // this.noSleepVideo = document.createElement("video");
       // this.noSleepVideo.setAttribute("title", "No Sleep");
@@ -448,12 +455,6 @@ class NoSleep {
 }
 
 export const noSleep = new NoSleep();
-window.noSleep = noSleep;
-
-var script = document.createElement("script");
-script.src = "//cdn.jsdelivr.net/npm/eruda";
-script.setAttribute("defer", true);
-document.body.appendChild(script);
 
 export function enableDebugMode() {
   if (window.eruda) {
@@ -510,7 +511,7 @@ export function hexStringToArray(str) {
   return new Uint8Array(arr);
 }
 
-window.hexStringToArray = hexStringToArray;
+// window.hexStringToArray = hexStringToArray;
 
 const CRC8_DATA = hexStringToArray(CRC8_TABLE);
 
@@ -636,4 +637,13 @@ export function validateTimestamp(value) {
   }
 }
 
-window.validateTimestamp = validateTimestamp;
+if (typeof window !== "undefined") {
+  window.validateTimestamp = validateTimestamp;
+
+  window.noSleep = noSleep;
+
+  var script = document.createElement("script");
+  script.src = "//cdn.jsdelivr.net/npm/eruda";
+  script.setAttribute("defer", true);
+  document.body.appendChild(script);
+}

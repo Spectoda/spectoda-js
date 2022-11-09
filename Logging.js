@@ -31,3 +31,14 @@ if (window) {
 
   window.setLoggingLevel = setLoggingLevel;
 }
+
+if (globalThis) {
+  globalThis.DEBUG_LEVEL_NONE = DEBUG_LEVEL_NONE;
+  globalThis.DEBUG_LEVEL_ERROR = DEBUG_LEVEL_ERROR;
+  globalThis.DEBUG_LEVEL_WARN = DEBUG_LEVEL_WARN;
+  globalThis.DEBUG_LEVEL_INFO = DEBUG_LEVEL_INFO;
+  globalThis.DEBUG_LEVEL_DEBUG = DEBUG_LEVEL_DEBUG;
+  globalThis.DEBUG_LEVEL_VERBOSE = DEBUG_LEVEL_VERBOSE;
+
+  globalThis.setLoggingLevel = setLoggingLevel;
+}
