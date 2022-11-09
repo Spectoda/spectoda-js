@@ -1,8 +1,8 @@
 import { logging } from "./Logging.js";
-import { sleep, toBytes, detectTangleConnect, numberToBytes } from "./functions.js";
+import { sleep, toBytes, detectSpectodaConnect, numberToBytes } from "./functions.js";
 import { TimeTrack } from "./TimeTrack.js";
 import { TnglReader } from "./TnglReader.js";
-import { DEVICE_FLAGS, NETWORK_FLAGS, TangleInterface } from "./TangleInterface.js";
+import { DEVICE_FLAGS, NETWORK_FLAGS, SpectodaInterface } from "./SpectodaInterface.js";
 
 /////////////////////////////////////////////////////////////////////////////////////
 
@@ -129,7 +129,7 @@ class FlutterConnection {
               }
               _selected = true;
               // @ts-ignore
-              window.flutterConnection.resolve('{"connector":"tangleconnect"}');
+              window.flutterConnection.resolve('{"connector":"spectodaconnect"}');
             }
             break;
 
@@ -147,7 +147,7 @@ class FlutterConnection {
               }
               _selected = true;
               // @ts-ignore
-              window.flutterConnection.resolve('{"connector":"tangleconnect"}'); // resolve with json containing the information about the connected device
+              window.flutterConnection.resolve('{"connector":"spectodaconnect"}'); // resolve with json containing the information about the connected device
             }
             break;
 
@@ -156,7 +156,7 @@ class FlutterConnection {
               // params: ()
               if (_selected) {
                 // @ts-ignore
-                window.flutterConnection.resolve('{"connector":"tangleconnect"}'); // if the device is selected, return json
+                window.flutterConnection.resolve('{"connector":"spectodaconnect"}'); // if the device is selected, return json
               } else {
                 // @ts-ignore
                 window.flutterConnection.resolve(); // if no device is selected resolve nothing
@@ -195,8 +195,8 @@ class FlutterConnection {
               _connected = true;
               // @ts-ignore
               // @ts-ignore
-              window.flutterConnection.resolve('{"connector":"tangleconnect"}');
-              // after connection the TangleConnect can any time emit #disconnect event.
+              window.flutterConnection.resolve('{"connector":"spectodaconnect"}');
+              // after connection the SpectodaConnect can any time emit #disconnect event.
 
               await sleep(1000); // unselect logic
 
@@ -231,7 +231,7 @@ class FlutterConnection {
               // params: ()
               if (_connected) {
                 // @ts-ignore
-                window.flutterConnection.resolve('{"connector":"tangleconnect"}');
+                window.flutterConnection.resolve('{"connector":"spectodaconnect"}');
               } else {
                 // @ts-ignore
                 window.flutterConnection.resolve();
@@ -393,8 +393,8 @@ class FlutterConnection {
   }
 }
 
-// Connector connects the application with one Tangle Device, that is then in a
-// position of a controller for other Tangle Devices
+// Connector connects the application with one Spectoda Device, that is then in a
+// position of a controller for other Spectoda Devices
 export class FlutterConnector extends FlutterConnection {
   #interfaceReference;
 
@@ -403,7 +403,7 @@ export class FlutterConnector extends FlutterConnection {
   constructor(interfaceReference) {
     super();
 
-    this.type = "tangleconnect";
+    this.type = "spectodaconnect";
 
     this.#interfaceReference = interfaceReference;
     this.#promise = null;
@@ -486,8 +486,8 @@ criteria example:
 ]
 
 */
-  // choose one Tangle device (user chooses which device to connect to via a popup)
-  // if no criteria are set, then show all Tangle devices visible.
+  // choose one Spectoda device (user chooses which device to connect to via a popup)
+  // if no criteria are set, then show all Spectoda devices visible.
   // first bonds the BLE device with the PC/Phone/Tablet if it is needed.
   // Then selects the device
   userSelect(criteria_object, timeout_number = 60000) {
@@ -516,7 +516,7 @@ criteria example:
   // if more devices are found matching the criteria, then the strongest signal wins
   // if no device is found within the timeout period, then it returns an error
 
-  // if no criteria are provided, all Tangle enabled devices (with all different FWs and Owners and such)
+  // if no criteria are provided, all Spectoda enabled devices (with all different FWs and Owners and such)
   // are eligible.
 
   autoSelect(criteria_object, scan_period_number = 1000, timeout_number = 10000) {
@@ -609,7 +609,7 @@ criteria example:
     });
   }
 
-  // disconnect Connector from the connected Tangle Device. But keep it selected
+  // disconnect Connector from the connected Spectoda Device. But keep it selected
   disconnect() {
     logging.debug(`disconnect()`);
 
@@ -644,7 +644,7 @@ criteria example:
     return this.#applyTimeout(this.#promise, 1000, "connected");
   }
 
-  // deliver handles the communication with the Tangle network in a way
+  // deliver handles the communication with the Spectoda network in a way
   // that the command is guaranteed to arrive
   deliver(payload_bytes) {
     logging.debug(`deliver(payload=[${payload_bytes}])`);
@@ -662,7 +662,7 @@ criteria example:
     return this.#applyTimeout(this.#promise, 10000, "deliver");
   }
 
-  // transmit handles the communication with the Tangle network in a way
+  // transmit handles the communication with the Spectoda network in a way
   // that the command is NOT guaranteed to arrive
   transmit(payload_bytes) {
     logging.debug(`transmit(payload=[${payload_bytes}])`);
@@ -680,7 +680,7 @@ criteria example:
     return this.#applyTimeout(this.#promise, 10000, "transmit");
   }
 
-  // request handles the requests on the Tangle network. The command request
+  // request handles the requests on the Spectoda network. The command request
   // is guaranteed to get a response
   request(payload_bytes, read_response = true) {
     logging.debug(`request(payload=[${payload_bytes}], read_response=${read_response ? "true" : "false"})`);

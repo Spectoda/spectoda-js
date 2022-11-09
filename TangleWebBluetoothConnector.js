@@ -2,13 +2,13 @@
 /// <reference types="web-bluetooth" />
 
 import { logging } from "./Logging.js";
-import { detectAndroid, detectBluefy, detectSafari, hexStringToUint8Array, numberToBytes, sleep, toBytes } from "./functions.js";
-import { DEVICE_FLAGS } from "./TangleInterface.js";
+import { detectAndroid, detectSafari, hexStringToUint8Array, numberToBytes, sleep, toBytes } from "./functions.js";
+import { DEVICE_FLAGS } from "./SpectodaInterface.js";
 import { TimeTrack } from "./TimeTrack.js";
 import { TnglReader } from "./TnglReader.js";
 
-// od 0.8.0 maji vsechny tangle enabled BLE zarizeni jednotne TANGLE_DEVICE_UUID.
-// kazdy typ (produkt) Tangle Zarizeni ma svuj kod v manufacturer data
+// od 0.8.0 maji vsechny spectoda enabled BLE zarizeni jednotne SPECTODA_DEVICE_UUID.
+// kazdy typ (produkt) Spectoda Zarizeni ma svuj kod v manufacturer data
 // verze FW lze získat také z manufacturer data
 
 // xxConnection.js udržuje komunikaci vždy pouze s
@@ -33,12 +33,12 @@ export class WebBLEConnection {
     this.#interfaceReference = interfaceReference;
 
     /*
-      BLE Tangle Service
+      BLE Spectoda Service
     */
     this.#service = /** @type {BluetoothRemoteGATTService} */ (null);
 
     /*  
-      Network Characteristics governs the communication with the Tangle Netwok.
+      Network Characteristics governs the communication with the Spectoda Netwok.
       That means tngl uploads, timeline manipulation, event emitting...
       You can access it only if you are authenticated via the Device Characteristics
     */
@@ -46,7 +46,7 @@ export class WebBLEConnection {
 
     /*  
       The whole purpuse of clock characteristics is to synchronize clock time
-      of the application with the Tangle network
+      of the application with the Spectoda network
     */
     this.#clockChar = /** @type {BluetoothRemoteGATTCharacteristic} */ (null); // ? always accesable
 
@@ -54,10 +54,10 @@ export class WebBLEConnection {
       Device Characteristics is renamed Update Characteristics
       Device Characteristics handles ALL CONCEPTS WITH THE 
       PHYSICAL CONNECTED DEVICE. On the other hand Network Characteristics 
-      handles concepts connected with the whole tangle network - all devices 
+      handles concepts connected with the whole spectoda network - all devices 
       With Device Charactristics you can upload FW to the single device, 
       access and manipulate json config of the device, adopt device, 
-      and authenticate the application client with the tangle network
+      and authenticate the application client with the spectoda network
     */
     this.#deviceChar = /** @type {BluetoothRemoteGATTCharacteristic} */ (null);
 
@@ -125,8 +125,8 @@ export class WebBLEConnection {
     return characteristic.readValue();
   }
 
-  // WIP, event handling from tangle network to application
-  // timeline changes from tangle network to application ...
+  // WIP, event handling from spectoda network to application
+  // timeline changes from spectoda network to application ...
   #onNetworkNotification(event) {
     // logging.debug(event);
 
@@ -137,11 +137,7 @@ export class WebBLEConnection {
     // }
     // logging.debug("> " + a.join(" "));
 
-    if (detectBluefy()) {
-      this.#interfaceReference.process(event);
-    } else {
-      this.#interfaceReference.process(event.target.value);
-    }
+    this.#interfaceReference.process(event.target.value);
   }
 
   // WIP
@@ -476,9 +472,9 @@ export class WebBLEConnection {
 
 /////////////////////////////////////////////////////////////////////////////////////
 
-// Connector connects the application with one Tangle Device, that is then in a
-// position of a controller for other Tangle Devices
-export class TangleWebBluetoothConnector {
+// Connector connects the application with one Spectoda Device, that is then in a
+// position of a controller for other Spectoda Devices
+export class SpectodaWebBluetoothConnector {
   #interfaceReference;
 
   #webBTDevice;
@@ -498,8 +494,8 @@ export class TangleWebBluetoothConnector {
     this.FW_0_7_2_SERVICE_UUID = "60cb125a-0000-0007-0002-5ad20c574c10";
     this.FW_0_7_3_SERVICE_UUID = "60cb125a-0000-0007-0003-5ad20c574c10";
     this.FW_0_7_4_SERVICE_UUID = "60cb125a-0000-0007-0004-5ad20c574c10";
-    this.TANGLE_SERVICE_UUID = "cc540e31-80be-44af-b64a-5d2def886bf5";
-    this.TANGLE_ADOPTING_SERVICE_UUID = "723247e6-3e2d-4279-ad8e-85a13b74d4a5";
+    this.SPECTODA_SERVICE_UUID = "cc540e31-80be-44af-b64a-5d2def886bf5";
+    this.SPECTODA_ADOPTING_SERVICE_UUID = "723247e6-3e2d-4279-ad8e-85a13b74d4a5";
 
     this.TERMINAL_CHAR_UUID = "33a0937e-0c61-41ea-b770-007ade2c79fa";
     this.CLOCK_CHAR_UUID = "7a1e0e3a-6b9b-49ef-b9b7-65c81b714a19";
@@ -560,8 +556,8 @@ criteria example:
 ]
 
 */
-  // choose one Tangle device (user chooses which device to connect to via a popup)
-  // if no criteria are set, then show all Tangle devices visible.
+  // choose one Spectoda device (user chooses which device to connect to via a popup)
+  // if no criteria are set, then show all Spectoda devices visible.
   // first bonds the BLE device with the PC/Phone/Tablet if it is needed.
   // Then selects the device
   userSelect(criteria, timeout) {
@@ -591,153 +587,12 @@ criteria example:
     }
 
     /** @type {RequestDeviceOptions} */
-    let web_ble_options = { filters: /** @type {BluetoothLEScanFilter[]} */ ([]), optionalServices: [this.TANGLE_SERVICE_UUID] };
-
-    // Bluefy Obechcavky
-    if (detectBluefy()) {
-      let add_all_devices = false;
-      let add_tangle_uuid = false;
-      let dont_add_tangle_uuid = false;
-      let dont_add_adoption_uuid = false;
-      let add_legacy_uuids = false;
-      let add_adoption_uuid = false;
-
-      for (let i = 0; i < this.#criteria.length; i++) {
-        add_all_devices = true;
-
-        if (this.#criteria[i].adoptionFlag) {
-          add_all_devices = true;
-          add_adoption_uuid = true;
-        }
-
-        if (this.#criteria[i].legacy) {
-          add_all_devices = true;
-          add_legacy_uuids = true;
-        }
-
-        if (this.#criteria[i].ownerSignature) {
-          add_all_devices = false;
-          add_tangle_uuid = true;
-          add_adoption_uuid = true;
-        }
-
-        // if (this.#criteria[i].namePrefix) {
-        //   dont_add_tangle_uuid = true;
-        //   dont_add_adoption_uuid = true;
-
-        //   // window.alert("namePrefix: " + this.#criteria[i].namePrefix);
-
-        //   web_ble_options.filters.push({ namePrefix: this.#criteria[i].namePrefix });
-        // }
-
-        // if (this.#criteria[i].name) {
-        //   dont_add_tangle_uuid = true;
-        //   dont_add_adoption_uuid = true;
-
-        //   // window.alert("name: " + this.#criteria[i].name);
-
-        //   web_ble_options.filters.push({ name: this.#criteria[i].name });
-        // }
-      }
-
-      if (add_tangle_uuid && !dont_add_tangle_uuid) {
-        // window.alert("add_tangle_uuid");
-
-        web_ble_options.filters.push({ services: [this.TANGLE_SERVICE_UUID] });
-      }
-
-      if (add_adoption_uuid && !dont_add_adoption_uuid) {
-        // window.alert("add_adoption_uuid");
-
-        web_ble_options.filters.push({ services: [this.TANGLE_ADOPTING_SERVICE_UUID] });
-      }
-
-      if (add_legacy_uuids) {
-        // window.alert("add_legacy_uuids");
-
-        web_ble_options.filters.push({ name: "Nara Alpha" });
-        web_ble_options.filters.push({ services: [this.FW_PRE_0_7_SERVICE_UUID] });
-        web_ble_options.filters.push({ services: [this.FW_0_7_0_SERVICE_UUID] });
-        web_ble_options.filters.push({ services: [this.FW_0_7_1_SERVICE_UUID] });
-        web_ble_options.filters.push({ services: [this.FW_0_7_2_SERVICE_UUID] });
-        web_ble_options.filters.push({ services: [this.FW_0_7_3_SERVICE_UUID] });
-        web_ble_options.filters.push({ services: [this.FW_0_7_4_SERVICE_UUID] });
-      }
-
-      if (add_all_devices) {
-        // window.alert("add_all_devices");
-
-        web_ble_options.filters.push({ namePrefix: "A" });
-        web_ble_options.filters.push({ namePrefix: "a" });
-        web_ble_options.filters.push({ namePrefix: "B" });
-        web_ble_options.filters.push({ namePrefix: "b" });
-        web_ble_options.filters.push({ namePrefix: "C" });
-        web_ble_options.filters.push({ namePrefix: "c" });
-        web_ble_options.filters.push({ namePrefix: "D" });
-        web_ble_options.filters.push({ namePrefix: "d" });
-        web_ble_options.filters.push({ namePrefix: "E" });
-        web_ble_options.filters.push({ namePrefix: "e" });
-        web_ble_options.filters.push({ namePrefix: "F" });
-        web_ble_options.filters.push({ namePrefix: "f" });
-        web_ble_options.filters.push({ namePrefix: "G" });
-        web_ble_options.filters.push({ namePrefix: "g" });
-        web_ble_options.filters.push({ namePrefix: "H" });
-        web_ble_options.filters.push({ namePrefix: "h" });
-        web_ble_options.filters.push({ namePrefix: "I" });
-        web_ble_options.filters.push({ namePrefix: "i" });
-        web_ble_options.filters.push({ namePrefix: "J" });
-        web_ble_options.filters.push({ namePrefix: "j" });
-        web_ble_options.filters.push({ namePrefix: "K" });
-        web_ble_options.filters.push({ namePrefix: "k" });
-        web_ble_options.filters.push({ namePrefix: "L" });
-        web_ble_options.filters.push({ namePrefix: "l" });
-        web_ble_options.filters.push({ namePrefix: "M" });
-        web_ble_options.filters.push({ namePrefix: "m" });
-        web_ble_options.filters.push({ namePrefix: "N" });
-        web_ble_options.filters.push({ namePrefix: "n" });
-        web_ble_options.filters.push({ namePrefix: "O" });
-        web_ble_options.filters.push({ namePrefix: "o" });
-        web_ble_options.filters.push({ namePrefix: "P" });
-        web_ble_options.filters.push({ namePrefix: "p" });
-        web_ble_options.filters.push({ namePrefix: "Q" });
-        web_ble_options.filters.push({ namePrefix: "q" });
-        web_ble_options.filters.push({ namePrefix: "R" });
-        web_ble_options.filters.push({ namePrefix: "r" });
-        web_ble_options.filters.push({ namePrefix: "S" });
-        web_ble_options.filters.push({ namePrefix: "s" });
-        web_ble_options.filters.push({ namePrefix: "T" });
-        web_ble_options.filters.push({ namePrefix: "t" });
-        web_ble_options.filters.push({ namePrefix: "U" });
-        web_ble_options.filters.push({ namePrefix: "u" });
-        web_ble_options.filters.push({ namePrefix: "V" });
-        web_ble_options.filters.push({ namePrefix: "v" });
-        web_ble_options.filters.push({ namePrefix: "W" });
-        web_ble_options.filters.push({ namePrefix: "w" });
-        web_ble_options.filters.push({ namePrefix: "X" });
-        web_ble_options.filters.push({ namePrefix: "x" });
-        web_ble_options.filters.push({ namePrefix: "Y" });
-        web_ble_options.filters.push({ namePrefix: "y" });
-        web_ble_options.filters.push({ namePrefix: "Z" });
-        web_ble_options.filters.push({ namePrefix: "z" });
-        web_ble_options.filters.push({ namePrefix: "_" });
-        web_ble_options.filters.push({ namePrefix: "0" });
-        web_ble_options.filters.push({ namePrefix: "1" });
-        web_ble_options.filters.push({ namePrefix: "2" });
-        web_ble_options.filters.push({ namePrefix: "3" });
-        web_ble_options.filters.push({ namePrefix: "4" });
-        web_ble_options.filters.push({ namePrefix: "5" });
-        web_ble_options.filters.push({ namePrefix: "6" });
-        web_ble_options.filters.push({ namePrefix: "7" });
-        web_ble_options.filters.push({ namePrefix: "8" });
-        web_ble_options.filters.push({ namePrefix: "9" });
-        web_ble_options.filters.push({ namePrefix: "@" });
-      }
-    }
+    let web_ble_options = { filters: /** @type {BluetoothLEScanFilter[]} */ ([]), optionalServices: [this.SPECTODA_SERVICE_UUID] };
 
     //
-    else if (this.#criteria.length == 0) {
-      web_ble_options.filters.push({ services: [this.TANGLE_SERVICE_UUID] });
-      // web_ble_options.filters.push({ services: [this.TANGLE_ADOPTING_SERVICE_UUID] });
+    if (this.#criteria.length == 0) {
+      web_ble_options.filters.push({ services: [this.SPECTODA_SERVICE_UUID] });
+      // web_ble_options.filters.push({ services: [this.SPECTODA_ADOPTING_SERVICE_UUID] });
     }
 
     //
@@ -764,7 +619,7 @@ criteria example:
           continue;
         }
 
-        let filter = { services: [this.TANGLE_SERVICE_UUID] };
+        let filter = { services: [this.SPECTODA_SERVICE_UUID] };
 
         if (criterium.name) {
           filter.name = criterium.name;
@@ -876,7 +731,7 @@ criteria example:
     }
 
     if (web_ble_options.filters.length == 0) {
-      web_ble_options = { acceptAllDevices: true, optionalServices: [this.TANGLE_SERVICE_UUID] };
+      web_ble_options = { acceptAllDevices: true, optionalServices: [this.SPECTODA_SERVICE_UUID] };
     }
 
     // logging.debug(web_ble_options);
@@ -885,10 +740,6 @@ criteria example:
       .requestDevice(web_ble_options)
       .catch(e => {
         logging.error(e);
-        // Bluefy way how to say "Bluetooth is not enabled"
-        if (e.toString() === "2") {
-          throw "BluefyError";
-        }
         throw "UserCanceledSelection";
       })
       .then(device => {
@@ -910,7 +761,7 @@ criteria example:
   // if more devices are found matching the criteria, then the strongest signal wins
   // if no device is found within the timeout period, then it returns an error
 
-  // if no criteria are provided, all Tangle enabled devices (with all different FWs and Owners and such)
+  // if no criteria are provided, all Spectoda enabled devices (with all different FWs and Owners and such)
   // are eligible.
 
   autoSelect(criteria, scan_period = 1000, timeout = 3000) {
@@ -960,7 +811,7 @@ criteria example:
     return Promise.resolve(this.#selected() ? { connector: this.type } : null);
   }
 
-  // connect Connector to the selected Tangle Device. Also can be used to reconnect.
+  // connect Connector to the selected Spectoda Device. Also can be used to reconnect.
   // Fails if no device is selected
   connect(timeout = 10000, supportLegacy = false) {
     logging.verbose(`connect(timeout=${timeout},supportLegacy=${supportLegacy})`);
@@ -1007,7 +858,7 @@ criteria example:
               // figure out which FW we are connecting to
               .then(services => {
                 if (services.length != 1 || !services[0].isPrimary) {
-                  logging.error("Connected to device that is not Tangle");
+                  logging.error("Connected to device that is not Spectoda");
                   throw "ConnectionFailed";
                 }
 
@@ -1041,12 +892,12 @@ criteria example:
                     legacy_fw_version = "0.7.4";
                     break;
 
-                  case this.TANGLE_SERVICE_UUID:
+                  case this.SPECTODA_SERVICE_UUID:
                     legacy_fw_version = null;
                     break;
 
                   default:
-                    logging.error("Connected to non Tangle Device");
+                    logging.error("Connected to non Spectoda Device");
                     throw "ConnectionFailed";
                     break;
                 }
@@ -1067,7 +918,7 @@ criteria example:
           // NOT SUPPORT LEGACY FW SERVICE UUIDS
 
           logging.debug("> Getting the Bluetooth Service...");
-          return server.getPrimaryService(this.TANGLE_SERVICE_UUID);
+          return server.getPrimaryService(this.SPECTODA_SERVICE_UUID);
         }
       })
       .then(service => {
@@ -1119,7 +970,7 @@ criteria example:
     this.#webBTDevice.gatt.disconnect();
   }
 
-  // disconnect Connector from the connected Tangle Device. But keep it selected
+  // disconnect Connector from the connected Spectoda Device. But keep it selected
   disconnect() {
     this.#reconection = false;
 
@@ -1150,7 +1001,7 @@ criteria example:
     }
   };
 
-  // deliver handles the communication with the Tangle network in a way
+  // deliver handles the communication with the Spectoda network in a way
   // that the command is guaranteed to arrive
   deliver(payload) {
     if (!this.#connected()) {
@@ -1160,7 +1011,7 @@ criteria example:
     return this.#connection.deliver(payload);
   }
 
-  // transmit handles the communication with the Tangle network in a way
+  // transmit handles the communication with the Spectoda network in a way
   // that the command is NOT guaranteed to arrive
   transmit(payload) {
     if (!this.#connected()) {
@@ -1170,7 +1021,7 @@ criteria example:
     return this.#connection.transmit(payload);
   }
 
-  // request handles the requests on the Tangle network. The command request
+  // request handles the requests on the Spectoda network. The command request
   // is guaranteed to get a response
   request(payload, read_response = true) {
     if (!this.#connected()) {

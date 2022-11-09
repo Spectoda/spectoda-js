@@ -530,7 +530,7 @@ export class TnglCompiler {
       case "defDevice":
         this.#tnglWriter.writeFlag(TNGL_FLAGS.DEFINE_DEVICE);
         break;
-      case "defTangle":
+      case "defSpectoda":
         this.#tnglWriter.writeFlag(TNGL_FLAGS.DEFINE_TANGLE);
         break;
       case "defGroup":
@@ -547,7 +547,7 @@ export class TnglCompiler {
       case "siftDevices":
         this.#tnglWriter.writeFlag(TNGL_FLAGS.SIFTER_DEVICE);
         break;
-      case "siftTangles":
+      case "siftSpectodas":
         this.#tnglWriter.writeFlag(TNGL_FLAGS.SIFTER_TANGLE);
         break;
       case "siftGroups":

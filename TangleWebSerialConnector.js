@@ -1,7 +1,7 @@
 import { logging } from "./Logging.js";
 import { sleep, toBytes, numberToBytes, crc8, crc32, hexStringToArray, rgbToHex, stringToBytes } from "./functions.js";
 import { TimeTrack } from "./TimeTrack.js";
-import { DEVICE_FLAGS } from "./TangleInterface.js";
+import { DEVICE_FLAGS } from "./SpectodaInterface.js";
 import { TnglWriter } from "./TnglWriter.js";
 import { TnglReader } from "./TnglReader.js";
 
@@ -33,9 +33,9 @@ class LineBreakTransformer {
 
 ///////////////////////////////////////////////////////////////////////////////////
 
-// Connector connects the application with one Tangle Device, that is then in a
-// position of a controller for other Tangle Devices
-export class TangleWebSerialConnector {
+// Connector connects the application with one Spectoda Device, that is then in a
+// position of a controller for other Spectoda Devices
+export class SpectodaWebSerialConnector {
   #interfaceReference;
 
   #serialPort;
@@ -220,8 +220,8 @@ criteria example:
 ]
 
 */
-  // choose one Tangle device (user chooses which device to connect to via a popup)
-  // if no criteria are set, then show all Tangle devices visible.
+  // choose one Spectoda device (user chooses which device to connect to via a popup)
+  // if no criteria are set, then show all Spectoda devices visible.
   // first bonds the BLE device with the PC/Phone/Tablet if it is needed.
   // Then selects the device
   userSelect(criteria) {
@@ -247,7 +247,7 @@ criteria example:
   // if more devices are found matching the criteria, then the strongest signal wins
   // if no device is found within the timeout period, then it returns an error
 
-  // if no criteria are provided, all Tangle enabled devices (with all different FWs and Owners and such)
+  // if no criteria are provided, all Spectoda enabled devices (with all different FWs and Owners and such)
   // are eligible.
 
   autoSelect(criteria, scan_period = 1000, timeout = 3000) {
@@ -352,7 +352,7 @@ criteria example:
     return Promise.resolve(this.#connected ? { connector: this.type } : null);
   }
 
-  // disconnect Connector from the connected Tangle Device. But keep it selected
+  // disconnect Connector from the connected Spectoda Device. But keep it selected
   async disconnect() {
     logging.debug("> Closing serial port...");
 
@@ -525,7 +525,7 @@ criteria example:
   //   return this.#request(this.DEVICE_REQUEST, request);
   // }
 
-  // deliver handles the communication with the Tangle network in a way
+  // deliver handles the communication with the Spectoda network in a way
   // that the command is guaranteed to arrive
   deliver(payload) {
     // logging.debug(`deliver(payload=${payload})`);
@@ -542,7 +542,7 @@ criteria example:
     return this.#write(this.CHANNEL_NETWORK, payload);
   }
 
-  // transmit handles the communication with the Tangle network in a way
+  // transmit handles the communication with the Spectoda network in a way
   // that the command is NOT guaranteed to arrive
   transmit(payload) {
     // logging.debug(`transmit(payload=${payload})`);
@@ -559,7 +559,7 @@ criteria example:
     return this.#write(this.CHANNEL_NETWORK, payload);
   }
 
-  // request handles the requests on the Tangle network. The command request
+  // request handles the requests on the Spectoda network. The command request
   // is guaranteed to get a response
   request(payload, read_response = true) {
     if (!this.#connected) {

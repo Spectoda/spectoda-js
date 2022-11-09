@@ -24,8 +24,8 @@ i18.init(
   },
   (err, t) => {
     // TEST
-    // console.log("tanglejs translation", "Zpět", t("Zpět"));
-    // console.log("tanglejs translation", "Zkusit znovu", t("Zkusit znovu"));
+    // console.log("spectodajs translation", "Zpět", t("Zpět"));
+    // console.log("spectodajs translation", "Zkusit znovu", t("Zkusit znovu"));
   },
 );
 

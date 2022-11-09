@@ -3,9 +3,7 @@ import {
   colorToBytes,
   computeTnglFingerprint,
   czechHackyToEnglish,
-  detectBluefy,
   detectSpectodaConnect,
-  detectTangleConnect,
   getClockTimestamp,
   hexStringToUint8Array,
   labelToBytes,
@@ -14,27 +12,27 @@ import {
   sleep,
   stringToBytes,
 } from "./functions.js";
-import { DEVICE_FLAGS, NETWORK_FLAGS, TangleInterface } from "./TangleInterface.js";
-import { TnglCodeParser } from "./TangleParser.js";
+import { DEVICE_FLAGS, NETWORK_FLAGS, SpectodaInterface } from "./SpectodaInterface.js";
+import { TnglCodeParser } from "./SpectodaParser.js";
 import { TimeTrack } from "./TimeTrack.js";
 import "./TnglReader.js";
 import { TnglReader } from "./TnglReader.js";
 import "./TnglWriter.js";
 import { io } from "./lib/socketio.js";
 import { t, changeLanguage } from "./i18n.js";
-import { WEBSOCKET_URL } from "./TangleWebSocketsConnector.js";
+import { WEBSOCKET_URL } from "./SpectodaWebSocketsConnector.js";
 
 let lastEvents = {};
 /////////////////////////////////////////////////////////////////////////
 
 // should not create more than one object!
-// the destruction of the TangleDevice is not well implemented
+// the destruction of the SpectodaDevice is not well implemented
 
-// TODO - kdyz zavolam tangleDevice.connect(), kdyz jsem pripojeny, tak nechci aby se do interfacu poslal select
+// TODO - kdyz zavolam spectodaDevice.connect(), kdyz jsem pripojeny, tak nechci aby se do interfacu poslal select
 // TODO - kdyz zavolam funkci connect a uz jsem pripojeny, tak vyslu event connected, pokud si myslim ze nejsem pripojeny.
 // TODO - "watchdog timer" pro resolve/reject z TC
 
-export class TangleDevice {
+export class SpectodaDevice {
   #uuidCounter;
   #ownerSignature;
   #ownerKey;
@@ -54,7 +52,7 @@ export class TangleDevice {
     this.#ownerSignature = null;
     this.#ownerKey = null;
 
-    this.interface = new TangleInterface(this, reconnectionInterval);
+    this.interface = new SpectodaInterface(this, reconnectionInterval);
 
     if (connectorType) {
       this.interface.assignConnector(connectorType);
@@ -298,7 +296,7 @@ export class TangleDevice {
    *
    * events: "disconnected", "connected"
    *
-   * all events: event.target === the sender object (TangleWebBluetoothConnector)
+   * all events: event.target === the sender object (SpectodaWebBluetoothConnector)
    * event "disconnected": event.reason has a string with a disconnect reason
    *
    * @returns {Function} unbind function
@@ -314,13 +312,13 @@ export class TangleDevice {
     return this.interface.on(event, callback);
   }
 
-  // každé tangle zařízení může být spárováno pouze s jedním účtem. (jednim user_key)
+  // každé spectoda zařízení může být spárováno pouze s jedním účtem. (jednim user_key)
   // jakmile je sparovana, pak ji nelze prepsat novým učtem.
   // filtr pro pripojovani k zarizeni je pak účet.
 
   // adopt != pair
   // adopt reprezentuje proces, kdy si webovka osvoji nove zarizeni. Tohle zarizeni, ale uz
-  // muze byt spárováno s telefonem / TangleConnectem
+  // muze byt spárováno s telefonem / SpectodaConnectem
 
   // pri adoptovani MUSI byt vsechny zarizeni ze skupiny zapnuty.
   // vsechny zarizeni totiz MUSI vedet o vsech.
@@ -604,11 +602,6 @@ export class TangleDevice {
       })
       .catch(error => {
         logging.warn(error);
-        if (error === "BluefyError") {
-          // @ts-ignore
-          window.alert(t("Zkontrolujte, prosím, že máte aktivní Bluetooth v telefonu a lampa je zapojená v zásuvce."), t("Spárování nové lampy se nezdařilo"));
-          return;
-        }
         if (error === "UserCanceledSelection") {
           return this.connected().then(result => {
             if (!result) {
@@ -674,7 +667,7 @@ export class TangleDevice {
     }
 
     if (connectAny) {
-      if (detectBluefy() || detectSpectodaConnect()) {
+      if (detectSpectodaConnect()) {
         criteria = [{}];
       } else {
         criteria = [{}, { adoptionFlag: true }, { legacy: true }];
@@ -690,7 +683,7 @@ export class TangleDevice {
       .catch(error => {
         // TODO: tady tento catch by mel dal thrownout error jako ze nepodarilo pripojit.
         logging.error(error);
-        if (error === "UserCanceledSelection" || error === "BluefyError") {
+        if (error === "UserCanceledSelection") {
           //@ts-ignore
           window.alert(t('Aktivujte prosím Bluetooth a vyberte svou lampu ze seznamu Pro spárování nové lampy prosím stiskněte tlačítko "Přidat zařízení".'), t("Připojení selhalo"));
           return;
@@ -1550,30 +1543,6 @@ export class TangleDevice {
    */
   setLanguage(lng) {
     changeLanguage(lng);
-  }
-
-  hideHomeButton(hide = true) {
-    if (detectTangleConnect()) {
-      logging.info("Hiding home button");
-      //@ts-ignore
-      window.tangleConnect.hideHomeButton(hide);
-    }
-  }
-
-  goHome() {
-    if (detectTangleConnect()) {
-      logging.info("Going home");
-      //@ts-ignore
-      window.tangleConnect.goHome();
-    }
-  }
-
-  setRotation(rotation) {
-    if (detectTangleConnect()) {
-      logging.info("Setting rotation to " + rotation);
-      //@ts-ignore
-      window.tangleConnect.setRotation(rotation);
-    }
   }
 
   setDebugLevel(level) {

@@ -8,9 +8,7 @@ import {
   percentageToBytes,
   sleep,
   stringToBytes,
-  detectBluefy,
   noSleep,
-  detectTangleConnect,
   detectSpectodaConnect,
   mapValue,
   rgbToHex,
@@ -22,11 +20,11 @@ import {
   detectIPhone,
   detectMacintosh,
 } from "./functions.js";
-import { TangleDummyConnector } from "./TangleDummyConnector.js";
-import { TangleWebBluetoothConnector } from "./TangleWebBluetoothConnector.js";
-import { TangleWebSerialConnector } from "./TangleWebSerialConnector.js";
-import { TangleConnectConnector } from "./TangleConnectConnector.js";
-import { TangleWebSocketsConnector } from "./TangleWebSocketsConnector.js";
+import { SpectodaDummyConnector } from "./SpectodaDummyConnector.js";
+import { SpectodaWebBluetoothConnector } from "./SpectodaWebBluetoothConnector.js";
+import { SpectodaWebSerialConnector } from "./SpectodaWebSerialConnector.js";
+import { SpectodaConnectConnector } from "./SpectodaConnectConnector.js";
+import { SpectodaWebSocketsConnector } from "./SpectodaWebSocketsConnector.js";
 import { TimeTrack } from "./TimeTrack.js";
 import "./TnglReader.js";
 import "./TnglWriter.js";
@@ -105,19 +103,19 @@ export const NETWORK_FLAGS = Object.freeze({
   FLAG_EMIT_LABEL_EVENT: 253,
 });
 
-// TangleDevice.js -> TangleInterface.js -> | TangleXXXConnector.js ->
+// SpectodaDevice.js -> SpectodaInterface.js -> | SpectodaXXXConnector.js ->
 
-// TangleInterface vsude vraci Promisy a ma v sobe spolecne
+// SpectodaInterface vsude vraci Promisy a ma v sobe spolecne
 // koncepty pro vsechny konektory. Tzn send queue, ktery paruje odpovedi a resolvuje
 // promisy.
-// TangleInterface definuje
+// SpectodaInterface definuje
 // userSelect, autoSelect, selected
 // connect, disconnect, connected
 // execute, request
 // setClock, getClock, updateFW
 // addEventListener - "connected", "disconnected", "otastatus", "tngl"
 
-// TangleXXXConnector.js je jakoby blokujici API, pres ktere se da pripojovat k FW.
+// SpectodaXXXConnector.js je jakoby blokujici API, pres ktere se da pripojovat k FW.
 
 /////////////////////////////////////////////////////////////////////////
 
@@ -153,7 +151,7 @@ class Query {
 }
 
 // filters out duplicate payloads and merges them together. Also decodes payloads received from the connector.
-export class TangleInterface {
+export class SpectodaInterface {
   #deviceReference;
 
   #eventEmitter;
@@ -180,7 +178,7 @@ export class TangleInterface {
 
     this.clock = new TimeTrack(0);
 
-    this.connector = /** @type {TangleDummyConnector | TangleWebBluetoothConnector | TangleWebSerialConnector | TangleConnectConnector | FlutterConnector | TangleWebSocketsConnector | null} */ (null);
+    this.connector = /** @type {SpectodaDummyConnector | SpectodaWebBluetoothConnector | SpectodaWebSerialConnector | SpectodaConnectConnector | FlutterConnector | SpectodaWebSocketsConnector | null} */ (null);
 
     this.#eventEmitter = createNanoEvents();
     this.#wakeLock = null;
@@ -302,27 +300,6 @@ export class TangleInterface {
       });
     }
 
-    // open external links in JAVA TC
-    else if (detectTangleConnect()) {
-      // target="_blank" global handler
-      // @ts-ignore
-      window.tangleConnect.hasOwnProperty("openExternal") &&
-        /** @type {HTMLBodyElement} */ (document.querySelector("body")).addEventListener("click", function (e) {
-          e.preventDefault();
-          // @ts-ignore
-          for (let el of e.path) {
-            if (el.tagName === "A" && el.getAttribute("target") === "_blank") {
-              e.preventDefault();
-              const url = el.getAttribute("href");
-              // logging.verbose(url);
-              // @ts-ignore
-              window.tangleConnect.open(url);
-              break;
-            }
-          }
-        });
-    }
-
     window.addEventListener("beforeunload", e => {
       // If I cant disconnect right now for some readon
       // return this.disconnect(false).catch(reason => {
@@ -334,7 +311,7 @@ export class TangleInterface {
       //   }
       // });
 
-      this.destroyConnector(); // dodelat .destroy() v tangleConnectConnectoru
+      this.destroyConnector();
     });
   }
 
@@ -345,7 +322,7 @@ export class TangleInterface {
    *
    * events: "disconnected", "connected"
    *
-   * all events: event.target === the sender object (TangleWebBluetoothConnector)
+   * all events: event.target === the sender object (SpectodaWebBluetoothConnector)
    * event "disconnected": event.reason has a string with a disconnect reason
    *
    * @returns {Function} unbind function
@@ -399,8 +376,6 @@ export class TangleInterface {
     if (connector_type == "default") {
       if (detectSpectodaConnect()) {
         connector_type = "flutter";
-      } else if (detectTangleConnect()) {
-        connector_type = "tangleconnect";
       } else if (navigator.bluetooth) {
         connector_type = "webbluetooth";
       } else {
@@ -417,7 +392,7 @@ export class TangleInterface {
             break;
 
           case "dummy":
-            this.connector = new TangleDummyConnector(this, false);
+            this.connector = new SpectodaDummyConnector(this, false);
             break;
 
           case "vdummy":
@@ -432,19 +407,19 @@ export class TangleInterface {
                 })
                 // @ts-ignore
                 .then(version => {
-                  this.connector = new TangleDummyConnector(this, false, version);
+                  this.connector = new SpectodaDummyConnector(this, false, version);
                 })
             );
 
           case "edummy":
-            this.connector = new TangleDummyConnector(this, true);
+            this.connector = new SpectodaDummyConnector(this, true);
             break;
 
           case "webbluetooth":
-            if (detectBluefy() || (detectAndroid() && detectChrome()) || (detectMacintosh() && detectChrome()) || (detectWindows() && detectChrome()) || (detectLinux() && detectChrome())) {
-              this.connector = new TangleWebBluetoothConnector(this);
+            if ((detectAndroid() && detectChrome()) || (detectMacintosh() && detectChrome()) || (detectWindows() && detectChrome()) || (detectLinux() && detectChrome())) {
+              this.connector = new SpectodaWebBluetoothConnector(this);
             } else {
-              // iPhone outside Bluefy and TangleConnect
+              // iPhone outside Bluefy and SpectodaConnect
               if (detectIPhone()) {
                 // @ts-ignore
                 window.confirm(t("Z tohoto webového prohlížeče bohužel není možné NARU ovládat. Prosím, stáhněte si aplikaci Spectoda Connect."), t("Prohlížeč není podporován")).then(result => {
@@ -497,16 +472,7 @@ export class TangleInterface {
 
           case "webserial":
             if (detectChrome()) {
-              this.connector = new TangleWebSerialConnector(this);
-            } else {
-              logging.error("Error: Assigning unsupported connector");
-              this.connector = null;
-            }
-            break;
-
-          case "tangleconnect":
-            if (detectTangleConnect()) {
-              this.connector = new TangleConnectConnector(this);
+              this.connector = new SpectodaWebSerialConnector(this);
             } else {
               logging.error("Error: Assigning unsupported connector");
               this.connector = null;
@@ -523,7 +489,7 @@ export class TangleInterface {
             break;
 
           case "websockets":
-            this.connector = new TangleWebSocketsConnector(this);
+            this.connector = new SpectodaWebSocketsConnector(this);
             break;
 
           default:
@@ -1150,22 +1116,22 @@ export class TangleInterface {
   }
 
   process(bytecode) {
-    let tangleBytes = new TnglReader(bytecode);
+    let spectodaBytes = new TnglReader(bytecode);
 
-    logging.verbose(tangleBytes);
+    logging.verbose(spectodaBytes);
 
     let emitted_events_log = [];
 
-    while (tangleBytes.available > 0) {
-      switch (tangleBytes.peekFlag()) {
+    while (spectodaBytes.available > 0) {
+      switch (spectodaBytes.peekFlag()) {
         case NETWORK_FLAGS.FLAG_CONF_BYTES:
           {
             logging.verbose("FLAG_CONF_BYTES");
-            tangleBytes.readFlag(); // NETWORK_FLAGS.FLAG_CONF_BYTES
+            spectodaBytes.readFlag(); // NETWORK_FLAGS.FLAG_CONF_BYTES
 
-            const conf_size = tangleBytes.readUint32();
-            //const bytecode_offset = tangleBytes.position() + offset;
-            tangleBytes.foward(conf_size);
+            const conf_size = spectodaBytes.readUint32();
+            //const bytecode_offset = spectodaBytes.position() + offset;
+            spectodaBytes.foward(conf_size);
 
             logging.verbose(`conf_size=${conf_size}`);
             //logging.debug("bytecode_offset=%u", bytecode_offset);
@@ -1177,11 +1143,11 @@ export class TangleInterface {
         case NETWORK_FLAGS.FLAG_TNGL_BYTES:
           {
             logging.verbose("FLAG_TNGL_BYTES");
-            tangleBytes.readFlag(); // NETWORK_FLAGS.FLAG_TNGL_BYTES
+            spectodaBytes.readFlag(); // NETWORK_FLAGS.FLAG_TNGL_BYTES
 
-            const tngl_size = tangleBytes.readUint32();
-            //const bytecode_offset = tangleBytes.position() + offset;
-            tangleBytes.foward(tngl_size);
+            const tngl_size = spectodaBytes.readUint32();
+            //const bytecode_offset = spectodaBytes.position() + offset;
+            spectodaBytes.foward(tngl_size);
 
             logging.verbose(`tngl_size=${tngl_size}`);
             //logging.debug("bytecode_offset=%u", bytecode_offset);
@@ -1208,7 +1174,7 @@ export class TangleInterface {
             let log_value_prefix = "";
             let log_value_postfix = "";
 
-            switch (tangleBytes.readFlag()) {
+            switch (spectodaBytes.readFlag()) {
               case NETWORK_FLAGS.FLAG_EMIT_LAZY_EVENT:
                 is_lazy = true;
               case NETWORK_FLAGS.FLAG_EMIT_EVENT:
@@ -1221,7 +1187,7 @@ export class TangleInterface {
                 is_lazy = true;
               case NETWORK_FLAGS.FLAG_EMIT_TIMESTAMP_EVENT:
                 logging.verbose("FLAG_TIMESTAMP_EVENT");
-                event_value = tangleBytes.readInt32();
+                event_value = spectodaBytes.readInt32();
                 event_type = "timestamp";
                 log_value_postfix = "ms";
                 break;
@@ -1230,7 +1196,7 @@ export class TangleInterface {
                 is_lazy = true;
               case NETWORK_FLAGS.FLAG_EMIT_COLOR_EVENT:
                 logging.verbose("FLAG_COLOR_EVENT");
-                const bytes = tangleBytes.readBytes(3);
+                const bytes = spectodaBytes.readBytes(3);
                 event_value = rgbToHex(bytes[0], bytes[1], bytes[2]);
                 event_type = "color";
                 break;
@@ -1239,7 +1205,7 @@ export class TangleInterface {
                 is_lazy = true;
               case NETWORK_FLAGS.FLAG_EMIT_PERCENTAGE_EVENT:
                 logging.verbose("FLAG_PERCENTAGE_EVENT");
-                event_value = Math.round(mapValue(tangleBytes.readInt32(), -2147483647, 2147483647, -100, 100) * 1000000.0) / 1000000.0;
+                event_value = Math.round(mapValue(spectodaBytes.readInt32(), -2147483647, 2147483647, -100, 100) * 1000000.0) / 1000000.0;
                 event_type = "percentage";
                 log_value_postfix = "%";
                 break;
@@ -1248,7 +1214,7 @@ export class TangleInterface {
                 is_lazy = true;
               case NETWORK_FLAGS.FLAG_EMIT_LABEL_EVENT:
                 logging.verbose("FLAG_LABEL_EVENT");
-                event_value = String.fromCharCode(...tangleBytes.readBytes(5)).match(/[\w\d_]*/g)[0];
+                event_value = String.fromCharCode(...spectodaBytes.readBytes(5)).match(/[\w\d_]*/g)[0];
                 event_type = "label";
                 log_value_prefix = "$";
                 break;
@@ -1261,13 +1227,13 @@ export class TangleInterface {
             logging.verbose(`is_lazy = ${is_lazy ? "true" : "false"}`);
             logging.verbose(`event_value = ${event_value}`);
 
-            const event_label = String.fromCharCode(...tangleBytes.readBytes(5)).match(/[\w\d_]*/g)[0]; // 5 bytes
+            const event_label = String.fromCharCode(...spectodaBytes.readBytes(5)).match(/[\w\d_]*/g)[0]; // 5 bytes
             logging.verbose(`event_label = ${event_label}`);
 
-            const event_timestamp = is_lazy ? -1 : tangleBytes.readInt32(); // 4 bytes
+            const event_timestamp = is_lazy ? -1 : spectodaBytes.readInt32(); // 4 bytes
             logging.verbose(`event_timestamp = ${event_timestamp} ms`);
 
-            const event_device_id = tangleBytes.readUint8(); // 1 byte
+            const event_device_id = spectodaBytes.readUint8(); // 1 byte
             logging.verbose(`event_device_id = ${event_device_id}`);
 
             if (is_lazy) {
@@ -1285,7 +1251,7 @@ export class TangleInterface {
         case NETWORK_FLAGS.FLAG_SET_TIMELINE:
           {
             logging.verbose("FLAG_SET_TIMELINE");
-            tangleBytes.readFlag(); // NETWORK_FLAGS.FLAG_SET_TIMELINE
+            spectodaBytes.readFlag(); // NETWORK_FLAGS.FLAG_SET_TIMELINE
 
             const PAUSED_FLAG = 1 << 4;
 
@@ -1293,9 +1259,9 @@ export class TangleInterface {
             // (int32_t) = timeline_timestamp
             // (uint8_t) = timeline_flags bits: [ Reserved,Reserved,Reserved,PausedFLag,IndexBit3,IndexBit2,IndexBit1,IndexBit0]
 
-            const clock_timestamp = tangleBytes.readInt32();
-            const timeline_timestamp = tangleBytes.readInt32();
-            const timeline_flags = tangleBytes.readUint8();
+            const clock_timestamp = spectodaBytes.readInt32();
+            const timeline_timestamp = spectodaBytes.readInt32();
+            const timeline_flags = spectodaBytes.readUint8();
             logging.verbose(`clock_timestamp = ${clock_timestamp} ms`);
             logging.verbose(`timeline_timestamp = ${timeline_timestamp} ms`);
             logging.verbose(`timeline_flags = ${timeline_flags}`);
@@ -1321,24 +1287,24 @@ export class TangleInterface {
             let obj = {};
 
             logging.verbose("FLAG_RSSI_DATA");
-            tangleBytes.readFlag(); // NETWORK_FLAGS.FLAG_RSSI_DATA
+            spectodaBytes.readFlag(); // NETWORK_FLAGS.FLAG_RSSI_DATA
 
-            obj.device_mac = tangleBytes
+            obj.device_mac = spectodaBytes
               .readBytes(6)
               .map(v => v.toString(16).padStart(2, "0"))
               .join(":");
             logging.verbose("obj.device_mac =", obj.device_mac);
 
-            const rssi_data_items = tangleBytes.readUint32();
+            const rssi_data_items = spectodaBytes.readUint32();
             obj.rssi = [];
 
             for (let i = 0; i < rssi_data_items; i++) {
               let item = {};
-              item.mac = tangleBytes
+              item.mac = spectodaBytes
                 .readBytes(6)
                 .map(v => v.toString(16).padStart(2, "0"))
                 .join(":");
-              item.value = tangleBytes.readInt16() / 256;
+              item.value = spectodaBytes.readInt16() / 256;
               logging.verbose("mac =", item.mac);
               logging.verbose("rssi =", item.value);
               obj.rssi.push(item);
@@ -1352,9 +1318,9 @@ export class TangleInterface {
         case NETWORK_FLAGS.FLAG_PEER_CONNECTED:
           {
             logging.verbose("FLAG_PEER_CONNECTED");
-            tangleBytes.readFlag(); // TangleFlag::FLAG_PEER_CONNECTED
+            spectodaBytes.readFlag(); // SpectodaFlag::FLAG_PEER_CONNECTED
 
-            const device_mac = tangleBytes
+            const device_mac = spectodaBytes
               .readBytes(6)
               .map(v => v.toString(16).padStart(2, "0"))
               .join(":");
@@ -1366,9 +1332,9 @@ export class TangleInterface {
         case NETWORK_FLAGS.FLAG_PEER_DISCONNECTED:
           {
             logging.verbose("FLAG_PEER_DISCONNECTED");
-            tangleBytes.readFlag(); // TangleFlag::FLAG_PEER_DISCONNECTED
+            spectodaBytes.readFlag(); // SpectodaFlag::FLAG_PEER_DISCONNECTED
 
-            const device_mac = tangleBytes
+            const device_mac = spectodaBytes
               .readBytes(6)
               .map(v => v.toString(16).padStart(2, "0"))
               .join(":");
@@ -1378,7 +1344,7 @@ export class TangleInterface {
           break;
 
         default:
-          logging.error(`ERROR flag=${tangleBytes.readFlag()}, available=${tangleBytes.available}`);
+          logging.error(`ERROR flag=${spectodaBytes.readFlag()}, available=${spectodaBytes.available}`);
           //throw "UnknownNetworkFlag";
           break;
       }

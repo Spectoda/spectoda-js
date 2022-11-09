@@ -8,7 +8,7 @@ import { nanoid } from "nanoid";
 export const WEBSOCKET_URL = "https://ws.host.spectoda.com/";
 /////////////////////////////////////////////////////////////////////////////////////
 
-export class TangleWebSocketsConnector {
+export class SpectodaWebSocketsConnector {
   #interfaceReference;
   #selected;
   #connected;

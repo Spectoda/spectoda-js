@@ -202,11 +202,6 @@ export function numberToBytes(value, byteCount) {
 // IPhone SE Spectoda Connect       Mozilla/5.0 (iPhone; CPU iPhone OS 15_6_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148
 // IPhone SE Safari                 Mozilla/5.0 (iPhone; CPU iPhone OS 15_6_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/15.6.1 Mobile/15E148 Safari/604.1
 
-const tangleConnectDetected = "tangleConnect" in window;
-export function detectTangleConnect() {
-  return tangleConnectDetected;
-}
-
 const spectodaConnectDetected = "flutter_inappwebview" in window;
 export function detectSpectodaConnect() {
   return spectodaConnectDetected;
@@ -239,17 +234,12 @@ export function detectLinux() {
 
 const chromeDetected = navigator.userAgent.toLowerCase().indexOf("chrome") > -1;
 export function detectChrome() {
-  return chromeDetected && !tangleConnectDetected && !spectodaConnectDetected;
-}
-
-const bluefyDetected = navigator.userAgent.toLowerCase().indexOf("bluefy") > -1;
-export function detectBluefy() {
-  return bluefyDetected;
+  return chromeDetected && !spectodaConnectDetected;
 }
 
 const safariDetected = navigator.userAgent.toLowerCase().indexOf("safari") > -1 && navigator.userAgent.toLowerCase().indexOf("chrome") == -1;
 export function detectSafari() {
-  return safariDetected && !tangleConnectDetected && !spectodaConnectDetected;
+  return safariDetected && !spectodaConnectDetected;
 }
 
 //////////////////////////////////////////////////////
