@@ -23,7 +23,7 @@ import {
 import { SpectodaDummyConnector } from "./SpectodaDummyConnector.js";
 import { SpectodaWebBluetoothConnector } from "./SpectodaWebBluetoothConnector.js";
 import { SpectodaWebSerialConnector } from "./SpectodaWebSerialConnector.js";
-import { SpectodaConnectConnector } from "./SpectodaConnectConnector.js";
+// import { SpectodaConnectConnector } from "./SpectodaConnectConnector.js";
 import { SpectodaWebSocketsConnector } from "./SpectodaWebSocketsConnector.js";
 import { TimeTrack } from "./TimeTrack.js";
 import "./TnglReader.js";
@@ -198,8 +198,8 @@ export class SpectodaInterface {
     this.#lastUpdateTime = new Date().getTime();
     this.#lastUpdatePercentage = 0;
 
-    this.onConnected = e => {};
-    this.onDisconnected = e => {};
+    this.onConnected = e => { };
+    this.onDisconnected = e => { };
 
     // this.#otaStart = new Date().getTime();
 
@@ -262,42 +262,42 @@ export class SpectodaInterface {
       // @ts-ignore
 
       /** @type {HTMLBodyElement} */ document.querySelector("body").addEventListener("click", function (e) {
-        e.preventDefault();
+      e.preventDefault();
 
-        (function (e, d, w) {
-          if (!e.composedPath) {
-            e.composedPath = function () {
-              if (this.path) {
-                return this.path;
-              }
-              var target = this.target;
-
-              this.path = [];
-              while (target.parentNode !== null) {
-                this.path.push(target);
-                target = target.parentNode;
-              }
-              this.path.push(d, w);
+      (function (e, d, w) {
+        if (!e.composedPath) {
+          e.composedPath = function () {
+            if (this.path) {
               return this.path;
-            };
-          }
-        })(Event.prototype, document, window);
-        // @ts-ignore
-        const path = e.path || (e.composedPath && e.composedPath());
+            }
+            var target = this.target;
 
-        // @ts-ignore
-        for (let el of path) {
-          if (el.tagName === "A" && el.getAttribute("target") === "_blank") {
-            e.preventDefault();
-            const url = el.getAttribute("href");
-            // logging.verbose(url);
-            // @ts-ignore
-            logging.debug("Openning external url", url);
-            window.flutter_inappwebview.callHandler("openExternalUrl", url);
-            break;
-          }
+            this.path = [];
+            while (target.parentNode !== null) {
+              this.path.push(target);
+              target = target.parentNode;
+            }
+            this.path.push(d, w);
+            return this.path;
+          };
         }
-      });
+      })(Event.prototype, document, window);
+      // @ts-ignore
+      const path = e.path || (e.composedPath && e.composedPath());
+
+      // @ts-ignore
+      for (let el of path) {
+        if (el.tagName === "A" && el.getAttribute("target") === "_blank") {
+          e.preventDefault();
+          const url = el.getAttribute("href");
+          // logging.verbose(url);
+          // @ts-ignore
+          logging.debug("Openning external url", url);
+          window.flutter_inappwebview.callHandler("openExternalUrl", url);
+          break;
+        }
+      }
+    });
     }
 
     window.addEventListener("beforeunload", e => {
@@ -384,7 +384,7 @@ export class SpectodaInterface {
     }
 
     return (this.connector ? this.destroyConnector() : Promise.resolve())
-      .catch(() => {})
+      .catch(() => { })
       .then(() => {
         switch (connector_type) {
           case "none":
@@ -946,7 +946,7 @@ export class SpectodaInterface {
                 this.#disconnectQuery = new Query();
                 await this.connector
                   .request([DEVICE_FLAGS.FLAG_DEVICE_DISCONNECT_REQUEST], false)
-                  .catch(() => {})
+                  .catch(() => { })
                   .then(() => {
                     return this.connector.disconnect();
                   })
@@ -1065,7 +1065,7 @@ export class SpectodaInterface {
               case Query.TYPE_FIRMWARE_UPDATE:
                 try {
                   await this.requestWakeLock();
-                } catch {}
+                } catch { }
                 await this.connector
                   .updateFW(item.a)
                   .then(response => {
@@ -1084,7 +1084,7 @@ export class SpectodaInterface {
                 this.#reconection = false;
                 await this.connector
                   .request([DEVICE_FLAGS.FLAG_DEVICE_DISCONNECT_REQUEST], false)
-                  .catch(() => {})
+                  .catch(() => { })
                   .then(() => {
                     return this.connector.disconnect();
                   })

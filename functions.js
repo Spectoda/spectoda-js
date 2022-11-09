@@ -207,7 +207,7 @@ export function detectSpectodaConnect() {
   return spectodaConnectDetected;
 }
 
-const navigatorUserAgent = typeof window !== "undefined" ? "" : navigator.userAgent.toLowerCase();
+const navigatorUserAgent = typeof navigator === "undefined" ? "" : navigator.userAgent.toLowerCase();
 
 const androidDetected = navigatorUserAgent.indexOf("android") > -1;
 export function detectAndroid() {
