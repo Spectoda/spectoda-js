@@ -984,6 +984,14 @@ export class SpectodaDevice {
     });
   }
 
+  syncState() {
+    logging.debug("> Synchronizing state...");
+
+    const request_uuid = this.#getUUID();
+    const device_request = [DEVICE_FLAGS.FLAG_SYNC_STATE_REQUEST, ...numberToBytes(request_uuid, 4)];
+    return this.interface.request(device_request, false);
+  }
+
   updateDeviceFirmware(firmware) {
     logging.verbose(`updateDeviceFirmware(firmware.length=${firmware?.length})`);
 
