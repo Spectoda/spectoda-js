@@ -66,12 +66,12 @@ export class WebBLEConnection {
     */
     this.#writing = false;
 
-    this.#uuidCounter = Math.floor(Math.random() * 0xffffffff);
+    this.#uuidCounter = Math.floor(Math.random() * 4294967295);
   }
 
   #getUUID() {
     // valid UUIDs are in range [1..4294967295] (32 bit number)
-    if (this.#uuidCounter >= 0xffffffff) {
+    if (this.#uuidCounter >= 4294967295) {
       this.#uuidCounter = 0;
     }
 
@@ -79,7 +79,7 @@ export class WebBLEConnection {
   }
 
   #writeBytes(characteristic, bytes, response) {
-    const write_uuid = this.#getUUID(); // two messages za sebou nesmi mit stejne UUID!
+    const write_uuid = this.#getUUID(); // two messages near to each other must not have the same UUID!
     const packet_header_size = 12; // 3x 4byte integers: write_uuid, index_from, payload.length
     const packet_size = detectAndroid() ? 212 : 512; // min size packet_header_size + 1 !!!! ANDROID NEEDS PACKET SIZE <= 212!!!!
     const bytes_size = packet_size - packet_header_size;
@@ -312,7 +312,7 @@ export class WebBLEConnection {
 
     this.#writing = true;
 
-    const bytes = toBytes(timestamp, 4);
+    const bytes = toBytes(timestamp, 8);
     return this.#clockChar
       .writeValueWithoutResponse(new Uint8Array(bytes))
       .catch(e => {
@@ -345,7 +345,7 @@ export class WebBLEConnection {
       .readValue()
       .then(dataView => {
         let reader = new TnglReader(dataView);
-        return reader.readInt32();
+        return reader.readUint64();
       })
       .catch(e => {
         logging.error(e);
@@ -813,8 +813,8 @@ criteria example:
 
   // connect Connector to the selected Spectoda Device. Also can be used to reconnect.
   // Fails if no device is selected
-  connect(timeout = 10000, supportLegacy = false) {
-    logging.verbose(`connect(timeout=${timeout},supportLegacy=${supportLegacy})`);
+  connect(timeout = 10000) {
+    logging.verbose(`connect(timeout=${timeout}})`);
 
     if (timeout <= 0) {
       logging.debug("> Connect timeout have expired");
@@ -847,79 +847,8 @@ criteria example:
       .then(server => {
         this.#connection.reset();
 
-        if (supportLegacy) {
-          // SUPPORT LEGACY FW SERVICE UUIDS
-
-          logging.debug("> Getting the Bluetooth Service UUID...");
-
-          return (
-            server
-              .getPrimaryServices()
-              // figure out which FW we are connecting to
-              .then(services => {
-                if (services.length != 1 || !services[0].isPrimary) {
-                  logging.error("Connected to device that is not Spectoda");
-                  throw "ConnectionFailed";
-                }
-
-                const service_uuid = services[0].uuid.toLowerCase();
-                logging.debug("Got Service UUID " + service_uuid);
-
-                let legacy_fw_version = "unknown";
-
-                switch (service_uuid) {
-                  case this.FW_PRE_0_7_SERVICE_UUID:
-                    legacy_fw_version = "legacy";
-                    break;
-
-                  case this.FW_0_7_0_SERVICE_UUID:
-                    legacy_fw_version = "0.7.0";
-                    break;
-
-                  case this.FW_0_7_1_SERVICE_UUID:
-                    legacy_fw_version = "0.7.1";
-                    break;
-
-                  case this.FW_0_7_2_SERVICE_UUID:
-                    legacy_fw_version = "0.7.2";
-                    break;
-
-                  case this.FW_0_7_3_SERVICE_UUID:
-                    legacy_fw_version = "0.7.3";
-                    break;
-
-                  case this.FW_0_7_4_SERVICE_UUID:
-                    legacy_fw_version = "0.7.4";
-                    break;
-
-                  case this.SPECTODA_SERVICE_UUID:
-                    legacy_fw_version = null;
-                    break;
-
-                  default:
-                    logging.error("Connected to non Spectoda Device");
-                    throw "ConnectionFailed";
-                    break;
-                }
-
-                if (legacy_fw_version) {
-                  logging.debug("FW Version: " + legacy_fw_version);
-                  this.#interfaceReference.emit("version", legacy_fw_version);
-
-                  logging.warn("Connected to unsupported legacy FW version");
-                  throw "ConnectionFailed";
-                }
-
-                logging.debug("> Getting the Bluetooth Service...");
-                return server.getPrimaryService(service_uuid);
-              })
-          );
-        } else {
-          // NOT SUPPORT LEGACY FW SERVICE UUIDS
-
-          logging.debug("> Getting the Bluetooth Service...");
-          return server.getPrimaryService(this.SPECTODA_SERVICE_UUID);
-        }
+        logging.debug("> Getting the Bluetooth Service...");
+        return server.getPrimaryService(this.SPECTODA_SERVICE_UUID);
       })
       .then(service => {
         logging.debug("> Getting the Service Characteristic...");

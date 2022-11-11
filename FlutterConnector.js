@@ -586,9 +586,8 @@ criteria example:
   connect(timeout_number = 10000) {
     logging.debug(`connect(timeout=${timeout_number})`);
 
-    if (timeout_number < 1000) {
-      logging.error("Invalid timeout. Must be more than 1000 ms.");
-      timeout_number = 1000;
+    if(timeout_number <= 0) {
+      return Promise.reject("ConnectionTimeout");
     }
 
     this.#promise = new Promise((resolve, reject) => {
@@ -601,7 +600,7 @@ criteria example:
     });
 
     // @ts-ignore
-    window.flutter_inappwebview.callHandler("connect", timeout_number);
+    window.flutter_inappwebview.callHandler("connect", timeout_number < 1000 ? 1000 : timeout_number);
 
     return this.#applyTimeout(this.#promise, timeout_number < 5000 ? 10000 : timeout_number * 2, "connect").then(() => {
       logging.debug("Sleeping for 200ms");
@@ -720,7 +719,7 @@ criteria example:
           });
 
           const timestamp = clock.millis();
-          const clock_bytes = toBytes(timestamp, 4);
+          const clock_bytes = toBytes(timestamp, 8);
           // @ts-ignore
           window.flutter_inappwebview.callHandler("writeClock", clock_bytes);
 
@@ -764,7 +763,7 @@ criteria example:
           const bytes = await this.#applyTimeout(this.#promise, 5000, "readClock");
 
           const reader = new TnglReader(new DataView(new Uint8Array(bytes).buffer));
-          const timestamp = reader.readInt32();
+          const timestamp = reader.readUint64();
 
           // const timestamp = await this.#promise;
           logging.debug("Clock read success:", timestamp);

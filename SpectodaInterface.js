@@ -1230,7 +1230,7 @@ export class SpectodaInterface {
             const event_label = String.fromCharCode(...spectodaBytes.readBytes(5)).match(/[\w\d_]*/g)[0]; // 5 bytes
             logging.verbose(`event_label = ${event_label}`);
 
-            const event_timestamp = is_lazy ? -1 : spectodaBytes.readInt32(); // 4 bytes
+            const event_timestamp = is_lazy ? -1 : spectodaBytes.readUint48(); // 6 bytes in 0.9
             logging.verbose(`event_timestamp = ${event_timestamp} ms`);
 
             const event_device_id = spectodaBytes.readUint8(); // 1 byte
@@ -1259,7 +1259,7 @@ export class SpectodaInterface {
             // (int32_t) = timeline_timestamp
             // (uint8_t) = timeline_flags bits: [ Reserved,Reserved,Reserved,PausedFLag,IndexBit3,IndexBit2,IndexBit1,IndexBit0]
 
-            const clock_timestamp = spectodaBytes.readInt32();
+            const clock_timestamp = spectodaBytes.readUint48(); // 6 bytes in 0.9
             const timeline_timestamp = spectodaBytes.readInt32();
             const timeline_flags = spectodaBytes.readUint8();
             logging.verbose(`clock_timestamp = ${clock_timestamp} ms`);
@@ -1350,7 +1350,9 @@ export class SpectodaInterface {
       }
     }
 
-    logging.info(emitted_events_log.join("\n"));
+    if (emitted_events_log.length) {
+      logging.info(emitted_events_log.join("\n"));
+    }
   }
 }
 

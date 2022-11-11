@@ -125,6 +125,22 @@ export class TnglReader {
     return this.readValue(4, true);
   }
 
+  readInt48() {
+    return this.readValue(6, false);
+  }
+
+  readUint48() {
+    return this.readValue(6, true);
+  }
+
+  readInt64() {
+    return this.readValue(8, false);
+  }
+
+  readUint64() {
+    return this.readValue(8, true);
+  }
+
   get available() {
     return this._dataView.byteLength - this._index;
   }
