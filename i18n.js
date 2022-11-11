@@ -35,4 +35,3 @@ export const t = i18.t;
 if (typeof window !== "undefined") {
   window.i18js = i18;
 }
-

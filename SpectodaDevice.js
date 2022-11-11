@@ -1,17 +1,5 @@
 import { logging, setLoggingLevel } from "./Logging.js";
-import {
-  colorToBytes,
-  computeTnglFingerprint,
-  czechHackyToEnglish,
-  detectSpectodaConnect,
-  getClockTimestamp,
-  hexStringToUint8Array,
-  labelToBytes,
-  numberToBytes,
-  percentageToBytes,
-  sleep,
-  stringToBytes,
-} from "./functions.js";
+import { colorToBytes, computeTnglFingerprint, czechHackyToEnglish, detectSpectodaConnect, getClockTimestamp, hexStringToUint8Array, labelToBytes, numberToBytes, percentageToBytes, sleep, stringToBytes } from "./functions.js";
 import { DEVICE_FLAGS, NETWORK_FLAGS, SpectodaInterface } from "./SpectodaInterface.js";
 import { TnglCodeParser } from "./SpectodaParser.js";
 import { TimeTrack } from "./TimeTrack.js";
@@ -45,9 +33,8 @@ export class SpectodaDevice {
   #reconnectRC;
 
   constructor(connectorType = "default", reconnectionInterval = 1000) {
-
     // nextjs
-    if (typeof window === 'undefined') {
+    if (typeof window === "undefined") {
       return;
     }
 

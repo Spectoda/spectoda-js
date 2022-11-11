@@ -10,15 +10,15 @@ export var logging = {
   warn: console.warn,
   info: console.log,
   debug: console.log,
-  verbose: function (...msg) { },
+  verbose: function (...msg) {},
 };
 
 export function setLoggingLevel(level) {
-  logging.error = level >= 1 ? console.error : function (...msg) { };
-  logging.warn = level >= 2 ? console.warn : function (...msg) { };
-  logging.info = level >= 3 ? console.log : function (...msg) { };
-  logging.debug = level >= 4 ? console.log : function (...msg) { };
-  logging.verbose = level >= 5 ? console.log : function (...msg) { };
+  logging.error = level >= 1 ? console.error : function (...msg) {};
+  logging.warn = level >= 2 ? console.warn : function (...msg) {};
+  logging.info = level >= 3 ? console.log : function (...msg) {};
+  logging.debug = level >= 4 ? console.log : function (...msg) {};
+  logging.verbose = level >= 5 ? console.log : function (...msg) {};
 }
 
 if (typeof window !== "undefined") {
