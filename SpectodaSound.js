@@ -30,6 +30,9 @@ export class SpectodaSound {
   #movingAverageGapValues;
   evRate;
 
+  #rmsMax;
+  #rmsMin;
+
   constructor() {
     this.running = false;
     this.#source = null;
@@ -44,12 +47,16 @@ export class SpectodaSound {
     this.#sensitivity = 100;
     this.evRate = 100;
     this.lastValue = 0;
+    this.silentCountdown;
     /**
      * @type {"static"|"dynamic"}
      */
     this.evRateType = "dynamic";
 
     this.#events = createNanoEvents();
+
+    this.#rmsMax = 0;
+    this.#rmsMin = 0;
   }
 
   /**
@@ -124,7 +131,7 @@ export class SpectodaSound {
             logging.debug("SpectodaSound.connect", "Connected SystemSound");
           })
           .catch(e => {
-            window.alert(t("Vaše zařízení není podporováno"), t("Chyba"));
+            window.alert(t("Your device is not supported or correctly configured (You have to allow 'System Sound when sharing screen')"), t("Error"));
             reject(e);
           });
       });
@@ -138,6 +145,7 @@ export class SpectodaSound {
 
   async start() {
     if (!this.#stream) {
+      this.startCountDown();
       await this.connect();
     }
     if (!this.running) {
@@ -224,6 +232,26 @@ export class SpectodaSound {
     this.#sensitivity = value;
   }
 
+  startCountDown() {
+    clearTimeout(this.silentCountdown);
+    this.silentCountdown = setTimeout(() => {
+      // this.#events.emit("silent", true);
+      this.#rmsMax = 0.01;
+      this.#rmsMin = 0.01;
+    }, 600);
+  }
+
+  resetSilentCountdown() {
+    clearTimeout(this.silentCountdown);
+    this.silentCountdown = setTimeout(() => {
+      // this.#events.emit("silent", true);
+      this.#rmsMax = 0.01; // reset min max on silent
+      this.#rmsMin = 0.01;
+    }, 600);
+
+    // this.#events.emit("silent", false);
+  }
+
   processHandler(e) {
     var samples = e.inputBuffer.getChannelData(0);
     var rms_loudness_spectrum = 0;
@@ -249,13 +277,54 @@ export class SpectodaSound {
     // Odmocnina součtu druhých mocnin nám dá efektivní hodnotu signálu "RMS"
     rms_loudness_spectrum = Math.sqrt(rms_loudness_spectrum);
 
+    // Pomale snizovani hranic
+    if (this.#rmsMin < this.#rmsMax - 0.01) {
+      this.#rmsMin += 0.0001;
+    }
+
+    if (this.#rmsMax >= 0.01) {
+      this.#rmsMax -= this.#rmsMax / 1000;
+    }
+
+    if (this.#rmsMax - this.#rmsMin < 0.01) {
+      this.#rmsMin = this.#rmsMax - 0.01;
+    }
+
+    if (this.#rmsMax < 0.01) {
+      this.#rmsMax = 0.01;
+    }
+
+    if (this.#rmsMin < 0.0) {
+      this.#rmsMin = 0.0;
+    }
+
+    if (rms_loudness_spectrum < this.#rmsMin) {
+      this.#rmsMin = rms_loudness_spectrum;
+    }
+
+    if (rms_loudness_spectrum > this.#rmsMax) {
+      this.#rmsMax = rms_loudness_spectrum;
+    }
+
     // Mapování efektivní hodnoty signálu na rozmezí 0-255 pro vhodný přenos dat.
     // Zde je zejmána nutné dobře nastavit mapovací prahy. Spodní pro odstranění šumu okolí a horní nám udává výslednou dynamiku.
-    var out = mapValue(rms_loudness_spectrum, 0.00001, 0.9, 0, 255);
+    var out = mapValue(rms_loudness_spectrum, this.#rmsMin, this.#rmsMax, 0.0, 100.0);
+
+    // console.log(
+    //   rms_loudness_spectrum.toFixed(5),
+    //   this.#rmsMin.toFixed(5),
+    //   this.#rmsMax.toFixed(5),
+    //   out.toFixed(5)
+    // );
 
     // console.log("spectrum avarge loudnes: "+ out);
     // this.#handleControlSend(out);
-    this.#events.emit("loudness", (out * this.#sensitivity) / 100);
+    //this.#events.emit("loudness", (out * this.#sensitivity) / 100);
+    this.#events.emit("loudness", out);
+    if (out > 1.0) {
+      this.resetSilentCountdown();
+    }
+
     this.#bufferedValues.push(out);
     this.#movingAverageGapValues.push(new Date().getTime());
     // { timestamp: new Date().getTime(), value:
