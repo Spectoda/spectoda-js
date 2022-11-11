@@ -275,7 +275,7 @@ export class SpectodaDevice {
 
   // valid UUIDs are in range [1..4294967295] (32-bit unsigned number)
   #getUUID() {
-    if (this.#uuidCounter >= 0xffffffff) {
+    if (this.#uuidCounter >= 4294967295) {
       this.#uuidCounter = 0;
     }
 
@@ -358,7 +358,7 @@ export class SpectodaDevice {
       throw "OwnerKeyNotAssigned";
     }
 
-    const criteria = /** @type {any} */ ([{ adoptionFlag: true }, { legacy: true }]);
+    const criteria = /** @type {any} */ ([{ adoptionFlag: true }]);
 
     return this.interface
       .userSelect(criteria, 60000)
