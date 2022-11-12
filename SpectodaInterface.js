@@ -1236,7 +1236,7 @@ export class SpectodaInterface {
             const event_timestamp = is_lazy ? -1 : spectodaBytes.readUint48(); // 6 bytes in 0.9
             logging.verbose(`event_timestamp = ${event_timestamp} ms`);
 
-            const event_device_id = spectodaBytes.readUint16(); // 2 byte
+            const event_device_id = spectodaBytes.readUint8(); // 1 byte
             logging.verbose(`event_device_id = ${event_device_id}`);
 
             if (is_lazy) {

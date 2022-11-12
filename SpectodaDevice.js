@@ -466,7 +466,7 @@ export class SpectodaDevice {
           while (!newDeviceId || (typeof newDeviceId !== "number" && !newDeviceId.match(/^[\d]+/))) {
             newDeviceId = await window
               // @ts-ignore
-              .prompt(t("Prosím, zadejte ID zařízení v rozmezí 0-4094."), "0", t("Přidělte ID svému zařízení"), "number", { min: 0, max: 255 });
+              .prompt(t("Prosím, zadejte ID zařízení v rozmezí 0-255."), "0", t("Přidělte ID svému zařízení"), "number", { min: 0, max: 255 });
             // @ts-ignore
 
             if (!newDeviceId) {
@@ -495,7 +495,7 @@ export class SpectodaDevice {
         const device_id = newDeviceId;
 
         const request_uuid = this.#getUUID();
-        const bytes = [DEVICE_FLAGS.FLAG_ADOPT_REQUEST, ...numberToBytes(request_uuid, 4), ...owner_signature_bytes, ...owner_key_bytes, ...device_name_bytes, ...numberToBytes(device_id, 2)];
+        const bytes = [DEVICE_FLAGS.FLAG_ADOPT_REQUEST, ...numberToBytes(request_uuid, 4), ...owner_signature_bytes, ...owner_key_bytes, ...device_name_bytes, ...numberToBytes(device_id, 1)];
 
         logging.debug("> Adopting device...");
 
@@ -776,12 +776,12 @@ export class SpectodaDevice {
    * @param {*} is_lazy
    * @returns
    */
-  emitEvent(event_label, device_ids = [0xffff], force_delivery = true, is_lazy = true) {
+  emitEvent(event_label, device_ids = [0xff], force_delivery = true, is_lazy = true) {
     logging.verbose(`emitEvent(label=${event_label},id=${device_ids},force=${force_delivery},lazy=${is_lazy})`);
     lastEvents[event_label] = { value: null, type: "none" };
 
     const func = device_id => {
-      const payload = is_lazy ? [NETWORK_FLAGS.FLAG_EMIT_LAZY_EVENT, ...labelToBytes(event_label), numberToBytes(device_id, 2)] : [NETWORK_FLAGS.FLAG_EMIT_EVENT, ...labelToBytes(event_label), ...numberToBytes(this.timeline.millis(), 4), numberToBytes(device_id, 2)];
+      const payload = is_lazy ? [NETWORK_FLAGS.FLAG_EMIT_LAZY_EVENT, ...labelToBytes(event_label), numberToBytes(device_id, 1)] : [NETWORK_FLAGS.FLAG_EMIT_EVENT, ...labelToBytes(event_label), ...numberToBytes(this.timeline.millis(), 4), numberToBytes(device_id, 2)];
       return this.interface.execute(payload, force_delivery ? null : "E" + event_label + device_id);
     };
 
@@ -825,7 +825,7 @@ export class SpectodaDevice {
    * @param {*} is_lazy
    * @returns
    */
-  emitTimestampEvent(event_label, event_value, device_ids = [0xffff], force_delivery = false, is_lazy = true) {
+  emitTimestampEvent(event_label, event_value, device_ids = [0xff], force_delivery = false, is_lazy = true) {
     logging.verbose(`emitTimestampEvent(label=${event_label},value=${event_value},id=${device_ids},force=${force_delivery},lazy=${is_lazy})`);
     lastEvents[event_label] = { value: event_value, type: "timestamp" };
 
@@ -841,8 +841,8 @@ export class SpectodaDevice {
 
     const func = device_id => {
       const payload = is_lazy
-        ? [NETWORK_FLAGS.FLAG_EMIT_LAZY_TIMESTAMP_EVENT, ...numberToBytes(event_value, 4), ...labelToBytes(event_label), numberToBytes(device_id, 2)]
-        : [NETWORK_FLAGS.FLAG_EMIT_TIMESTAMP_EVENT, ...numberToBytes(event_value, 4), ...labelToBytes(event_label), ...numberToBytes(this.interface.clock.millis() + 10, 6), numberToBytes(device_id, 2)];
+        ? [NETWORK_FLAGS.FLAG_EMIT_LAZY_TIMESTAMP_EVENT, ...numberToBytes(event_value, 4), ...labelToBytes(event_label), numberToBytes(device_id, 1)]
+        : [NETWORK_FLAGS.FLAG_EMIT_TIMESTAMP_EVENT, ...numberToBytes(event_value, 4), ...labelToBytes(event_label), ...numberToBytes(this.interface.clock.millis() + 10, 6), numberToBytes(device_id, 1)];
       return this.interface.execute(payload, force_delivery ? null : "E" + event_label + device_id);
     };
 
@@ -865,7 +865,7 @@ export class SpectodaDevice {
    * @param {*} is_lazy
    * @returns
    */
-  emitColorEvent(event_label, event_value, device_ids = [0xffff], force_delivery = false, is_lazy = true) {
+  emitColorEvent(event_label, event_value, device_ids = [0xff], force_delivery = false, is_lazy = true) {
     logging.verbose(`emitColorEvent(label=${event_label},value=${event_value},id=${device_ids},force=${force_delivery},lazy=${is_lazy})`);
     lastEvents[event_label] = { value: event_value, type: "color" };
 
@@ -876,8 +876,8 @@ export class SpectodaDevice {
 
     const func = device_id => {
       const payload = is_lazy
-        ? [NETWORK_FLAGS.FLAG_EMIT_LAZY_COLOR_EVENT, ...colorToBytes(event_value), ...labelToBytes(event_label), numberToBytes(device_id, 2)]
-        : [NETWORK_FLAGS.FLAG_EMIT_COLOR_EVENT, ...colorToBytes(event_value), ...labelToBytes(event_label), ...numberToBytes(this.interface.clock.millis() + 10, 6), numberToBytes(device_id, 2)];
+        ? [NETWORK_FLAGS.FLAG_EMIT_LAZY_COLOR_EVENT, ...colorToBytes(event_value), ...labelToBytes(event_label), numberToBytes(device_id, 1)]
+        : [NETWORK_FLAGS.FLAG_EMIT_COLOR_EVENT, ...colorToBytes(event_value), ...labelToBytes(event_label), ...numberToBytes(this.interface.clock.millis() + 10, 6), numberToBytes(device_id, 1)];
       return this.interface.execute(payload, force_delivery ? null : "E" + event_label + device_id);
     };
 
@@ -900,7 +900,7 @@ export class SpectodaDevice {
    * @param {*} is_lazy
    * @returns
    */
-  emitPercentageEvent(event_label, event_value, device_ids = [0xffff], force_delivery = false, is_lazy = true) {
+  emitPercentageEvent(event_label, event_value, device_ids = [0xff], force_delivery = false, is_lazy = true) {
     logging.verbose(`emitPercentageEvent(label=${event_label},value=${event_value},id=${device_ids},force=${force_delivery},lazy=${is_lazy})`);
     lastEvents[event_label] = { value: event_value, type: "percentage" };
 
@@ -916,8 +916,8 @@ export class SpectodaDevice {
 
     const func = device_id => {
       const payload = is_lazy
-        ? [NETWORK_FLAGS.FLAG_EMIT_LAZY_PERCENTAGE_EVENT, ...percentageToBytes(event_value), ...labelToBytes(event_label), numberToBytes(device_id, 2)]
-        : [NETWORK_FLAGS.FLAG_EMIT_PERCENTAGE_EVENT, ...percentageToBytes(event_value), ...labelToBytes(event_label), ...numberToBytes(this.interface.clock.millis() + 10, 6), numberToBytes(device_id, 2)];
+        ? [NETWORK_FLAGS.FLAG_EMIT_LAZY_PERCENTAGE_EVENT, ...percentageToBytes(event_value), ...labelToBytes(event_label), numberToBytes(device_id, 1)]
+        : [NETWORK_FLAGS.FLAG_EMIT_PERCENTAGE_EVENT, ...percentageToBytes(event_value), ...labelToBytes(event_label), ...numberToBytes(this.interface.clock.millis() + 10, 6), numberToBytes(device_id, 1)];
       return this.interface.execute(payload, force_delivery ? null : "E" + event_label + device_id);
     };
 
@@ -941,7 +941,7 @@ export class SpectodaDevice {
    * @param {*} is_lazy
    * @returns
    */
-  emitLabelEvent(event_label, event_value, device_ids = [0xffff], force_delivery = false, is_lazy = true) {
+  emitLabelEvent(event_label, event_value, device_ids = [0xff], force_delivery = false, is_lazy = true) {
     logging.verbose(`emitLabelEvent(label=${event_label},value=${event_value},id=${device_ids},force=${force_delivery},lazy=${is_lazy})`);
     lastEvents[event_label] = { value: event_value, type: "label" };
 
@@ -957,8 +957,8 @@ export class SpectodaDevice {
 
     const func = device_id => {
       const payload = is_lazy
-        ? [NETWORK_FLAGS.FLAG_EMIT_LAZY_LABEL_EVENT, ...labelToBytes(event_value), ...labelToBytes(event_label), numberToBytes(device_id, 2)]
-        : [NETWORK_FLAGS.FLAG_EMIT_LABEL_EVENT, ...labelToBytes(event_value), ...labelToBytes(event_label), ...numberToBytes(this.interface.clock.millis() + 10, 6), numberToBytes(device_id, 2)];
+        ? [NETWORK_FLAGS.FLAG_EMIT_LAZY_LABEL_EVENT, ...labelToBytes(event_value), ...labelToBytes(event_label), numberToBytes(device_id, 1)]
+        : [NETWORK_FLAGS.FLAG_EMIT_LABEL_EVENT, ...labelToBytes(event_value), ...labelToBytes(event_label), ...numberToBytes(this.interface.clock.millis() + 10, 6), numberToBytes(device_id, 1)];
       return this.interface.execute(payload, force_delivery ? null : "E" + event_label + device_id);
     };
 
