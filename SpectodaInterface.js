@@ -915,15 +915,13 @@ export class SpectodaInterface {
                       .getClock()
                       .then(clock => {
                         this.clock = clock;
-                      })
-                      .catch(e => {
-                        this.clock = new TimeTrack();
-                        return this.connector.setClock(this.clock);
-                      })
-                      .finally(() => {
-                        logging.verbose("TYPE_CONNECT end");
                         item.resolve(device);
-                      });
+                      })
+                      .catch(error => {
+                        this.disconnect();
+                        logging.warn(error);
+                        item.reject(error);
+                      })
                   })
                   .catch(error => {
                     this.disconnect();

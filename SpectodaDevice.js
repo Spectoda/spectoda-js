@@ -776,7 +776,7 @@ export class SpectodaDevice {
    * @param {*} is_lazy
    * @returns
    */
-  emitEvent(event_label, device_ids = [0xff], force_delivery = true, is_lazy = true) {
+  emitEvent(event_label, device_ids = [0xff], force_delivery = true, is_lazy = false) {
     logging.verbose(`emitEvent(label=${event_label},id=${device_ids},force=${force_delivery},lazy=${is_lazy})`);
     lastEvents[event_label] = { value: null, type: "none" };
 
@@ -825,7 +825,7 @@ export class SpectodaDevice {
    * @param {*} is_lazy
    * @returns
    */
-  emitTimestampEvent(event_label, event_value, device_ids = [0xff], force_delivery = false, is_lazy = true) {
+  emitTimestampEvent(event_label, event_value, device_ids = [0xff], force_delivery = false, is_lazy = false) {
     logging.verbose(`emitTimestampEvent(label=${event_label},value=${event_value},id=${device_ids},force=${force_delivery},lazy=${is_lazy})`);
     lastEvents[event_label] = { value: event_value, type: "timestamp" };
 
@@ -865,7 +865,7 @@ export class SpectodaDevice {
    * @param {*} is_lazy
    * @returns
    */
-  emitColorEvent(event_label, event_value, device_ids = [0xff], force_delivery = false, is_lazy = true) {
+  emitColorEvent(event_label, event_value, device_ids = [0xff], force_delivery = false, is_lazy = false) {
     logging.verbose(`emitColorEvent(label=${event_label},value=${event_value},id=${device_ids},force=${force_delivery},lazy=${is_lazy})`);
     lastEvents[event_label] = { value: event_value, type: "color" };
 
@@ -900,7 +900,7 @@ export class SpectodaDevice {
    * @param {*} is_lazy
    * @returns
    */
-  emitPercentageEvent(event_label, event_value, device_ids = [0xff], force_delivery = false, is_lazy = true) {
+  emitPercentageEvent(event_label, event_value, device_ids = [0xff], force_delivery = false, is_lazy = false) {
     logging.verbose(`emitPercentageEvent(label=${event_label},value=${event_value},id=${device_ids},force=${force_delivery},lazy=${is_lazy})`);
     lastEvents[event_label] = { value: event_value, type: "percentage" };
 
@@ -941,7 +941,7 @@ export class SpectodaDevice {
    * @param {*} is_lazy
    * @returns
    */
-  emitLabelEvent(event_label, event_value, device_ids = [0xff], force_delivery = false, is_lazy = true) {
+  emitLabelEvent(event_label, event_value, device_ids = [0xff], force_delivery = false, is_lazy = false) {
     logging.verbose(`emitLabelEvent(label=${event_label},value=${event_value},id=${device_ids},force=${force_delivery},lazy=${is_lazy})`);
     lastEvents[event_label] = { value: event_value, type: "label" };
 
@@ -1093,7 +1093,7 @@ export class SpectodaDevice {
           await this.interface.execute(network_bytes, null);
         }
 
-        await sleep(3000);
+        await sleep(5000);
 
         logging.debug("Rebooting whole network...");
 
