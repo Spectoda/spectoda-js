@@ -335,7 +335,7 @@ export class SpectodaDevice {
   //   });
   // }
 
-  adopt(newDeviceName = null, newDeviceId = null, tnglCode = null, ownerSignature = null, ownerKey = null, autoSelect = true) {
+  adopt(newDeviceName = null, newDeviceId = null, tnglCode = null, ownerSignature = null, ownerKey = null, autoSelect = false) {
     if (this.#adoptingGuard) {
       return Promise.reject("AdoptingInProgress");
     }
@@ -564,7 +564,15 @@ export class SpectodaDevice {
               // );
 
               logging.info("Adoption success.");
-              window.alert("Adopting Success");
+              // window.alert("Adopting Success");
+
+              return {
+                mac: device_mac,
+                ownerSignature: this.#ownerSignature,
+                ownerKey: this.#ownerKey,
+                name: newDeviceName,
+                id: newDeviceId,
+              };
             } else {
               logging.warn("Adoption refused.");
               this.disconnect().finally(() => {
