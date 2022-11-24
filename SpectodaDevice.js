@@ -563,7 +563,8 @@ export class SpectodaDevice {
               //     })
               // );
 
-              logging.info("Adoption success.");
+              console.log("Adopted ", newDeviceName, "id: " + device_id, device_mac, "successfully");
+
               // window.alert("Adopting Success");
 
               return {
