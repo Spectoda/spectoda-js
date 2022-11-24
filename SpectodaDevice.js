@@ -529,7 +529,6 @@ export class SpectodaDevice {
             logging.verbose(`error_code=${error_code}, device_mac=${device_mac}`);
 
             if (error_code === 0) {
-
               // return (
               //   Promise.resolve()
               //     .then(() => {
@@ -565,8 +564,15 @@ export class SpectodaDevice {
               // );
 
               logging.info("Adoption success.");
-              window.alert("Adopting Success");
+              // window.alert("Adopting Success");
 
+              return {
+                mac: device_mac,
+                ownerSignature: this.#ownerSignature,
+                ownerKey: this.#ownerKey,
+                name: newDeviceName,
+                id: newDeviceId,
+              };
             } else {
               logging.warn("Adoption refused.");
               this.disconnect().finally(() => {
@@ -585,9 +591,9 @@ export class SpectodaDevice {
             this.disconnect().finally(() => {
               // @ts-ignore
               //window.confirm(t("Zkuste to, prosím, později."), t("Přidání se nezdařilo"), { confirm: t("Zkusit znovu"), cancel: t("Zpět") }).then(result => {
-                // if (result) {
-                //   this.adopt(newDeviceName, newDeviceId, tnglCode);
-                // }
+              // if (result) {
+              //   this.adopt(newDeviceName, newDeviceId, tnglCode);
+              // }
               //});
               throw "AdoptionFailed";
             });
@@ -781,7 +787,9 @@ export class SpectodaDevice {
     lastEvents[event_label] = { value: null, type: "none" };
 
     const func = device_id => {
-      const payload = is_lazy ? [NETWORK_FLAGS.FLAG_EMIT_LAZY_EVENT, ...labelToBytes(event_label), numberToBytes(device_id, 1)] : [NETWORK_FLAGS.FLAG_EMIT_EVENT, ...labelToBytes(event_label), ...numberToBytes(this.timeline.millis(), 4), numberToBytes(device_id, 2)];
+      const payload = is_lazy
+        ? [NETWORK_FLAGS.FLAG_EMIT_LAZY_EVENT, ...labelToBytes(event_label), numberToBytes(device_id, 1)]
+        : [NETWORK_FLAGS.FLAG_EMIT_EVENT, ...labelToBytes(event_label), ...numberToBytes(this.timeline.millis(), 4), numberToBytes(device_id, 2)];
       return this.interface.execute(payload, force_delivery ? null : "E" + event_label + device_id);
     };
 
