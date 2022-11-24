@@ -452,7 +452,7 @@ export class SpectodaDevice {
             newDeviceName = await window
               // @ts-ignore
               // .prompt(t("Unikátní jméno pro vaši lampu vám ji pomůže odlišit od ostatních."), random_names[Math.floor(Math.random() * random_names.length)], t("Pojmenujte svoji lampu"), "text", {
-              .prompt(t("Unikátní jméno pro vaši lampu vám ji pomůže odlišit od ostatních."), "stick_", t("Pojmenujte svoji lampu"), "text", {
+              .prompt(t("Unikátní jméno pro vaši lampu vám ji pomůže odlišit od ostatních."), "LED_", t("Pojmenujte svoji lampu"), "text", {
                 placeholder: "Spectoda",
                 regex: /^[a-zA-Z0-9_ ]{1,16}$/,
                 invalidText: t("Název obsahuje nepovolené znaky"),
