@@ -335,7 +335,7 @@ export class SpectodaDevice {
   //   });
   // }
 
-  adopt(newDeviceName = null, newDeviceId = null, tnglCode = null, ownerSignature = null, ownerKey = null) {
+  adopt(newDeviceName = null, newDeviceId = null, tnglCode = null, ownerSignature = null, ownerKey = null, autoSelect = false) {
     if (this.#adoptingGuard) {
       return Promise.reject("AdoptingInProgress");
     }
@@ -360,8 +360,7 @@ export class SpectodaDevice {
 
     const criteria = /** @type {any} */ ([{ adoptionFlag: true }]);
 
-    return this.interface
-      .userSelect(criteria, 60000)
+    return (autoSelect ? this.interface.autoSelect(criteria, 4000) : this.interface.userSelect(criteria, 60000))
       .then(() => {
         this.#adopting = true;
         return this.interface.connect(10000, true);
@@ -452,8 +451,9 @@ export class SpectodaDevice {
 
             newDeviceName = await window
               // @ts-ignore
-              .prompt(t("Unikátní jméno pro vaši lampu vám ji pomůže odlišit od ostatních."), random_names[Math.floor(Math.random() * random_names.length)], t("Pojmenujte svoji lampu"), "text", {
-                placeholder: "NARA",
+              // .prompt(t("Unikátní jméno pro vaši lampu vám ji pomůže odlišit od ostatních."), random_names[Math.floor(Math.random() * random_names.length)], t("Pojmenujte svoji lampu"), "text", {
+              .prompt(t("Unikátní jméno pro vaši lampu vám ji pomůže odlišit od ostatních."), "stick_", t("Pojmenujte svoji lampu"), "text", {
+                placeholder: "Spectoda",
                 regex: /^[a-zA-Z0-9_ ]{1,16}$/,
                 invalidText: t("Název obsahuje nepovolené znaky"),
                 maxlength: 16,
@@ -483,6 +483,7 @@ export class SpectodaDevice {
             newDeviceId = Number(newDeviceId.match(/^[\d]+/)[0]);
           }
         } catch (e) {
+          logging.error(e);
           await this.disconnect();
           return Promise.reject("UserRefused");
         }
@@ -528,50 +529,49 @@ export class SpectodaDevice {
             logging.verbose(`error_code=${error_code}, device_mac=${device_mac}`);
 
             if (error_code === 0) {
-              return (
-                // (tnglCode ? this.writeTngl(tnglCode) : Promise.resolve())
-                Promise.resolve()
-                  .then(() => {
-                    return sleep(1000).then(() => {
-                      return this.rebootAndDisconnectDevice();
-                    });
-                  })
-                  .then(() => {
-                    return sleep(3500).then(() => {
-                      return this.interface.connect(10000);
-                    });
-                  })
-                  // .then(() => {
-                  //   return this.requestTimeline().catch(e => {
-                  //     logging.error("Timeline request failed.", e);
-                  //   });
-                  // })
-                  .then(() => {
-                    setTimeout(() => {
-                      return this.interface.connected().then(() => {
-                        logging.debug("> Device connected");
-                        this.interface.emit("connected", { target: this });
-                      });
-                    }, 1);
-                  })
-                  .catch(e => {
-                    logging.error(e);
-                  })
-                  .then(() => {
-                    return {
-                      mac: device_mac,
-                      ownerSignature: this.#ownerSignature,
-                      ownerKey: this.#ownerKey,
-                      name: newDeviceName,
-                      id: newDeviceId,
-                    };
-                  })
-              );
+
+              // return (
+              //   Promise.resolve()
+              //     .then(() => {
+              //       return sleep(1000).then(() => {
+              //         return this.rebootAndDisconnectDevice();
+              //       });
+              //     })
+              //     .then(() => {
+              //       return sleep(3500).then(() => {
+              //         return this.interface.connect(10000);
+              //       });
+              //     })
+              //     .then(() => {
+              //       setTimeout(() => {
+              //         return this.interface.connected().then(() => {
+              //           logging.debug("> Device connected");
+              //           this.interface.emit("connected", { target: this });
+              //         });
+              //       }, 1);
+              //     })
+              //     .catch(e => {
+              //       logging.error(e);
+              //     })
+              //     .then(() => {
+              //       return {
+              //         mac: device_mac,
+              //         ownerSignature: this.#ownerSignature,
+              //         ownerKey: this.#ownerKey,
+              //         name: newDeviceName,
+              //         id: newDeviceId,
+              //       };
+              //     })
+              // );
+
+              logging.info("Adoption success.");
+              window.alert("Adopting Success");
+
             } else {
               logging.warn("Adoption refused.");
               this.disconnect().finally(() => {
                 // @ts-ignore
-                window.confirm(t("Zkuste to, prosím, později."), t("Přidání se nezdařilo"), { confirm: t("Zkusit znovu"), cancel: t("Zpět") }).then(result => {
+                window.confirm(t("Zkuste to, prosím, později."), t("Přidání se nezdařilo"), { confirm: t("OK"), cancel: t("Zpět") }).then(result => {
                   // if (result) {
                   //   this.adopt(newDeviceName, newDeviceId, tnglCode);
                   // }
@@ -584,11 +584,11 @@ export class SpectodaDevice {
             logging.error(e);
             this.disconnect().finally(() => {
               // @ts-ignore
-              window.confirm(t("Zkuste to, prosím, později."), t("Přidání se nezdařilo"), { confirm: t("Zkusit znovu"), cancel: t("Zpět") }).then(result => {
+              //window.confirm(t("Zkuste to, prosím, později."), t("Přidání se nezdařilo"), { confirm: t("Zkusit znovu"), cancel: t("Zpět") }).then(result => {
                 // if (result) {
                 //   this.adopt(newDeviceName, newDeviceId, tnglCode);
                 // }
-              });
+              //});
               throw "AdoptionFailed";
             });
           });
@@ -599,7 +599,7 @@ export class SpectodaDevice {
           return this.connected().then(result => {
             if (!result) {
               // @ts-ignore
-              window.alert(t("Pro připojení již spárované lampy prosím stiskněte jakýkoli symbol") + ' "🛑"', t("Spárování nové lampy se nezdařilo"));
+              //window.alert(t("Pro připojení již spárované lampy prosím stiskněte jakýkoli symbol") + ' "🛑"', t("Spárování nové lampy se nezdařilo"));
             }
           });
         }

@@ -1239,7 +1239,7 @@ export class SpectodaInterface {
 
             if (is_lazy) {
               let event = { type: event_type, value: event_value, label: event_label, id: event_device_id };
-              emitted_events_log.push(`${event.id?.toString().padStart(3)} -> $${event.label}: ${log_value_prefix + event.value + log_value_postfix}`);
+              emitted_events_log.push(`${event.id?.toString().padStart(3)} -> $${event.label}: ${log_value_prefix + event.value + log_value_postfix} [lazy]`);
               this.emit("event", event);
             } else {
               let event = { type: event_type, value: event_value, label: event_label, timestamp: event_timestamp, id: event_device_id };
