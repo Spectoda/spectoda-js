@@ -1,4 +1,4 @@
-import type { code } from "./errors/errorLibrary";
+import { code, unknownError } from "./errors/errorLibrary";
 import { general, nara, studio } from "./errors/errorLibrary";
 
 export class SpectodaError extends Error {
@@ -14,15 +14,10 @@ export class SpectodaError extends Error {
   }
 }
 
-export type env = "studio" | "nara";
-
-export const getError = (errorCode: keyof typeof general, env?: env) => {
-  if (env == "nara" && nara[errorCode]) return nara[errorCode];
-  if (env == "studio" && studio[errorCode]) return studio[errorCode];
+type env = "studio" | "nara";
+export const getError = (errorCode: code, env?: env) => {
+  if (env == "nara" && errorCode in nara) return nara[errorCode];
+  if (env == "studio" && errorCode in studio) return studio[errorCode];
   if (general[errorCode]) return general[errorCode];
-  else
-    return {
-      title: "Unknown Error",
-      message: `An unknown error has occurred. Please contact us for support. Error code: ${errorCode}`,
-    };
+  else return unknownError(errorCode);
 };

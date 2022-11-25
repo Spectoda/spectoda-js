@@ -61,4 +61,10 @@ export const general = {
   },
 };
 
+// Appears when error is not defined above
+export const unknownError = (errorCode: string) => ({
+  title: "Unknown Error",
+  message: "An unknown error has occurred. Please contact us for support. Error code: " + errorCode,
+});
+
 export type code = keyof typeof general & keyof typeof nara & keyof typeof studio;
