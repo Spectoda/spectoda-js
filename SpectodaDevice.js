@@ -178,12 +178,12 @@ export class SpectodaDevice {
 
       this.socket.on("connect", () => {
         logging.debug("> Connected to remote control");
-        throw t("Connected to remote control");
+        window.alert(t("Connected to remote control"));
       });
 
       this.socket.on("disconnect", () => {
         logging.debug("> Disconnected from remote control");
-        throw t("Disconnected from remote control");
+        window.alert(t("Disconnected from remote control"));
 
         // if (this.#reconnectRC) {
         //   logging.debug("Disconnected by its own... Reloading");
