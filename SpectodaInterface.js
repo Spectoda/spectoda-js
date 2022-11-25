@@ -507,11 +507,11 @@ export class SpectodaInterface {
 
     if (timeout < 1000) {
       logging.error("Timeout is too short.");
-      return Promise.reject("InvalidTimeout");
+      throw "InvalidTimeout";
     }
 
     if (this.#selecting) {
-      return Promise.reject("SelectingInProgress");
+      throw "SelectingInProgress";
     }
 
     this.#selecting = true;
@@ -533,7 +533,7 @@ export class SpectodaInterface {
     // this.#reconection = false;
 
     // if (this.#selecting) {
-    //   return Promise.reject("SelectingInProgress");
+    //   throw("SelectingInProgress");
     // }
 
     // this.#selecting = true;
@@ -554,11 +554,11 @@ export class SpectodaInterface {
 
     if (timeout < 1000) {
       logging.error("Timeout is too short.");
-      return Promise.reject("InvalidTimeout");
+      throw "InvalidTimeout";
     }
 
     if (this.#selecting) {
-      return Promise.reject("SelectingInProgress");
+      throw "SelectingInProgress";
     }
 
     this.#selecting = true;
@@ -580,7 +580,7 @@ export class SpectodaInterface {
     // this.#reconection = false;
 
     // if (this.#selecting) {
-    //   return Promise.reject("SelectingInProgress");
+    //   throw("SelectingInProgress");
     // }
 
     // this.#selecting = true;
@@ -619,7 +619,7 @@ export class SpectodaInterface {
   connect(timeout = 10000, supportLegacy = false) {
     if (timeout < 1000) {
       logging.error("Timeout is too short.");
-      return Promise.reject("InvalidTimeout");
+      throw "InvalidTimeout";
     }
 
     const item = new Query(Query.TYPE_CONNECT, timeout, supportLegacy);
@@ -632,11 +632,11 @@ export class SpectodaInterface {
 
     // if (timeout < 1000) {
     //   logging.error("Timeout is too short.");
-    //   return Promise.reject("InvalidTimeout");
+    //   throw("InvalidTimeout");
     // }
 
     // if (this.#connecting) {
-    //   return Promise.reject("ConnectingInProgress");
+    //   throw("ConnectingInProgress");
     // }
 
     // this.#connecting = true;

@@ -86,7 +86,7 @@ export class SpectodaWebSocketsConnector {
 
       return Promise.resolve({ connector: this.type });
     } else {
-      return Promise.reject("NotSelected");
+      throw("NotSelected");
     }
   }
 
@@ -102,7 +102,7 @@ export class SpectodaWebSocketsConnector {
       }
       return Promise.resolve();
     } else {
-      return Promise.reject("NotSelected");
+      throw("NotSelected");
     }
   }
 
@@ -138,7 +138,7 @@ export class SpectodaWebSocketsConnector {
 
       return this.#promise;
     } else {
-      return Promise.reject("Disconnected");
+      throw("Disconnected");
     }
   }
 
@@ -176,7 +176,7 @@ export class SpectodaWebSocketsConnector {
 
       return this.#promise;
     } else {
-      return Promise.reject("Disconnected");
+      throw("Disconnected");
     }
   }
 
@@ -219,7 +219,7 @@ export class SpectodaWebSocketsConnector {
 
       return this.#promise;
     } else {
-      return Promise.reject("Disconnected");
+      throw("Disconnected");
     }
   }
 
@@ -232,10 +232,10 @@ export class SpectodaWebSocketsConnector {
     //   this.socket.emit("setClock", payload);
     //   return Promise.resolve();
     // } else {
-    //   return Promise.reject("Disconnected");
+    //   throw("Disconnected");
     // }
 
-    return Promise.reject("Not Supported");
+    throw("Not Supported");
   }
 
   getClock() {
@@ -248,7 +248,7 @@ export class SpectodaWebSocketsConnector {
     //   this.socket.emit("setClock", payload);
     //   return Promise.resolve(clock);
     // } else {
-    //   return Promise.reject("Disconnected");
+    //   throw("Disconnected");
     // }
 
     // ============= CLOCK HACK ==============
@@ -256,7 +256,7 @@ export class SpectodaWebSocketsConnector {
     if (this.#connected) {
       return Promise.resolve(new TimeTrack(0));
     } else {
-      return Promise.reject("Disconnected");
+      throw("Disconnected");
     }
   }
 
@@ -297,7 +297,7 @@ export class SpectodaWebSocketsConnector {
     //   return;
     // });
 
-    return Promise.reject("Not supported");
+    throw("Not supported");
   }
 
   destroy() {

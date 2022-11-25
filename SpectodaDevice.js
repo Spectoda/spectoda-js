@@ -337,7 +337,7 @@ export class SpectodaDevice {
 
   adopt(newDeviceName = null, newDeviceId = null, tnglCode = null, ownerSignature = null, ownerKey = null) {
     if (this.#adoptingGuard) {
-      return Promise.reject("AdoptingInProgress");
+      throw "AdoptingInProgress";
     }
 
     this.#adoptingGuard = true;
@@ -484,7 +484,7 @@ export class SpectodaDevice {
           }
         } catch (e) {
           await this.disconnect();
-          return Promise.reject("UserRefused");
+          throw "UserRefused";
         }
         return Promise.resolve();
       })
@@ -611,7 +611,7 @@ export class SpectodaDevice {
 
   connect(devices = null, autoConnect = true, ownerSignature = null, ownerKey = null, connectAny = false) {
     if (this.#connecting) {
-      return Promise.reject("ConnectingInProgress");
+      throw "ConnectingInProgress";
     }
 
     this.#connecting = true;
@@ -715,7 +715,7 @@ export class SpectodaDevice {
     logging.verbose("writeTngl()");
 
     if (tngl_code === null && tngl_bytes === null) {
-      return Promise.reject("Invalid");
+      throw "Invalid";
     }
 
     if (tngl_bytes === null) {
@@ -740,7 +740,7 @@ export class SpectodaDevice {
     logging.verbose("writeTngl()");
 
     if (tngl_code === null && tngl_bytes === null) {
-      return Promise.reject("Invalid");
+      throw "Invalid";
     }
 
     if (tngl_bytes === null) {
@@ -985,7 +985,7 @@ export class SpectodaDevice {
 
     if (!firmware || firmware.length < 10000) {
       logging.error("Invalid firmware");
-      return Promise.reject("InvalidFirmware");
+      throw "InvalidFirmware";
     }
 
     return this.interface.updateFW(firmware).then(() => {
@@ -998,7 +998,7 @@ export class SpectodaDevice {
 
     if (!firmware || firmware.length < 10000) {
       logging.error("Invalid firmware");
-      return Promise.reject("InvalidFirmware");
+      throw "InvalidFirmware";
     }
 
     this.#updating = true;

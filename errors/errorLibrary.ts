@@ -4,7 +4,7 @@
  * USE THE FOLLOWING FORMAT WHEN ADDING NEW ERRORS:
  * ErrorCode: {
  *   title: "What happened",
- *   message: "What should you do",
+ *   message: "OPTIONAL BUT RECOMMENDED: What should you do",
  *   url: "OPTIONAL: Link to documentation",
  * }
  *
@@ -31,7 +31,7 @@ import { t } from "../i18n";
 
 export interface ErrorFormat {
   title: string;
-  message: string;
+  message?: string;
   url?: string;
 }
 type ErrorList = { [key: string]: ErrorFormat };
@@ -70,10 +70,9 @@ export const general: ErrorList = {
     title: "Microphone access denied",
     message: "Please allow access to your microphone in your settings.",
   },
-  "Connection failed.": {
-    title: "a",
-    message: "b",
-    url: "https://support.google.com/chrome/answer/2693767?co=GENIE.Platform%3DDesktop&hl=en",
+  UserCancelledSelection: {
+    title: "Connection cancelled",
+    message: 'Device selection has been cancelled. To complete connection, select a device from the dropdown list and select "Pair".',
   },
 };
 

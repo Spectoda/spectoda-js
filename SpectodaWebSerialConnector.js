@@ -278,13 +278,13 @@ criteria example:
   connect(timeout = 15000) {
     if (timeout <= 0) {
       logging.debug("> Connect timeout have expired");
-      return Promise.reject("ConnectionFailed");
+      throw "ConnectionFailed";
     }
 
     const start = new Date().getTime();
 
     if (!this.#serialPort) {
-      return Promise.reject("NotSelected");
+      throw "NotSelected";
     }
 
     if (this.#connected) {
@@ -422,7 +422,7 @@ criteria example:
 
   #initiate(initiate_code, payload, tries) {
     if (!tries) {
-      return Promise.reject("WriteFailed");
+      throw "WriteFailed";
     }
 
     if (!payload) {
@@ -531,7 +531,7 @@ criteria example:
     // logging.debug(`deliver(payload=${payload})`);
 
     if (!this.#connected) {
-      return Promise.reject("DeviceDisconnected");
+      throw "DeviceDisconnected";
       return;
     }
 
@@ -548,7 +548,7 @@ criteria example:
     // logging.debug(`transmit(payload=${payload})`);
 
     if (!this.#connected) {
-      return Promise.reject("DeviceDisconnected");
+      throw "DeviceDisconnected";
       return;
     }
 
@@ -563,7 +563,7 @@ criteria example:
   // is guaranteed to get a response
   request(payload, read_response = true) {
     if (!this.#connected) {
-      return Promise.reject("DeviceDisconnected");
+      throw "DeviceDisconnected";
       return;
     }
 
@@ -580,7 +580,7 @@ criteria example:
     // logging.debug(`setClock(clock.millis()=${clock.millis()})`);
 
     if (!this.#connected) {
-      return Promise.reject("DeviceDisconnected");
+      throw "DeviceDisconnected";
     }
 
     return new Promise(async (resolve, reject) => {
@@ -607,7 +607,7 @@ criteria example:
     // logging.debug(`getClock()`);
 
     if (!this.#connected) {
-      return Promise.reject("DeviceDisconnected");
+      throw "DeviceDisconnected";
     }
 
     return new Promise(async (resolve, reject) => {
@@ -640,12 +640,12 @@ criteria example:
 
     if (!this.#serialPort) {
       logging.warn("Serial Port is null");
-      return Promise.reject("UpdateFailed");
+      throw "UpdateFailed";
     }
 
     if (this.#writing) {
       logging.warn("Communication in proccess");
-      return Promise.reject("UpdateFailed");
+      throw "UpdateFailed";
     }
 
     this.#writing = true;
