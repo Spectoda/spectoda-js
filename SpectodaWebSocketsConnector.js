@@ -86,7 +86,7 @@ export class SpectodaWebSocketsConnector {
 
       return Promise.resolve({ connector: this.type });
     } else {
-      throw("NotSelected");
+      return Promise.reject("NotSelected");
     }
   }
 
@@ -102,7 +102,7 @@ export class SpectodaWebSocketsConnector {
       }
       return Promise.resolve();
     } else {
-      throw("NotSelected");
+      return Promise.reject("NotSelected");
     }
   }
 
@@ -138,7 +138,7 @@ export class SpectodaWebSocketsConnector {
 
       return this.#promise;
     } else {
-      throw("Disconnected");
+      return Promise.reject("Disconnected");
     }
   }
 
@@ -176,7 +176,7 @@ export class SpectodaWebSocketsConnector {
 
       return this.#promise;
     } else {
-      throw("Disconnected");
+      return Promise.reject("Disconnected");
     }
   }
 
@@ -219,7 +219,7 @@ export class SpectodaWebSocketsConnector {
 
       return this.#promise;
     } else {
-      throw("Disconnected");
+      return Promise.reject("Disconnected");
     }
   }
 
@@ -232,10 +232,10 @@ export class SpectodaWebSocketsConnector {
     //   this.socket.emit("setClock", payload);
     //   return Promise.resolve();
     // } else {
-    //   throw("Disconnected");
+    //   return Promise.reject("Disconnected");
     // }
 
-    throw("Not Supported");
+    return Promise.reject("Not Supported");
   }
 
   getClock() {
@@ -248,7 +248,7 @@ export class SpectodaWebSocketsConnector {
     //   this.socket.emit("setClock", payload);
     //   return Promise.resolve(clock);
     // } else {
-    //   throw("Disconnected");
+    //   return Promise.reject("Disconnected");
     // }
 
     // ============= CLOCK HACK ==============
@@ -256,7 +256,7 @@ export class SpectodaWebSocketsConnector {
     if (this.#connected) {
       return Promise.resolve(new TimeTrack(0));
     } else {
-      throw("Disconnected");
+      return Promise.reject("Disconnected");
     }
   }
 
@@ -297,7 +297,7 @@ export class SpectodaWebSocketsConnector {
     //   return;
     // });
 
-    throw("Not supported");
+    return Promise.reject("Not supported");
   }
 
   destroy() {

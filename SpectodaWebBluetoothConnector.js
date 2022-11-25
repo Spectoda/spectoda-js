@@ -113,7 +113,7 @@ export class WebBLEConnection {
     } else {
       if (bytes.length > bytes_size) {
         logging.error("The maximum bytes that can be written without response is " + bytes_size);
-        throw "WriteError";
+        return Promise.reject("WriteError");
       }
       const payload = [...numberToBytes(write_uuid, 4), ...numberToBytes(0, 4), ...numberToBytes(bytes.length, 4), ...bytes.slice(0, bytes.length)];
       return characteristic.writeValueWithoutResponse(new Uint8Array(payload));
@@ -220,12 +220,12 @@ export class WebBLEConnection {
   deliver(payload) {
     if (!this.#networkChar) {
       logging.warn("Network characteristics is null");
-      throw "DeliverFailed";
+      return Promise.reject("DeliverFailed");
     }
 
     if (this.#writing) {
       logging.warn("Communication in proccess");
-      throw "DeliverFailed";
+      return Promise.reject("DeliverFailed");
     }
 
     this.#writing = true;
@@ -246,12 +246,12 @@ export class WebBLEConnection {
   transmit(payload) {
     if (!this.#networkChar) {
       logging.warn("Network characteristics is null");
-      throw "TransmitFailed";
+      return Promise.reject("TransmitFailed");
     }
 
     if (this.#writing) {
       logging.warn("Communication in proccess");
-      throw "TransmitFailed";
+      return Promise.reject("TransmitFailed");
     }
 
     this.#writing = true;
@@ -271,12 +271,12 @@ export class WebBLEConnection {
   request(payload, read_response) {
     if (!this.#deviceChar) {
       logging.warn("Device characteristics is null");
-      throw "RequestFailed";
+      return Promise.reject("RequestFailed");
     }
 
     if (this.#writing) {
       logging.warn("Communication in proccess");
-      throw "RequestFailed";
+      return Promise.reject("RequestFailed");
     }
 
     this.#writing = true;
@@ -302,12 +302,12 @@ export class WebBLEConnection {
   writeClock(timestamp) {
     if (!this.#clockChar) {
       logging.warn("Sync characteristics is null");
-      throw "ClockWriteFailed";
+      return Promise.reject("ClockWriteFailed");
     }
 
     if (this.#writing) {
       logging.warn("Communication in proccess");
-      throw "ClockWriteFailed";
+      return Promise.reject("ClockWriteFailed");
     }
 
     this.#writing = true;
@@ -327,16 +327,16 @@ export class WebBLEConnection {
   // reads the current clock characteristics timestamp from the device
   // as fast as possible
   readClock() {
-    // throw("SimulatedFail");
+    // return Promise.reject("SimulatedFail");
 
     if (!this.#clockChar) {
       logging.warn("Sync characteristics is null");
-      throw "ClockReadFailed";
+      return Promise.reject("ClockReadFailed");
     }
 
     if (this.#writing) {
       logging.warn("Communication in proccess");
-      throw "ClockReadFailed";
+      return Promise.reject("ClockReadFailed");
     }
 
     this.#writing = true;
@@ -359,12 +359,12 @@ export class WebBLEConnection {
   updateFirmware(firmware) {
     if (!this.#deviceChar) {
       logging.warn("Device characteristics is null");
-      throw "UpdateFailed";
+      return Promise.reject("UpdateFailed");
     }
 
     if (this.#writing) {
       logging.warn("Communication in proccess");
-      throw "UpdateFailed";
+      return Promise.reject("UpdateFailed");
     }
 
     this.#writing = true;
@@ -818,14 +818,14 @@ criteria example:
 
     if (timeout <= 0) {
       logging.debug("> Connect timeout have expired");
-      throw "ConnectionFailed";
+      return Promise.reject("ConnectionFailed");
     }
 
     const start = new Date().getTime();
     this.#reconection = true;
 
     if (!this.#selected()) {
-      throw "DeviceNotSelected";
+      return Promise.reject("DeviceNotSelected");
     }
 
     if (this.#connected()) {
@@ -947,7 +947,7 @@ criteria example:
               const passed = new Date().getTime() - start;
               return this.connect(timeout - passed);
             } else {
-              throw "ConnectionFailed";
+              return Promise.reject("ConnectionFailed");
             }
           });
         } else {
@@ -1005,7 +1005,7 @@ criteria example:
   // that the command is guaranteed to arrive
   deliver(payload) {
     if (!this.#connected()) {
-      throw "DeviceDisconnected";
+      return Promise.reject("DeviceDisconnected");
     }
 
     return this.#connection.deliver(payload);
@@ -1015,7 +1015,7 @@ criteria example:
   // that the command is NOT guaranteed to arrive
   transmit(payload) {
     if (!this.#connected()) {
-      throw "DeviceDisconnected";
+      return Promise.reject("DeviceDisconnected");
     }
 
     return this.#connection.transmit(payload);
@@ -1025,7 +1025,7 @@ criteria example:
   // is guaranteed to get a response
   request(payload, read_response = true) {
     if (!this.#connected()) {
-      throw "DeviceDisconnected";
+      return Promise.reject("DeviceDisconnected");
     }
 
     return this.#connection.request(payload, read_response);
@@ -1037,7 +1037,7 @@ criteria example:
     logging.verbose("setClock()");
 
     if (!this.#connected()) {
-      throw "DeviceDisconnected";
+      return Promise.reject("DeviceDisconnected");
     }
 
     return new Promise(async (resolve, reject) => {
@@ -1064,7 +1064,7 @@ criteria example:
     logging.verbose("getClock()");
 
     if (!this.#connected()) {
-      throw "DeviceDisconnected";
+      return Promise.reject("DeviceDisconnected");
     }
 
     return new Promise(async (resolve, reject) => {
@@ -1089,7 +1089,7 @@ criteria example:
   // to all handlers
   updateFW(firmware) {
     if (!this.#connected()) {
-      throw "DeviceDisconnected";
+      return Promise.reject("DeviceDisconnected");
     }
 
     return this.#connection.updateFirmware(firmware).finally(() => {

@@ -4,7 +4,7 @@
  * USE THE FOLLOWING FORMAT WHEN ADDING NEW ERRORS:
  * ErrorCode: {
  *   title: "What happened",
- *   message: "OPTIONAL BUT RECOMMENDED: What should you do",
+ *   message: "What should you do",
  *   url: "OPTIONAL: Link to documentation",
  * }
  *
@@ -30,7 +30,7 @@
 import { t } from "../i18n";
 export interface ErrorFormat {
   title: string;
-  message?: string;
+  message: string;
   url?: string;
 }
 type ErrorList = { [key: string]: ErrorFormat };
