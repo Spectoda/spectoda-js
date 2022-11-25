@@ -460,7 +460,7 @@ export class SpectodaDevice {
               });
 
             if (!newDeviceName) {
-              throw "AdoptionCancelled";
+              throw "AdoptionCanceled";
             }
           }
           while (!newDeviceId || (typeof newDeviceId !== "number" && !newDeviceId.match(/^[\d]+/))) {
@@ -470,7 +470,7 @@ export class SpectodaDevice {
             // @ts-ignore
 
             if (!newDeviceId) {
-              throw "AdoptionCancelled";
+              throw "AdoptionCanceled";
             }
           }
 
@@ -597,7 +597,7 @@ export class SpectodaDevice {
         logging.warn(error);
         if (error === "UserCanceledSelection") {
           return this.connected().then(result => {
-            if (!result) throw "UserCancelledSelection";
+            if (!result) throw "UserCanceledSelection";
           });
         }
       })
@@ -674,7 +674,7 @@ export class SpectodaDevice {
         // TODO: tady tento catch by mel dal thrownout error jako ze nepodarilo pripojit.
         logging.error(error);
         if (error === "UserCanceledSelection") {
-          throw "UserCancelledSelection";
+          throw "UserCanceledSelection";
           //todo: remove old error
           //@ts-ignore
           throw (t('Aktivujte prosím Bluetooth a vyberte svou lampu ze seznamu Pro spárování nové lampy prosím stiskněte tlačítko "Přidat zařízení".'), t("Připojení selhalo"));

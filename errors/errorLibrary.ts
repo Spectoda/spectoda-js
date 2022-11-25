@@ -28,7 +28,6 @@
  */
 
 import { t } from "../i18n";
-
 export interface ErrorFormat {
   title: string;
   message?: string;
@@ -42,7 +41,7 @@ export const nara: ErrorList = {
     title: t("Mikrofon se nepodařilo spustit."),
     message: t("Zkontrolujte, zda jste v Nastavení povolili aplikaci přístup k mikrofonu."),
   },
-  UserCancelledSelection: {
+  UserCanceledSelection: {
     title: t("Spárování nové lampy se nezdařilo"),
     message: t("Pro připojení již spárované lampy prosím stiskněte jakýkoli symbol") + ' "🛑"',
   },
@@ -70,9 +69,9 @@ export const general: ErrorList = {
     title: "Microphone access denied",
     message: "Please allow access to your microphone in your settings.",
   },
-  UserCancelledSelection: {
-    title: "Connection cancelled",
-    message: 'Device selection has been cancelled. To complete connection, select a device from the dropdown list and select "Pair".',
+  UserCanceledSelection: {
+    title: "Connection canceled",
+    message: 'Device selection has been canceled. To complete connection, select a device from the dropdown list and select "Pair".',
   },
 };
 
