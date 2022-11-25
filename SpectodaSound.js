@@ -94,7 +94,7 @@ export class SpectodaSound {
         // await new Promise((resolve, reject) => { navigator.mediaDevices.getUserMedia(constraints).then(resolve).catch(reject)) };
       } else {
         // TODO - check, tato chyba možná vzniká jinak. Navíc ta chyba nemusí být bluefy only
-        throw (t("Zkontrolujte, zda jste v Nastavení povolili aplikaci přístup k mikrofonu."), t("Mikrofon se nepodařilo spustit."));
+              throw "MicAccessDenied";
       }
     } else if (!mediaStream || mediaStream === "system") {
       const gdmOptions = {

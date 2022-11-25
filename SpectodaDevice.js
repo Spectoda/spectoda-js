@@ -597,10 +597,7 @@ export class SpectodaDevice {
         logging.warn(error);
         if (error === "UserCanceledSelection") {
           return this.connected().then(result => {
-            if (!result) {
-              // @ts-ignore
-              throw (t("Pro připojení již spárované lampy prosím stiskněte jakýkoli symbol") + ' "🛑"', t("Spárování nové lampy se nezdařilo"));
-            }
+            if (!result) throw "UserCancelledSelection";
           });
         }
       })
@@ -677,6 +674,8 @@ export class SpectodaDevice {
         // TODO: tady tento catch by mel dal thrownout error jako ze nepodarilo pripojit.
         logging.error(error);
         if (error === "UserCanceledSelection") {
+          throw "UserCancelledSelection";
+          //todo: remove old error
           //@ts-ignore
           throw (t('Aktivujte prosím Bluetooth a vyberte svou lampu ze seznamu Pro spárování nové lampy prosím stiskněte tlačítko "Přidat zařízení".'), t("Připojení selhalo"));
           return;
@@ -686,6 +685,8 @@ export class SpectodaDevice {
           return;
         }
         //@ts-ignore
+        throw error.toString();
+        //todo: remove old error
         throw (t("Zkuste to, prosím, později.") + "\n\n" + t("Chyba: ") + error.toString(), t("Připojení selhalo"));
       })
       .finally(() => {
@@ -709,7 +710,7 @@ export class SpectodaDevice {
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-  // WIP, writes Tngl only if fingerprints does not match
+  // WIP, writes Tngl only if fingerprints does not mFatch
   syncTngl(tngl_code, tngl_bytes = null) {
     logging.verbose("writeTngl()");
 

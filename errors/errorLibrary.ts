@@ -28,24 +28,27 @@
 
 import { t } from "../i18n";
 
-// Errors specific for NARA environment
+// Errors specific for NARA
 export const nara = {
   MicAccessDenied: {
-    title: "Microphone access denied",
-    message: "Please allow access to your microphone in your browser settings.",
+    title: t("Mikrofon se nepodařilo spustit."),
+    message: t("Zkontrolujte, zda jste v Nastavení povolili aplikaci přístup k mikrofonu."),
+  },
+  UserCancelledSelection: {
+    title: t("Spárování nové lampy se nezdařilo"),
+    message: t("Pro připojení již spárované lampy prosím stiskněte jakýkoli symbol") + ' "🛑"',
   },
 };
 
-// Errors specific for STUDIO environment
+// Errors specific for STUDIO
 export const studio = {
   MicAccessDenied: {
     title: "Microphone access denied",
     message: "Make sure you've enabled microphone access in Settings. If so, refresh the current page, delete cookies and try again.",
-    url: "https://support.google.com/chrome/answer/2693767?co=GENIE.Platform%3DDesktop&hl=en",
   },
 };
 
-// General error messages
+// All error messages
 export const general = {
   DeviceDisconnected: {
     title: "Device Disconnected",
