@@ -26,19 +26,22 @@
  * - Generic information, ambiguity (e.g. "Something went wrong", "The item was moved, deleted, removed or archived")
  */
 
+import { t } from "../i18n";
+
 // Errors specific for NARA environment
 export const nara = {
-  DeviceDisconnected: {
-    title: "Device Disconnected",
-    message: "The device has been disconnected. Please reconnect the device and try again.",
+  MicAccessDenied: {
+    title: "Microphone access denied",
+    message: "Please allow access to your microphone in your browser settings.",
   },
 };
 
 // Errors specific for STUDIO environment
 export const studio = {
-  DeviceDisconnected: {
-    title: "Device Disconnected",
-    message: "The device has been disconnected. Please reconnect the device and try again.",
+  MicAccessDenied: {
+    title: "Microphone access denied",
+    message: "Make sure you've enabled microphone access in Settings. If so, refresh the current page, delete cookies and try again.",
+    url: "https://support.google.com/chrome/answer/2693767?co=GENIE.Platform%3DDesktop&hl=en",
   },
 };
 
@@ -47,6 +50,14 @@ export const general = {
   DeviceDisconnected: {
     title: "Device Disconnected",
     message: "The device has been disconnected. Please reconnect the device and try again.",
+  },
+  DeviceUnsupported: {
+    title: "Your device is not supported",
+    message: "//todo WHAT DEVICES ARE (NOT) SUPPORTED?",
+  },
+  MicAccessDenied: {
+    title: "Microphone access denied",
+    message: "Please allow access to your microphone in your settings.",
   },
 };
 

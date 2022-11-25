@@ -86,8 +86,8 @@ export class SpectodaSound {
               logging.debug("SpectodaSound.connect", "Connected microphone");
             })
             .catch(e => {
-              throw (t("Zkontrolujte, zda jste v Nastavení povolili aplikaci přístup k mikrofonu."), t("Mikrofon se nepodařilo spustit."));
               reject(e);
+              throw "MicAccessDenied";
             });
         });
         console.log("Connected Mic");
@@ -124,8 +124,8 @@ export class SpectodaSound {
             logging.debug("SpectodaSound.connect", "Connected SystemSound");
           })
           .catch(e => {
-            throw (t("Vaše zařízení není podporováno"), t("Chyba"));
             reject(e);
+            throw "DeviceUnsupported";
           });
       });
     } else {
