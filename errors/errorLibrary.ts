@@ -5,6 +5,7 @@
  * ErrorCode: {
  *   title: "What happened",
  *   message: "What should you do",
+ *   url: "OPTIONAL: Link to documentation",
  * }
  *
  * TITLE: What happened
@@ -28,8 +29,15 @@
 
 import { t } from "../i18n";
 
+export interface ErrorFormat {
+  title: string;
+  message: string;
+  url?: string;
+}
+type ErrorList = { [key: string]: ErrorFormat };
+
 // Errors specific for NARA
-export const nara = {
+export const nara: ErrorList = {
   MicAccessDenied: {
     title: t("Mikrofon se nepodařilo spustit."),
     message: t("Zkontrolujte, zda jste v Nastavení povolili aplikaci přístup k mikrofonu."),
@@ -41,15 +49,15 @@ export const nara = {
 };
 
 // Errors specific for STUDIO
-export const studio = {
+export const studio: ErrorList = {
   MicAccessDenied: {
     title: "Microphone access denied",
     message: "Make sure you've enabled microphone access in Settings. If so, refresh the current page, delete cookies and try again.",
   },
 };
 
-// All error messages
-export const general = {
+// General error messages
+export const general: ErrorList = {
   DeviceDisconnected: {
     title: "Device Disconnected",
     message: "The device has been disconnected. Please reconnect the device and try again.",
@@ -62,6 +70,11 @@ export const general = {
     title: "Microphone access denied",
     message: "Please allow access to your microphone in your settings.",
   },
+  "Connection failed.": {
+    title: "a",
+    message: "b",
+    url: "https://support.google.com/chrome/answer/2693767?co=GENIE.Platform%3DDesktop&hl=en",
+  },
 };
 
 // Appears when error is not defined above
@@ -69,5 +82,3 @@ export const unknownError = (errorCode: string) => ({
   title: "Unknown Error",
   message: "An unknown error has occurred. Please contact us for support. Error code: " + errorCode,
 });
-
-export type code = keyof typeof general & keyof typeof nara & keyof typeof studio;
