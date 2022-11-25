@@ -422,7 +422,7 @@ export class FlutterConnector extends FlutterConnection {
   #applyTimeout(promise, timeout, message) {
     let id = setTimeout(() => {
       // @ts-ignore
-      // window.alert(message, "Error: TC response timeouted");
+      // throw(message, "Error: TC response timeouted");
       // @ts-ignore
       window.flutterConnection.reject("ResponseTimeout " + message);
     }, timeout);

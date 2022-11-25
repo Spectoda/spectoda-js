@@ -839,7 +839,7 @@ export class SpectodaInterface {
             const item = this.#queue.shift();
 
             if (this.connector === null) {
-              window.alert("Error: ConnectorNotAssigned");
+              throw "Error: ConnectorNotAssigned";
               item.reject("ConnectorNotAssigned");
               continue;
             }

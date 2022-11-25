@@ -86,7 +86,7 @@ export class SpectodaSound {
               logging.debug("SpectodaSound.connect", "Connected microphone");
             })
             .catch(e => {
-              window.alert(t("Zkontrolujte, zda jste v Nastavení povolili aplikaci přístup k mikrofonu."), t("Mikrofon se nepodařilo spustit."));
+              throw (t("Zkontrolujte, zda jste v Nastavení povolili aplikaci přístup k mikrofonu."), t("Mikrofon se nepodařilo spustit."));
               reject(e);
             });
         });
@@ -94,7 +94,7 @@ export class SpectodaSound {
         // await new Promise((resolve, reject) => { navigator.mediaDevices.getUserMedia(constraints).then(resolve).catch(reject)) };
       } else {
         // TODO - check, tato chyba možná vzniká jinak. Navíc ta chyba nemusí být bluefy only
-        window.alert(t("Zkontrolujte, zda jste v Nastavení povolili aplikaci přístup k mikrofonu."), t("Mikrofon se nepodařilo spustit."));
+        throw (t("Zkontrolujte, zda jste v Nastavení povolili aplikaci přístup k mikrofonu."), t("Mikrofon se nepodařilo spustit."));
       }
     } else if (!mediaStream || mediaStream === "system") {
       const gdmOptions = {
@@ -124,7 +124,7 @@ export class SpectodaSound {
             logging.debug("SpectodaSound.connect", "Connected SystemSound");
           })
           .catch(e => {
-            window.alert(t("Vaše zařízení není podporováno"), t("Chyba"));
+            throw (t("Vaše zařízení není podporováno"), t("Chyba"));
             reject(e);
           });
       });

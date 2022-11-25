@@ -178,12 +178,12 @@ export class SpectodaDevice {
 
       this.socket.on("connect", () => {
         logging.debug("> Connected to remote control");
-        window.alert(t("Connected to remote control"));
+        throw t("Connected to remote control");
       });
 
       this.socket.on("disconnect", () => {
         logging.debug("> Disconnected from remote control");
-        window.alert(t("Disconnected from remote control"));
+        throw t("Disconnected from remote control");
 
         // if (this.#reconnectRC) {
         //   logging.debug("Disconnected by its own... Reloading");
@@ -599,7 +599,7 @@ export class SpectodaDevice {
           return this.connected().then(result => {
             if (!result) {
               // @ts-ignore
-              window.alert(t("Pro připojení již spárované lampy prosím stiskněte jakýkoli symbol") + ' "🛑"', t("Spárování nové lampy se nezdařilo"));
+              throw (t("Pro připojení již spárované lampy prosím stiskněte jakýkoli symbol") + ' "🛑"', t("Spárování nové lampy se nezdařilo"));
             }
           });
         }
@@ -678,7 +678,7 @@ export class SpectodaDevice {
         logging.error(error);
         if (error === "UserCanceledSelection") {
           //@ts-ignore
-          window.alert(t('Aktivujte prosím Bluetooth a vyberte svou lampu ze seznamu Pro spárování nové lampy prosím stiskněte tlačítko "Přidat zařízení".'), t("Připojení selhalo"));
+          throw (t('Aktivujte prosím Bluetooth a vyberte svou lampu ze seznamu Pro spárování nové lampy prosím stiskněte tlačítko "Přidat zařízení".'), t("Připojení selhalo"));
           return;
         }
         if (error === "SecurityError") {
@@ -686,7 +686,7 @@ export class SpectodaDevice {
           return;
         }
         //@ts-ignore
-        window.alert(t("Zkuste to, prosím, později.") + "\n\n" + t("Chyba: ") + error.toString(), t("Připojení selhalo"));
+        throw (t("Zkuste to, prosím, později.") + "\n\n" + t("Chyba: ") + error.toString(), t("Připojení selhalo"));
       })
       .finally(() => {
         this.#connecting = false;
