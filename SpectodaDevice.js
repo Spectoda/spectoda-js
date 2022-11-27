@@ -29,6 +29,7 @@ export class SpectodaDevice {
   #adoptingGuard;
   #updating;
   #selected;
+  #saveStateTimeoutHandle;
 
   #reconnectRC;
 
@@ -55,6 +56,7 @@ export class SpectodaDevice {
     this.#adopting = false;
     this.#adoptingGuard = false;
     this.#updating = false;
+    this.#saveStateTimeoutHandle = null;
 
     this.#reconnectRC = false;
 
@@ -787,6 +789,11 @@ export class SpectodaDevice {
     logging.verbose(`emitEvent(label=${event_label},id=${device_ids},force=${force_delivery},lazy=${is_lazy})`);
     lastEvents[event_label] = { value: null, type: "none" };
 
+    clearTimeout(this.#saveStateTimeoutHandle);
+    this.#saveStateTimeoutHandle = setTimeout(() => {
+      this.saveState();
+    }, 5000);
+
     const func = device_id => {
       const payload = is_lazy
         ? [NETWORK_FLAGS.FLAG_EMIT_LAZY_EVENT, ...labelToBytes(event_label), numberToBytes(device_id, 1)]
@@ -838,6 +845,11 @@ export class SpectodaDevice {
     logging.verbose(`emitTimestampEvent(label=${event_label},value=${event_value},id=${device_ids},force=${force_delivery},lazy=${is_lazy})`);
     lastEvents[event_label] = { value: event_value, type: "timestamp" };
 
+    clearTimeout(this.#saveStateTimeoutHandle);
+    this.#saveStateTimeoutHandle = setTimeout(() => {
+      this.saveState();
+    }, 5000);
+
     if (event_value > 2147483647) {
       logging.error("Invalid event value");
       event_value = 2147483647;
@@ -878,6 +890,11 @@ export class SpectodaDevice {
     logging.verbose(`emitColorEvent(label=${event_label},value=${event_value},id=${device_ids},force=${force_delivery},lazy=${is_lazy})`);
     lastEvents[event_label] = { value: event_value, type: "color" };
 
+    clearTimeout(this.#saveStateTimeoutHandle);
+    this.#saveStateTimeoutHandle = setTimeout(() => {
+      this.saveState();
+    }, 5000);
+
     if (!event_value || !event_value.match(/#[\dabcdefABCDEF]{6}/g)) {
       logging.error("Invalid event value. event_value=", event_value);
       event_value = "#000000";
@@ -912,6 +929,11 @@ export class SpectodaDevice {
   emitPercentageEvent(event_label, event_value, device_ids = [0xff], force_delivery = false, is_lazy = false) {
     logging.verbose(`emitPercentageEvent(label=${event_label},value=${event_value},id=${device_ids},force=${force_delivery},lazy=${is_lazy})`);
     lastEvents[event_label] = { value: event_value, type: "percentage" };
+
+    clearTimeout(this.#saveStateTimeoutHandle);
+    this.#saveStateTimeoutHandle = setTimeout(() => {
+      this.saveState();
+    }, 5000);
 
     if (event_value > 100.0) {
       logging.error("Invalid event value");
@@ -953,6 +975,11 @@ export class SpectodaDevice {
   emitLabelEvent(event_label, event_value, device_ids = [0xff], force_delivery = false, is_lazy = false) {
     logging.verbose(`emitLabelEvent(label=${event_label},value=${event_value},id=${device_ids},force=${force_delivery},lazy=${is_lazy})`);
     lastEvents[event_label] = { value: event_value, type: "label" };
+
+    clearTimeout(this.#saveStateTimeoutHandle);
+    this.#saveStateTimeoutHandle = setTimeout(() => {
+      this.saveState();
+    }, 5000);
 
     if (typeof event_value !== "string") {
       logging.error("Invalid event value");
