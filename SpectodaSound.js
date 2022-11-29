@@ -93,15 +93,15 @@ export class SpectodaSound {
               logging.debug("SpectodaSound.connect", "Connected microphone");
             })
             .catch(e => {
-              window.alert(t("Zkontrolujte, zda jste v Nastavení povolili aplikaci přístup k mikrofonu."), t("Mikrofon se nepodařilo spustit."));
               reject(e);
+              throw "MicAccessDenied";
             });
         });
         console.log("Connected Mic");
         // await new Promise((resolve, reject) => { navigator.mediaDevices.getUserMedia(constraints).then(resolve).catch(reject)) };
       } else {
         // TODO - check, tato chyba možná vzniká jinak. Navíc ta chyba nemusí být bluefy only
-        window.alert(t("Zkontrolujte, zda jste v Nastavení povolili aplikaci přístup k mikrofonu."), t("Mikrofon se nepodařilo spustit."));
+        throw "MicAccessDenied";
       }
     } else if (!mediaStream || mediaStream === "system") {
       const gdmOptions = {
@@ -131,8 +131,8 @@ export class SpectodaSound {
             logging.debug("SpectodaSound.connect", "Connected SystemSound");
           })
           .catch(e => {
-            window.alert(t("Your device is not supported or correctly configured (You have to allow 'System Sound when sharing screen')"), t("Error"));
             reject(e);
+            throw "DeviceUnsupported";
           });
       });
     } else {

@@ -462,7 +462,7 @@ export class SpectodaDevice {
               });
 
             if (!newDeviceName) {
-              throw "AdoptionCancelled";
+              throw "AdoptionCanceled";
             }
           }
           while (!newDeviceId || (typeof newDeviceId !== "number" && !newDeviceId.match(/^[\d]+/))) {
@@ -472,7 +472,7 @@ export class SpectodaDevice {
             // @ts-ignore
 
             if (!newDeviceId) {
-              throw "AdoptionCancelled";
+              throw "AdoptionCanceled";
             }
           }
 
@@ -606,10 +606,7 @@ export class SpectodaDevice {
         logging.warn(error);
         if (error === "UserCanceledSelection") {
           return this.connected().then(result => {
-            if (!result) {
-              // @ts-ignore
-              //window.alert(t("Pro připojení již spárované lampy prosím stiskněte jakýkoli symbol") + ' "🛑"', t("Spárování nové lampy se nezdařilo"));
-            }
+            if (!result) throw "UserCanceledSelection";
           });
         }
       })
@@ -686,16 +683,14 @@ export class SpectodaDevice {
         // TODO: tady tento catch by mel dal thrownout error jako ze nepodarilo pripojit.
         logging.error(error);
         if (error === "UserCanceledSelection") {
-          //@ts-ignore
-          window.alert(t('Aktivujte prosím Bluetooth a vyberte svou lampu ze seznamu Pro spárování nové lampy prosím stiskněte tlačítko "Přidat zařízení".'), t("Připojení selhalo"));
-          return;
+          throw "UserCanceledSelection";
         }
         if (error === "SecurityError") {
           console.error(error);
           return;
         }
         //@ts-ignore
-        window.alert(t("Zkuste to, prosím, později.") + "\n\n" + t("Chyba: ") + error.toString(), t("Připojení selhalo"));
+        throw error.toString();
       })
       .finally(() => {
         this.#connecting = false;
@@ -718,7 +713,7 @@ export class SpectodaDevice {
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-  // WIP, writes Tngl only if fingerprints does not match
+  // WIP, writes Tngl only if fingerprints does not mFatch
   syncTngl(tngl_code, tngl_bytes = null) {
     logging.verbose("writeTngl()");
 
