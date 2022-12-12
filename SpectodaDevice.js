@@ -101,6 +101,19 @@ export class SpectodaDevice {
         });
       }
     }, 60000);
+
+    // auto save sync loop
+    setInterval(() => {
+      if (!this.#updating) {
+        this.connected().then(connected => {
+          if (connected) {
+            this.saveState().catch(error => {
+              logging.warn(error);
+            });
+          }
+        });
+      }
+    }, 10000);
   }
 
   requestWakeLock() {
@@ -792,7 +805,7 @@ export class SpectodaDevice {
     clearTimeout(this.#saveStateTimeoutHandle);
     this.#saveStateTimeoutHandle = setTimeout(() => {
       this.saveState();
-    }, 5000);
+    }, 3000);
 
     const func = device_id => {
       const payload = is_lazy
@@ -848,7 +861,7 @@ export class SpectodaDevice {
     clearTimeout(this.#saveStateTimeoutHandle);
     this.#saveStateTimeoutHandle = setTimeout(() => {
       this.saveState();
-    }, 5000);
+    }, 3000);
 
     if (event_value > 2147483647) {
       logging.error("Invalid event value");
@@ -893,7 +906,7 @@ export class SpectodaDevice {
     clearTimeout(this.#saveStateTimeoutHandle);
     this.#saveStateTimeoutHandle = setTimeout(() => {
       this.saveState();
-    }, 5000);
+    }, 3000);
 
     if (!event_value || !event_value.match(/#[\dabcdefABCDEF]{6}/g)) {
       logging.error("Invalid event value. event_value=", event_value);
@@ -933,7 +946,7 @@ export class SpectodaDevice {
     clearTimeout(this.#saveStateTimeoutHandle);
     this.#saveStateTimeoutHandle = setTimeout(() => {
       this.saveState();
-    }, 5000);
+    }, 3000);
 
     if (event_value > 100.0) {
       logging.error("Invalid event value");
@@ -979,7 +992,7 @@ export class SpectodaDevice {
     clearTimeout(this.#saveStateTimeoutHandle);
     this.#saveStateTimeoutHandle = setTimeout(() => {
       this.saveState();
-    }, 5000);
+    }, 3000);
 
     if (typeof event_value !== "string") {
       logging.error("Invalid event value");
@@ -1660,8 +1673,15 @@ export class SpectodaDevice {
   saveState() {
     logging.debug("> Saving state...");
 
-    const request_uuid = this.#getUUID();
-    const payload = [NETWORK_FLAGS.FLAG_CONF_BYTES, ...numberToBytes(5, 4), DEVICE_FLAGS.FLAG_SAVE_STATE_REQUEST, ...numberToBytes(request_uuid, 4)];
-    return this.interface.execute(payload, null);
+    return new Promise(async (resolve, reject) => {
+      const request_uuid = this.#getUUID();
+      const payload = [NETWORK_FLAGS.FLAG_CONF_BYTES, ...numberToBytes(5, 4), DEVICE_FLAGS.FLAG_SAVE_STATE_REQUEST, ...numberToBytes(request_uuid, 4)];
+
+      for (let i = 0; i < 5; i++) {
+        await this.interface.execute(payload, null);
+      }
+
+      resolve();
+    });
   }
 }

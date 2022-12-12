@@ -314,7 +314,14 @@ export class SpectodaInterface {
       //   }
       // });
 
-      this.destroyConnector();
+      this.#deviceReference
+        .saveState()
+        .catch(e => {
+          console.error(e);
+        })
+        .finally(() => {
+          this.destroyConnector();
+        });
     });
   }
 
@@ -921,7 +928,7 @@ export class SpectodaInterface {
                         this.disconnect();
                         logging.warn(error);
                         item.reject(error);
-                      })
+                      });
                   })
                   .catch(error => {
                     this.disconnect();
