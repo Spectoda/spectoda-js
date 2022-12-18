@@ -8,7 +8,7 @@ const i18 = I18.createInstance();
 i18.init(
   {
     lng: "en",
-    debug: false,
+    debug: true,
 
     // supportedLngs: ["cs", "en", "cs-CZ", "en-US"],
     // fallbackLng: "en",
@@ -24,14 +24,11 @@ i18.init(
   },
   (err, t) => {
     // TEST
-    // console.log("spectodajs translation", "Zpět", t("Zpět"));
-    // console.log("spectodajs translation", "Zkusit znovu", t("Zkusit znovu"));
+    // console.log("tanglejs translation", "Zpět", t("Zpět"));
+    // console.log("tanglejs translation", "Zkusit znovu", t("Zkusit znovu"));
   },
 );
 
 export const changeLanguage = i18.changeLanguage;
 export const t = i18.t;
-
-if (typeof window !== "undefined") {
-  window.i18js = i18;
-}
+window.i18js = i18;

@@ -1,5 +1,10 @@
 import { logging } from "./Logging.js";
-import { sleep, stringToBytes, toBytes, getClockTimestamp } from "./functions.js";
+import {
+  sleep,
+  stringToBytes,
+  toBytes,
+  getClockTimestamp,
+} from "./functions.js";
 import { TimeTrack } from "./TimeTrack.js";
 import { io } from "./lib/socketio.js";
 import { nanoid } from "nanoid";
@@ -8,7 +13,7 @@ import { nanoid } from "nanoid";
 export const WEBSOCKET_URL = "https://ws.host.spectoda.com/";
 /////////////////////////////////////////////////////////////////////////////////////
 
-export class SpectodaWebSocketsConnector {
+export class TangleWebSocketsConnector {
   #interfaceReference;
   #selected;
   #connected;
@@ -55,7 +60,7 @@ export class SpectodaWebSocketsConnector {
 
           logging.debug(this.socket);
 
-          this.socket.on("connect", socket => {
+          this.socket.on("connect", (socket) => {
             logging.debug("connected");
 
             logging.debug("> Connected to remote control");
@@ -73,7 +78,7 @@ export class SpectodaWebSocketsConnector {
             this.#interfaceReference.emit("#disconnected");
           });
 
-          this.socket.on("connect_error", error => {
+          this.socket.on("connect_error", (error) => {
             logging.debug("connect_error", error);
             setTimeout(() => {
               this.socket.connect();
@@ -114,7 +119,7 @@ export class SpectodaWebSocketsConnector {
       this.socket.emit("deliver", reqId, payload);
       const socket = this.socket;
       this.#promise = new Promise((resolve, reject) => {
-        const timeout = setTimeout(() => rejectFunc(reqId, "timeout"), 5000);
+        const timeout = setTimeout(() => rejectFunc(reqId, 'timeout'), 5000);
 
         function resolveFunc(reqId, response) {
           if (reqId === reqId) {
@@ -134,6 +139,8 @@ export class SpectodaWebSocketsConnector {
 
         this.socket.once("response_success", resolveFunc);
         this.socket.once("response_error", rejectFunc);
+
+
       });
 
       return this.#promise;
@@ -152,7 +159,7 @@ export class SpectodaWebSocketsConnector {
       const socket = this.socket;
 
       this.#promise = new Promise((resolve, reject) => {
-        const timeout = setTimeout(() => rejectFunc(reqId, "timeout"), 5000);
+        const timeout = setTimeout(() => rejectFunc(reqId, 'timeout'), 5000);
 
         function resolveFunc(reqId, response) {
           if (reqId === reqId) {
@@ -189,7 +196,7 @@ export class SpectodaWebSocketsConnector {
       const socket = this.socket;
 
       this.#promise = new Promise((resolve, reject) => {
-        const timeout = setTimeout(() => rejectFunc(reqId, "timeout"), 5000);
+        const timeout = setTimeout(() => rejectFunc(reqId, 'timeout'), 5000);
 
         function resolveFunc(reqId, response) {
           // console.log(reqId, new DataView(new Uint8Array(response).buffer));
@@ -302,10 +309,10 @@ export class SpectodaWebSocketsConnector {
 
   destroy() {
     return this.disconnect()
-      .catch(() => {})
+      .catch(() => { })
       .then(() => {
         return this.unselect();
       })
-      .catch(() => {});
+      .catch(() => { });
   }
 }

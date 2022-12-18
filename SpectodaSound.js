@@ -79,14 +79,21 @@ export class SpectodaSound {
         await new Promise((resolve, reject) => {
           navigator.mediaDevices
             .getUserMedia(constraints)
-            .then(stream => {
+            .then((stream) => {
               this.#stream = stream;
-              this.#source = this.#audioContext.createMediaStreamSource(this.#stream);
+              this.#source = this.#audioContext.createMediaStreamSource(
+                this.#stream
+              );
               resolve();
               logging.debug("SpectodaSound.connect", "Connected microphone");
             })
-            .catch(e => {
-              window.alert(t("Zkontrolujte, zda jste v Nastavení povolili aplikaci přístup k mikrofonu."), t("Mikrofon se nepodařilo spustit."));
+            .catch((e) => {
+              window.alert(
+                t(
+                  "Zkontrolujte, zda jste v Nastavení povolili aplikaci přístup k mikrofonu."
+                ),
+                t("Mikrofon se nepodařilo spustit.")
+              );
               reject(e);
             });
         });
@@ -94,7 +101,12 @@ export class SpectodaSound {
         // await new Promise((resolve, reject) => { navigator.mediaDevices.getUserMedia(constraints).then(resolve).catch(reject)) };
       } else {
         // TODO - check, tato chyba možná vzniká jinak. Navíc ta chyba nemusí být bluefy only
-        window.alert(t("Zkontrolujte, zda jste v Nastavení povolili aplikaci přístup k mikrofonu."), t("Mikrofon se nepodařilo spustit."));
+        window.alert(
+          t(
+            "Zkontrolujte, zda jste v Nastavení povolili aplikaci přístup k mikrofonu."
+          ),
+          t("Mikrofon se nepodařilo spustit.")
+        );
       }
     } else if (!mediaStream || mediaStream === "system") {
       const gdmOptions = {
@@ -117,13 +129,15 @@ export class SpectodaSound {
       await new Promise(async (resolve, reject) => {
         const srcObject = await navigator.mediaDevices
           .getDisplayMedia(gdmOptions)
-          .then(stream => {
+          .then((stream) => {
             this.#stream = stream;
-            this.#source = this.#audioContext.createMediaStreamSource(this.#stream);
+            this.#source = this.#audioContext.createMediaStreamSource(
+              this.#stream
+            );
             resolve();
             logging.debug("SpectodaSound.connect", "Connected SystemSound");
           })
-          .catch(e => {
+          .catch((e) => {
             window.alert(t("Vaše zařízení není podporováno"), t("Chyba"));
             reject(e);
           });
@@ -145,7 +159,8 @@ export class SpectodaSound {
       this.#gain_node.connect(this.#audioContext.destination);
 
       // TODO use audio worklet https://developer.chrome.com/blog/audio-worklet/
-      this.#script_processor_get_audio_samples = this.#audioContext.createScriptProcessor(this.BUFF_SIZE, 1, 1);
+      this.#script_processor_get_audio_samples =
+        this.#audioContext.createScriptProcessor(this.BUFF_SIZE, 1, 1);
       this.#script_processor_get_audio_samples.connect(this.#gain_node);
 
       console.log("Sample rate of soundcard: " + this.#audioContext.sampleRate);
@@ -162,7 +177,10 @@ export class SpectodaSound {
       // Tato funkce se provede pokaždé když dojde k naplnění bufferu o velikosti 2048 vzorků.
       // Při vzorkovacím kmitočku 48 kHz se tedy zavolá jednou za cca 42 ms.
 
-      this.#script_processor_get_audio_samples.addEventListener("audioprocess", this.processHandler.bind(this));
+      this.#script_processor_get_audio_samples.addEventListener(
+        "audioprocess",
+        this.processHandler.bind(this)
+      );
     }
   }
 
@@ -176,7 +194,9 @@ export class SpectodaSound {
 
   getBufferedDataAverage() {
     if (this.#bufferedValues.length > 0) {
-      let value = this.#bufferedValues.reduce((p, v) => p + v) / this.#bufferedValues.length;
+      let value =
+        this.#bufferedValues.reduce((p, v) => p + v) /
+        this.#bufferedValues.length;
       this.#bufferedValues = [];
 
       // value = lerpUp(this.lastValue, value, 0.2);
@@ -190,7 +210,7 @@ export class SpectodaSound {
     let gapValues = [...this.#movingAverageGapValues];
     let evRate;
     if (gapValues.length > 0) {
-      gapValues = gapValues.map(v => v - gapValues[0]);
+      gapValues = gapValues.map((v) => v - gapValues[0]);
       for (let i = 0; i < gapValues.length; i++) {
         gapValues[i + 1] -= gapValues[i];
       }
@@ -208,7 +228,9 @@ export class SpectodaSound {
   async autoEmitFunctionValue(func) {
     let data = this.getBufferedDataAverage();
     if (data) {
-      func(calculateSensitivityValue(data.value, this.#sensitivity)).finally(() => this.autoEmitFunctionValue(func));
+      func(calculateSensitivityValue(data.value, this.#sensitivity)).finally(
+        () => this.autoEmitFunctionValue(func)
+      );
     } else {
       if (this.running) {
         sleep(10).finally(() => this.autoEmitFunctionValue(func));
@@ -238,7 +260,7 @@ export class SpectodaSound {
     //------------------------//
 
     // Zde se postupně sečte druhá mocnina všech 1024 vzorků.
-    spectrum.forEach(element => {
+    spectrum.forEach((element) => {
       rms_loudness_spectrum += Math.pow(element, 2);
     });
 

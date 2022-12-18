@@ -1,15 +1,16 @@
 import { logging } from "./Logging.js";
 import { sleep } from "./functions.js";
 import { TimeTrack } from "./TimeTrack.js";
-import { DEVICE_FLAGS } from "./SpectodaInterface.js";
+import { DEVICE_FLAGS } from "./TangleInterface.js";
 import { TnglReader } from "./TnglReader.js";
 import { TnglWriter } from "./TnglWriter.js";
 
+
 /////////////////////////////////////////////////////////////////////////////////////
 
-// Connector connects the application with one Spectoda Device, that is then in a
-// position of a controller for other Spectoda Devices
-export class SpectodaDummyConnector {
+// Connector connects the application with one Tangle Device, that is then in a
+// position of a controller for other Tangle Devices
+export class TangleDummyConnector {
   #interfaceReference;
   #selected;
   #connected;
@@ -18,7 +19,7 @@ export class SpectodaDummyConnector {
 
   constructor(interfaceReference, enableErrors = false, dummyFWVersion = "DUMMY_0.0.0_00000000") {
     this.type = enableErrors ? "edummy" : "dummy";
-
+    
     this.#interfaceReference = interfaceReference;
     this.#enableErrors = enableErrors;
     this.#FWVersion = dummyFWVersion;
@@ -66,8 +67,8 @@ criteria example:
   }
 ]
 */
-  // choose one Spectoda device (user chooses which device to connect to via a popup)
-  // if no criteria are set, then show all Spectoda devices visible.
+  // choose one Tangle device (user chooses which device to connect to via a popup)
+  // if no criteria are set, then show all Tangle devices visible.
   // first bonds the BLE device with the PC/Phone/Tablet if it is needed.
   // Then selects the device
   userSelect(criteria) {
@@ -97,7 +98,7 @@ criteria example:
   // if more devices are found matching the criteria, then the strongest signal wins
   // if no device is found within the timeout period, then it returns an error
 
-  // if no criteria are provided, all Spectoda enabled devices (with all different FWs and Owners and such)
+  // if no criteria are provided, all Tangle enabled devices (with all different FWs and Owners and such)
   // are eligible.
 
   autoSelect(criteria, scan_period = 1000, timeout = 3000) {
@@ -173,7 +174,7 @@ criteria example:
     });
   }
 
-  // disconnect Connector from the connected Spectoda Device. But keep it selected
+  // disconnect Connector from the connected Tangle Device. But keep it selected
   disconnect() {
     logging.verbose(`disconnect()`);
 
@@ -199,7 +200,7 @@ criteria example:
     });
   }
 
-  // deliver handles the communication with the Spectoda network in a way
+  // deliver handles the communication with the Tangle network in a way
   // that the command is guaranteed to arrive
   deliver(payload) {
     logging.verbose(`deliver(payload=${payload})`);
@@ -219,7 +220,7 @@ criteria example:
     });
   }
 
-  // transmit handles the communication with the Spectoda network in a way
+  // transmit handles the communication with the Tangle network in a way
   // that the command is NOT guaranteed to arrive
   transmit(payload) {
     logging.verbose(`transmit(payload=${payload})`);
@@ -239,7 +240,7 @@ criteria example:
     });
   }
 
-  // request handles the requests on the Spectoda network. The command request
+  // request handles the requests on the Tangle network. The command request
   // is guaranteed to get a response
   request(payload, read_response = true) {
     logging.verbose(`request(payload=${payload}, read_response=${read_response ? "true" : "false"})`);
@@ -362,7 +363,7 @@ criteria example:
 
             // uint8_t fingerprint[32];
 
-            // if (!spectoda::getTnglFingerprint(fingerprint)) {
+            // if (!tangle::getTnglFingerprint(fingerprint)) {
             //     error_code = DeviceErrorCode::NO_TNGL_CODE_STORED;
             // }
 
