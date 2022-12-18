@@ -211,59 +211,60 @@ export function numberToBytes(value, byteCount) {
 // Android Google Chrome            Mozilla/5.0 (Linux; Android 11; Pixel 2 XL) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/104.0.0.0 Mobile Safari/537.36
 // IPhone SE Spectoda Connect       Mozilla/5.0 (iPhone; CPU iPhone OS 15_6_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148         
 // IPhone SE Safari                 Mozilla/5.0 (iPhone; CPU iPhone OS 15_6_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/15.6.1 Mobile/15E148 Safari/604.1
-        
 
-const tangleConnectDetected = "tangleConnect" in window;
+
+const tangleConnectDetected = typeof window !== "undefined" && "tangleConnect" in window;
 export function detectTangleConnect() {
   return tangleConnectDetected;
 }
 
-const spectodaConnectDetected = "flutter_inappwebview" in window;
+const spectodaConnectDetected = typeof window !== "undefined" && "flutter_inappwebview" in window;
 export function detectSpectodaConnect() {
   return spectodaConnectDetected;
 }
 
-const androidDetected =
-  navigator.userAgent.toLowerCase().indexOf("android") > -1;
 export function detectAndroid() {
+  const androidDetected = navigator.userAgent.toLowerCase().indexOf("android") > -1;
+
   return androidDetected;
 }
 
-const iphoneDetected = navigator.userAgent.toLowerCase().indexOf("iphone") > -1;
 export function detectIPhone() {
+  const iphoneDetected = navigator.userAgent.toLowerCase().indexOf("iphone") > -1;
+
   return iphoneDetected;
 }
 
-const macintoshDetected =
-  navigator.userAgent.toLowerCase().indexOf("macintosh") > -1;
 export function detectMacintosh() {
+  const macintoshDetected = navigator.userAgent.toLowerCase().indexOf("macintosh") > -1;
+
   return macintoshDetected;
 }
 
-const windowsDetected =
-  navigator.userAgent.toLowerCase().indexOf("windows") > -1;
 export function detectWindows() {
+  const windowsDetected = navigator.userAgent.toLowerCase().indexOf("windows") > -1;
+
   return windowsDetected;
 }
 
-const linuxDetected = navigator.userAgent.toLowerCase().indexOf("linux") > -1;
+
 export function detectLinux() {
+  const linuxDetected = navigator.userAgent.toLowerCase().indexOf("linux") > -1;
+
   return linuxDetected;
 }
 
-const chromeDetected = navigator.userAgent.toLowerCase().indexOf("chrome") > -1;
+const chromeDetected = typeof window !== "undefined" && navigator.userAgent.toLowerCase().indexOf("chrome") > -1;
 export function detectChrome() {
   return chromeDetected && !tangleConnectDetected && !spectodaConnectDetected;
 }
 
-const bluefyDetected = navigator.userAgent.toLowerCase().indexOf("bluefy") > -1;
 export function detectBluefy() {
+  const bluefyDetected = navigator.userAgent.toLowerCase().indexOf("bluefy") > -1;
+
   return bluefyDetected;
 }
 
-const safariDetected =
-  navigator.userAgent.toLowerCase().indexOf("safari") > -1 &&
-  navigator.userAgent.toLowerCase().indexOf("chrome") == -1;
 export function detectSafari() {
   return safariDetected && !tangleConnectDetected && !spectodaConnectDetected;
 }
@@ -373,6 +374,10 @@ const { webm, mp4 } = {
 
 class NoSleep {
   constructor() {
+    if (typeof window === 'undefined') {
+      return;
+    }
+
     this.enabled = false;
     if (nativeWakeLock()) {
       this._wakeLock = null;
@@ -489,12 +494,14 @@ class NoSleep {
 }
 
 export const noSleep = new NoSleep();
-window.noSleep = noSleep;
 
-var script = document.createElement("script");
-script.src = "//cdn.jsdelivr.net/npm/eruda";
-script.setAttribute("defer", true);
-document.body.appendChild(script);
+if (typeof window !== "undefined") {
+  var script = document.createElement("script");
+  script.src = "//cdn.jsdelivr.net/npm/eruda";
+  script.setAttribute("defer", true);
+  document.body.appendChild(script);
+}
+
 
 export function enableDebugMode() {
   if (window.eruda) {
@@ -551,7 +558,6 @@ export function hexStringToArray(str) {
   return new Uint8Array(arr);
 }
 
-window.hexStringToArray = hexStringToArray;
 
 const CRC8_DATA = hexStringToArray(CRC8_TABLE);
 
@@ -686,5 +692,3 @@ export function validateTimestamp(value) {
     return [total, result.trim()];
   }
 }
-
-window.validateTimestamp = validateTimestamp;

@@ -8,7 +8,7 @@ const i18 = I18.createInstance();
 i18.init(
   {
     lng: "en",
-    debug: true,
+    debug: false,
 
     // supportedLngs: ["cs", "en", "cs-CZ", "en-US"],
     // fallbackLng: "en",
@@ -31,4 +31,4 @@ i18.init(
 
 export const changeLanguage = i18.changeLanguage;
 export const t = i18.t;
-window.i18js = i18;
+// window.i18js = i18;
