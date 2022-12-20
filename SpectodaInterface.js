@@ -911,17 +911,24 @@ export class SpectodaInterface {
                       this.#eventEmitter.emit("#connected");
                     }
 
-                    return this.connector
-                      .getClock()
-                      .then(clock => {
-                        this.clock = clock;
-                        item.resolve(device);
-                      })
-                      .catch(error => {
-                        this.disconnect();
-                        logging.warn(error);
-                        item.reject(error);
-                      })
+                    return (
+                      this.connector
+                        .getClock()
+                        .then(clock => {
+                          this.clock = clock;
+                          item.resolve(device);
+                        })
+                        // .catch(error => {
+                        //   this.disconnect();
+                        //   logging.warn(error);
+                        //   item.reject(error);
+                        // });
+                        .catch(error => {
+                          logging.error(error);
+                          this.clock = null;
+                          item.resolve(device);
+                        })
+                    );
                   })
                   .catch(error => {
                     this.disconnect();
