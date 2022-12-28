@@ -31,6 +31,7 @@ import "./TnglWriter.js";
 import { TnglReader } from "./TnglReader.js";
 import { FlutterConnector } from "./FlutterConnector.js";
 import { t } from "./i18n.js";
+import { isUndefined } from "util";
 
 export const DEVICE_FLAGS = Object.freeze({
   // legacy FW update flags
@@ -367,9 +368,14 @@ export class SpectodaInterface {
     }
   }
 
-  assignConnector(connector_type) {
-    if (!connector_type) {
+  assignConnector(connector_type = "default") {
+
+    if (connector_type === null) {
       connector_type = "none";
+    }
+
+    if (connector_type == "") {
+      connector_type = "default";
     }
 
     logging.debug(`> Assigning ${connector_type} connector...`);
@@ -379,7 +385,7 @@ export class SpectodaInterface {
       return Promise.resolve();
     }
 
-    if (connector_type == "default") {
+    if (connector_type == "default" || connector_type == "automatic") {
       if (detectSpectodaConnect()) {
         connector_type = "flutter";
       } else if (navigator.bluetooth) {
@@ -499,6 +505,7 @@ export class SpectodaInterface {
             break;
 
           default:
+            logging.warn("Selected unknown connector");
             throw "UnknownConnector";
         }
       });
