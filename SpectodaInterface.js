@@ -846,8 +846,8 @@ export class SpectodaInterface {
           while (this.#queue.length > 0) {
             const item = this.#queue.shift();
 
-            if (this.connector === null) {
-              //console.error("ConnectorNotAssigned");
+            if (this.connector === null || this.connector === undefined) {
+              logging.warn("Trying to do something while connector is not assigned");
               item.reject("ConnectorNotAssigned");
               continue;
             }
