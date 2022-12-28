@@ -1,5 +1,5 @@
 import { logging, setLoggingLevel } from "./Logging.js";
-import { colorToBytes, computeTnglFingerprint, czechHackyToEnglish, detectSpectodaConnect, getClockTimestamp, hexStringToUint8Array, labelToBytes, numberToBytes, percentageToBytes, sleep, stringToBytes } from "./functions.js";
+import { colorToBytes, computeTnglFingerprint, czechHackyToEnglish, detectSpectodaConnect, getClockTimestamp, hexStringToUint8Array, labelToBytes, numberToBytes, percentageToBytes, sleep, stringToBytes, strMacToBytes } from "./functions.js";
 import { DEVICE_FLAGS, NETWORK_FLAGS, SpectodaInterface } from "./SpectodaInterface.js";
 import { TnglCodeParser } from "./SpectodaParser.js";
 import { TimeTrack } from "./TimeTrack.js";
@@ -1009,9 +1009,9 @@ export class SpectodaDevice {
   }
 
   syncClock() {
-    logging.debug("> Forcing sync clock at " + this.interface.clock.millis() + " ms");
+    logging.debug("> Syncing clock from device");
     return this.interface.syncClock().then(() => {
-      logging.debug("> Device clock synchronized");
+      logging.debug("> App clock synchronized");
     });
   }
 
@@ -1153,6 +1153,50 @@ export class SpectodaDevice {
         this.interface.releaseWakeLock();
         this.#updating = false;
       });
+  }
+
+  async updatePeerFirmware(peer) {
+    logging.debug(`updatePeerFirmware(peer=${peer})`);
+
+    if (peer === null || peer === undefined) {
+      // Prompt the user to enter a MAC address
+      peer = await prompt("Please enter a valid MAC address:", "00:00:00:00:00:00");
+    }
+
+    // Validate the input to ensure it is a valid MAC address
+    if (!/^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})$/.test(peer)) {
+      // If the input is invalid, display an error message and return null
+      throw "InvalidMacAdress";
+    }
+
+    const request_uuid = this.#getUUID();
+    const bytes = [DEVICE_FLAGS.FLAG_FW_UPDATE_PEER_REQUEST, ...numberToBytes(request_uuid, 4), ...strMacToBytes(peer)];
+
+    return this.interface.request(bytes, true).then(response => {
+      let reader = new TnglReader(response);
+
+      logging.verbose("response=", response);
+
+      if (reader.readFlag() !== DEVICE_FLAGS.FLAG_FW_UPDATE_PEER_RESPONSE) {
+        throw "InvalidResponseFlag";
+      }
+
+      const response_uuid = reader.readUint32();
+
+      if (response_uuid != request_uuid) {
+        throw "InvalidResponseUuid";
+      }
+
+      const error_code = reader.readUint8();
+
+      logging.verbose(`error_code=${error_code}`);
+
+      if (error_code === 0) {
+        logging.info(`Update sucessful`);
+      } else {
+        throw "Fail";
+      }
+    });
   }
 
   /**
