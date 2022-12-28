@@ -378,7 +378,8 @@ export class SpectodaInterface {
       connector_type = "default";
     }
 
-    logging.debug(`> Assigning ${connector_type} connector...`);
+    // leave this at info, for faster debug
+    logging.info(`> Assigning ${connector_type} connector...`);
 
     if ((!this.connector && connector_type === "none") || (this.connector && this.connector.type === connector_type)) {
       logging.warn("Trying to reassign current connector.");
@@ -733,21 +734,21 @@ export class SpectodaInterface {
   }
 
   deliver(bytes, timeout) {
-    logging.debug("deliver", { bytes, timeout });
+    logging.verbose("deliver", { bytes, timeout });
     const item = new Query(Query.TYPE_DELIVER, bytes, timeout);
     this.#process(item);
     return item.promise;
   }
 
   transmit(bytes, timeout) {
-    logging.debug("transmit", { bytes, timeout });
+    logging.verbose("transmit", { bytes, timeout });
     const item = new Query(Query.TYPE_TRANSMIT, bytes, timeout);
     this.#process(item);
     return item.promise;
   }
 
   execute(bytes, bytes_label, timeout) {
-    logging.debug("execute", { bytes, bytes_label, timeout });
+    logging.verbose("execute", { bytes, bytes_label, timeout });
     const item = new Query(Query.TYPE_EXECUTE, bytes, bytes_label, timeout);
 
     // there must only by one item in the queue with given label
@@ -770,7 +771,7 @@ export class SpectodaInterface {
   }
 
   request(bytes, read_response, timeout) {
-    logging.debug("request", { bytes, read_response, timeout });
+    logging.verbose("request", { bytes, read_response, timeout });
     const item = new Query(Query.TYPE_REQUEST, bytes, read_response, timeout);
     this.#process(item);
     return item.promise;
