@@ -201,8 +201,8 @@ criteria example:
 
   // deliver handles the communication with the Spectoda network in a way
   // that the command is guaranteed to arrive
-  deliver(payload) {
-    logging.verbose(`deliver(payload=${payload})`);
+  deliver(payload, timeout = 5000) {
+    logging.verbose(`deliver(payload=${payload}, timeout=${timeout})`);
 
     return new Promise(async (resolve, reject) => {
       if (!this.#connected) {
@@ -221,8 +221,8 @@ criteria example:
 
   // transmit handles the communication with the Spectoda network in a way
   // that the command is NOT guaranteed to arrive
-  transmit(payload) {
-    logging.verbose(`transmit(payload=${payload})`);
+  transmit(payload, timeout = 5000) {
+    logging.verbose(`transmit(payload=${payload}, timeout=${timeout})`);
 
     return new Promise(async (resolve, reject) => {
       if (!this.#connected) {
@@ -241,8 +241,8 @@ criteria example:
 
   // request handles the requests on the Spectoda network. The command request
   // is guaranteed to get a response
-  request(payload, read_response = true) {
-    logging.verbose(`request(payload=${payload}, read_response=${read_response ? "true" : "false"})`);
+  request(payload, read_response = true, timeout = 5000) {
+    logging.verbose(`request(payload=${payload}, read_response=${read_response ? "true" : "false"}, timeout=${timeout})`);
 
     const ERROR_CODE_SUCCESS = 0;
     const DUMMY_MACS = [0x111111111111, 0x222222222222, 0x333333333333, 0x444444444444, 0x555555555555, 0x666666666666, 0x777777777777, 0x888888888888];

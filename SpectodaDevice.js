@@ -1049,10 +1049,9 @@ export class SpectodaDevice {
     this.interface.requestWakeLock();
 
     return new Promise(async (resolve, reject) => {
-      // const chunk_size = 3984; // must be modulo 16
+      const chunk_size = detectAndroid() ? 480 : 3984; // must be modulo 16
       // const chunk_size = 992; // must be modulo 16
       // const chunk_size = 496;
-      const chunk_size = 400;
 
       let index_from = 0;
       let index_to = chunk_size;

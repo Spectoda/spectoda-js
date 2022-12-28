@@ -3,6 +3,7 @@ import { sleep, stringToBytes, toBytes, getClockTimestamp } from "./functions.js
 import { TimeTrack } from "./TimeTrack.js";
 import { io } from "./lib/socketio.js";
 import { nanoid } from "nanoid";
+import { resolve } from "path";
 
 // const WEBSOCKET_URL = "https://tangle-remote-control.glitch.me/"
 export const WEBSOCKET_URL = "https://ws.host.spectoda.com/";
@@ -47,44 +48,63 @@ export class SpectodaWebSocketsConnector {
   connect(timeout) {
     if (this.#selected) {
       if (!this.#connected) {
-        this.#connected = true;
 
-        if (!this.socket) {
-          this.socket = io(WEBSOCKET_URL, { transports: ["websocket"] });
-          window.wssocket = this.socket;
+        const timetou_handle = setTimeout(() => {
+          console.error("WebSockets timeout");
+          reject("ConnectionFailed");
+        }, timeout * 1.5);
+        
+        return new Promise((resolve, reject) => {
+          if (!this.socket) {
+            this.socket = io(WEBSOCKET_URL, { transports: ["websocket"] });
+            window.wssocket = this.socket;
 
-          logging.debug(this.socket);
+            logging.debug(this.socket);
 
-          this.socket.on("connect", socket => {
-            logging.debug("connected");
+            this.socket.on("connect", socket => {
+              logging.debug("> Connected to remote control");
 
-            logging.debug("> Connected to remote control");
+              // socket.join("sans-souci");
 
-            // socket.join("sans-souci");
+              this.#connected = true;
 
-            this.#interfaceReference.emit("#connected");
-          });
+              this.#interfaceReference.emit("#connected");
 
-          this.socket.on("disconnect", () => {
-            logging.debug("> Disconnected from remote control");
+              clearTimeout(timetou_handle);
+              resolve({ connector: this.type });
+            });
 
-            this.#connected = false;
+            this.socket.on("disconnect", () => {
+              logging.debug("> Disconnected from remote control");
 
-            this.#interfaceReference.emit("#disconnected");
-          });
+              this.#connected = false;
 
-          this.socket.on("connect_error", error => {
-            logging.debug("connect_error", error);
-            setTimeout(() => {
-              this.socket.connect();
-            }, 1000);
-          });
-        } else {
-          this.socket.connect();
-        }
+              this.#interfaceReference.emit("#disconnected");
+
+              clearTimeout(timetou_handle);
+              reject("ConnectionFailed");
+            });
+
+            this.socket.on("connect_error", error => {
+              logging.error(error);
+
+              this.#connected = false;
+
+              clearTimeout(timetou_handle);
+              reject("ConnectionFailed");
+
+              // setTimeout(() => {
+              //   this.socket.connect();
+              // }, 1000);
+            });
+          } else {
+            this.socket.connect();
+          }
+
+        });
+      } else {
+        return Promise.resolve({ connector: this.type });
       }
-
-      return Promise.resolve({ connector: this.type });
     } else {
       return Promise.reject("NotSelected");
     }
@@ -106,7 +126,7 @@ export class SpectodaWebSocketsConnector {
     }
   }
 
-  deliver(payload) {
+  deliver(payload, timeout = 5000) {
     if (this.#connected) {
       const reqId = nanoid();
       // console.log("Emit deliver", reqId, payload);
@@ -114,13 +134,13 @@ export class SpectodaWebSocketsConnector {
       this.socket.emit("deliver", reqId, payload);
       const socket = this.socket;
       this.#promise = new Promise((resolve, reject) => {
-        const timeout = setTimeout(() => rejectFunc(reqId, "timeout"), 5000);
+        const timeout_handle = setTimeout(() => rejectFunc(reqId, "timeout"), timeout);
 
         function resolveFunc(reqId, response) {
           if (reqId === reqId) {
             resolve(response);
             socket.off("response_error", rejectFunc);
-            clearTimeout(timeout);
+            clearTimeout(timeout_handle);
           }
         }
 
@@ -128,7 +148,7 @@ export class SpectodaWebSocketsConnector {
           if (reqId === reqId) {
             reject(error);
             socket.off("response_success", resolveFunc);
-            clearTimeout(timeout);
+            clearTimeout(timeout_handle);
           }
         }
 
@@ -142,7 +162,7 @@ export class SpectodaWebSocketsConnector {
     }
   }
 
-  transmit(payload) {
+  transmit(payload, timeout = 5000) {
     if (this.#connected) {
       const reqId = nanoid();
 
@@ -152,13 +172,13 @@ export class SpectodaWebSocketsConnector {
       const socket = this.socket;
 
       this.#promise = new Promise((resolve, reject) => {
-        const timeout = setTimeout(() => rejectFunc(reqId, "timeout"), 5000);
+        const timeout_handle = setTimeout(() => rejectFunc(reqId, "timeout"), timeout);
 
         function resolveFunc(reqId, response) {
           if (reqId === reqId) {
             resolve(response);
             socket.off("response_error", rejectFunc);
-            clearTimeout(timeout);
+            clearTimeout(timeout_handle);
           }
         }
 
@@ -166,7 +186,7 @@ export class SpectodaWebSocketsConnector {
           if (reqId === reqId) {
             reject(error);
             socket.off("response_success", resolveFunc);
-            clearTimeout(timeout);
+            clearTimeout(timeout_handle);
           }
         }
 
@@ -180,7 +200,7 @@ export class SpectodaWebSocketsConnector {
     }
   }
 
-  request(payload, read_response = true) {
+  request(payload, read_response = true, timeout = 5000) {
     if (this.#connected) {
       const reqId = nanoid();
       // console.log("Emit request", reqId, payload, read_response);
@@ -189,7 +209,7 @@ export class SpectodaWebSocketsConnector {
       const socket = this.socket;
 
       this.#promise = new Promise((resolve, reject) => {
-        const timeout = setTimeout(() => rejectFunc(reqId, "timeout"), 5000);
+        const timeout_handle = setTimeout(() => rejectFunc(reqId, "timeout"), timeout);
 
         function resolveFunc(reqId, response) {
           // console.log(reqId, new DataView(new Uint8Array(response).buffer));
@@ -197,7 +217,7 @@ export class SpectodaWebSocketsConnector {
           if (reqId === reqId) {
             resolve(new DataView(new Uint8Array(response).buffer));
             socket.off("response_error", rejectFunc);
-            clearTimeout(timeout);
+            clearTimeout(timeout_handle);
           }
         }
 
@@ -207,7 +227,7 @@ export class SpectodaWebSocketsConnector {
           if (reqId === reqId) {
             reject(error);
             socket.off("response_success", resolveFunc);
-            clearTimeout(timeout);
+            clearTimeout(timeout_handle);
           }
         }
 

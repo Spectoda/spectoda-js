@@ -217,7 +217,7 @@ export class WebBLEConnection {
   // returns promise that resolves when message is physically send, but you
   // dont need to wait for it to resolve, and spam deliver() as you please.
   // transmering queue will handle it
-  deliver(payload) {
+  deliver(payload, timeout) {
     if (!this.#networkChar) {
       logging.warn("Network characteristics is null");
       return Promise.reject("DeliverFailed");
@@ -243,7 +243,7 @@ export class WebBLEConnection {
   // transmit() tryes to transmit data NOW. ASAP. It will fail,
   // if deliver or another transmit is being executed at the moment
   // returns promise that will be resolved when message is physically send (only transmittion, not receive)
-  transmit(payload) {
+  transmit(payload, timeout) {
     if (!this.#networkChar) {
       logging.warn("Network characteristics is null");
       return Promise.reject("TransmitFailed");
@@ -268,7 +268,7 @@ export class WebBLEConnection {
 
   // request first writes the request to the Device Characteristics
   // and then reads the response also from the Device Characteristics
-  request(payload, read_response) {
+  request(payload, read_response, timeout) {
     if (!this.#deviceChar) {
       logging.warn("Device characteristics is null");
       return Promise.reject("RequestFailed");
@@ -932,32 +932,32 @@ criteria example:
 
   // deliver handles the communication with the Spectoda network in a way
   // that the command is guaranteed to arrive
-  deliver(payload) {
+  deliver(payload, timeout = 5000) {
     if (!this.#connected()) {
       return Promise.reject("DeviceDisconnected");
     }
 
-    return this.#connection.deliver(payload);
+    return this.#connection.deliver(payload, timeout);
   }
 
   // transmit handles the communication with the Spectoda network in a way
   // that the command is NOT guaranteed to arrive
-  transmit(payload) {
+  transmit(payload, timeout = 5000) {
     if (!this.#connected()) {
       return Promise.reject("DeviceDisconnected");
     }
 
-    return this.#connection.transmit(payload);
+    return this.#connection.transmit(payload, timeout);
   }
 
   // request handles the requests on the Spectoda network. The command request
   // is guaranteed to get a response
-  request(payload, read_response = true) {
+  request(payload, read_response = true, timeout = 5000) {
     if (!this.#connected()) {
       return Promise.reject("DeviceDisconnected");
     }
 
-    return this.#connection.request(payload, read_response);
+    return this.#connection.request(payload, read_response, timeout);
   }
 
   // synchronizes the device internal clock with the provided TimeTrack clock

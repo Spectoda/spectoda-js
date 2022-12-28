@@ -725,20 +725,23 @@ export class SpectodaInterface {
     // return this.connector.connected();
   }
 
-  deliver(bytes) {
-    const item = new Query(Query.TYPE_DELIVER, bytes);
+  deliver(bytes, timeout) {
+    logging.debug("deliver", { bytes, timeout });
+    const item = new Query(Query.TYPE_DELIVER, bytes, timeout);
     this.#process(item);
     return item.promise;
   }
 
-  transmit(bytes) {
-    const item = new Query(Query.TYPE_TRANSMIT, bytes);
+  transmit(bytes, timeout) {
+    logging.debug("transmit", { bytes, timeout });
+    const item = new Query(Query.TYPE_TRANSMIT, bytes, timeout);
     this.#process(item);
     return item.promise;
   }
 
-  execute(bytes, bytes_label) {
-    const item = new Query(Query.TYPE_EXECUTE, bytes, bytes_label);
+  execute(bytes, bytes_label, timeout) {
+    logging.debug("execute", { bytes, bytes_label, timeout });
+    const item = new Query(Query.TYPE_EXECUTE, bytes, bytes_label, timeout);
 
     // there must only by one item in the queue with given label
     // this is used to send only the most recent item.
@@ -759,9 +762,9 @@ export class SpectodaInterface {
     return item.promise;
   }
 
-  request(bytes, read_response) {
-    console.log({ bytes, read_response });
-    const item = new Query(Query.TYPE_REQUEST, bytes, read_response);
+  request(bytes, read_response, timeout) {
+    logging.debug("request", { bytes, read_response, timeout });
+    const item = new Query(Query.TYPE_REQUEST, bytes, read_response, timeout);
     this.#process(item);
     return item.promise;
   }
@@ -976,7 +979,7 @@ export class SpectodaInterface {
 
               case Query.TYPE_DELIVER:
                 await this.connector
-                  .deliver(item.a)
+                  .deliver(item.a, item.b)
                   .then(() => {
                     this.process(new DataView(new Uint8Array(item.a).buffer));
                     item.resolve();
@@ -989,7 +992,7 @@ export class SpectodaInterface {
 
               case Query.TYPE_TRANSMIT:
                 await this.connector
-                  .transmit(item.a)
+                  .transmit(item.a, item.b)
                   .then(() => {
                     this.process(new DataView(new Uint8Array(item.a).buffer));
                     item.resolve();
@@ -1026,7 +1029,7 @@ export class SpectodaInterface {
                 const data = payload.slice(0, index);
 
                 await this.connector
-                  .deliver(data)
+                  .deliver(data, item.b)
                   .then(() => {
                     this.process(new DataView(data.buffer));
                     item.resolve();
@@ -1039,7 +1042,7 @@ export class SpectodaInterface {
 
               case Query.TYPE_REQUEST:
                 await this.connector
-                  .request(item.a, item.b)
+                  .request(item.a, item.b, item.c)
                   .then(response => {
                     item.resolve(response);
                   })

@@ -420,7 +420,7 @@ criteria example:
   //   CLOCK_WRITE = 3
   // };
 
-  #initiate(initiate_code, payload, tries) {
+  #initiate(initiate_code, payload, tries, timeout) {
     if (!tries) {
       return Promise.reject("WriteFailed");
     }
@@ -430,7 +430,13 @@ criteria example:
     }
 
     const header_writer = new TnglWriter(32);
-    const timeout = 25 + payload.length / this.#divisor;
+    const timeout_min = (25 + payload.length / this.#divisor) * 4;
+
+    if (timeout < timeout_min) {
+      timeout = timeout_min;
+    }
+
+    logging.debug(`timeout=${timeout}`);
 
     header_writer.writeUint32(initiate_code);
     header_writer.writeUint32(payload.length);
@@ -441,19 +447,15 @@ criteria example:
     this.#transmitStreamWriter = this.#transmitStream.getWriter();
 
     return new Promise((resolve, reject) => {
-      const timeout_handle = setTimeout(
-        () => {
-          logging.error("ResponseTimeout");
-          this.#feedbackCallback = null;
-          if (this.#transmitStreamWriter) {
-            this.#transmitStreamWriter.releaseLock();
-          }
-          this.disconnect();
-          reject("ResponseTimeout");
-        },
-        timeout < 5000 ? 20000 : timeout * 4,
-        // 60000
-      );
+      const timeout_handle = setTimeout(() => {
+        logging.error("ResponseTimeout");
+        this.#feedbackCallback = null;
+        if (this.#transmitStreamWriter) {
+          this.#transmitStreamWriter.releaseLock();
+        }
+        this.disconnect();
+        reject("ResponseTimeout");
+      }, timeout);
 
       this.#feedbackCallback = success => {
         this.#feedbackCallback = null;
@@ -472,7 +474,7 @@ criteria example:
             if (this.#transmitStreamWriter) {
               this.#transmitStreamWriter.releaseLock();
             }
-            resolve(this.#initiate(initiate_code, payload, tries - 1));
+            resolve(this.#initiate(initiate_code, payload, tries - 1, 0));
           }, 100);
         }
       };
@@ -490,11 +492,11 @@ criteria example:
     });
   }
 
-  #write(channel_type, payload) {
-    return this.#initiate(this.CODE_WRITE + channel_type, payload, 3);
+  #write(channel_type, payload, timeout) {
+    return this.#initiate(this.CODE_WRITE + channel_type, payload, 3, timeout);
   }
 
-  #read(channel_type) {
+  #read(channel_type, timeout) {
     let response = null;
 
     this.#dataCallback = data => {
@@ -502,15 +504,15 @@ criteria example:
       this.#dataCallback = null;
     };
 
-    return this.#initiate(this.CODE_READ + channel_type, null, 3).then(() => {
+    return this.#initiate(this.CODE_READ + channel_type, null, 3, timeout).then(() => {
       return response;
     });
   }
 
-  #request(channel_type, payload, read_response) {
-    return this.#write(channel_type, payload).then(() => {
+  #request(channel_type, payload, read_response, timeout) {
+    return this.#write(channel_type, payload, timeout).then(() => {
       if (read_response) {
-        return this.#read(channel_type);
+        return this.#read(channel_type, timeout);
       } else {
         return Promise.resolve(null);
       }
@@ -527,7 +529,7 @@ criteria example:
 
   // deliver handles the communication with the Spectoda network in a way
   // that the command is guaranteed to arrive
-  deliver(payload) {
+  deliver(payload, timeout = 5000) {
     // logging.debug(`deliver(payload=${payload})`);
 
     if (!this.#connected) {
@@ -539,12 +541,12 @@ criteria example:
       return Promise.resolve();
     }
 
-    return this.#write(this.CHANNEL_NETWORK, payload);
+    return this.#write(this.CHANNEL_NETWORK, payload, timeout);
   }
 
   // transmit handles the communication with the Spectoda network in a way
   // that the command is NOT guaranteed to arrive
-  transmit(payload) {
+  transmit(payload, timeout = 5000) {
     // logging.debug(`transmit(payload=${payload})`);
 
     if (!this.#connected) {
@@ -556,12 +558,12 @@ criteria example:
       return Promise.resolve();
     }
 
-    return this.#write(this.CHANNEL_NETWORK, payload);
+    return this.#write(this.CHANNEL_NETWORK, payload, timeout);
   }
 
   // request handles the requests on the Spectoda network. The command request
   // is guaranteed to get a response
-  request(payload, read_response = true) {
+  request(payload, read_response = true, timeout = 5000) {
     if (!this.#connected) {
       return Promise.reject("DeviceDisconnected");
       return;
@@ -571,7 +573,7 @@ criteria example:
       return Promise.resolve();
     }
 
-    return this.#request(this.CHANNEL_DEVICE, payload, read_response);
+    return this.#request(this.CHANNEL_DEVICE, payload, read_response, timeout);
   }
 
   // synchronizes the device internal clock with the provided TimeTrack clock
@@ -683,7 +685,7 @@ criteria example:
           logging.debug("OTA BEGIN");
 
           const bytes = [DEVICE_FLAGS.FLAG_OTA_BEGIN, 0x00, ...numberToBytes(firmware.length, 4)];
-          await this.#write(this.CHANNEL_DEVICE, bytes);
+          await this.#write(this.CHANNEL_DEVICE, bytes, 20000);
         }
 
         await sleep(8000); // need to wait 10 seconds to let the ESP erase the flash.

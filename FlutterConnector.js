@@ -1,5 +1,5 @@
 import { logging } from "./Logging.js";
-import { sleep, toBytes, detectSpectodaConnect, numberToBytes } from "./functions.js";
+import { sleep, toBytes, detectSpectodaConnect, numberToBytes, detectAndroid } from "./functions.js";
 import { TimeTrack } from "./TimeTrack.js";
 import { TnglReader } from "./TnglReader.js";
 import { DEVICE_FLAGS, NETWORK_FLAGS, SpectodaInterface } from "./SpectodaInterface.js";
@@ -419,13 +419,13 @@ export class FlutterConnector extends FlutterConnection {
     };
   }
 
-  #applyTimeout(promise, timeout, message) {
+  #applyTimeout(promise, timeout_number, message) {
     let id = setTimeout(() => {
       // @ts-ignore
       // throw(message, "Error: TC response timeouted");
       // @ts-ignore
       window.flutterConnection.reject("ResponseTimeout " + message);
-    }, timeout);
+    }, timeout_number);
     return promise.finally(() => {
       clearTimeout(id);
     });
@@ -514,7 +514,7 @@ criteria example:
   // you can then connect to. This works only for BLE devices that are bond with the phone/PC/tablet
   // the app is running on OR doesnt need to be bonded in a special way.
   // if more devices are found matching the criteria, then the strongest signal wins
-  // if no device is found within the timeout period, then it returns an error
+  // if no device is found within the timeout_number period, then it returns an error
 
   // if no criteria are provided, all Spectoda enabled devices (with all different FWs and Owners and such)
   // are eligible.
@@ -522,7 +522,7 @@ criteria example:
   autoSelect(criteria_object, scan_period_number = 1000, timeout_number = 10000) {
     // step 1. for the scan_period scan the surroundings for BLE devices.
     // step 2. if some devices matching the criteria are found, then select the one with
-    //         the greatest signal strength. If no device is found until the timeout,
+    //         the greatest signal strength. If no device is found until the timeout_number,
     //         then return error
 
     const criteria_json = JSON.stringify(criteria_object);
@@ -580,13 +580,13 @@ criteria example:
 
   /*
   
-  timeout ms 
+  timeout_number ms 
 
   */
   connect(timeout_number = 10000) {
     logging.debug(`connect(timeout=${timeout_number})`);
 
-    if(timeout_number <= 0) {
+    if (timeout_number <= 0) {
       return Promise.reject("ConnectionTimeout");
     }
 
@@ -645,8 +645,8 @@ criteria example:
 
   // deliver handles the communication with the Spectoda network in a way
   // that the command is guaranteed to arrive
-  deliver(payload_bytes) {
-    logging.debug(`deliver(payload=[${payload_bytes}])`);
+  deliver(payload_bytes, timeout_number = 5000) {
+    logging.debug(`deliver(payload=[${payload_bytes}], timeout=${timeout_number})`);
 
     this.#promise = new Promise((resolve, reject) => {
       // @ts-ignore
@@ -656,15 +656,15 @@ criteria example:
     });
 
     // @ts-ignore
-    window.flutter_inappwebview.callHandler("deliver", payload_bytes);
+    window.flutter_inappwebview.callHandler("deliver", payload_bytes, timeout_number);
 
-    return this.#applyTimeout(this.#promise, 10000, "deliver");
+    return this.#applyTimeout(this.#promise, timeout_number * 1.5, "deliver");
   }
 
   // transmit handles the communication with the Spectoda network in a way
   // that the command is NOT guaranteed to arrive
-  transmit(payload_bytes) {
-    logging.debug(`transmit(payload=[${payload_bytes}])`);
+  transmit(payload_bytes, timeout_number = 1000) {
+    logging.debug(`transmit(payload=[${payload_bytes}], timeout=${timeout_number})`);
 
     this.#promise = new Promise((resolve, reject) => {
       // @ts-ignore
@@ -674,15 +674,15 @@ criteria example:
     });
 
     // @ts-ignore
-    window.flutter_inappwebview.callHandler("transmit", payload_bytes);
+    window.flutter_inappwebview.callHandler("transmit", payload_bytes, timeout_number);
 
-    return this.#applyTimeout(this.#promise, 10000, "transmit");
+    return this.#applyTimeout(this.#promise, timeout_number * 1.5, "transmit");
   }
 
   // request handles the requests on the Spectoda network. The command request
   // is guaranteed to get a response
-  request(payload_bytes, read_response = true) {
-    logging.debug(`request(payload=[${payload_bytes}], read_response=${read_response ? "true" : "false"})`);
+  request(payload_bytes, read_response = true, timeout_number = 5000) {
+    logging.debug(`request(payload=[${payload_bytes}], read_response=${read_response ? "true" : "false"}, timeout=${timeout_number})`);
 
     this.#promise = new Promise((resolve, reject) => {
       // @ts-ignore
@@ -694,9 +694,9 @@ criteria example:
     });
 
     // @ts-ignore
-    window.flutter_inappwebview.callHandler("request", payload_bytes, read_response);
+    window.flutter_inappwebview.callHandler("request", payload_bytes, read_response, timeout_number);
 
-    return this.#applyTimeout(this.#promise, 10000, "request");
+    return this.#applyTimeout(this.#promise, timeout_number * 1.5, "request");
   }
 
   // synchronizes the device internal clock with the provided TimeTrack clock
@@ -807,7 +807,7 @@ criteria example:
     this.#interfaceReference.requestWakeLock();
 
     return new Promise(async (resolve, reject) => {
-      const chunk_size = 3984; // must be modulo 16
+      const chunk_size = detectAndroid() ? 480 : 3984; // must be modulo 16
       // const chunk_size = 992; // must be modulo 16
 
       let index_from = 0;
@@ -842,7 +842,7 @@ criteria example:
 
           const device_bytes = [DEVICE_FLAGS.FLAG_OTA_BEGIN, 0x00, ...numberToBytes(firmware_bytes.length, 4)];
           // const network_bytes = [NETWORK_FLAGS.FLAG_CONF_BYTES, ...numberToBytes(device_bytes.length, 4), ...device_bytes];
-          await this.request(device_bytes, false);
+          await this.request(device_bytes, false, 20000);
         }
 
         await sleep(8000);
