@@ -767,18 +767,21 @@ export class SpectodaInterface {
   }
 
   syncClock() {
-    const item = new Query(Query.TYPE_SET_CLOCK, this.clock);
+    const item = new Query(Query.TYPE_GET_CLOCK, this.clock);
 
     for (let i = 0; i < this.#queue.length; i++) {
-      if (this.#queue[i].type === Query.TYPE_SET_CLOCK) {
-        this.#queue[i].reject("Multiple Clock writes");
+      if (this.#queue[i].type === Query.TYPE_GET_CLOCK) {
+        this.#queue[i].reject("MultipleClockReads");
         this.#queue.splice(i, 1);
         break;
       }
     }
 
     this.#process(item);
-    return item.promise;
+    return item.promise.then(clock => {
+      logging.debug(`Clock synchronized at time=${clock.millis()}ms`);
+      this.clock = clock;
+    });
   }
 
   // getClock() {
@@ -786,14 +789,13 @@ export class SpectodaInterface {
 
   //   for (let i = 0; i < this.#queue.length; i++) {
   //     if (this.#queue[i].type === Query.TYPE_GET_CLOCK) {
-  //       this.#queue[i].reject("Multiple Clock Requests");
+  //       this.#queue[i].reject("MultipleClockReads");
   //       this.#queue.splice(i, 1);
   //       break;
   //     }
   //   }
 
   //   this.#process(item);
-
   //   return item.promise;
   // }
 

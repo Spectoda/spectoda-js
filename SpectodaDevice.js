@@ -91,7 +91,7 @@ export class SpectodaDevice {
 
     // auto clock sync loop
     setInterval(() => {
-      if (!this.#updating) {
+      if (!this.#updating && this.interface.connector) {
         this.connected().then(connected => {
           if (connected) {
             this.syncClock().catch(error => {
@@ -100,7 +100,7 @@ export class SpectodaDevice {
           }
         });
       }
-    }, 60000);
+    }, 30000);
   }
 
   requestWakeLock() {
