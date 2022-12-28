@@ -369,7 +369,6 @@ export class SpectodaInterface {
   }
 
   assignConnector(connector_type = "default") {
-
     if (connector_type === null) {
       connector_type = "none";
     }
@@ -516,7 +515,7 @@ export class SpectodaInterface {
     this.#reconection = enable;
   }
 
-  userSelect(criteria, timeout = 60000) {
+  userSelect(criteria, timeout = 600000) {
     // this.#reconection = false;
 
     if (timeout < 1000) {
@@ -563,7 +562,7 @@ export class SpectodaInterface {
     //   });
   }
 
-  autoSelect(criteria, scan_period = 1000, timeout = 10000) {
+  autoSelect(criteria, scan_period = 2000, timeout = 10000) {
     // this.#reconection = false;
 
     if (timeout < 1000) {
@@ -733,21 +732,36 @@ export class SpectodaInterface {
     // return this.connector.connected();
   }
 
-  deliver(bytes, timeout) {
+  deliver(bytes, timeout = 5000) {
+    if (timeout < 100) {
+      logging.error("Timeout is too short.");
+      return Promise.reject("InvalidTimeout");
+    }
+
     logging.verbose("deliver", { bytes, timeout });
     const item = new Query(Query.TYPE_DELIVER, bytes, timeout);
     this.#process(item);
     return item.promise;
   }
 
-  transmit(bytes, timeout) {
+  transmit(bytes, timeout = 1000) {
+    if (timeout < 100) {
+      logging.error("Timeout is too short.");
+      return Promise.reject("InvalidTimeout");
+    }
+
     logging.verbose("transmit", { bytes, timeout });
     const item = new Query(Query.TYPE_TRANSMIT, bytes, timeout);
     this.#process(item);
     return item.promise;
   }
 
-  execute(bytes, bytes_label, timeout) {
+  execute(bytes, bytes_label, timeout = 5000) {
+    if (timeout < 100) {
+      logging.error("Timeout is too short.");
+      return Promise.reject("InvalidTimeout");
+    }
+
     logging.verbose("execute", { bytes, bytes_label, timeout });
     const item = new Query(Query.TYPE_EXECUTE, bytes, bytes_label, timeout);
 
@@ -770,7 +784,12 @@ export class SpectodaInterface {
     return item.promise;
   }
 
-  request(bytes, read_response, timeout) {
+  request(bytes, read_response = true, timeout = 5000) {
+    if (timeout < 100) {
+      logging.error("Timeout is too short.");
+      return Promise.reject("InvalidTimeout");
+    }
+
     logging.verbose("request", { bytes, read_response, timeout });
     const item = new Query(Query.TYPE_REQUEST, bytes, read_response, timeout);
     this.#process(item);
@@ -1014,6 +1033,7 @@ export class SpectodaInterface {
               case Query.TYPE_EXECUTE:
                 let payload = new Uint8Array(0xffff);
                 let index = 0;
+                const timeout = item.c;
 
                 payload.set(item.a, index);
                 index += item.a.length;
@@ -1037,7 +1057,7 @@ export class SpectodaInterface {
                 const data = payload.slice(0, index);
 
                 await this.connector
-                  .deliver(data, item.b)
+                  .deliver(data, timeout)
                   .then(() => {
                     this.process(new DataView(data.buffer));
                     item.resolve();

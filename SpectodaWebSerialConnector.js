@@ -250,7 +250,7 @@ criteria example:
   // if no criteria are provided, all Spectoda enabled devices (with all different FWs and Owners and such)
   // are eligible.
 
-  autoSelect(criteria, scan_period = 1000, timeout = 3000) {
+  autoSelect(criteria, scan_period, timeout) {
     // step 1. for the scan_period scan the surroundings for BLE devices.
     // step 2. if some devices matching the criteria are found, then select the one with
     //         the greatest signal strength. If no device is found until the timeout,
@@ -529,7 +529,7 @@ criteria example:
 
   // deliver handles the communication with the Spectoda network in a way
   // that the command is guaranteed to arrive
-  deliver(payload, timeout = 5000) {
+  deliver(payload, timeout) {
     // logging.debug(`deliver(payload=${payload})`);
 
     if (!this.#connected) {
@@ -546,7 +546,7 @@ criteria example:
 
   // transmit handles the communication with the Spectoda network in a way
   // that the command is NOT guaranteed to arrive
-  transmit(payload, timeout = 5000) {
+  transmit(payload, timeout) {
     // logging.debug(`transmit(payload=${payload})`);
 
     if (!this.#connected) {
@@ -563,7 +563,7 @@ criteria example:
 
   // request handles the requests on the Spectoda network. The command request
   // is guaranteed to get a response
-  request(payload, read_response = true, timeout = 5000) {
+  request(payload, read_response, timeout) {
     if (!this.#connected) {
       return Promise.reject("DeviceDisconnected");
       return;

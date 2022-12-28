@@ -31,7 +31,7 @@ export class SpectodaWebSocketsConnector {
     return Promise.resolve({ connector: this.type });
   }
 
-  autoSelect(criteria, scan_period = 1000, timeout = 3000) {
+  autoSelect(criteria, scan_period, timeout) {
     this.#selected = true;
     return Promise.resolve({ connector: this.type });
   }
@@ -126,7 +126,7 @@ export class SpectodaWebSocketsConnector {
     }
   }
 
-  deliver(payload, timeout = 5000) {
+  deliver(payload, timeout) {
     if (this.#connected) {
       const reqId = nanoid();
       // console.log("Emit deliver", reqId, payload);
@@ -162,7 +162,7 @@ export class SpectodaWebSocketsConnector {
     }
   }
 
-  transmit(payload, timeout = 5000) {
+  transmit(payload, timeout) {
     if (this.#connected) {
       const reqId = nanoid();
 
@@ -200,7 +200,7 @@ export class SpectodaWebSocketsConnector {
     }
   }
 
-  request(payload, read_response = true, timeout = 5000) {
+  request(payload, read_response, timeout) {
     if (this.#connected) {
       const reqId = nanoid();
       // console.log("Emit request", reqId, payload, read_response);

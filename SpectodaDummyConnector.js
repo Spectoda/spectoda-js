@@ -100,7 +100,7 @@ criteria example:
   // if no criteria are provided, all Spectoda enabled devices (with all different FWs and Owners and such)
   // are eligible.
 
-  autoSelect(criteria, scan_period = 1000, timeout = 3000) {
+  autoSelect(criteria, scan_period, timeout) {
     logging.verbose("autoSelect(criteria=", criteria, ", scan_period=", scan_period, "timeout=", timeout, ")");
     // step 1. for the scan_period scan the surroundings for BLE devices.
     // step 2. if some devices matching the criteria are found, then select the one with
@@ -201,7 +201,7 @@ criteria example:
 
   // deliver handles the communication with the Spectoda network in a way
   // that the command is guaranteed to arrive
-  deliver(payload, timeout = 5000) {
+  deliver(payload, timeout) {
     logging.verbose(`deliver(payload=${payload}, timeout=${timeout})`);
 
     return new Promise(async (resolve, reject) => {
@@ -221,7 +221,7 @@ criteria example:
 
   // transmit handles the communication with the Spectoda network in a way
   // that the command is NOT guaranteed to arrive
-  transmit(payload, timeout = 5000) {
+  transmit(payload, timeout) {
     logging.verbose(`transmit(payload=${payload}, timeout=${timeout})`);
 
     return new Promise(async (resolve, reject) => {
@@ -241,7 +241,7 @@ criteria example:
 
   // request handles the requests on the Spectoda network. The command request
   // is guaranteed to get a response
-  request(payload, read_response = true, timeout = 5000) {
+  request(payload, read_response = true, timeout) {
     logging.verbose(`request(payload=${payload}, read_response=${read_response ? "true" : "false"}, timeout=${timeout})`);
 
     const ERROR_CODE_SUCCESS = 0;
