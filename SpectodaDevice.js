@@ -623,8 +623,6 @@ export class SpectodaDevice {
       return Promise.reject("ConnectingInProgress");
     }
 
-    this.#connecting = true;
-
     if (ownerSignature) {
       this.setOwnerSignature(ownerSignature);
     }
@@ -640,6 +638,8 @@ export class SpectodaDevice {
     if (!this.#ownerKey) {
       throw "OwnerKeyNotAssigned";
     }
+
+    this.#connecting = true;
 
     let criteria = /** @type {any} */ ([{ ownerSignature: this.#ownerSignature }]);
 

@@ -45,6 +45,9 @@ export const DEVICE_FLAGS = Object.freeze({
   FLAG_CONFIG_UPDATE_REQUEST: 10,
   FLAG_CONFIG_UPDATE_RESPONSE: 11,
 
+  FLAG_FW_UPDATE_PEER_REQUEST: 216,
+  FLAG_FW_UPDATE_PEER_RESPONSE: 217,
+
   FLAG_SYNC_STATE_REQUEST: 218,
   FLAG_SYNC_STATE_RESPONSE: 219,
 
@@ -842,7 +845,7 @@ export class SpectodaInterface {
             const item = this.#queue.shift();
 
             if (this.connector === null) {
-              throw "Error: ConnectorNotAssigned";
+              //console.error("ConnectorNotAssigned");
               item.reject("ConnectorNotAssigned");
               continue;
             }
