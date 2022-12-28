@@ -181,6 +181,18 @@ export function percentageToBytes(percentage_float) {
   return toBytes(Math.floor(value), 4);
 }
 
+export function strMacToBytes(mac_str) {
+    // Split the string into an array of hexadecimal values
+    var hexValues = mac_str.split(":");
+
+    // Convert each hexadecimal value to a byte
+    var bytes = hexValues.map(function(hex) {
+      return parseInt(hex, 16);
+    });
+  
+    return bytes;
+}
+
 export function numberToBytes(value, byteCount) {
   let number = Math.round(value);
   var byteArray = [];
