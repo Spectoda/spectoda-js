@@ -1062,18 +1062,17 @@ export class SpectodaInterface {
                   });
                 break;
 
-              // case Query.TYPE_GET_CLOCK:
-              //   await this.connector
-              //     .getClock()
-              //     .then(response => {
-              //       item.resolve(response);
-              //     })
-
-              //     .catch(error => {
-              //       //logging.warn(error);
-              //       item.reject(error);
-              //     });
-              //   break;
+              case Query.TYPE_GET_CLOCK:
+                await this.connector
+                  .getClock()
+                  .then(response => {
+                    item.resolve(response);
+                  })
+                  .catch(error => {
+                    //logging.warn(error);
+                    item.reject(error);
+                  });
+                break;
 
               case Query.TYPE_FIRMWARE_UPDATE:
                 try {
