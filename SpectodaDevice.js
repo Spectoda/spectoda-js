@@ -1,5 +1,5 @@
 import { logging, setLoggingLevel } from "./Logging.js";
-import { colorToBytes, computeTnglFingerprint, czechHackyToEnglish, detectSpectodaConnect, getClockTimestamp, hexStringToUint8Array, labelToBytes, numberToBytes, percentageToBytes, sleep, stringToBytes, strMacToBytes } from "./functions.js";
+import { colorToBytes, computeTnglFingerprint, czechHackyToEnglish, detectSpectodaConnect, getClockTimestamp, hexStringToUint8Array, labelToBytes, numberToBytes, percentageToBytes, sleep, stringToBytes, strMacToBytes, detectAndroid } from "./functions.js";
 import { DEVICE_FLAGS, NETWORK_FLAGS, SpectodaInterface } from "./SpectodaInterface.js";
 import { TnglCodeParser } from "./SpectodaParser.js";
 import { TimeTrack } from "./TimeTrack.js";
