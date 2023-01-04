@@ -1089,7 +1089,7 @@ export class SpectodaDevice {
 
           const device_bytes = [DEVICE_FLAGS.FLAG_OTA_BEGIN, 0x00, ...numberToBytes(firmware.length, 4)];
           const network_bytes = [NETWORK_FLAGS.FLAG_CONF_BYTES, ...numberToBytes(device_bytes.length, 4), ...device_bytes];
-          await this.interface.execute(network_bytes, null);
+          await this.interface.execute(network_bytes, null, 20000);
         }
 
         await sleep(8000);
