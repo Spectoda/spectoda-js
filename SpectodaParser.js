@@ -37,8 +37,8 @@ const TNGL_FLAGS = Object.freeze({
 
   /* sifters */
   SIFTER_DEVICE: 13,
-  SIFTER_TANGLE: 14,
-  SIFTER_GROUP: 15,
+  SIFTER_SEGMENT: 14,
+  SIFTER_CANVAS: 15,
 
   /* event handlers */
   INTERACTIVE: 16,
@@ -51,11 +51,11 @@ const TNGL_FLAGS = Object.freeze({
 
   /* definitions global */
   DEFINE_DEVICE: 24,
-  DEFINE_TANGLE: 25,
-  DEFINE_GROUP: 26,
+  DEFINE_SEGMENT: 25,
+  DEFINE_CANVAS: 26,
   DEFINE_MARKS: 27,
-  DEFINE_ANIMATION: 28,
   DEFINE_EMITTER: 28,
+  DEFINE_ANIMATION: 29,
 
   // ======================
 
@@ -109,11 +109,12 @@ const TNGL_FLAGS = Object.freeze({
 
   /* objects */
   DEVICE: 176,
-  TANGLE: 177,
+  SEGMENT: 177,
   SLICE: 178,
   PORT: 179,
-  GROUP: 180,
+  CANVAS: 180,
   MARKS: 181,
+  ID: 182,
 
   /* events */
   EVENT_SET_VALUE: 184,
@@ -474,7 +475,7 @@ export class TnglCompiler {
         break;
 
       // === animations ===
-      case "animDefined":
+      case "animation":
         this.#tnglWriter.writeFlag(TNGL_FLAGS.ANIMATION_DEFINED);
         break;
       case "animNone":
@@ -531,11 +532,11 @@ export class TnglCompiler {
       case "defDevice":
         this.#tnglWriter.writeFlag(TNGL_FLAGS.DEFINE_DEVICE);
         break;
-      case "defSpectoda":
-        this.#tnglWriter.writeFlag(TNGL_FLAGS.DEFINE_TANGLE);
+      case "defSegment":
+        this.#tnglWriter.writeFlag(TNGL_FLAGS.DEFINE_SEGMENT);
         break;
-      case "defGroup":
-        this.#tnglWriter.writeFlag(TNGL_FLAGS.DEFINE_GROUP);
+      case "defCanvas":
+        this.#tnglWriter.writeFlag(TNGL_FLAGS.DEFINE_CANVAS);
         break;
       case "defMarks":
         this.#tnglWriter.writeFlag(TNGL_FLAGS.DEFINE_MARKS);
@@ -545,22 +546,22 @@ export class TnglCompiler {
         break;
 
       // === sifters ===
-      case "siftDevices":
-        this.#tnglWriter.writeFlag(TNGL_FLAGS.SIFTER_DEVICE);
+      // case "siftDevices":
+      //   this.#tnglWriter.writeFlag(TNGL_FLAGS.SIFTER_DEVICE);
+      //   break;
+      case "siftSegments":
+        this.#tnglWriter.writeFlag(TNGL_FLAGS.SIFTER_SEGMENT);
         break;
-      case "siftSpectodas":
-        this.#tnglWriter.writeFlag(TNGL_FLAGS.SIFTER_TANGLE);
-        break;
-      case "siftGroups":
-        this.#tnglWriter.writeFlag(TNGL_FLAGS.SIFTER_GROUP);
+      case "siftCanvases":
+        this.#tnglWriter.writeFlag(TNGL_FLAGS.SIFTER_CANVAS);
         break;
 
       // === objects ===
       case "device":
         this.#tnglWriter.writeFlag(TNGL_FLAGS.DEVICE);
         break;
-      case "tangle":
-        this.#tnglWriter.writeFlag(TNGL_FLAGS.TANGLE);
+      case "segment":
+        this.#tnglWriter.writeFlag(TNGL_FLAGS.SEGMENT);
         break;
       case "slice":
         this.#tnglWriter.writeFlag(TNGL_FLAGS.SLICE);
@@ -568,11 +569,14 @@ export class TnglCompiler {
       case "port":
         this.#tnglWriter.writeFlag(TNGL_FLAGS.PORT);
         break;
-      case "group":
-        this.#tnglWriter.writeFlag(TNGL_FLAGS.GROUP);
+      case "canvas":
+        this.#tnglWriter.writeFlag(TNGL_FLAGS.CANVAS);
         break;
       case "marks":
         this.#tnglWriter.writeFlag(TNGL_FLAGS.MARKS);
+        break;
+      case "id":
+        this.#tnglWriter.writeFlag(TNGL_FLAGS.ID);
         break;
 
       // === modifiers ===
