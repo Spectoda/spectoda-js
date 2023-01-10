@@ -31,7 +31,6 @@ import "./TnglWriter.js";
 import { TnglReader } from "./TnglReader.js";
 import { FlutterConnector } from "./FlutterConnector.js";
 import { t } from "./i18n.js";
-import { isUndefined } from "util";
 
 export const DEVICE_FLAGS = Object.freeze({
   // legacy FW update flags
