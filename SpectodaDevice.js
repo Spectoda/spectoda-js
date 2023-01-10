@@ -618,7 +618,7 @@ export class SpectodaDevice {
 
   // devices: [ {name:"Lampa 1", mac:"12:34:56:78:9a:bc"}, {name:"Lampa 2", mac:"12:34:56:78:9a:bc"} ]
 
-  connect(devices = null, autoConnect = true, ownerSignature = null, ownerKey = null, connectAny = false) {
+  connect(devices = null, autoConnect = true, ownerSignature = null, ownerKey = null, connectAny = false, fwVersion=null) {
     if (this.#connecting) {
       return Promise.reject("ConnectingInProgress");
     }
@@ -670,6 +670,12 @@ export class SpectodaDevice {
         criteria = [{}];
       } else {
         criteria = [{}, { adoptionFlag: true }, { legacy: true }];
+      }
+    }
+
+    if (fwVersion) {
+      for (let i = 0; i < criteria.length; i++) {
+        criteria[i].fwVersion = fwVersion;
       }
     }
 
