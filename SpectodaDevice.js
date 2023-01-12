@@ -1,5 +1,19 @@
 import { logging, setLoggingLevel } from "./Logging.js";
-import { colorToBytes, computeTnglFingerprint, czechHackyToEnglish, detectSpectodaConnect, getClockTimestamp, hexStringToUint8Array, labelToBytes, numberToBytes, percentageToBytes, sleep, stringToBytes, strMacToBytes, detectAndroid } from "./functions.js";
+import {
+  colorToBytes,
+  computeTnglFingerprint,
+  czechHackyToEnglish,
+  detectSpectodaConnect,
+  getClockTimestamp,
+  hexStringToUint8Array,
+  labelToBytes,
+  numberToBytes,
+  percentageToBytes,
+  sleep,
+  stringToBytes,
+  strMacToBytes,
+  detectAndroid,
+} from "./functions.js";
 import { DEVICE_FLAGS, NETWORK_FLAGS, SpectodaInterface } from "./SpectodaInterface.js";
 import { TnglCodeParser } from "./SpectodaParser.js";
 import { TimeTrack } from "./TimeTrack.js";
@@ -622,7 +636,7 @@ export class SpectodaDevice {
 
   // devices: [ {name:"Lampa 1", mac:"12:34:56:78:9a:bc"}, {name:"Lampa 2", mac:"12:34:56:78:9a:bc"} ]
 
-  connect(devices = null, autoConnect = true, ownerSignature = null, ownerKey = null, connectAny = false, fwVersion="0.8.6") {
+  connect(devices = null, autoConnect = true, ownerSignature = null, ownerKey = null, connectAny = false, fwVersion = "") {
     if (this.#connecting) {
       return Promise.reject("ConnectingInProgress");
     }

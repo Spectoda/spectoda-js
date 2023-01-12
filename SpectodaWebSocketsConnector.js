@@ -3,7 +3,6 @@ import { sleep, stringToBytes, toBytes, getClockTimestamp } from "./functions.js
 import { TimeTrack } from "./TimeTrack.js";
 import { io } from "./lib/socketio.js";
 import { nanoid } from "nanoid";
-import { resolve } from "path";
 
 // const WEBSOCKET_URL = "https://tangle-remote-control.glitch.me/"
 export const WEBSOCKET_URL = "https://ws.host.spectoda.com/";
@@ -53,12 +52,11 @@ export class SpectodaWebSocketsConnector {
   connect(timeout) {
     if (this.#selected) {
       if (!this.#connected) {
-
         const timetou_handle = setTimeout(() => {
           console.error("WebSockets timeout");
           reject("ConnectionFailed");
         }, timeout * 1.5);
-        
+
         return new Promise((resolve, reject) => {
           if (!this.socket) {
             this.socket = io(WEBSOCKET_URL, { transports: ["websocket"] });
@@ -105,7 +103,6 @@ export class SpectodaWebSocketsConnector {
           } else {
             this.socket.connect();
           }
-
         });
       } else {
         return Promise.resolve({ connector: this.type });
