@@ -146,6 +146,11 @@ criteria example:
     });
   }
 
+  scan(criteria, scan_period) {
+    // returns devices like autoSelect scan() function
+    return Promise.resolve("{}");
+  }
+
   connect(timeout) {
     logging.verbose(`connect(timeout=${timeout})`);
 

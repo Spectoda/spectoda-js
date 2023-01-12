@@ -178,6 +178,25 @@ class FlutterConnection {
             }
             break;
 
+          case "scan": // params: (criteria_json, scan_period_number)
+            {
+              if (_connected) {
+                // @ts-ignore
+                await window.flutter_inappwebview.callHandler("disconnect"); // handle disconnection inside the flutter app
+              }
+              await sleep(Math.random() * 5000); // do the autoSelect task filtering devices by the criteria_json parameter and scanning minimum time scan_period_number, maximum timeout_number
+              if (_fail(0.1)) {
+                // @ts-ignore
+                window.flutterConnection.reject("SelectionFailed"); // if the selection fails, return "SelectionFailed"
+                return;
+              }
+              _selected = true;
+              // @ts-ignore
+              window.flutterConnection.resolve('{"connector":"spectodaconnect"}'); // resolve with json containing the information about the connected device
+            }
+            break;
+
+
           case "connect":
             {
               // params: (timeout_number)
@@ -576,6 +595,32 @@ criteria example:
     window.flutter_inappwebview.callHandler("unselect");
 
     return this.#applyTimeout(this.#promise, 1000, "unselect");
+  }
+
+  // takes the criteria, scans for scan_period and returns the scanning results
+  // if no criteria are provided, all Spectoda enabled devices (with all different FWs and Owners and such)
+  // are eligible.
+
+  scan(criteria_object, scan_period_number = 5000) {
+    // step 1. for the scan_period scan the surroundings for BLE devices.
+
+    const criteria_json = JSON.stringify(criteria_object);
+
+    logging.debug(`scan(criteria=${criteria_json}, scan_period=${scan_period_number})`);
+
+    this.#promise = new Promise((resolve, reject) => {
+      // @ts-ignore
+      window.flutterConnection.resolve = function (j) {
+        resolve(j ? JSON.parse(j) : null);
+      };
+      // @ts-ignore
+      window.flutterConnection.reject = reject;
+    });
+
+    // @ts-ignore
+    window.flutter_inappwebview.callHandler("scan", criteria_json, scan_period_number);
+
+    return this.#applyTimeout(this.#promise, scan_period_number * 2.0, "scan");
   }
 
   /*

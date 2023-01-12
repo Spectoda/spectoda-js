@@ -275,6 +275,11 @@ criteria example:
     return Promise.resolve();
   }
 
+  scan(criteria, scan_period) {
+    // returns devices like autoSelect scan() function
+    return Promise.resolve("{}");
+  }
+
   connect(timeout = 15000) {
     if (timeout <= 0) {
       logging.debug("> Connect timeout have expired");

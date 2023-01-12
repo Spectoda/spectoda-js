@@ -337,6 +337,10 @@ export class SpectodaDevice {
   //   });
   // }
 
+  scan(scan_period = 5000) {
+    return this.interface.scan([{}], scan_period);
+  }
+
   adopt(newDeviceName = null, newDeviceId = null, tnglCode = null, ownerSignature = null, ownerKey = null, autoSelect = false) {
     if (this.#adoptingGuard) {
       return Promise.reject("AdoptingInProgress");
@@ -618,7 +622,7 @@ export class SpectodaDevice {
 
   // devices: [ {name:"Lampa 1", mac:"12:34:56:78:9a:bc"}, {name:"Lampa 2", mac:"12:34:56:78:9a:bc"} ]
 
-  connect(devices = null, autoConnect = true, ownerSignature = null, ownerKey = null, connectAny = false, fwVersion=null) {
+  connect(devices = null, autoConnect = true, ownerSignature = null, ownerKey = null, connectAny = false, fwVersion="0.8.6") {
     if (this.#connecting) {
       return Promise.reject("ConnectingInProgress");
     }

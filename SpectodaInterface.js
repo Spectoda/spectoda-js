@@ -135,6 +135,7 @@ class Query {
   static TYPE_AUTOSELECT = 5;
   static TYPE_SELECTED = 6;
   static TYPE_UNSELECT = 7;
+  static TYPE_SCAN = 16;
   static TYPE_CONNECT = 8;
   static TYPE_CONNECTED = 9;
   static TYPE_DISCONNECT = 10;
@@ -629,6 +630,33 @@ export class SpectodaInterface {
     // return this.connector.selected();
   }
 
+  scan(criteria, scan_period = 5000) {
+    // this.#reconection = false;
+
+    if (scan_period < 1000) {
+      logging.error("Scan period is too short.");
+      return Promise.reject("InvalidScanPeriod");
+    }
+
+    if (this.#selecting) {
+      return Promise.reject("SelectingInProgress");
+    }
+
+    this.#selecting = true;
+
+    if (criteria === null) {
+      criteria = [];
+    } else if (!Array.isArray(criteria)) {
+      criteria = [criteria];
+    }
+
+    const item = new Query(Query.TYPE_SCAN, criteria, scan_period);
+    this.#process(item);
+    return item.promise.finally(() => {
+      this.#selecting = false;
+    });
+  }
+
   connect(timeout = 10000, supportLegacy = false) {
     if (timeout < 1000) {
       logging.error("Timeout is too short.");
@@ -933,6 +961,18 @@ export class SpectodaInterface {
                     item.reject(error);
                   });
                 break;
+
+              case Query.TYPE_SCAN:
+                  await this.connector
+                    .scan(item.a, item.b) // criteria, scan_period
+                    .then(device => {
+                      item.resolve(device);
+                    })
+                    .catch(error => {
+                      //logging.warn(error);
+                      item.reject(error);
+                    });
+                  break;
 
               case Query.TYPE_CONNECT:
                 this.#reconection = true;

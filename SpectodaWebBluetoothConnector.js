@@ -811,6 +811,12 @@ criteria example:
     return Promise.resolve(this.#selected() ? { connector: this.type } : null);
   }
 
+  scan(criteria, scan_period) {
+    // returns devices like autoSelect scan() function
+    return Promise.resolve("{}");
+
+  }
+
   // connect Connector to the selected Spectoda Device. Also can be used to reconnect.
   // Fails if no device is selected
   connect(timeout = 10000) {
