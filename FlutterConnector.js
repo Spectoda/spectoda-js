@@ -688,7 +688,7 @@ criteria example:
     return this.#applyTimeout(this.#promise, 1000, "connected");
   }
 
-  // deliver handles the communication with the Spectoda network in a way
+  // deliver handles the communication with the Spectoda Controller in a way
   // that the command is guaranteed to arrive
   deliver(payload_bytes, timeout_number = 5000) {
     logging.debug(`deliver(payload=[${payload_bytes}], timeout=${timeout_number})`);
@@ -706,8 +706,8 @@ criteria example:
     return this.#applyTimeout(this.#promise, timeout_number * 1.5, "deliver");
   }
 
-  // transmit handles the communication with the Spectoda network in a way
-  // that the command is NOT guaranteed to arrive
+  // transmit handles the communication with the Spectoda Controller in a way
+  // that the paylaod is NOT guaranteed to arrive
   transmit(payload_bytes, timeout_number = 1000) {
     logging.debug(`transmit(payload=[${payload_bytes}], timeout=${timeout_number})`);
 
@@ -724,7 +724,7 @@ criteria example:
     return this.#applyTimeout(this.#promise, timeout_number * 1.5, "transmit");
   }
 
-  // request handles the requests on the Spectoda network. The command request
+  // request handles the requests on the Spectoda Controller. The payload request
   // is guaranteed to get a response
   request(payload_bytes, read_response = true, timeout_number = 5000) {
     logging.debug(`request(payload=[${payload_bytes}], read_response=${read_response ? "true" : "false"}, timeout=${timeout_number})`);
