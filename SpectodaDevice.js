@@ -9,7 +9,6 @@ import "./TnglWriter.js";
 import { io } from "./lib/socketio.js";
 import { t, changeLanguage } from "./i18n.js";
 import { WEBSOCKET_URL } from "./SpectodaWebSocketsConnector.js";
-import { spectodaDevice } from "lib/utils/communication.jsx";
 
 let lastEvents = {};
 /////////////////////////////////////////////////////////////////////////
@@ -1271,10 +1270,10 @@ export class SpectodaDevice {
 
       if (timeline_paused) {
         this.timeline.setState(timeline_timestamp, true);
-        spectodaDevice.interface.emit("timeline_paused", timeline_timestamp);
+        this.interface.emit("timeline_paused", timeline_timestamp);
       } else {
         this.timeline.setState(timeline_timestamp + (this.interface.clock.millis() - clock_timestamp), false);
-        spectodaDevice.interface.emit("timeline_unpaused", timeline_timestamp + (this.interface.clock.millis() - clock_timestamp));
+        this.interface.emit("timeline_unpaused", timeline_timestamp + (this.interface.clock.millis() - clock_timestamp));
       }
     });
   }
