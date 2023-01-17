@@ -1272,12 +1272,14 @@ export class SpectodaInterface {
             if (timeline_paused) {
               this.#deviceReference.timeline.pause();
               this.#deviceReference.timeline.setMillis(timeline_timestamp);
+              this.emit("timeline_paused", timeline_timestamp);
             } else {
               const time_delta = this.clock.millis() - clock_timestamp;
               const current_timeline_timestamp = timeline_timestamp + time_delta;
 
               this.#deviceReference.timeline.unpause();
               this.#deviceReference.timeline.setMillis(current_timeline_timestamp);
+              this.emit("timeline_unpaused", current_timeline_timestamp);
             }
           }
           break;
