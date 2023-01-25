@@ -1496,12 +1496,15 @@ export class TangleDevice {
 
       if (timeline_paused) {
         this.timeline.setState(timeline_timestamp, true);
+        this.interface.emit("timeline_paused", timeline_timestamp);
       } else {
+        const current_timeline_timestamp =           timeline_timestamp +
+        (this.interface.clock.millis() - clock_timestamp);
         this.timeline.setState(
-          timeline_timestamp +
-          (this.interface.clock.millis() - clock_timestamp),
+          current_timeline_timestamp,
           false
         );
+        this.interface.emit("timeline_unpaused", current_timeline_timestamp);
       }
     });
   }
