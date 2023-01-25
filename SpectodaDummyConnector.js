@@ -315,7 +315,7 @@ criteria example:
 
             // {
             //     if (!unit::writeConfig(config_bytes, config_size)) {
-            //         error_code = DeviceErrorCode::CONFIG_UPDATE_FAIL;
+            //         error_code = RequestErrorCode::CONFIG_UPDATE_FAIL;
             //     }
             // }
 
@@ -368,7 +368,7 @@ criteria example:
             // uint8_t fingerprint[32];
 
             // if (!spectoda::getTnglFingerprint(fingerprint)) {
-            //     error_code = DeviceErrorCode::NO_TNGL_CODE_STORED;
+            //     error_code = RequestErrorCode::NO_TNGL_CODE_STORED;
             // }
 
             // log_d("error_code=%u", error_code);
@@ -401,7 +401,7 @@ criteria example:
             // if (unit::eraseOwner()) {
             //     bluetooth::rebootOnDisconnect(true);
             // } else {
-            //     error_code = DeviceErrorCode::FAILED_TO_ERASE_OWNER;
+            //     error_code = RequestErrorCode::FAILED_TO_ERASE_OWNER;
             // }
 
             // log_d("error_code=%u", error_code);

@@ -109,7 +109,7 @@ export const NETWORK_FLAGS = Object.freeze({
   FLAG_EMIT_LABEL_EVENT: 253,
 });
 
-// SpectodaDevice.js -> SpectodaInterface.js -> | SpectodaXXXConnector.js ->
+// Spectoda.js -> SpectodaInterface.js -> | SpectodaXXXConnector.js ->
 
 // SpectodaInterface vsude vraci Promisy a ma v sobe spolecne
 // koncepty pro vsechny konektory. Tzn send queue, ktery paruje odpovedi a resolvuje
@@ -122,6 +122,22 @@ export const NETWORK_FLAGS = Object.freeze({
 // addEventListener - "connected", "disconnected", "otastatus", "tngl"
 
 // SpectodaXXXConnector.js je jakoby blokujici API, pres ktere se da pripojovat k FW.
+
+/////////////////////////////////////////////////////////////////////////
+
+// TODO Interface proccesses the commands before they are handed to Runtime. It deals with the same command spaming (moving slider generates a lot of events)
+// TODO Hands the execute commands to other Interfaces in "paralel" of giving it to its own Runtime.
+
+// Interface -> Interface -> Interface
+//     |            |            |
+//  Runtime      Runtime      Runtime
+
+// TODO SpectodaInterface is the host of the FW simulation of the Spectoda Controller Runtime. 
+// TODO Wasm holds the event history, current TNGL banks and acts like the FW.
+// TODO execute commands goes in and when processed goes back out to be handed over to Connectors to sendExecute() the commands to other connected Interfaces
+// TODO request commands goes in and if needed another request command goes out to Connectors to sendRequest() to a external Interface with given mac address.
+
+
 
 /////////////////////////////////////////////////////////////////////////
 
@@ -1400,7 +1416,7 @@ export class SpectodaInterface {
         case NETWORK_FLAGS.FLAG_PEER_CONNECTED:
           {
             logging.verbose("FLAG_PEER_CONNECTED");
-            spectodaBytes.readFlag(); // SpectodaFlag::FLAG_PEER_CONNECTED
+            spectodaBytes.readFlag(); // ExecuteFlag::FLAG_PEER_CONNECTED
 
             const device_mac = spectodaBytes
               .readBytes(6)
@@ -1414,7 +1430,7 @@ export class SpectodaInterface {
         case NETWORK_FLAGS.FLAG_PEER_DISCONNECTED:
           {
             logging.verbose("FLAG_PEER_DISCONNECTED");
-            spectodaBytes.readFlag(); // SpectodaFlag::FLAG_PEER_DISCONNECTED
+            spectodaBytes.readFlag(); // ExecuteFlag::FLAG_PEER_DISCONNECTED
 
             const device_mac = spectodaBytes
               .readBytes(6)
