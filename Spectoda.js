@@ -1234,7 +1234,7 @@ export class Spectoda {
    *
    */
 
-  readDeviceConfig() {
+  readDeviceConfig(mac="ee:33:fa:89:08:08") {
     logging.debug("> Reading device config...");
 
     const request_uuid = this.#getUUID();
