@@ -1352,7 +1352,9 @@ export class SpectodaInterface {
       }
     }
 
-    logging.info(emitted_events_log.join("\n"));
+    if (emitted_events_log.length > 0) {
+      logging.info(emitted_events_log.join("\n"));
+    }
   }
 }
 
