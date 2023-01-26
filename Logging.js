@@ -26,7 +26,7 @@ export function routeLoggingElswhere(funcn) {
   logging.warn = funcn;
   logging.info = funcn;
   logging.debug = funcn;
-  logging.verbose = funcn;
+  // logging.verbose = ;
 }
 
 if (typeof window !== "undefined") {
