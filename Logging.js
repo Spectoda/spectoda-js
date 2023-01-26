@@ -21,6 +21,14 @@ export function setLoggingLevel(level) {
   logging.verbose = level >= 5 ? console.log : function (...msg) {};
 }
 
+export function routeLoggingElswhere(funcn) {
+  logging.error = funcn;
+  logging.warn = funcn;
+  logging.info = funcn;
+  logging.debug = funcn;
+  logging.verbose = funcn;
+}
+
 if (typeof window !== "undefined") {
   window.DEBUG_LEVEL_NONE = DEBUG_LEVEL_NONE;
   window.DEBUG_LEVEL_ERROR = DEBUG_LEVEL_ERROR;
