@@ -587,22 +587,25 @@ export class SpectodaDevice {
 
               // window.alert("Adopting Success");
 
-              return {
-                mac: device_mac,
-                ownerSignature: this.#ownerSignature,
-                ownerKey: this.#ownerKey,
-                name: newDeviceName,
-                id: newDeviceId,
-              };
+              return this.rebootAndDisconnectDevice()
+                .catch(e => {
+                  logging.error(e);
+                })
+                .then(() => {
+                  return {
+                    mac: device_mac,
+                    ownerSignature: this.#ownerSignature,
+                    ownerKey: this.#ownerKey,
+                    name: newDeviceName,
+                    id: newDeviceId,
+                  };
+                });
             } else {
               logging.warn("Adoption refused.");
-              this.disconnect().finally(() => {
+              window.alert(t("Zkuste to, prosím, později."), t("Přidání se nezdařilo"), { confirm: t("OK") });
+
+              return this.rebootAndDisconnectDevice().catch(() => {
                 // @ts-ignore
-                window.confirm(t("Zkuste to, prosím, později."), t("Přidání se nezdařilo"), { confirm: t("OK"), cancel: t("Zpět") }).then(result => {
-                  // if (result) {
-                  //   this.adopt(newDeviceName, newDeviceId, tnglCode);
-                  // }
-                });
                 throw "AdoptionRefused";
               });
             }
