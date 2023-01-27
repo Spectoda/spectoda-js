@@ -994,43 +994,49 @@ export class SpectodaInterface {
                     item.reject(error);
                   });
                 break;
-
-              case Query.TYPE_EXECUTE:
-                let payload = new Uint8Array(0xffff);
-                let index = 0;
-
-                payload.set(item.a, index);
-                index += item.a.length;
-
-                // while there are items in the queue, and the next item is also TYPE_EXECUTE
-                while (this.#queue.length && this.#queue[0].type == Query.TYPE_EXECUTE) {
-                  const next_item = this.#queue.shift();
-
-                  // then check if I have toom to merge the payload bytes
-                  if (index + next_item.a.length <= this.#chunkSize) {
-                    payload.set(next_item.a, index);
-                    index += next_item.a.length;
+                case Query.TYPE_EXECUTE:
+                  let payload = new Uint8Array(0xffff);
+                  let index = 0;
+                  const timeout = item.c;
+  
+                  payload.set(item.a, index);
+                  index += item.a.length;
+  
+                  let executesInPayload = [item];
+  
+                  // while there are items in the queue, and the next item is also TYPE_EXECUTE
+                  while (this.#queue.length && this.#queue[0].type == Query.TYPE_EXECUTE) {
+                    const next_item = this.#queue.shift();
+  
+                    // then check if I have toom to merge the payload bytes
+                    if (index + next_item.a.length <= this.#chunkSize) {
+                      payload.set(next_item.a, index);
+                      index += next_item.a.length;
+                      executesInPayload.push(next_item);
+                    }
+  
+                    // if not, then return the item back into the queue
+                    else {
+                      this.#queue.unshift(next_item);
+                    }
                   }
-
-                  // if not, then return the item back into the queue
-                  else {
-                    this.#queue.unshift(next_item);
-                  }
-                }
-
-                const data = payload.slice(0, index);
-
-                await this.connector
-                  .deliver(data)
-                  .then(() => {
-                    this.process(new DataView(data.buffer));
-                    item.resolve();
-                  })
-                  .catch(error => {
-                    //logging.warn(error);
-                    item.reject(error);
-                  });
-                break;
+  
+                  const data = payload.slice(0, index);
+  
+                  await this.connector
+                    .deliver(data, timeout)
+                    .then(() => {
+                      this.process(new DataView(data.buffer));
+                      // item.resolve();
+                      executesInPayload.forEach(element => element.resolve());
+                    })
+                    .catch(error => {
+                      //logging.warn(error);
+                      // item.reject(error);
+                      executesInPayload.forEach(element => element.reject(error));
+  
+                    });
+                  break;
 
               case Query.TYPE_REQUEST:
                 await this.connector
