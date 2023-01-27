@@ -27,6 +27,7 @@ import { WEBSOCKET_URL } from "./SpectodaWebSocketsConnector.js";
 let lastEvents = {};
 /////////////////////////////////////////////////////////////////////////
 
+let lastnumber = "000";
 // should not create more than one object!
 // the destruction of the SpectodaDevice is not well implemented
 
@@ -472,7 +473,7 @@ export class SpectodaDevice {
             newDeviceName = await window
               // @ts-ignore
               // .prompt(t("Unikátní jméno pro vaši lampu vám ji pomůže odlišit od ostatních."), random_names[Math.floor(Math.random() * random_names.length)], t("Pojmenujte svoji lampu"), "text", {
-              .prompt(t("Unikátní jméno pro vaši lampu vám ji pomůže odlišit od ostatních."), "LED_", t("Pojmenujte svoji lampu"), "text", {
+              .prompt(t("Unikátní jméno pro vaši lampu vám ji pomůže odlišit od ostatních."), "LED_" + (Number(lastnumber) + 1 + "").padStart(3, "0"), t("Pojmenujte svoji lampu"), "text", {
                 placeholder: "Spectoda",
                 regex: /^[a-zA-Z0-9_ ]{1,16}$/,
                 invalidText: t("Název obsahuje nepovolené znaky"),
@@ -584,6 +585,7 @@ export class SpectodaDevice {
               // );
 
               console.log("Adopted ", newDeviceName, "id: " + device_id, device_mac, "successfully");
+              lastnumber = newDeviceName.match(/\d+/)[0];
 
               // window.alert("Adopting Success");
 
