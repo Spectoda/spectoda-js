@@ -71,6 +71,9 @@ export const COMMAND_FLAGS = Object.freeze({
 
   // Former CommandFlag end
 
+  FLAG_EVENT_HISTORY_BC_REQUEST: 212,
+  FLAG_EVENT_HISTORY_BC_RESPONSE: 213,
+
   FLAG_VISIBLE_PEERS_REQUEST: 214,
   FLAG_VISIBLE_PEERS_RESPONSE: 215,
 
@@ -85,7 +88,7 @@ export const COMMAND_FLAGS = Object.freeze({
 
   FLAG_SLEEP_REQUEST: 222,
   FLAG_SLEEP_RESPONSE: 223,
-  FLAG_DETECTED_PEERS_INFO_REQUEST: 224,
+  FLAG_CONNECTED_PEERS_INFO_REQUEST: 224,
   FLAG_CONNECTED_PEERS_INFO_RESPONSE: 225,
 
   FLAG_DEVICE_CONFIG_REQUEST: 226,
@@ -1367,7 +1370,7 @@ export class SpectodaInterface {
             logging.verbose(`timeline_flags = ${timeline_flags}`);
 
             const timeline_paused = timeline_flags & PAUSED_FLAG ? true : false;
-            logging.verbose("timeline_paused = %s", timeline_paused ? "true" : "false");
+            logging.verbose(`timeline_paused = ${timeline_paused ? "true" : "false"}`);
 
             if (timeline_paused) {
               this.#deviceReference.timeline.pause();

@@ -246,7 +246,7 @@ export class Spectoda {
           .then(payload => {
             // ! missing returned payload
             payload = payload;
-            console.log({ reqId, payload });
+            logging.info({ reqId, payload });
             this.socket.emit("response_success", reqId, payload);
           })
           .catch(error => this.socket.emit("response_error", reqId, error));
@@ -549,60 +549,27 @@ export class Spectoda {
             logging.verbose(`error_code=${error_code}, device_mac=${device_mac}`);
 
             if (error_code === 0) {
-              // return (
-              //   Promise.resolve()
-              //     .then(() => {
-              //       return sleep(1000).then(() => {
-              //         return this.rebootAndDisconnectDevice();
-              //       });
-              //     })
-              //     .then(() => {
-              //       return sleep(3500).then(() => {
-              //         return this.interface.connect(10000);
-              //       });
-              //     })
-              //     .then(() => {
-              //       setTimeout(() => {
-              //         return this.interface.connected().then(() => {
-              //           logging.debug("> Device connected");
-              //           this.interface.emit("connected", { target: this });
-              //         });
-              //       }, 1);
-              //     })
-              //     .catch(e => {
-              //       logging.error(e);
-              //     })
-              //     .then(() => {
-              //       return {
-              //         mac: device_mac,
-              //         ownerSignature: this.#ownerSignature,
-              //         ownerKey: this.#ownerKey,
-              //         name: newDeviceName,
-              //         id: newDeviceId,
-              //       };
-              //     })
-              // );
+              logging.info("Adopted ", newDeviceName, "id: " + device_id, device_mac, "successfully");
 
-              console.log("Adopted ", newDeviceName, "id: " + device_id, device_mac, "successfully");
-
-              // window.alert("Adopting Success");
-
-              return {
-                mac: device_mac,
-                ownerSignature: this.#ownerSignature,
-                ownerKey: this.#ownerKey,
-                name: newDeviceName,
-                id: newDeviceId,
-              };
+              return this.rebootAndDisconnectDevice()
+                .catch(e => {
+                  logging.error(e);
+                })
+                .then(() => {
+                  return {
+                    mac: device_mac,
+                    ownerSignature: this.#ownerSignature,
+                    ownerKey: this.#ownerKey,
+                    name: newDeviceName,
+                    id: newDeviceId,
+                  };
+                });
             } else {
               logging.warn("Adoption refused.");
-              this.disconnect().finally(() => {
+              window.alert(t("Zkuste to, prosím, později."), t("Přidání se nezdařilo"), { confirm: t("OK") });
+
+              return this.rebootAndDisconnectDevice().catch(() => {
                 // @ts-ignore
-                window.confirm(t("Zkuste to, prosím, později."), t("Přidání se nezdařilo"), { confirm: t("OK"), cancel: t("Zpět") }).then(result => {
-                  // if (result) {
-                  //   this.adopt(newDeviceName, newDeviceId, tnglCode);
-                  // }
-                });
                 throw "AdoptionRefused";
               });
             }
@@ -611,11 +578,6 @@ export class Spectoda {
             logging.error(e);
             this.disconnect().finally(() => {
               // @ts-ignore
-              //window.confirm(t("Zkuste to, prosím, později."), t("Přidání se nezdařilo"), { confirm: t("Zkusit znovu"), cancel: t("Zpět") }).then(result => {
-              // if (result) {
-              //   this.adopt(newDeviceName, newDeviceId, tnglCode);
-              // }
-              //});
               throw "AdoptionFailed";
             });
           });
@@ -637,6 +599,9 @@ export class Spectoda {
   // devices: [ {name:"Lampa 1", mac:"12:34:56:78:9a:bc"}, {name:"Lampa 2", mac:"12:34:56:78:9a:bc"} ]
 
   connect(devices = null, autoConnect = true, ownerSignature = null, ownerKey = null, connectAny = false, fwVersion = "") {
+    
+    logging.info("connect()");
+    
     if (this.#connecting) {
       return Promise.reject("ConnectingInProgress");
     }
@@ -710,7 +675,7 @@ export class Spectoda {
           throw "UserCanceledSelection";
         }
         if (error === "SecurityError") {
-          console.error(error);
+          logging.error(error);
           return;
         }
         //@ts-ignore
@@ -784,7 +749,7 @@ export class Spectoda {
 
     const reinterpret_bytecode = [COMMAND_FLAGS.FLAG_REINTERPRET_TNGL, ...numberToBytes(this.interface.clock.millis(), 6), memory_bank, ...numberToBytes(tngl_bytes.length, 4), ...tngl_bytes];
 
-    console.log(reinterpret_bytecode);
+    logging.info(reinterpret_bytecode);
 
     const payload = [...timeline_bytecode, ...reinterpret_bytecode];
     return this.interface.execute(payload, "TNGL").then(() => {
@@ -1201,7 +1166,7 @@ export class Spectoda {
     return this.interface.request(bytes, true).then(response => {
       let reader = new TnglReader(response);
 
-      logging.verbose("response=", response);
+      logging.info(`response.byteLength=${response.byteLength}`);
 
       if (reader.readFlag() !== COMMAND_FLAGS.FLAG_FW_UPDATE_PEER_RESPONSE) {
         throw "InvalidResponseFlag";
@@ -1242,7 +1207,7 @@ export class Spectoda {
     return this.interface.request(bytes, true).then(response => {
       let reader = new TnglReader(response);
 
-      logging.verbose("response=", response);
+      logging.info(`response.byteLength=${response.byteLength}`);
 
       if (reader.readFlag() !== COMMAND_FLAGS.FLAG_DEVICE_CONFIG_RESPONSE) {
         throw "InvalidResponseFlag";
@@ -1302,7 +1267,7 @@ export class Spectoda {
     return this.interface.request(bytes, true).then(response => {
       let reader = new TnglReader(response);
 
-      logging.verbose("response=", response);
+      logging.info(`response.byteLength=${response.byteLength}`);
 
       if (reader.readFlag() !== COMMAND_FLAGS.FLAG_CONFIG_UPDATE_RESPONSE) {
         throw "InvalidResponse";
@@ -1362,7 +1327,7 @@ export class Spectoda {
     const bytes = [COMMAND_FLAGS.FLAG_TIMELINE_REQUEST, ...numberToBytes(request_uuid, 4)];
 
     return this.interface.request(bytes, true).then(response => {
-      logging.verbose("response=", response);
+      logging.info(`response.byteLength=${response.byteLength}`);
 
       let reader = new TnglReader(response);
 
@@ -1427,7 +1392,7 @@ export class Spectoda {
     return this.interface.request(bytes, true).then(response => {
       let reader = new TnglReader(response);
 
-      logging.verbose("response=", response);
+      logging.info(`response.byteLength=${response.byteLength}`);
 
       if (reader.readFlag() !== COMMAND_FLAGS.FLAG_ERASE_OWNER_RESPONSE) {
         throw "InvalidResponseFlag";
@@ -1480,12 +1445,12 @@ export class Spectoda {
     const request_uuid = this.#getUUID();
     const bytes = [COMMAND_FLAGS.FLAG_FW_VERSION_REQUEST, ...numberToBytes(request_uuid, 4)];
 
-    console.log("getFwVersion", { bytes });
+    logging.info("getFwVersion", { bytes });
 
     return this.interface.request(bytes, true).then(response => {
       let reader = new TnglReader(response);
 
-      logging.verbose("response=", response);
+      logging.info(`response.byteLength=${response.byteLength}`);
 
       if (reader.readFlag() !== COMMAND_FLAGS.FLAG_FW_VERSION_RESPONSE) {
         throw "InvalidResponseFlag";
@@ -1585,7 +1550,7 @@ export class Spectoda {
     return this.interface.request(bytes, true).then(response => {
       let reader = new TnglReader(response);
 
-      logging.verbose("response=", response);
+      logging.info(`response.byteLength=${response.byteLength}`);
 
       if (reader.readFlag() !== COMMAND_FLAGS.FLAG_ROM_PHY_VDD33_RESPONSE) {
         throw "InvalidResponseFlag";
@@ -1623,7 +1588,7 @@ export class Spectoda {
     return this.interface.request(bytes, true).then(response => {
       let reader = new TnglReader(response);
 
-      logging.verbose("response=", response);
+      logging.info(`response.byteLength=${response.byteLength}`);
 
       if (reader.readFlag() !== COMMAND_FLAGS.FLAG_VOLTAGE_ON_PIN_RESPONSE) {
         throw "InvalidResponseFlag";
@@ -1668,12 +1633,12 @@ export class Spectoda {
     logging.debug("> Requesting connected peers info...");
 
     const request_uuid = this.#getUUID();
-    const bytes = [COMMAND_FLAGS.FLAG_DETECTED_PEERS_INFO_REQUEST, ...numberToBytes(request_uuid, 4)];
+    const bytes = [COMMAND_FLAGS.FLAG_CONNECTED_PEERS_INFO_REQUEST, ...numberToBytes(request_uuid, 4)];
 
     return this.interface.request(bytes, true).then(response => {
       let reader = new TnglReader(response);
 
-      logging.verbose("response=", response);
+      logging.info(`response.byteLength=${response.byteLength}`);
 
       if (reader.readFlag() !== COMMAND_FLAGS.FLAG_CONNECTED_PEERS_INFO_RESPONSE) {
         throw "InvalidResponseFlag";
@@ -1703,8 +1668,48 @@ export class Spectoda {
           });
         }
 
-        logging.verbose(`count=${count}, peers=`, peers);
+        // logging.info(`count=${count}, peers=`, peers);
+        logging.info(`count=${count}, peers=\n${peers.map(x=>`mac:${x.mac},rssi:${x.rssi}`).join("\n")}`);
         return peers;
+      } else {
+        throw "Fail";
+      }
+    });
+  }
+
+  readEventHistory() {
+    logging.debug("> Requesting event history bytecode...");
+
+    const request_uuid = this.#getUUID();
+    const bytes = [COMMAND_FLAGS.FLAG_EVENT_HISTORY_BC_REQUEST, ...numberToBytes(request_uuid, 4)];
+
+    return this.interface.request(bytes, true).then(response => {
+      let reader = new TnglReader(response);
+
+      logging.info(`response.byteLength=${response.byteLength}`);
+          
+      if (reader.readFlag() !== COMMAND_FLAGS.FLAG_EVENT_HISTORY_BC_RESPONSE) {
+        throw "InvalidResponseFlag";
+      }
+
+      const response_uuid = reader.readUint32();
+
+      if (response_uuid != request_uuid) {
+        throw "InvalidResponseUuid";
+      }
+
+      const error_code = reader.readUint8();
+
+      logging.info(`error_code=${error_code}`);
+
+      if (error_code === 0) {
+        const historic_events_bytecode_size = reader.readUint16();
+        const historic_events_bytecode = reader.readBytes(historic_events_bytecode_size);
+
+        logging.info(`historic_events_bytecode_size=${historic_events_bytecode_size}`);
+        logging.verbose(`historic_events_bytecode=[${historic_events_bytecode}]`);
+
+        this.interface.process(new DataView(new Uint8Array(historic_events_bytecode).buffer));
       } else {
         throw "Fail";
       }

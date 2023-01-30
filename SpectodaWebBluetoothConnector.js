@@ -122,7 +122,24 @@ export class WebBLEConnection {
 
   #readBytes(characteristic) {
     // read the requested value
-    return characteristic.readValue();
+
+    // TODO write this function effectivelly
+    return new Promise(async (resolve, reject) => {
+      let bytes = new Uint8Array((await characteristic.readValue()).buffer);
+
+      // console.log(bytes);
+
+      let total_bytes = [...bytes];
+
+      while (bytes.length == 512) {
+        bytes = new Uint8Array((await characteristic.readValue()).buffer);
+        total_bytes = [...total_bytes, ...bytes];
+      }
+
+      // console.log(total_bytes);
+
+      resolve(new DataView(new Uint8Array(total_bytes).buffer));
+    });
   }
 
   // WIP, event handling from spectoda network to application
