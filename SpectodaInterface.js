@@ -33,7 +33,7 @@ import { FlutterConnector } from "./FlutterConnector.js";
 import { t } from "./i18n.js";
 
 export const COMMAND_FLAGS = Object.freeze({
-  FLAG_UNSUPPORTED_COMMND_RESPONSE:  255, // TODO fix FLAG_OTA_BEGIN to not be 255.
+  FLAG_UNSUPPORTED_COMMND_RESPONSE: 255, // TODO fix FLAG_OTA_BEGIN to not be 255.
 
   // legacy FW update flags
   FLAG_OTA_BEGIN: 255, // legacy
@@ -1133,7 +1133,6 @@ export class SpectodaInterface {
                     //logging.warn(error);
                     // item.reject(error);
                     executesInPayload.forEach(element => element.reject(error));
-
                   });
                 break;
 
@@ -1231,9 +1230,11 @@ export class SpectodaInterface {
   process(bytecode) {
     let reader = new TnglReader(bytecode);
 
+    const utc_timestamp = new Date().getTime();;
+
     logging.verbose(reader);
 
-    let emitted_events_log = [];
+    let emitted_events = [];
 
     while (reader.available > 0) {
       switch (reader.peekFlag()) {
@@ -1329,21 +1330,21 @@ export class SpectodaInterface {
             const event_label = String.fromCharCode(...reader.readBytes(5)).match(/[\w\d_]*/g)[0]; // 5 bytes
             logging.verbose(`event_label = ${event_label}`);
 
-            const event_timestamp = is_lazy ? -1 : reader.readUint48(); // 6 bytes in 0.9
+            const event_timestamp = is_lazy ? this.clock.millis() : reader.readUint48(); // 6 bytes in 0.9
             logging.verbose(`event_timestamp = ${event_timestamp} ms`);
 
             const event_device_id = reader.readUint8(); // 1 byte
             logging.verbose(`event_device_id = ${event_device_id}`);
 
-            if (is_lazy) {
-              let event = { type: event_type, value: event_value, label: event_label, id: event_device_id };
-              emitted_events_log.push(`${event.id?.toString().padStart(3)} -> $${event.label}: ${log_value_prefix + event.value + log_value_postfix} [lazy]`);
-              this.emit("event", event);
-            } else {
-              let event = { type: event_type, value: event_value, label: event_label, timestamp: event_timestamp, id: event_device_id };
-              emitted_events_log.push(`${event.id?.toString().padStart(3)} -> $${event.label}: ${log_value_prefix + event.value + log_value_postfix}`);
-              this.emit("event", event);
-            }
+            emitted_events.push({
+              type: event_type, // The type of the event as string "none", "timestamp", "color", "percentage", "label"
+              value: event_value, // null (type="none"), number (type="timestamp"), string e.g. "#ff00ff" (type="color"), number (type="percentage"), string (type="label")
+              label: event_label, // Label label as a string e.g. "event"
+              timestamp: event_timestamp, // TNGL Network Clock Timestamp as number
+              id: event_device_id, // Event destination ID as number
+              timestamp_utc: utc_timestamp,
+              info: `${event_device_id.toString().padStart(3)} -> $${event_label}: ${log_value_prefix + event_value + log_value_postfix}`, // debug information
+            });
           }
           break;
 
@@ -1506,8 +1507,12 @@ export class SpectodaInterface {
       }
     }
 
-    if (emitted_events_log.length) {
-      logging.info(emitted_events_log.join("\n"));
+    if (emitted_events.length) {
+
+      this.emit("emitted_events", emitted_events);
+
+      const informations = emitted_events.map(x => x.info);
+      logging.info(informations.join("\n"));
     }
   }
 }
