@@ -1,7 +1,7 @@
 import { logging } from "./Logging.js";
 import { sleep, toBytes, numberToBytes, crc8, crc32, hexStringToArray, rgbToHex, stringToBytes } from "./functions.js";
 import { TimeTrack } from "./TimeTrack.js";
-import { DEVICE_FLAGS } from "./SpectodaInterface.js";
+import { COMMAND_FLAGS } from "./SpectodaInterface.js";
 import { TnglWriter } from "./TnglWriter.js";
 import { TnglReader } from "./TnglReader.js";
 
@@ -679,7 +679,7 @@ criteria example:
           //===========// RESET //===========//
           logging.debug("OTA RESET");
 
-          const bytes = [DEVICE_FLAGS.FLAG_OTA_RESET, 0x00, ...numberToBytes(0x00000000, 4)];
+          const bytes = [COMMAND_FLAGS.FLAG_OTA_RESET, 0x00, ...numberToBytes(0x00000000, 4)];
           await this.#write(this.CHANNEL_DEVICE, bytes);
         }
 
@@ -689,7 +689,7 @@ criteria example:
           //===========// BEGIN //===========//
           logging.debug("OTA BEGIN");
 
-          const bytes = [DEVICE_FLAGS.FLAG_OTA_BEGIN, 0x00, ...numberToBytes(firmware.length, 4)];
+          const bytes = [COMMAND_FLAGS.FLAG_OTA_BEGIN, 0x00, ...numberToBytes(firmware.length, 4)];
           await this.#write(this.CHANNEL_DEVICE, bytes, 20000);
         }
 
@@ -704,7 +704,7 @@ criteria example:
               index_to = firmware.length;
             }
 
-            const bytes = [DEVICE_FLAGS.FLAG_OTA_WRITE, 0x00, ...numberToBytes(written, 4), ...firmware.slice(index_from, index_to)];
+            const bytes = [COMMAND_FLAGS.FLAG_OTA_WRITE, 0x00, ...numberToBytes(written, 4), ...firmware.slice(index_from, index_to)];
 
             await this.#write(this.CHANNEL_DEVICE, bytes);
             written += index_to - index_from;
@@ -725,7 +725,7 @@ criteria example:
           //===========// END //===========//
           logging.debug("OTA END");
 
-          const bytes = [DEVICE_FLAGS.FLAG_OTA_END, 0x00, ...numberToBytes(written, 4)];
+          const bytes = [COMMAND_FLAGS.FLAG_OTA_END, 0x00, ...numberToBytes(written, 4)];
           await this.#write(this.CHANNEL_DEVICE, bytes);
         }
 

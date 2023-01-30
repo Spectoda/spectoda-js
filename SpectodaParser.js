@@ -144,7 +144,6 @@ const TNGL_FLAGS = Object.freeze({
   CONST_PERCENTAGE_MAX: 200,
   CONST_PERCENTAGE_MIN: 201,
 
-
   // ======================
 
   /* command ends */
@@ -236,7 +235,7 @@ export class TnglCompiler {
   }
 
   compileVariableAddress(variable_reference) {
-    logging.debug(`compileVariableAddress(${variable_reference})`);
+    logging.verbose(`compileVariableAddress(${variable_reference})`);
 
     let reg = variable_reference.match(/&([a-z_][\w]*)/i);
     if (!reg) {

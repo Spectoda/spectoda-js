@@ -3,7 +3,7 @@
 
 import { logging } from "./Logging.js";
 import { detectAndroid, detectSafari, hexStringToUint8Array, numberToBytes, sleep, toBytes } from "./functions.js";
-import { DEVICE_FLAGS } from "./SpectodaInterface.js";
+import { COMMAND_FLAGS } from "./SpectodaInterface.js";
 import { TimeTrack } from "./TimeTrack.js";
 import { TnglReader } from "./TnglReader.js";
 
@@ -389,7 +389,7 @@ export class WebBLEConnection {
           //===========// RESET //===========//
           logging.debug("OTA RESET");
 
-          const bytes = [DEVICE_FLAGS.FLAG_OTA_RESET, 0x00, ...numberToBytes(0x00000000, 4)];
+          const bytes = [COMMAND_FLAGS.FLAG_OTA_RESET, 0x00, ...numberToBytes(0x00000000, 4)];
           await this.#writeBytes(this.#deviceChar, bytes, true);
         }
 
@@ -399,7 +399,7 @@ export class WebBLEConnection {
           //===========// BEGIN //===========//
           logging.debug("OTA BEGIN");
 
-          const bytes = [DEVICE_FLAGS.FLAG_OTA_BEGIN, 0x00, ...numberToBytes(firmware.length, 4)];
+          const bytes = [COMMAND_FLAGS.FLAG_OTA_BEGIN, 0x00, ...numberToBytes(firmware.length, 4)];
           await this.#writeBytes(this.#deviceChar, bytes, true);
         }
 
@@ -414,7 +414,7 @@ export class WebBLEConnection {
               index_to = firmware.length;
             }
 
-            const bytes = [DEVICE_FLAGS.FLAG_OTA_WRITE, 0x00, ...numberToBytes(written, 4), ...firmware.slice(index_from, index_to)];
+            const bytes = [COMMAND_FLAGS.FLAG_OTA_WRITE, 0x00, ...numberToBytes(written, 4), ...firmware.slice(index_from, index_to)];
 
             await this.#writeBytes(this.#deviceChar, bytes, true);
             written += index_to - index_from;
@@ -435,7 +435,7 @@ export class WebBLEConnection {
           //===========// END //===========//
           logging.debug("OTA END");
 
-          const bytes = [DEVICE_FLAGS.FLAG_OTA_END, 0x00, ...numberToBytes(written, 4)];
+          const bytes = [COMMAND_FLAGS.FLAG_OTA_END, 0x00, ...numberToBytes(written, 4)];
           await this.#writeBytes(this.#deviceChar, bytes, true);
         }
 
