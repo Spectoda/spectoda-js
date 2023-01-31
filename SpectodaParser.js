@@ -539,24 +539,24 @@ export class TnglCompiler {
       case "filDrawing":
         this.#tnglWriter.writeFlag(TNGL_FLAGS.DRAWING_FILTER);
         break;
-      case "setWindow":
+      case "setLayer":
         this.#tnglWriter.writeFlag(TNGL_FLAGS.WINDOW_SET);
         break;
-      case "addWindow":
+      case "addLayer":
         this.#tnglWriter.writeFlag(TNGL_FLAGS.WINDOW_ADD);
         break;
-      case "subWindow":
+      case "subLayer":
         this.#tnglWriter.writeFlag(TNGL_FLAGS.WINDOW_SUB);
         break;
-      case "scaWindow":
+      case "scaLayer":
         this.#tnglWriter.writeFlag(TNGL_FLAGS.WINDOW_SCALE);
         break;
-      case "filWindow":
+      case "filLayer":
         this.#tnglWriter.writeFlag(TNGL_FLAGS.WINDOW_FILTER);
 
         // === time operations ===
         break;
-      case "frame":
+      case "sc":
         this.#tnglWriter.writeFlag(TNGL_FLAGS.FRAME);
         break;
 
