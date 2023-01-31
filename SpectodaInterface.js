@@ -1247,7 +1247,7 @@ export class SpectodaInterface {
             reader.readFlag(); // COMMAND_FLAGS.FLAG_REINTERPRET_TNGL
 
             const clock_ms = reader.readUint48();
-            const uint8_t = reader.readUint8_t();
+            const uint8_t = reader.readUint8();
             const tngl_size = reader.readUint32();
             //const bytecode_offset = reader.position() + offset;
             reader.foward(tngl_size);
@@ -1346,7 +1346,7 @@ export class SpectodaInterface {
               timestamp: event_timestamp, // TNGL Network Clock Timestamp as number
               id: event_device_id, // Event destination ID as number
               timestamp_utc: utc_timestamp,
-              info: `${event_device_id.toString().padStart(3)} -> $${event_label}: ${log_value_prefix + event_value + log_value_postfix}`, // debug information
+              info: `${event_device_id.toString().padStart(3)} -> $${event_label}: ${log_value_prefix + event_value + log_value_postfix} [${event_timestamp}ms]`, // debug information
             });
           }
           break;

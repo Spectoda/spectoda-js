@@ -1045,9 +1045,9 @@ export class Spectoda {
     this.interface.requestWakeLock();
 
     return new Promise(async (resolve, reject) => {
-      const chunk_size = detectAndroid() ? 480 : 3984; // must be modulo 16
+      // const chunk_size = detectAndroid() ? 480 : 3984; // must be modulo 16
       // const chunk_size = 992; // must be modulo 16
-      // const chunk_size = 496;
+      const chunk_size = 480;
 
       let index_from = 0;
       let index_to = chunk_size;
@@ -1661,7 +1661,7 @@ export class Spectoda {
 
         for (let index = 0; index < count; index++) {
           const mac = reader.readBytes(6).map(v => v.toString(16).padStart(2, "0")).join(":");
-          const rssi = reader.readUint16() / (65535 / 1024);
+          const rssi = reader.readUint16() / (65535.0 / 512.0) - 256.0;
           peers.push({
             mac: mac,
             rssi: rssi
