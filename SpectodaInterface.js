@@ -214,7 +214,7 @@ export class SpectodaInterface {
 
     this.#queue = /** @type {Query[]} */ ([]);
     this.#processing = false;
-    this.#chunkSize = 5000;
+    this.#chunkSize = 208; // 208 is ESPNOW chunk size
 
     this.#reconection = false;
     this.#selecting = false;
@@ -1105,7 +1105,7 @@ export class SpectodaInterface {
                 while (this.#queue.length && this.#queue[0].type == Query.TYPE_EXECUTE) {
                   const next_item = this.#queue.shift();
 
-                  // then check if I have toom to merge the payload bytes
+                  // then check if I have room to merge other payload bytes
                   if (index + next_item.a.length <= this.#chunkSize) {
                     payload.set(next_item.a, index);
                     index += next_item.a.length;
@@ -1115,6 +1115,7 @@ export class SpectodaInterface {
                   // if not, then return the item back into the queue
                   else {
                     this.#queue.unshift(next_item);
+                    break;
                   }
                 }
 
@@ -1233,7 +1234,7 @@ export class SpectodaInterface {
   process(bytecode) {
     let reader = new TnglReader(bytecode);
 
-    const utc_timestamp = new Date().getTime();;
+    const utc_timestamp = new Date().getTime();
 
     logging.verbose(reader);
 
@@ -1511,7 +1512,6 @@ export class SpectodaInterface {
     }
 
     if (emitted_events.length) {
-
       this.emit("emitted_events", emitted_events);
 
       const informations = emitted_events.map(x => x.info);

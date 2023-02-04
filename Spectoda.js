@@ -599,9 +599,8 @@ export class Spectoda {
   // devices: [ {name:"Lampa 1", mac:"12:34:56:78:9a:bc"}, {name:"Lampa 2", mac:"12:34:56:78:9a:bc"} ]
 
   connect(devices = null, autoConnect = true, ownerSignature = null, ownerKey = null, connectAny = false, fwVersion = "") {
-    
     logging.info("connect()");
-    
+
     if (this.#connecting) {
       return Promise.reject("ConnectingInProgress");
     }
@@ -667,6 +666,11 @@ export class Spectoda {
     return (autoConnect ? this.interface.autoSelect(criteria) : this.interface.userSelect(criteria))
       .then(() => {
         return this.interface.connect();
+      })
+      .then(connectedDeviceInfo => {
+        return this.readEventHistory().then(() => {
+          return connectedDeviceInfo;
+        });
       })
       .catch(error => {
         // TODO: tady tento catch by mel dal thrownout error jako ze nepodarilo pripojit.
@@ -1660,16 +1664,19 @@ export class Spectoda {
         let count = reader.readUint16();
 
         for (let index = 0; index < count; index++) {
-          const mac = reader.readBytes(6).map(v => v.toString(16).padStart(2, "0")).join(":");
+          const mac = reader
+            .readBytes(6)
+            .map(v => v.toString(16).padStart(2, "0"))
+            .join(":");
           const rssi = reader.readUint16() / (65535.0 / 512.0) - 256.0;
           peers.push({
             mac: mac,
-            rssi: rssi
+            rssi: rssi,
           });
         }
 
         // logging.info(`count=${count}, peers=`, peers);
-        logging.info(`count=${count}, peers=\n${peers.map(x=>`mac:${x.mac},rssi:${x.rssi}`).join("\n")}`);
+        logging.info(`count=${count}, peers=\n${peers.map(x => `mac:${x.mac},rssi:${x.rssi}`).join("\n")}`);
         return peers;
       } else {
         throw "Fail";
@@ -1687,7 +1694,7 @@ export class Spectoda {
       let reader = new TnglReader(response);
 
       logging.info(`response.byteLength=${response.byteLength}`);
-          
+
       if (reader.readFlag() !== COMMAND_FLAGS.FLAG_EVENT_HISTORY_BC_RESPONSE) {
         throw "InvalidResponseFlag";
       }
@@ -1717,9 +1724,8 @@ export class Spectoda {
   }
 
   deviceSleep() {
-
     throw "WorkInProgress";
-    
+
     logging.debug("> Sleep device...");
 
     const request_uuid = this.#getUUID();
@@ -1728,9 +1734,8 @@ export class Spectoda {
   }
 
   networkSleep() {
-    
     throw "WorkInProgress";
-    
+
     logging.debug("> Sleep device...");
 
     const request_uuid = this.#getUUID();
@@ -1739,7 +1744,6 @@ export class Spectoda {
   }
 
   saveState() {
-   
     throw "WorkInProgress";
 
     logging.debug("> Saving state...");
