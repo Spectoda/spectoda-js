@@ -3,7 +3,7 @@
 
 import { logging } from "./Logging.js";
 import { detectAndroid, detectSafari, hexStringToUint8Array, numberToBytes, sleep, toBytes } from "./functions.js";
-import { DEVICE_FLAGS } from "./SpectodaInterface.js";
+import { COMMAND_FLAGS } from "./SpectodaInterface.js";
 import { TimeTrack } from "./TimeTrack.js";
 import { TnglReader } from "./TnglReader.js";
 
@@ -122,7 +122,24 @@ export class WebBLEConnection {
 
   #readBytes(characteristic) {
     // read the requested value
-    return characteristic.readValue();
+
+    // TODO write this function effectivelly
+    return new Promise(async (resolve, reject) => {
+      let bytes = new Uint8Array((await characteristic.readValue()).buffer);
+
+      // console.log(bytes);
+
+      let total_bytes = [...bytes];
+
+      while (bytes.length == 512) {
+        bytes = new Uint8Array((await characteristic.readValue()).buffer);
+        total_bytes = [...total_bytes, ...bytes];
+      }
+
+      // console.log(total_bytes);
+
+      resolve(new DataView(new Uint8Array(total_bytes).buffer));
+    });
   }
 
   // WIP, event handling from spectoda network to application
@@ -389,7 +406,7 @@ export class WebBLEConnection {
           //===========// RESET //===========//
           logging.debug("OTA RESET");
 
-          const bytes = [DEVICE_FLAGS.FLAG_OTA_RESET, 0x00, ...numberToBytes(0x00000000, 4)];
+          const bytes = [COMMAND_FLAGS.FLAG_OTA_RESET, 0x00, ...numberToBytes(0x00000000, 4)];
           await this.#writeBytes(this.#deviceChar, bytes, true);
         }
 
@@ -399,7 +416,7 @@ export class WebBLEConnection {
           //===========// BEGIN //===========//
           logging.debug("OTA BEGIN");
 
-          const bytes = [DEVICE_FLAGS.FLAG_OTA_BEGIN, 0x00, ...numberToBytes(firmware.length, 4)];
+          const bytes = [COMMAND_FLAGS.FLAG_OTA_BEGIN, 0x00, ...numberToBytes(firmware.length, 4)];
           await this.#writeBytes(this.#deviceChar, bytes, true);
         }
 
@@ -414,7 +431,7 @@ export class WebBLEConnection {
               index_to = firmware.length;
             }
 
-            const bytes = [DEVICE_FLAGS.FLAG_OTA_WRITE, 0x00, ...numberToBytes(written, 4), ...firmware.slice(index_from, index_to)];
+            const bytes = [COMMAND_FLAGS.FLAG_OTA_WRITE, 0x00, ...numberToBytes(written, 4), ...firmware.slice(index_from, index_to)];
 
             await this.#writeBytes(this.#deviceChar, bytes, true);
             written += index_to - index_from;
@@ -435,7 +452,7 @@ export class WebBLEConnection {
           //===========// END //===========//
           logging.debug("OTA END");
 
-          const bytes = [DEVICE_FLAGS.FLAG_OTA_END, 0x00, ...numberToBytes(written, 4)];
+          const bytes = [COMMAND_FLAGS.FLAG_OTA_END, 0x00, ...numberToBytes(written, 4)];
           await this.#writeBytes(this.#deviceChar, bytes, true);
         }
 

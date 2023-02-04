@@ -1,7 +1,7 @@
 import { logging } from "./Logging.js";
 import { sleep } from "./functions.js";
 import { TimeTrack } from "./TimeTrack.js";
-import { DEVICE_FLAGS } from "./SpectodaInterface.js";
+import { COMMAND_FLAGS } from "./SpectodaInterface.js";
 import { TnglReader } from "./TnglReader.js";
 import { TnglWriter } from "./TnglWriter.js";
 
@@ -266,9 +266,9 @@ criteria example:
       let reader = new TnglReader(new DataView(new Uint8Array(payload).buffer));
 
       switch (reader.peekFlag()) {
-        case DEVICE_FLAGS.FLAG_ADOPT_REQUEST:
+        case COMMAND_FLAGS.FLAG_ADOPT_REQUEST:
           {
-            reader.readFlag(); // DEVICE_FLAGS.FLAG_ADOPT_REQUEST
+            reader.readFlag(); // COMMAND_FLAGS.FLAG_ADOPT_REQUEST
 
             const request_uuid = reader.readUint32();
 
@@ -290,7 +290,7 @@ criteria example:
             // // log_d("error_code=%u", error_code);
 
             let writer = new TnglWriter(64);
-            writer.writeFlag(DEVICE_FLAGS.FLAG_ADOPT_RESPONSE);
+            writer.writeFlag(COMMAND_FLAGS.FLAG_ADOPT_RESPONSE);
             writer.writeUint32(request_uuid);
             writer.writeUint8(error_code);
 
@@ -302,10 +302,10 @@ criteria example:
           }
           break;
 
-        case DEVICE_FLAGS.FLAG_CONFIG_UPDATE_REQUEST:
+        case COMMAND_FLAGS.FLAG_CONFIG_UPDATE_REQUEST:
           {
             // log_d("FLAG_CONFIG_UPDATE_REQUEST");
-            reader.readFlag(); // DEVICE_FLAGS.FLAG_CONFIG_UPDATE_REQUEST
+            reader.readFlag(); // COMMAND_FLAGS.FLAG_CONFIG_UPDATE_REQUEST
 
             const request_uuid = reader.readUint32();
             // const uint32_t config_size = confBytes.read<uint32_t>();
@@ -315,14 +315,14 @@ criteria example:
 
             // {
             //     if (!unit::writeConfig(config_bytes, config_size)) {
-            //         error_code = DeviceErrorCode::CONFIG_UPDATE_FAIL;
+            //         error_code = RequestErrorCode::CONFIG_UPDATE_FAIL;
             //     }
             // }
 
             // log_d("error_code=%u", error_code);
 
             let writer = new TnglWriter(64);
-            writer.writeFlag(DEVICE_FLAGS.FLAG_CONFIG_UPDATE_RESPONSE);
+            writer.writeFlag(COMMAND_FLAGS.FLAG_CONFIG_UPDATE_RESPONSE);
             writer.writeUint32(request_uuid);
             writer.writeUint8(error_code);
 
@@ -330,9 +330,9 @@ criteria example:
           }
           break;
 
-        case DEVICE_FLAGS.FLAG_TIMELINE_REQUEST:
+        case COMMAND_FLAGS.FLAG_TIMELINE_REQUEST:
           {
-            reader.readFlag(); // DEVICE_FLAGS.FLAG_TIMELINE_REQUEST
+            reader.readFlag(); // COMMAND_FLAGS.FLAG_TIMELINE_REQUEST
 
             const request_uuid = reader.readUint32();
             // const time_ms clock_timestamp = Runtime::getClock().millis();
@@ -345,7 +345,7 @@ criteria example:
             // // log_d("timeline_paused = %s", timeline_paused ? "true" : "false");
 
             let writer = new TnglWriter(64);
-            writer.writeFlag(DEVICE_FLAGS.FLAG_TIMELINE_RESPONSE);
+            writer.writeFlag(COMMAND_FLAGS.FLAG_TIMELINE_RESPONSE);
             writer.writeUint32(request_uuid);
             writer.writeInt32(0); // clock_timestamp
             writer.writeInt32(0); //timeline_timestamp
@@ -355,7 +355,7 @@ criteria example:
           }
           break;
 
-        case DEVICE_FLAGS.FLAG_TNGL_FINGERPRINT_REQUEST:
+        case COMMAND_FLAGS.FLAG_TNGL_FINGERPRINT_REQUEST:
           {
             // log_d("FLAG_TNGL_FINGERPRINT_REQUEST");
 
@@ -368,13 +368,13 @@ criteria example:
             // uint8_t fingerprint[32];
 
             // if (!spectoda::getTnglFingerprint(fingerprint)) {
-            //     error_code = DeviceErrorCode::NO_TNGL_CODE_STORED;
+            //     error_code = RequestErrorCode::NO_TNGL_CODE_STORED;
             // }
 
             // log_d("error_code=%u", error_code);
 
             let writer = new TnglWriter(64);
-            writer.writeFlag(DEVICE_FLAGS.FLAG_TNGL_FINGERPRINT_RESPONSE);
+            writer.writeFlag(COMMAND_FLAGS.FLAG_TNGL_FINGERPRINT_RESPONSE);
             writer.writeUint32(request_uuid);
             writer.writeUint8(error_code);
 
@@ -389,7 +389,7 @@ criteria example:
           }
           break;
 
-        case DEVICE_FLAGS.FLAG_ERASE_OWNER_REQUEST:
+        case COMMAND_FLAGS.FLAG_ERASE_OWNER_REQUEST:
           {
             // log_d("FLAG_ERASE_OWNER_REQUEST");
             reader.readFlag(); // FLAG_ERASE_OWNER_REQUEST
@@ -401,13 +401,13 @@ criteria example:
             // if (unit::eraseOwner()) {
             //     bluetooth::rebootOnDisconnect(true);
             // } else {
-            //     error_code = DeviceErrorCode::FAILED_TO_ERASE_OWNER;
+            //     error_code = RequestErrorCode::FAILED_TO_ERASE_OWNER;
             // }
 
             // log_d("error_code=%u", error_code);
 
             let writer = new TnglWriter(64);
-            writer.writeFlag(DEVICE_FLAGS.FLAG_ERASE_OWNER_RESPONSE);
+            writer.writeFlag(COMMAND_FLAGS.FLAG_ERASE_OWNER_RESPONSE);
             writer.writeUint32(request_uuid);
             writer.writeUint8(error_code);
 
@@ -420,7 +420,7 @@ criteria example:
           }
           break;
 
-        case DEVICE_FLAGS.FLAG_FW_VERSION_REQUEST:
+        case COMMAND_FLAGS.FLAG_FW_VERSION_REQUEST:
           {
             // log_d("FLAG_FW_VERSION_REQUEST");
             reader.readFlag(); // FLAG_FW_VERSION_REQUEST
@@ -432,7 +432,7 @@ criteria example:
             // log_d("error_code=%u", error_code);
 
             let writer = new TnglWriter(64);
-            writer.writeFlag(DEVICE_FLAGS.FLAG_FW_VERSION_RESPONSE);
+            writer.writeFlag(COMMAND_FLAGS.FLAG_FW_VERSION_RESPONSE);
             writer.writeUint32(request_uuid);
             writer.writeUint8(error_code);
 

@@ -42,10 +42,10 @@ const TNGL_FLAGS = Object.freeze({
 
   /* event handlers */
   INTERACTIVE: 16,
-  EVENT_HANDLE: 17,
+  EVENT_CATCHER: 17,
 
   /* definitions scoped */
-  DEFINE_VARIABLE: 18,
+  DECLARE_VARIABLE: 18,
 
   // ======================
 
@@ -124,6 +124,7 @@ const TNGL_FLAGS = Object.freeze({
   // ======================
 
   /* values */
+  VARIABLE_ADDRESS: 187,
   TIMESTAMP: 188,
   COLOR: 189,
   PERCENTAGE: 190,
@@ -139,18 +140,41 @@ const TNGL_FLAGS = Object.freeze({
   TIMESTAMP_MIN: 196,
   COLOR_WHITE: 197,
   COLOR_BLACK: 198,
+  CONST_PERCENTAGE_ZERO: 199,
+  CONST_PERCENTAGE_MAX: 200,
+  CONST_PERCENTAGE_MIN: 201,
 
   // ======================
 
   /* command ends */
-  END_OF_STATEMENT: 254,
+  END_OF_SCOPE: 254,
   END_OF_TNGL_BYTES: 255,
 });
 
 export class TnglCompiler {
   #tnglWriter;
+  #variable_address_counter;
+  #variable_declarations_stack;
+  #variable_scope_depth_stack;
+
   constructor() {
     this.#tnglWriter = new TnglWriter();
+    // @type number
+    this.#variable_address_counter = 0x0001; // addresses starts from 0x0001 to 0xfffe. 0x0000 is a "nullptr", 0xffff is unknown address
+    // @type array of {name: "variable", address: 0x0001};
+    this.#variable_declarations_stack = []; // stack of variable name-address pairs
+    // @type array of numers
+    this.#variable_scope_depth_stack = []; // stack of variable depths in scopes
+  }
+
+  reset() {
+    this.#variable_address_counter = 0x0001;
+    this.#variable_declarations_stack.length = 0;
+    this.#variable_scope_depth_stack.length = 0;
+  }
+
+  compileUndefined() {
+    this.#tnglWriter.writeUint8(TNGL_FLAGS.NONE);
   }
 
   compileFlag(flag) {
@@ -208,6 +232,38 @@ export class TnglCompiler {
     } else {
       logging.error("Error while compiling infinity");
     }
+  }
+
+  compileVariableAddress(variable_reference) {
+    logging.verbose(`compileVariableAddress(${variable_reference})`);
+
+    let reg = variable_reference.match(/&([a-z_][\w]*)/i);
+    if (!reg) {
+      logging.error("Failed to compile variable address");
+      return;
+    }
+
+    const variable_name = reg[1];
+    let variable_address = undefined;
+
+    // check if the variable is already declared
+    // look for the latest variable address on the stack
+    for (let i = this.#variable_declarations_stack.length - 1; i >= 0; i--) {
+      const declaration = this.#variable_declarations_stack[i];
+      if (declaration.name === variable_name) {
+        variable_address = declaration.address;
+        break;
+      }
+    }
+
+    if (variable_address === undefined) {
+      console.error(`Variable ${variable_name} is not declated`);
+      throw CompilationError;
+    }
+
+    logging.debug(`VARIABLE_ADDRESS name=${variable_name}, address=${variable_address}`);
+    this.#tnglWriter.writeFlag(TNGL_FLAGS.VARIABLE_ADDRESS);
+    this.#tnglWriter.writeUint16(variable_address);
   }
 
   // takes in time string token like "1.2d+9h2m7.2s-123t" and appeds to payload the total time in ms (tics) as a int32_t: [FLAG.TIMESTAMP, BYTE4, BYTE2, BYTE1, BYTE0]
@@ -399,10 +455,20 @@ export class TnglCompiler {
       val = -100.0;
     }
 
-    const remapped = mapValue(val, -100.0, 100.0, -2147483647, 2147483647);
+    // percentage has 28 bits of resolution dividing range from -100.0 to 100.0
+    const UNIT_ERROR = (100.0 - -100.0) / 2 ** 28;
 
-    this.#tnglWriter.writeFlag(TNGL_FLAGS.PERCENTAGE);
-    this.#tnglWriter.writeInt32(parseInt(remapped));
+    if (val > -UNIT_ERROR && val < UNIT_ERROR) {
+      this.#tnglWriter.writeFlag(TNGL_FLAGS.CONST_PERCENTAGE_ZERO);
+    } else if (val > 100.0 - UNIT_ERROR) {
+      this.#tnglWriter.writeFlag(TNGL_FLAGS.CONST_PERCENTAGE_MAX);
+    } else if (val < -100.0 + UNIT_ERROR) {
+      this.#tnglWriter.writeFlag(TNGL_FLAGS.CONST_PERCENTAGE_MIN);
+    } else {
+      const remapped = mapValue(val, -100.0, 100.0, -2147483647, 2147483647);
+      this.#tnglWriter.writeFlag(TNGL_FLAGS.PERCENTAGE);
+      this.#tnglWriter.writeInt32(parseInt(remapped));
+    }
   }
 
   // takes label string as "$label" and encodes it into 32 bits
@@ -435,6 +501,26 @@ export class TnglCompiler {
 
   ///////////////////////////////////////////////////////////
 
+  compileConstVariableDeclaration(variable_declaration) {
+    logging.verbose(`compileConstVariableDeclaration(${variable_declaration})`);
+
+    let reg = variable_declaration.match(/const +([A-Za-z_][\w]*) *=/);
+    if (!reg) {
+      logging.error("Failed to compile variable declaration");
+      return;
+    }
+
+    const variable_name = reg[1];
+    let variable_address = this.#variable_address_counter++;
+    // insert the variable_name into variable_name->variable_address map
+    this.#variable_declarations_stack.push({ name: variable_name, address: variable_address });
+
+    logging.debug(`DECLARE_VARIABLE name=${variable_name} address=${variable_address}`);
+    // retrieve the variable_address and write the TNGL_FLAGS with uint16_t variable address value.
+    this.#tnglWriter.writeFlag(TNGL_FLAGS.DECLARE_VARIABLE);
+    this.#tnglWriter.writeUint16(variable_address);
+  }
+
   compileWord(word) {
     switch (word) {
       // === canvas operations ===
@@ -453,24 +539,24 @@ export class TnglCompiler {
       case "filDrawing":
         this.#tnglWriter.writeFlag(TNGL_FLAGS.DRAWING_FILTER);
         break;
-      case "setWindow":
+      case "setLayer":
         this.#tnglWriter.writeFlag(TNGL_FLAGS.WINDOW_SET);
         break;
-      case "addWindow":
+      case "addLayer":
         this.#tnglWriter.writeFlag(TNGL_FLAGS.WINDOW_ADD);
         break;
-      case "subWindow":
+      case "subLayer":
         this.#tnglWriter.writeFlag(TNGL_FLAGS.WINDOW_SUB);
         break;
-      case "scaWindow":
+      case "scaLayer":
         this.#tnglWriter.writeFlag(TNGL_FLAGS.WINDOW_SCALE);
         break;
-      case "filWindow":
+      case "filLayer":
         this.#tnglWriter.writeFlag(TNGL_FLAGS.WINDOW_FILTER);
 
         // === time operations ===
         break;
-      case "frame":
+      case "sc":
         this.#tnglWriter.writeFlag(TNGL_FLAGS.FRAME);
         break;
 
@@ -541,9 +627,9 @@ export class TnglCompiler {
       case "defMarks":
         this.#tnglWriter.writeFlag(TNGL_FLAGS.DEFINE_MARKS);
         break;
-      case "defVariable":
-        this.#tnglWriter.writeFlag(TNGL_FLAGS.DEFINE_VARIABLE);
-        break;
+      // case "defVariable":
+      //   this.#tnglWriter.writeFlag(TNGL_FLAGS.DECLARE_VARIABLE);
+      //   break;
 
       // === sifters ===
       // case "siftDevices":
@@ -612,8 +698,8 @@ export class TnglCompiler {
         break;
 
       // === events ===
-      case "handleEvent":
-        this.#tnglWriter.writeFlag(TNGL_FLAGS.EVENT_HANDLE);
+      case "catchEvent":
+        this.#tnglWriter.writeFlag(TNGL_FLAGS.EVENT_CATCHER);
         break;
       case "setValue":
         this.#tnglWriter.writeFlag(TNGL_FLAGS.EVENT_SET_VALUE);
@@ -653,9 +739,9 @@ export class TnglCompiler {
 
       /* === variable operations === */
 
-      case "variable":
-        this.#tnglWriter.writeFlag(TNGL_FLAGS.VARIABLE_READ);
-        break;
+      // case "variable":
+      //   this.#tnglWriter.writeFlag(TNGL_FLAGS.VARIABLE_READ);
+      //   break;
       case "addValues":
         this.#tnglWriter.writeFlag(TNGL_FLAGS.VARIABLE_ADD);
         break;
@@ -702,9 +788,50 @@ export class TnglCompiler {
         this.#tnglWriter.writeUint8(CONSTANTS.MODIFIER_SWITCH_BR);
         break;
 
-      // === unknown ===
       default:
+        // TODO look for variable_name in the variable_name->variable_address map
+
+        let possible_variable_address = undefined;
+
+        // check if the variable is already declared
+        // look for the latest variable address on the stack
+        for (let i = this.#variable_declarations_stack.length - 1; i >= 0; i--) {
+          const declaration = this.#variable_declarations_stack[i];
+          if (declaration.name === word) {
+            possible_variable_address = declaration.address;
+            break;
+          }
+        }
+
+        if (possible_variable_address !== undefined) {
+          logging.debug(`VARIABLE_READ name=${word}, address=${possible_variable_address}`);
+          this.#tnglWriter.writeFlag(TNGL_FLAGS.VARIABLE_READ);
+          this.#tnglWriter.writeUint16(possible_variable_address);
+          break;
+        }
+
+        // === unknown ===
         logging.warn("Unknown word >", word, "<");
+        break;
+    }
+  }
+
+  compilePunctuation(puctuation) {
+    switch (puctuation) {
+      case "{":
+        // push the current depth of the variable stack to the depth stack
+        this.#variable_scope_depth_stack.push(this.#variable_declarations_stack.length);
+        break;
+
+      case "}":
+        // pop the scope depth of the depth stack variable stack and set the variable stack to the previous depth
+        const depth = this.#variable_scope_depth_stack.pop();
+        this.#variable_declarations_stack.length = depth;
+
+        this.#tnglWriter.writeFlag(TNGL_FLAGS.END_OF_SCOPE);
+        break;
+
+      default:
         break;
     }
   }
@@ -723,6 +850,8 @@ export class TnglCodeParser {
   parseTnglCode(tngl_code) {
     logging.verbose(tngl_code);
 
+    this.#compiler.reset();
+
     const tokens = this.#tokenize(tngl_code, TnglCodeParser.#parses);
     logging.verbose(tokens);
 
@@ -732,6 +861,14 @@ export class TnglCodeParser {
       // logging.debug(element);
 
       switch (element.type) {
+        case "undefined":
+          this.#compiler.compileUndefined();
+          break;
+
+        case "const_variale_declaration":
+          this.#compiler.compileConstVariableDeclaration(element.token);
+          break;
+
         case "comment":
           // skip
           break;
@@ -746,6 +883,10 @@ export class TnglCodeParser {
 
         case "string":
           this.#compiler.compileString(element.token);
+          break;
+
+        case "variable_address":
+          this.#compiler.compileVariableAddress(element.token);
           break;
 
         case "timestamp":
@@ -780,9 +921,9 @@ export class TnglCodeParser {
           logging.error('"Naked" numbers are not permitted.');
           break;
 
-        case "arrow":
-          // skip
-          break;
+        // case "arrow":
+        //   // skip
+        //   break;
 
         case "word":
           this.#compiler.compileWord(element.token);
@@ -793,9 +934,7 @@ export class TnglCodeParser {
           break;
 
         case "punctuation":
-          if (element.token === "}") {
-            this.#compiler.compileFlag(TNGL_FLAGS.END_OF_STATEMENT);
-          }
+          this.#compiler.compilePunctuation(element.token);
           break;
 
         default:
@@ -815,10 +954,13 @@ export class TnglCodeParser {
   }
 
   static #parses = {
+    undefined: /undefined/,
+    const_variale_declaration: /const +[A-Za-z_][\w]* *=/,
     comment: /\/\/[^\n]*/,
     htmlrgb: /#[0-9a-f]{6}/i,
     infinity: /[+-]?Infinity/,
     string: /"[\w ]*"/,
+    variable_address: /&[a-z_][\w]*/i,
     timestamp: /(_?[+-]?[0-9]*[.]?[0-9]+(d|h|m(?!s)|s|t|ms))+/,
     label: /\$[\w]*/,
     char: /-?'[\W\w]'/,
@@ -827,7 +969,7 @@ export class TnglCodeParser {
     percentage: /[+-]?[\d.]+%/,
     float: /([+-]?[0-9]*[.][0-9]+)/,
     number: /([+-]?[0-9]+)/,
-    arrow: /->/,
+    //arrow: /->/,
     word: /[a-z_][\w]*/i,
     whitespace: /\s+/,
     punctuation: /[^\w\s]/,

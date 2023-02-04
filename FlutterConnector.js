@@ -2,7 +2,7 @@ import { logging } from "./Logging.js";
 import { sleep, toBytes, detectSpectodaConnect, numberToBytes, detectAndroid } from "./functions.js";
 import { TimeTrack } from "./TimeTrack.js";
 import { TnglReader } from "./TnglReader.js";
-import { DEVICE_FLAGS, NETWORK_FLAGS, SpectodaInterface } from "./SpectodaInterface.js";
+import { COMMAND_FLAGS, SpectodaInterface } from "./SpectodaInterface.js";
 
 /////////////////////////////////////////////////////////////////////////////////////
 
@@ -54,7 +54,7 @@ class FlutterConnection {
       window.addEventListener("#resolve", e => {
         // @ts-ignore
         const value = e.detail.value;
-        logging.debug("Triggered #resolve:", typeof value, value);
+        logging.debug(`Triggered #resolve: [${value}]`);
 
         // @ts-ignore
         window.flutterConnection.resolve(value);
@@ -63,7 +63,8 @@ class FlutterConnection {
       window.addEventListener("#reject", e => {
         // @ts-ignore
         const value = e.detail.value;
-        logging.debug("Triggered #reject:", typeof value, value);
+        logging.debug(`Triggered #reject: [${value}]`);
+
 
         // @ts-ignore
         window.flutterConnection.reject(value);
@@ -72,16 +73,19 @@ class FlutterConnection {
       window.addEventListener("#emit", e => {
         // @ts-ignore
         const event = e.detail.value;
-        logging.debug("Triggered #emit:", typeof event, event);
+        logging.debug(`Triggered #emit: ${event}`, event);
+
 
         // @ts-ignore
         window.flutterConnection.emit(event);
       });
 
+      // TODO #process is renamed to something else
       window.addEventListener("#process", e => {
         // @ts-ignore
         const bytes = e.detail.value;
-        logging.debug("Triggered #process:", typeof bytes, bytes);
+        logging.debug(`Triggered #process: [${bytes}]`, bytes);
+
 
         // @ts-ignore
         window.flutterConnection.process(bytes);
@@ -874,8 +878,7 @@ criteria example:
           //===========// RESET //===========//
           logging.info("OTA RESET");
 
-          const device_bytes = [DEVICE_FLAGS.FLAG_OTA_RESET, 0x00, ...numberToBytes(0x00000000, 4)];
-          // const network_bytes = [NETWORK_FLAGS.FLAG_CONF_BYTES, ...numberToBytes(device_bytes.length, 4), ...device_bytes];
+          const device_bytes = [COMMAND_FLAGS.FLAG_OTA_RESET, 0x00, ...numberToBytes(0x00000000, 4)];
           await this.request(device_bytes, false);
         }
 
@@ -885,8 +888,7 @@ criteria example:
           //===========// BEGIN //===========//
           logging.info("OTA BEGIN");
 
-          const device_bytes = [DEVICE_FLAGS.FLAG_OTA_BEGIN, 0x00, ...numberToBytes(firmware_bytes.length, 4)];
-          // const network_bytes = [NETWORK_FLAGS.FLAG_CONF_BYTES, ...numberToBytes(device_bytes.length, 4), ...device_bytes];
+          const device_bytes = [COMMAND_FLAGS.FLAG_OTA_BEGIN, 0x00, ...numberToBytes(firmware_bytes.length, 4)];
           await this.request(device_bytes, false, 20000);
         }
 
@@ -901,8 +903,7 @@ criteria example:
               index_to = firmware_bytes.length;
             }
 
-            const device_bytes = [DEVICE_FLAGS.FLAG_OTA_WRITE, 0x00, ...numberToBytes(written, 4), ...firmware_bytes.slice(index_from, index_to)];
-            // const network_bytes = [NETWORK_FLAGS.FLAG_CONF_BYTES, ...numberToBytes(device_bytes.length, 4), ...device_bytes];
+            const device_bytes = [COMMAND_FLAGS.FLAG_OTA_WRITE, 0x00, ...numberToBytes(written, 4), ...firmware_bytes.slice(index_from, index_to)];
             await this.request(device_bytes, false);
 
             written += index_to - index_from;
@@ -922,8 +923,7 @@ criteria example:
           //===========// END //===========//
           logging.info("OTA END");
 
-          const device_bytes = [DEVICE_FLAGS.FLAG_OTA_END, 0x00, ...numberToBytes(written, 4)];
-          // const network_bytes = [NETWORK_FLAGS.FLAG_CONF_BYTES, ...numberToBytes(device_bytes.length, 4), ...device_bytes];
+          const device_bytes = [COMMAND_FLAGS.FLAG_OTA_END, 0x00, ...numberToBytes(written, 4)];
           await this.request(device_bytes, false);
         }
 
@@ -931,8 +931,7 @@ criteria example:
 
         logging.info("Rebooting device...");
 
-        const device_bytes = [DEVICE_FLAGS.FLAG_DEVICE_REBOOT_REQUEST];
-        // const network_bytes = [NETWORK_FLAGS.FLAG_CONF_BYTES, ...numberToBytes(device_bytes.length, 4), ...device_bytes];
+        const device_bytes = [COMMAND_FLAGS.FLAG_DEVICE_REBOOT_REQUEST];
         await this.request(device_bytes, false);
 
         logging.debug("Firmware written in " + (new Date().getTime() - start_timestamp) / 1000 + " seconds");
