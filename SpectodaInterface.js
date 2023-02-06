@@ -584,7 +584,7 @@ export class SpectodaInterface {
     //   });
   }
 
-  autoSelect(criteria, scan_period = 2000, timeout = 10000) {
+  autoSelect(criteria, scan_period = 4000, timeout = 10000) {
     // this.#reconection = false;
 
     if (timeout < 1000) {

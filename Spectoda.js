@@ -668,9 +668,13 @@ export class Spectoda {
         return this.interface.connect();
       })
       .then(connectedDeviceInfo => {
-        return this.readEventHistory().then(() => {
-          return connectedDeviceInfo;
-        });
+        return this.readEventHistory()
+          .then(() => {
+            return connectedDeviceInfo;
+          })
+          .catch(e => {
+            console.warn(e);
+          });
       })
       .catch(error => {
         // TODO: tady tento catch by mel dal thrownout error jako ze nepodarilo pripojit.
