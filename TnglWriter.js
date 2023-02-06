@@ -80,7 +80,7 @@ export class TnglWriter {
     return this._dataView.byteLength - this._index;
   }
 
-  foward(byteCount) {
+  forward(byteCount) {
     if (this._index + byteCount <= this._dataView.byteLength) {
       this._index += byteCount;
     } else {

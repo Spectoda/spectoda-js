@@ -1086,7 +1086,7 @@ export class Spectoda {
           await this.interface.execute(command_bytes, null, 20000);
         }
 
-        await sleep(8000);
+        await sleep(10000);
 
         {
           //===========// WRITE //===========//

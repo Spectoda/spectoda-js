@@ -47,7 +47,7 @@ export class TnglReader {
   readValue(byteCount, unsigned) {
     try {
       const val = this.peekValue(byteCount, unsigned);
-      this.foward(byteCount);
+      this.forward(byteCount);
       return val;
     } catch {
       throw "Read out of range";
@@ -62,7 +62,7 @@ export class TnglReader {
         bytes.push(this._dataView.getUint8(this._index + i));
       }
 
-      this.foward(byteCount);
+      this.forward(byteCount);
 
       return bytes;
     } else {
@@ -145,7 +145,7 @@ export class TnglReader {
     return this._dataView.byteLength - this._index;
   }
 
-  foward(byteCount) {
+  forward(byteCount) {
     if (this._index + byteCount <= this._dataView.byteLength) {
       this._index += byteCount;
     } else {

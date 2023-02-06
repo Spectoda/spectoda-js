@@ -1124,7 +1124,6 @@ export class SpectodaInterface {
                 await this.connector
                   .deliver(data, timeout)
                   .then(() => {
-                    // TODO!
                     try {
                       this.process(new DataView(data.buffer));
                     } catch (e) {
@@ -1251,7 +1250,7 @@ export class SpectodaInterface {
             const uint8_t = reader.readUint8();
             const tngl_size = reader.readUint32();
             //const bytecode_offset = reader.position() + offset;
-            reader.foward(tngl_size);
+            reader.forward(tngl_size);
 
             logging.verbose(`tngl_size=${tngl_size}`);
             //logging.debug("bytecode_offset=%u", bytecode_offset);
@@ -1470,7 +1469,7 @@ export class SpectodaInterface {
             const header_checksum = reader.readUint8();
             const header_size = reader.readUint32();
 
-            reader.foward(reader.available);
+            reader.forward(reader.available);
 
             // logging.verbose("header_checksum=%u", header_checksum);
             // logging.verbose("header_size=%u", header_size);
@@ -1506,7 +1505,7 @@ export class SpectodaInterface {
 
         default:
           logging.error(`ERROR flag=${reader.readFlag()}, available=${reader.available}`);
-          //throw "UnknownNetworkFlag";
+          reader.forward(reader.available);
           break;
       }
     }
