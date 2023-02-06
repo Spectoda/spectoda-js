@@ -50,7 +50,7 @@ export class TnglReader {
       this.forward(byteCount);
       return val;
     } catch {
-      throw "Read out of range";
+      throw "Read_Out_Of_Range";
     }
   }
 

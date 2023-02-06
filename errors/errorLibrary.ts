@@ -75,7 +75,7 @@ export const general: ErrorList = {
     title: "Connection canceled",
     message: 'Device selection has been canceled. To complete connection, select a device from the dropdown list and select "Pair".',
   },
-  ReadOutOfRange: {
+  Read_Out_Of_Range: {
     title: "Internal Processing Error",
     message: "Something went wrong while processing your request. Please try again later or contact support for assistance.",
   },
