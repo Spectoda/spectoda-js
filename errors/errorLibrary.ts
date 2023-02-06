@@ -33,7 +33,9 @@ export interface ErrorFormat {
   message: string;
   url?: string;
 }
-type ErrorList = { [key: string]: ErrorFormat };
+interface ErrorList {
+  [key: string]: ErrorFormat;
+}
 
 // Errors specific for NARA
 export const nara: ErrorList = {
@@ -73,10 +75,14 @@ export const general: ErrorList = {
     title: "Connection canceled",
     message: 'Device selection has been canceled. To complete connection, select a device from the dropdown list and select "Pair".',
   },
+  ReadOutOfRange: {
+    title: "Internal Processing Error",
+    message: "Something went wrong while processing your request. Please try again later or contact support for assistance.",
+  },
 };
 
 // Appears when error is not defined above
 export const unknownError = (errorCode: string) => ({
   title: "Unknown Error",
-  message: "An unknown error has occurred. Please contact us for support. Error code: " + errorCode,
+  message: "An unknown error has occurred. Please contact us for support.",
 });
