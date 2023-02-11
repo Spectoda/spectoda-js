@@ -6,6 +6,7 @@
     "i18next-parser": "^6.0.0"
   },
   "dependencies": {
+    "firebase": "^9.17.1",
     "nanoid": "^4.0.0"
   }
 }
