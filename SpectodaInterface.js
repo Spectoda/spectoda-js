@@ -557,6 +557,8 @@ export class SpectodaInterface {
       criteria = [criteria];
     }
 
+    logging.debug(`userSelect(criteria=${JSON.stringify(criteria)}, timeout=${timeout}`);
+
     const item = new Query(Query.TYPE_USERSELECT, criteria, timeout);
     this.#process(item);
     return item.promise.finally(() => {
@@ -603,6 +605,8 @@ export class SpectodaInterface {
     } else if (!Array.isArray(criteria)) {
       criteria = [criteria];
     }
+
+    logging.debug(`autoSelect(criteria=${JSON.stringify(criteria)}, scan_period=${scan_period}, timeout=${timeout}`);
 
     const item = new Query(Query.TYPE_AUTOSELECT, criteria, scan_period, timeout);
     this.#process(item);
@@ -1264,7 +1268,6 @@ export class SpectodaInterface {
         case COMMAND_FLAGS.FLAG_EMIT_COLOR_EVENT:
         case COMMAND_FLAGS.FLAG_EMIT_PERCENTAGE_EVENT:
         case COMMAND_FLAGS.FLAG_EMIT_LABEL_EVENT:
-
           {
             // let is_lazy = false;
             let event_value = null;

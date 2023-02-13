@@ -655,13 +655,11 @@ export class Spectoda {
       }
     }
 
-    if (fwVersion) {
+    if (typeof fwVersion == "string" && fwVersion.match(/(!?)([\d]+).([\d]+).([\d]+)/)) {
       for (let i = 0; i < criteria.length; i++) {
         criteria[i].fwVersion = fwVersion;
       }
     }
-
-    logging.debug("criteria=", criteria);
 
     return (autoConnect ? this.interface.autoSelect(criteria) : this.interface.userSelect(criteria))
       .then(() => {
@@ -1742,5 +1740,47 @@ export class Spectoda {
     const request_uuid = this.#getUUID();
     const payload = [COMMAND_FLAGS.FLAG_SAVE_STATE_REQUEST, ...numberToBytes(request_uuid, 4)];
     return this.interface.execute(payload, null);
+  }
+
+  getControllerInfo() {
+    logging.debug("> Requesting controller info ...");
+
+    const request_uuid = this.#getUUID();
+    const bytes = [DEVICE_FLAGS.FLAG_CONTROLLER_INFO_REQUEST, ...numberToBytes(request_uuid, 4)];
+
+    return this.interface.request(bytes, true).then(response => {
+      let reader = new TnglReader(response);
+
+      logging.verbose("response=", response);
+
+      if (reader.readFlag() !== DEVICE_FLAGS.FLAG_CONTROLLER_INFO_RESPONSE) {
+        throw "InvalidResponseFlag";
+      }
+
+      const response_uuid = reader.readUint32();
+
+      if (response_uuid != request_uuid) {
+        throw "InvalidResponseUuid";
+      }
+
+      const error_code = reader.readUint8();
+
+      logging.verbose(`error_code=${error_code}`);
+
+      let pcb_code = null;
+      let product_code = null;
+
+      if (error_code === 0) {
+        pcb_code = reader.readUint16();
+        product_code = reader.readUint16();
+      } else {
+        throw "Fail";
+      }
+
+      logging.info(`pcb_code=${pcb_code}`);
+      logging.info(`product_code=${product_code}`);
+
+      return { pcb_code: pcb_code, product_code: product_code };
+    });
   }
 }
