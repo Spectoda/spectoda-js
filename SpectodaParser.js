@@ -22,15 +22,15 @@ const TNGL_FLAGS = Object.freeze({
   DRAWING_SCALE: 4,
   DRAWING_FILTER: 5,
 
-  /* windows */
-  WINDOW_SET: 6,
-  WINDOW_ADD: 7,
-  WINDOW_SUB: 8,
-  WINDOW_SCALE: 9,
-  WINDOW_FILTER: 10,
+  /* layer operations */
+  LAYER_SET: 6,
+  LAYER_ADD: 7,
+  LAYER_SUB: 8,
+  LAYER_SCALE: 9,
+  LAYER_FILTER: 10,
 
   /* frame */
-  FRAME: 11,
+  SCOPE: 11,
 
   /* clip */
   CLIP: 12,
@@ -258,7 +258,7 @@ export class TnglCompiler {
 
     if (variable_address === undefined) {
       console.error(`Variable ${variable_name} is not declated`);
-      throw CompilationError;
+      throw "CompilationError";
     }
 
     logging.debug(`VARIABLE_ADDRESS name=${variable_name}, address=${variable_address}`);
@@ -540,24 +540,24 @@ export class TnglCompiler {
         this.#tnglWriter.writeFlag(TNGL_FLAGS.DRAWING_FILTER);
         break;
       case "setLayer":
-        this.#tnglWriter.writeFlag(TNGL_FLAGS.WINDOW_SET);
+        this.#tnglWriter.writeFlag(TNGL_FLAGS.LAYER_SET);
         break;
       case "addLayer":
-        this.#tnglWriter.writeFlag(TNGL_FLAGS.WINDOW_ADD);
+        this.#tnglWriter.writeFlag(TNGL_FLAGS.LAYER_ADD);
         break;
       case "subLayer":
-        this.#tnglWriter.writeFlag(TNGL_FLAGS.WINDOW_SUB);
+        this.#tnglWriter.writeFlag(TNGL_FLAGS.LAYER_SUB);
         break;
       case "scaLayer":
-        this.#tnglWriter.writeFlag(TNGL_FLAGS.WINDOW_SCALE);
+        this.#tnglWriter.writeFlag(TNGL_FLAGS.LAYER_SCALE);
         break;
       case "filLayer":
-        this.#tnglWriter.writeFlag(TNGL_FLAGS.WINDOW_FILTER);
-
-        // === time operations ===
+        this.#tnglWriter.writeFlag(TNGL_FLAGS.LAYER_FILTER);
         break;
-      case "sc":
-        this.#tnglWriter.writeFlag(TNGL_FLAGS.FRAME);
+
+      // === scopes ===
+      case "scope":
+        this.#tnglWriter.writeFlag(TNGL_FLAGS.SCOPE);
         break;
 
       // === animations ===
