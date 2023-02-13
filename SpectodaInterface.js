@@ -1264,13 +1264,9 @@ export class SpectodaInterface {
         case COMMAND_FLAGS.FLAG_EMIT_COLOR_EVENT:
         case COMMAND_FLAGS.FLAG_EMIT_PERCENTAGE_EVENT:
         case COMMAND_FLAGS.FLAG_EMIT_LABEL_EVENT:
-        case COMMAND_FLAGS.FLAG_EMIT_LAZY_EVENT:
-        case COMMAND_FLAGS.FLAG_EMIT_LAZY_TIMESTAMP_EVENT:
-        case COMMAND_FLAGS.FLAG_EMIT_LAZY_COLOR_EVENT:
-        case COMMAND_FLAGS.FLAG_EMIT_LAZY_PERCENTAGE_EVENT:
-        case COMMAND_FLAGS.FLAG_EMIT_LAZY_LABEL_EVENT:
+
           {
-            let is_lazy = false;
+            // let is_lazy = false;
             let event_value = null;
             let event_type = "unknown";
 
@@ -1278,16 +1274,16 @@ export class SpectodaInterface {
             let log_value_postfix = "";
 
             switch (reader.readFlag()) {
-              case COMMAND_FLAGS.FLAG_EMIT_LAZY_EVENT:
-                is_lazy = true;
+              // case COMMAND_FLAGS.FLAG_EMIT_LAZY_EVENT:
+              //   is_lazy = true;
               case COMMAND_FLAGS.FLAG_EMIT_EVENT:
                 logging.verbose("FLAG_EVENT");
                 event_value = null;
                 event_type = "none";
                 break;
 
-              case COMMAND_FLAGS.FLAG_EMIT_LAZY_TIMESTAMP_EVENT:
-                is_lazy = true;
+              // case COMMAND_FLAGS.FLAG_EMIT_LAZY_TIMESTAMP_EVENT:
+              //   is_lazy = true;
               case COMMAND_FLAGS.FLAG_EMIT_TIMESTAMP_EVENT:
                 logging.verbose("FLAG_TIMESTAMP_EVENT");
                 event_value = reader.readInt32();
@@ -1295,8 +1291,8 @@ export class SpectodaInterface {
                 log_value_postfix = "ms";
                 break;
 
-              case COMMAND_FLAGS.FLAG_EMIT_LAZY_COLOR_EVENT:
-                is_lazy = true;
+              // case COMMAND_FLAGS.FLAG_EMIT_LAZY_COLOR_EVENT:
+              //   is_lazy = true;
               case COMMAND_FLAGS.FLAG_EMIT_COLOR_EVENT:
                 logging.verbose("FLAG_COLOR_EVENT");
                 const bytes = reader.readBytes(3);
@@ -1304,8 +1300,8 @@ export class SpectodaInterface {
                 event_type = "color";
                 break;
 
-              case COMMAND_FLAGS.FLAG_EMIT_LAZY_PERCENTAGE_EVENT:
-                is_lazy = true;
+              // case COMMAND_FLAGS.FLAG_EMIT_LAZY_PERCENTAGE_EVENT:
+              //   is_lazy = true;
               case COMMAND_FLAGS.FLAG_EMIT_PERCENTAGE_EVENT:
                 logging.verbose("FLAG_PERCENTAGE_EVENT");
                 event_value = Math.round(mapValue(reader.readInt32(), -2147483647, 2147483647, -100, 100) * 1000000.0) / 1000000.0;
@@ -1313,8 +1309,8 @@ export class SpectodaInterface {
                 log_value_postfix = "%";
                 break;
 
-              case COMMAND_FLAGS.FLAG_EMIT_LAZY_LABEL_EVENT:
-                is_lazy = true;
+              // case COMMAND_FLAGS.FLAG_EMIT_LAZY_LABEL_EVENT:
+              //   is_lazy = true;
               case COMMAND_FLAGS.FLAG_EMIT_LABEL_EVENT:
                 logging.verbose("FLAG_LABEL_EVENT");
                 event_value = String.fromCharCode(...reader.readBytes(5)).match(/[\w\d_]*/g)[0];
@@ -1327,13 +1323,13 @@ export class SpectodaInterface {
                 break;
             }
 
-            logging.verbose(`is_lazy = ${is_lazy ? "true" : "false"}`);
+            // logging.verbose(`is_lazy = ${is_lazy ? "true" : "false"}`);
             logging.verbose(`event_value = ${event_value}`);
 
             const event_label = String.fromCharCode(...reader.readBytes(5)).match(/[\w\d_]*/g)[0]; // 5 bytes
             logging.verbose(`event_label = ${event_label}`);
 
-            const event_timestamp = is_lazy ? this.clock.millis() : reader.readUint48(); // 6 bytes in 0.9
+            const event_timestamp = reader.readUint48(); // 6 bytes in 0.9
             logging.verbose(`event_timestamp = ${event_timestamp} ms`);
 
             const event_device_id = reader.readUint8(); // 1 byte
