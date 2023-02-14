@@ -261,7 +261,7 @@ export class TnglCompiler {
       throw "CompilationError";
     }
 
-    logging.debug(`VARIABLE_ADDRESS name=${variable_name}, address=${variable_address}`);
+    logging.verbose(`VARIABLE_ADDRESS name=${variable_name}, address=${variable_address}`);
     this.#tnglWriter.writeFlag(TNGL_FLAGS.VARIABLE_ADDRESS);
     this.#tnglWriter.writeUint16(variable_address);
   }
@@ -515,7 +515,7 @@ export class TnglCompiler {
     // insert the variable_name into variable_name->variable_address map
     this.#variable_declarations_stack.push({ name: variable_name, address: variable_address });
 
-    logging.debug(`DECLARE_VARIABLE name=${variable_name} address=${variable_address}`);
+    logging.verbose(`DECLARE_VARIABLE name=${variable_name} address=${variable_address}`);
     // retrieve the variable_address and write the TNGL_FLAGS with uint16_t variable address value.
     this.#tnglWriter.writeFlag(TNGL_FLAGS.DECLARE_VARIABLE);
     this.#tnglWriter.writeUint16(variable_address);

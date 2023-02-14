@@ -865,6 +865,7 @@ export class SpectodaInterface {
     return item.promise.then(clock => {
       logging.debug(`Clock synchronized at time=${clock.millis()}ms`);
       this.clock = clock;
+
     });
   }
 
@@ -1126,7 +1127,7 @@ export class SpectodaInterface {
 
                 const data = payload.slice(0, index);
 
-                logging.debug("EXECUTE", uint8ArrayToHexString(data)); 
+                logging.debug("EXECUTE", uint8ArrayToHexString(data));
 
                 await this.connector
                   .deliver(data, timeout)
@@ -1149,8 +1150,8 @@ export class SpectodaInterface {
               case Query.TYPE_REQUEST:
                 // TODO process in internal Interface
                 // this.process(new DataView(data.buffer)).catch((e)=>{console.error(e)});
-                
-                logging.debug("REQUEST", uint8ArrayToHexString(item.a)); 
+
+                logging.debug("REQUEST", uint8ArrayToHexString(item.a));
 
                 await this.connector
                   .request(item.a, item.b, item.c)

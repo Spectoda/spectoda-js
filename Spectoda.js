@@ -755,7 +755,7 @@ export class Spectoda {
 
     const reinterpret_bytecode = [COMMAND_FLAGS.FLAG_REINTERPRET_TNGL, ...numberToBytes(this.interface.clock.millis(), 6), memory_bank, ...numberToBytes(tngl_bytes.length, 4), ...tngl_bytes];
 
-    logging.info(reinterpret_bytecode);
+    // logging.info(reinterpret_bytecode);
 
     const payload = [...timeline_bytecode, ...reinterpret_bytecode];
     return this.interface.execute(payload, "TNGL").then(() => {

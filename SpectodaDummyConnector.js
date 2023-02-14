@@ -16,6 +16,8 @@ export class SpectodaDummyConnector {
   #enableErrors;
   #FWVersion;
 
+  #clock;
+
   constructor(interfaceReference, enableErrors = false, dummyFWVersion = "DUMMY_0.0.0_00000000") {
     this.type = enableErrors ? "edummy" : "dummy";
 
@@ -25,6 +27,8 @@ export class SpectodaDummyConnector {
 
     this.#selected = false;
     this.#connected = false;
+
+    this.#clock = new TimeTrack(0, false);
   }
 
   #fail(chance) {
@@ -220,6 +224,9 @@ criteria example:
         reject("DeliverFailed");
         return;
       }
+
+      this.#interfaceReference.emit("wasm_execute", payload);
+
       resolve();
     });
   }
@@ -240,6 +247,9 @@ criteria example:
         reject("TransmitFailed");
         return;
       }
+
+      this.#interfaceReference.emit("wasm_execute", payload);
+
       resolve();
     });
   }
@@ -258,10 +268,13 @@ criteria example:
         return;
       }
       await sleep(50); // requesting logic
+
       if (this.#fail(0.1)) {
         reject("RequestFailed");
         return;
       }
+
+      this.#interfaceReference.emit("wasm_request", payload);
 
       let reader = new TnglReader(new DataView(new Uint8Array(payload).buffer));
 
@@ -464,6 +477,10 @@ criteria example:
         reject("ClockWriteFailed");
         return;
       }
+      this.#clock.setMillis(clock.millis());
+
+      this.#interfaceReference.emit("wasm_clock", this.#clock.millis());
+
       resolve();
     });
   }
@@ -484,7 +501,9 @@ criteria example:
         return;
       }
 
-      resolve(new TimeTrack(0));
+      this.#interfaceReference.emit("wasm_clock", this.#clock.millis());
+
+      resolve(this.#clock);
     });
   }
 
