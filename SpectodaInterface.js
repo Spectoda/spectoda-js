@@ -19,6 +19,7 @@ import {
   detectLinux,
   detectIPhone,
   detectMacintosh,
+  uint8ArrayToHexString,
 } from "./functions.js";
 import { SpectodaDummyConnector } from "./SpectodaDummyConnector.js";
 import { SpectodaWebBluetoothConnector } from "./SpectodaWebBluetoothConnector.js";
@@ -31,7 +32,6 @@ import "./TnglWriter.js";
 import { TnglReader } from "./TnglReader.js";
 import { FlutterConnector } from "./FlutterConnector.js";
 import { t } from "./i18n.js";
-import { uint8ArrayToHexString } from "lib/spectoda-js/functions";
 
 export const COMMAND_FLAGS = Object.freeze({
   FLAG_UNSUPPORTED_COMMND_RESPONSE: 255, // TODO fix FLAG_OTA_BEGIN to not be 255.
@@ -865,7 +865,6 @@ export class SpectodaInterface {
     return item.promise.then(clock => {
       logging.debug(`Clock synchronized at time=${clock.millis()}ms`);
       this.clock = clock;
-
     });
   }
 
