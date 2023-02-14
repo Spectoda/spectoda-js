@@ -31,6 +31,7 @@ import "./TnglWriter.js";
 import { TnglReader } from "./TnglReader.js";
 import { FlutterConnector } from "./FlutterConnector.js";
 import { t } from "./i18n.js";
+import { uint8ArrayToHexString } from "lib/spectoda-js/functions";
 
 export const COMMAND_FLAGS = Object.freeze({
   FLAG_UNSUPPORTED_COMMND_RESPONSE: 255, // TODO fix FLAG_OTA_BEGIN to not be 255.
@@ -1125,6 +1126,8 @@ export class SpectodaInterface {
 
                 const data = payload.slice(0, index);
 
+                logging.debug("EXECUTE", uint8ArrayToHexString(data)); 
+
                 await this.connector
                   .deliver(data, timeout)
                   .then(() => {
@@ -1146,6 +1149,9 @@ export class SpectodaInterface {
               case Query.TYPE_REQUEST:
                 // TODO process in internal Interface
                 // this.process(new DataView(data.buffer)).catch((e)=>{console.error(e)});
+                
+                logging.debug("REQUEST", uint8ArrayToHexString(item.a)); 
+
                 await this.connector
                   .request(item.a, item.b, item.c)
                   .then(response => {

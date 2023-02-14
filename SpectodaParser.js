@@ -948,7 +948,7 @@ export class TnglCodeParser {
     let tnglBytes = this.#compiler.tnglBytes;
 
     logging.verbose(tnglBytes);
-    logging.debug(uint8ArrayToHexString(tnglBytes));
+    // logging.debug(uint8ArrayToHexString(tnglBytes));
     logging.info("Compiled tnglbytes length:", tnglBytes.length);
     return tnglBytes;
   }
