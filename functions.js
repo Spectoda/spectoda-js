@@ -649,6 +649,33 @@ export function validateTimestamp(value) {
   }
 }
 
+export function getColorString(r, g, b) {
+  return '#' +
+      ('0' + r.toString(16)).slice(-2) +
+      ('0' + g.toString(16)).slice(-2) +
+      ('0' + b.toString(16)).slice(-2);
+}
+
+export function toUint8Array(numbers) {
+  const arrayBuffer = new ArrayBuffer(numbers.length);
+  const uint8Array = new Uint8Array(arrayBuffer);
+  for (let i = 0; i < numbers.length; i++) {
+      uint8Array[i] = numbers[i];
+  }
+  return uint8Array;
+}
+
+export function hexStringToNumberArray(hexString) {
+  var numberArray = [];
+  for (var i = 0; i < hexString.length; i += 2) {
+      var hexPair = hexString.substr(i, 2);
+      var number = parseInt(hexPair, 16);
+      numberArray.push(number);
+  }
+  return numberArray;
+}
+
+
 if (typeof window !== "undefined") {
   window.validateTimestamp = validateTimestamp;
 
@@ -659,3 +686,5 @@ if (typeof window !== "undefined") {
   script.setAttribute("defer", true);
   document.body.appendChild(script);
 }
+
+
