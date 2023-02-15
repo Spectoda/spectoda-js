@@ -124,7 +124,7 @@ const TNGL_FLAGS = Object.freeze({
   // ======================
 
   /* values */
-  VARIABLE_ADDRESS: 187,
+  VALUE_ADDRESS: 187,
   TIMESTAMP: 188,
   COLOR: 189,
   PERCENTAGE: 190,
@@ -261,8 +261,8 @@ export class TnglCompiler {
       throw "CompilationError";
     }
 
-    logging.verbose(`VARIABLE_ADDRESS name=${variable_name}, address=${variable_address}`);
-    this.#tnglWriter.writeFlag(TNGL_FLAGS.VARIABLE_ADDRESS);
+    logging.verbose(`VALUE_ADDRESS name=${variable_name}, address=${variable_address}`);
+    this.#tnglWriter.writeFlag(TNGL_FLAGS.VALUE_ADDRESS);
     this.#tnglWriter.writeUint16(variable_address);
   }
 
