@@ -38,7 +38,9 @@ class LocalFirebaseDataStore {
   }
 }
 
-const localFirebaseDataStore = new LocalFirebaseDataStore();
+export const localFirebaseDataStore = new LocalFirebaseDataStore();
+// @ts-ignore
+window.localFirebaseDataStore = localFirebaseDataStore;
 
 class SpectodaFirebaseSync {
   #database: Database;
@@ -63,6 +65,7 @@ class SpectodaFirebaseSync {
     const eventData = {
       value: event.value,
       timestamp: event.timestamp + this.#timeOffset,
+      meta: event.meta,
     };
 
     localFirebaseDataStore.set(dbPath, eventData);
@@ -75,8 +78,13 @@ class SpectodaFirebaseSync {
 
     let t = onValue(dbRef, snapshot => {
       const data = snapshot.val() as SpectodaEvent;
-      localFirebaseDataStore.set(dbPath, data);
-      callback(data);
+      if (localFirebaseDataStore.get(dbPath)?.timestamp < data.timestamp) {
+        // this execs when the event is emitted externally
+        callback(data);
+        localFirebaseDataStore.set(dbPath, data);
+      } else {
+        // this execs when the event is emitted from this app
+      }
     });
 
     return () => t();
