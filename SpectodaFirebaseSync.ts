@@ -78,7 +78,7 @@ class SpectodaFirebaseSync {
 
     let t = onValue(dbRef, snapshot => {
       const data = snapshot.val() as SpectodaEvent;
-      if (localFirebaseDataStore.get(dbPath)?.timestamp < data.timestamp) {
+      if (localFirebaseDataStore.get(dbPath)?.timestamp < data?.timestamp) {
         // this execs when the event is emitted externally
         callback(data);
         localFirebaseDataStore.set(dbPath, data);
