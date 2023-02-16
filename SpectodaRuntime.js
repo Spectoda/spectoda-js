@@ -1,5 +1,8 @@
 import { getColorString, toUint8Array, hexStringToNumberArray } from "./functions.js";
+import Module from "./wasm/spectoda-wasm.js";
 
+
+Module._
 
 // 
 
