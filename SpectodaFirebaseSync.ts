@@ -98,9 +98,9 @@ class SpectodaFirebaseSync {
     // const dbRef = ref(this.#database, dbPath);
 
     const dbPath255 = `${this.#homePrefix}/events/255/${label}`;
-    // if (localFirebaseDataStore.get(dbPath255)?.timestamp > localFirebaseDataStore.get(dbPath)?.timestamp) {
-    //   return localFirebaseDataStore.get(dbPath255);
-    // }
+    if (localFirebaseDataStore.get(dbPath255)?.timestamp > localFirebaseDataStore.get(dbPath)?.timestamp) {
+      return localFirebaseDataStore.get(dbPath255);
+    }
 
     return localFirebaseDataStore.get(dbPath);
   }
