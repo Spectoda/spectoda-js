@@ -69,6 +69,9 @@ class SpectodaFirebaseSync {
     };
 
     localFirebaseDataStore.set(dbPath, eventData);
+    if (event.id === 255) {
+      localFirebaseDataStore.set(`${this.#homePrefix}/events/255/${event.label}`, eventData);
+    }
     return update(dbRef, eventData);
   }
 
@@ -93,6 +96,11 @@ class SpectodaFirebaseSync {
   getLatestSavedEvent(label: string, device_id: number) {
     const dbPath = `${this.#homePrefix}/events/${device_id}/${label}`;
     // const dbRef = ref(this.#database, dbPath);
+
+    const dbPath255 = `${this.#homePrefix}/events/255/${label}`;
+    if (localFirebaseDataStore.get(dbPath255)?.timestamp > localFirebaseDataStore.get(dbPath)?.timestamp) {
+      return localFirebaseDataStore.get(dbPath255);
+    }
 
     return localFirebaseDataStore.get(dbPath);
   }
