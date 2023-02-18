@@ -1,22 +1,21 @@
-// import Module from "./spectoda-wasm-debug";
+import {Module} from "./spectoda-wasm-debug";
 // import Module from "./spectoda-wasm-release";
 
 // const Module = debug ? await import("./spectoda-wasm-debug.js") : await import("./spectoda-wasm-release.js");
-if(typeof window !== "undefined") {
-  import("./spectoda-wasm-debug.js").then(Module => {
-  
-    console.log("NATAHNUTO", Module);
+if (typeof window !== "undefined") {
+  // import("./spectoda-wasm-debug.js").then(Module => {
+  // console.log("NATAHNUTO", Module);
 
-    Module.onRuntimeInitialized = () => {
-      window.Module = Module;
-      console.log("INITILIZED", Module);
-      SpectodaWasm.initilized = true;
-    };
+  Module.onRuntimeInitialized = () => {
+    window.Module = Module;
+    console.log("INITILIZED", Module);
+    SpectodaWasm.initilized = true;
+  };
 
-    if (typeof window !== "undefined") {
-      window.Module = Module;
-    }
-  })
+  // if (typeof window !== "undefined") {
+  // window.Module = Module;
+  // }
+  // });
 }
 
 // JS to WASM bindings
@@ -206,4 +205,3 @@ export const SpectodaWasm = {
     return response_bytes;
   },
 };
-
