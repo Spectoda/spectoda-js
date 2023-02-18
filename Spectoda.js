@@ -14,7 +14,7 @@ import {
   strMacToBytes,
   detectAndroid,
 } from "./functions.js";
-import { COMMAND_FLAGS, SpectodaInterface } from "./SpectodaInterface.js";
+import { COMMAND_FLAGS, SpectodaInterfaceLegacy } from "./SpectodaInterfaceLegacy.js";
 import { TnglCodeParser } from "./SpectodaParser.js";
 import { TimeTrack } from "./TimeTrack.js";
 import "./TnglReader.js";
@@ -24,8 +24,12 @@ import { io } from "./lib/socketio.js";
 import { t, changeLanguage } from "./i18n.js";
 import { WEBSOCKET_URL } from "./SpectodaWebSocketsConnector.js";
 
+import { SpectodaRuntime } from "./src/SpectodaRuntime.js"
+
 let lastEvents = {};
 /////////////////////////////////////////////////////////////////////////
+
+console.log(SpectodaRuntime);
 
 // should not create more than one object!
 // the destruction of the Spectoda is not well implemented
@@ -60,7 +64,7 @@ export class Spectoda {
     this.#ownerSignature = null;
     this.#ownerKey = null;
 
-    this.interface = new SpectodaInterface(this, reconnectionInterval);
+    this.interface = new SpectodaInterfaceLegacy(this, reconnectionInterval);
 
     if (connectorType) {
       this.interface.assignConnector(connectorType);

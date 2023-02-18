@@ -1,2 +1,2 @@
 node_modules
-wasm/spectoda-wasm.wasm.map
+wasm/*.map
