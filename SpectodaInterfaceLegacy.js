@@ -1313,7 +1313,7 @@ export class SpectodaInterfaceLegacy {
               //   is_lazy = true;
               case COMMAND_FLAGS.FLAG_EMIT_PERCENTAGE_EVENT:
                 logging.verbose("FLAG_PERCENTAGE_EVENT");
-                event_value = Math.round(mapValue(reader.readInt32(), -2147483647, 2147483647, -100, 100) * 1000000.0) / 1000000.0;
+                event_value = Math.round(mapValue(reader.readInt32(), -268435455, 268435455, -100, 100) * 1000000.0) / 1000000.0;
                 event_type = "percentage";
                 log_value_postfix = "%";
                 break;
