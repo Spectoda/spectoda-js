@@ -24,12 +24,11 @@ import { io } from "./lib/socketio.js";
 import { t, changeLanguage } from "./i18n.js";
 import { WEBSOCKET_URL } from "./SpectodaWebSocketsConnector.js";
 
-import { SpectodaRuntime } from "./src/SpectodaRuntime.js"
+// import { SpectodaRuntime } from "./src/SpectodaRuntime.js"
+// console.log(SpectodaRuntime);
 
 let lastEvents = {};
 /////////////////////////////////////////////////////////////////////////
-
-console.log(SpectodaRuntime);
 
 // should not create more than one object!
 // the destruction of the Spectoda is not well implemented

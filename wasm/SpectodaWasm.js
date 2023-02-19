@@ -1,22 +1,31 @@
-import {Module} from "./spectoda-wasm-debug";
+import { Module } from "./spectoda-wasm-debug";
 // import Module from "./spectoda-wasm-release";
 
 // const Module = debug ? await import("./spectoda-wasm-debug.js") : await import("./spectoda-wasm-release.js");
-if (typeof window !== "undefined") {
-  // import("./spectoda-wasm-debug.js").then(Module => {
-  // console.log("NATAHNUTO", Module);
 
-  Module.onRuntimeInitialized = () => {
-    window.Module = Module;
-    console.log("INITILIZED", Module);
-    SpectodaWasm.initilized = true;
-  };
-
-  // if (typeof window !== "undefined") {
-  // window.Module = Module;
-  // }
-  // });
+class Wait {
+  constructor() {
+    this.promise = new Promise((resolve, reject) => {
+      this.reject = reject;
+      this.resolve = resolve;
+    });
+  }
 }
+
+let moduleInitilized = false;
+let waitingQueue = [];
+
+Module.onRuntimeInitialized = () => {
+  moduleInitilized = true;
+
+  waitingQueue.forEach(wait => {
+    wait.resolve();
+  });
+
+  if (typeof window !== "undefined") {
+    window.Module = Module;
+  }
+};
 
 // JS to WASM bindings
 
@@ -32,30 +41,67 @@ const HEAPU32_PTR = function (ptr) {
 
 // This class binds the JS world with the webassembly's C
 export const SpectodaWasm = {
-  /**
-   * @param {boolean} value
-   */
-  set initilized(value) {
-    this._initilized = value;
-  },
+  // // /**
+  // //  * @param {boolean} value
+  // //  */
+  // // set initilized(value) {
+  // //   this._initilized = value;
+  // // },
+
+  // // /**
+  // //  * @return {boolean}
+  // //  */
+  // // get initilized() {
+  // //   this._initilized || false;
+  // // },
 
   /**
-   * @return {boolean}
+   * @return {Promise<null>}
    */
-  get initilized() {
-    this._initilized || false;
-  },
-
-  /** returns a Interface instance handle (pointer in wasm heap memory)
-   *  for now only one instance is allowed
-   * @return {number}
-   */
-  makeInstance(debug = false) {
-    if (!this.initilized) {
-      throw "WebassemblyNotInitilized";
+  waitForInitilize() {
+    if (moduleInitilized) {
+      return Promise.resolve();
     }
 
-    return Module["_makeInstance"]();
+    const wait = new Wait();
+    waitingQueue.push(wait);
+    return wait.promise;
+  },
+
+  /** returns a promise that resolves Interface instance handle (pointer in wasm heap memory)
+   *  for now only one instance is allowed
+   * @param {string} label "contr"
+   * @param {string} mac_address "ff:ff:ff:ff:ff:ff"
+   * @param {number} id_offset 0
+   * @return {Promise<number>}
+   */
+  makeInstance(label, mac_address, id_offset) {
+    return waitForInitilize().then(() => {
+      const label_bytes_size = label.length;
+      const label_bytes_ptr = Module["_malloc"](label_bytes_size);
+
+      // Copy the string into the WASM memory
+      for (let i = 0; i < label.length; i++) {
+        Module.HEAPU8[label_bytes_ptr + i] = label.charCodeAt(i);
+      }
+      Module.HEAPU8[label_bytes_ptr + label_bytes_size] = 0; // null terminator
+
+      const mac_parts = mac_address.split(':');
+      const mac_bytes_size = 6;
+      const mac_bytes_ptr = Module["_malloc"](mac_bytes_size); 
+
+      for (let i = 0; i < mac_parts.length && i < mac_bytes_size; i++) {
+        Module.HEAPU8[mac_bytes_ptr + i] = parseInt(mac_parts[i], 16);
+      }
+
+      // makeInstance(const char* const controller_identifier, const uint8_t* const controller_mac, const uint8_t controller_id_offset)
+      const instance = Module["_makeInstance"](label_bytes_ptr, mac_bytes_ptr, id_offset);
+
+      Module["_free"](label_bytes_ptr);
+      Module["_free"](mac_bytes_ptr);
+
+      return instance;
+    });
   },
 
   /** returns a Interface instance pointer
@@ -71,7 +117,7 @@ export const SpectodaWasm = {
    * @return {Uint8Array}
    */
   makePort(interface_handle, port_char, port_size, port_brightness, port_power, port_visible, port_reversed) {
-    if (!this.initilized) {
+    if (!moduleInitilized) {
       throw "WebassemblyNotInitilized";
     }
 
@@ -84,7 +130,7 @@ export const SpectodaWasm = {
    * @return {null}
    */
   render(interface_handle) {
-    if (!this.initilized) {
+    if (!moduleInitilized) {
       throw "WebassemblyNotInitilized";
     }
 
@@ -97,7 +143,7 @@ export const SpectodaWasm = {
    * @return {null}
    */
   setClock(interface_handle, clock_timestamp) {
-    if (!this.initilized) {
+    if (!moduleInitilized) {
       throw "WebassemblyNotInitilized";
     }
 
@@ -109,7 +155,7 @@ export const SpectodaWasm = {
    * @return {number}
    */
   getClock(interface_handle) {
-    if (!this.initilized) {
+    if (!moduleInitilized) {
       throw "WebassemblyNotInitilized";
     }
 
@@ -122,7 +168,7 @@ export const SpectodaWasm = {
    * @return {null}
    */
   execute(interface_handle, commands) {
-    if (!this.initilized) {
+    if (!moduleInitilized) {
       throw "WebassemblyNotInitilized";
     }
 
@@ -137,7 +183,7 @@ export const SpectodaWasm = {
     // console.log("command_bytes_size", command_bytes_size);
     // console.log("command_bytes_ptr", command_bytes_ptr);
 
-    Module["_execute"](interface_handle, command_bytes_ptr, command_bytes_size, 0xffff);
+    Module["_execute"](interface_handle, command_bytes_ptr, command_bytes_size);
 
     Module["_free"](command_bytes_ptr); // Free the memory when you're done with it
   },
@@ -149,7 +195,7 @@ export const SpectodaWasm = {
    * @return {Uint8Array}
    */
   request(interface_handle, command) {
-    if (!this.initilized) {
+    if (!moduleInitilized) {
       throw "WebassemblyNotInitilized";
     }
 
@@ -175,7 +221,7 @@ export const SpectodaWasm = {
     // console.log("response_result_ptr", response_result_ptr);
 
     // INTERFACE RequestResult request(const uint8_t* const request_bytecode, const size_t request_bytecode_size, const connection_handle_t source_connection)
-    Module["_request"](interface_handle, request_bytes_ptr, request_bytes_size, 0xffff, response_result_ptr);
+    Module["_request"](interface_handle, request_bytes_ptr, request_bytes_size, response_result_ptr);
 
     const response_bytecode_ptr = Module.HEAPU32[HEAPU32_PTR(response_result_ptr)];
     const response_bytecode_size = Module.HEAPU32[HEAPU32_PTR(response_result_ptr) + 1];

@@ -176,8 +176,12 @@ export function colorToBytes(color_hex_code) {
   return [r, g, b];
 }
 
+// TODO move constants to one file
+const PERCENTAGE_MAX = 268435455; // 2^28-1
+const PERCENTAGE_MIN = -268435455; // -(2^28)+1  (plus 1 is there for the percentage to be simetric)
+
 export function percentageToBytes(percentage_float) {
-  const value = mapValue(percentage_float, -100.0, 100.0, -2147483647, 2147483647);
+  const value = mapValue(percentage_float, -100.0, 100.0, PERCENTAGE_MIN, PERCENTAGE_MAX);
   return toBytes(Math.floor(value), 4);
 }
 
@@ -685,6 +689,8 @@ if (typeof window !== "undefined") {
   script.src = "//cdn.jsdelivr.net/npm/eruda";
   script.setAttribute("defer", true);
   document.body.appendChild(script);
+
+  window.mapValue = mapValue;
 }
 
 

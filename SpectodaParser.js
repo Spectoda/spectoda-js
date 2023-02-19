@@ -1,5 +1,5 @@
 import { logging } from "./Logging.js";
-import { mapValue, uint8ArrayToHexString } from "./functions.js";
+import { mapValue, uint8ArrayToHexString, percentageToBytes } from "./functions.js";
 import { TnglWriter } from "./TnglWriter.js";
 
 const CONSTANTS = Object.freeze({
@@ -455,6 +455,10 @@ export class TnglCompiler {
       val = -100.0;
     }
 
+    // TODO move constants to one file
+    const PERCENTAGE_MAX = 268435455; // 2^28-1
+    const PERCENTAGE_MIN = -268435455; // -(2^28)+1  (plus 1 is there for the percentage to be simetric)
+
     // percentage has 28 bits of resolution dividing range from -100.0 to 100.0
     const UNIT_ERROR = (100.0 - -100.0) / 2 ** 28;
 
@@ -465,7 +469,7 @@ export class TnglCompiler {
     } else if (val < -100.0 + UNIT_ERROR) {
       this.#tnglWriter.writeFlag(TNGL_FLAGS.CONST_PERCENTAGE_MIN);
     } else {
-      const remapped = mapValue(val, -100.0, 100.0, -2147483647, 2147483647);
+      const remapped = mapValue(val, -100.0, 100.0, PERCENTAGE_MIN, PERCENTAGE_MAX);
       this.#tnglWriter.writeFlag(TNGL_FLAGS.PERCENTAGE);
       this.#tnglWriter.writeInt32(parseInt(remapped));
     }
