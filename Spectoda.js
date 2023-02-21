@@ -15,6 +15,7 @@ import {
   detectAndroid,
 } from "./functions.js";
 import { COMMAND_FLAGS, SpectodaInterfaceLegacy } from "./SpectodaInterfaceLegacy.js";
+import { Interface } from "./src/SpectodaInterface.js";
 import { TnglCodeParser } from "./SpectodaParser.js";
 import { TimeTrack } from "./TimeTrack.js";
 import "./TnglReader.js";
@@ -26,6 +27,7 @@ import { WEBSOCKET_URL } from "./SpectodaWebSocketsConnector.js";
 
 // import { SpectodaRuntime } from "./src/SpectodaRuntime.js"
 // console.log(SpectodaRuntime);
+console.log({ Interface });
 
 let lastEvents = {};
 /////////////////////////////////////////////////////////////////////////

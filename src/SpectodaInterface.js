@@ -10,32 +10,29 @@ export class Interface {
     this.#instanceHandle = 0;
   }
 
-    /**
+  /**
    * @param {number} clock_timestamp
    * @return {Promise<null>}
    */
   construct(label, mac_address, id_offset) {
-
-    if(this.#instanceHandle) {
+    if (this.#instanceHandle) {
       throw "AlreadyContructed";
     }
 
     return SpectodaWasm.makeInstance(label, mac_address, id_offset).then(handle => {
       this.#instanceHandle = handle;
     });
-
-   
   }
 
   destroy() {
-    if(!this.#instanceHandle) {
+    if (!this.#instanceHandle) {
       throw "AlreadyDestroied";
     }
 
     throw "NotImplemented";
   }
 
-   /**
+  /**
    * @param {number} clock_timestamp
    * @return {null}
    */
@@ -43,34 +40,33 @@ export class Interface {
     SpectodaWasm.setClock(this.#instanceHandle, clock_timestamp);
   }
 
-   /**
+  /**
    * @return {number}
    */
   getClock() {
     return SpectodaWasm.getClock(this.#instanceHandle);
   }
 
- /**
+  /**
    * @param {Uint8Array} commands
    * @return {null}
    */
   execute(commands, connection_handle) {
     // execute only on me
     SpectodaWasm.execute(this.#instanceHandle, commands);
-    
+
     this.sendExecute(commands, connection_handle);
   }
 
-    /**
+  /**
    * If request_evaluate_result is not SUCCESS the promise is rejected with an exception
    * @param {Uint8Array} command
    * @return {Uint8Array}
    */
   request(commands, connection_handle) {
-
     // TODO implement if the request is for me, and it not, send it to the friend it is for
-    
-    // request is for me 
+
+    // request is for me
     return SpectodaWasm.request(this.#instanceHandle, commands);
   }
 
@@ -82,5 +78,3 @@ export class Interface {
     console.warn("Implement this method by extending this class");
   }
 }
-
-

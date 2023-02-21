@@ -1,4 +1,3 @@
-import { Module } from "./spectoda-wasm-debug";
 // import Module from "./spectoda-wasm-release";
 
 // const Module = debug ? await import("./spectoda-wasm-debug.js") : await import("./spectoda-wasm-release.js");
@@ -15,17 +14,43 @@ class Wait {
 let moduleInitilized = false;
 let waitingQueue = [];
 
-Module.onRuntimeInitialized = () => {
-  moduleInitilized = true;
+function injectScript(src) {
+  return new Promise((resolve, reject) => {
+    const script = document.createElement("script");
+    script.src = src;
+    script.addEventListener("load", resolve);
+    script.addEventListener("error", e => reject(e.error));
+    document.head.appendChild(script);
+  });
+}
 
-  waitingQueue.forEach(wait => {
-    wait.resolve();
+console.log("Loading Spectoda WASM...");
+injectScript("/wasm/spectoda-wasm-release.js")
+  .then(onWasmLoad)
+  .catch(error => {
+    console.error(error);
+    // Fallback when wasm not found on absolute / path
+    injectScript("./wasm/spectoda-wasm-release.js")
+      .then(onWasmLoad)
+      .catch(error => {
+        console.error(error);
+      });
   });
 
-  if (typeof window !== "undefined") {
-    window.Module = Module;
-  }
-};
+function onWasmLoad() {
+  Module.onRuntimeInitialized = () => {
+    moduleInitilized = true;
+    console.log("Spectoda WASM loaded!");
+
+    waitingQueue.forEach(wait => {
+      wait.resolve();
+    });
+
+    if (typeof window !== "undefined") {
+      window.Module = Module;
+    }
+  };
+}
 
 // JS to WASM bindings
 
@@ -86,9 +111,9 @@ export const SpectodaWasm = {
       }
       Module.HEAPU8[label_bytes_ptr + label_bytes_size] = 0; // null terminator
 
-      const mac_parts = mac_address.split(':');
+      const mac_parts = mac_address.split(":");
       const mac_bytes_size = 6;
-      const mac_bytes_ptr = Module["_malloc"](mac_bytes_size); 
+      const mac_bytes_ptr = Module["_malloc"](mac_bytes_size);
 
       for (let i = 0; i < mac_parts.length && i < mac_bytes_size; i++) {
         Module.HEAPU8[mac_bytes_ptr + i] = parseInt(mac_parts[i], 16);
