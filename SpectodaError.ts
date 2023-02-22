@@ -19,5 +19,5 @@ export const getError = (errorCode: string, env?: env): ErrorFormat => {
   if (env == "nara" && errorCode in nara) return nara[errorCode]!;
   if (env == "studio" && errorCode in studio) return studio[errorCode]!;
   if (errorCode in general) return general[errorCode]!;
-  else return unknownError(errorCode);
+  else return unknownError;
 };

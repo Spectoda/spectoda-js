@@ -82,7 +82,7 @@ export const general: ErrorList = {
 };
 
 // Appears when error is not defined above
-export const unknownError = (errorCode: string) => ({
+export const unknownError = {
   title: "Unknown Error",
   message: "An unknown error has occurred. Please contact us for support.",
-});
+};
