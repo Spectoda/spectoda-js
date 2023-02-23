@@ -16,26 +16,29 @@ let waitingQueue = [];
 
 function injectScript(src) {
   return new Promise((resolve, reject) => {
-    const script = document.createElement("script");
-    script.src = src;
-    script.addEventListener("load", resolve);
-    script.addEventListener("error", e => reject(e.error));
-    document.head.appendChild(script);
+    if (typeof window !== "undefined" && document) {
+      const script = document.createElement("script");
+      script.src = src;
+      script.addEventListener("load", resolve);
+      script.addEventListener("error", e => reject(e.error));
+      document.head.appendChild(script);
+    }
   });
 }
 
-console.log("Loading Spectoda WASM...");
-injectScript("/wasm/spectoda-wasm-release.js")
-  .then(onWasmLoad)
-  .catch(error => {
-    console.error(error);
-    // Fallback when wasm not found on absolute / path
-    injectScript("./wasm/spectoda-wasm-release.js")
-      .then(onWasmLoad)
-      .catch(error => {
-        console.error(error);
-      });
-  });
+if (typeof window !== "undefined") {
+  injectScript("/wasm/spectoda-wasm-release.js")
+    .then(onWasmLoad)
+    .catch(error => {
+      console.error(error);
+      // Fallback when wasm not found on absolute / path
+      injectScript("./wasm/spectoda-wasm-release.js")
+        .then(onWasmLoad)
+        .catch(error => {
+          console.error(error);
+        });
+    });
+}
 
 function onWasmLoad() {
   Module.onRuntimeInitialized = () => {
