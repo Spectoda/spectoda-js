@@ -1,29 +1,26 @@
-import { logging, setLoggingLevel } from "./Logging.js";
 import {
   colorToBytes,
   computeTnglFingerprint,
   czechHackyToEnglish,
-  detectSpectodaConnect,
-  getClockTimestamp,
-  hexStringToUint8Array,
+  detectSpectodaConnect, hexStringToUint8Array,
   labelToBytes,
   numberToBytes,
   percentageToBytes,
   sleep,
   stringToBytes,
-  strMacToBytes,
-  detectAndroid,
+  strMacToBytes
 } from "./functions.js";
+import { changeLanguage, t } from "./i18n.js";
+import { io } from "./lib/socketio.js";
+import { logging, setLoggingLevel } from "./Logging.js";
 import { COMMAND_FLAGS, SpectodaInterfaceLegacy } from "./SpectodaInterfaceLegacy.js";
-import { Interface } from "./src/SpectodaInterface.js";
 import { TnglCodeParser } from "./SpectodaParser.js";
+import { WEBSOCKET_URL } from "./SpectodaWebSocketsConnector.js";
+import { Interface } from "./src/SpectodaInterface.js";
 import { TimeTrack } from "./TimeTrack.js";
 import "./TnglReader.js";
 import { TnglReader } from "./TnglReader.js";
 import "./TnglWriter.js";
-import { io } from "./lib/socketio.js";
-import { t, changeLanguage } from "./i18n.js";
-import { WEBSOCKET_URL } from "./SpectodaWebSocketsConnector.js";
 
 // import { SpectodaRuntime } from "./src/SpectodaRuntime.js"
 // console.log(SpectodaRuntime);
@@ -31,6 +28,8 @@ console.log({ Interface });
 
 let lastEvents = {};
 /////////////////////////////////////////////////////////////////////////
+let lastnumber = "000";
+let lastprefix = "L_";
 
 // should not create more than one object!
 // the destruction of the Spectoda is not well implemented
@@ -477,7 +476,8 @@ export class Spectoda {
             newDeviceName = await window
               // @ts-ignore
               // .prompt(t("Unikátní jméno pro vaši lampu vám ji pomůže odlišit od ostatních."), random_names[Math.floor(Math.random() * random_names.length)], t("Pojmenujte svoji lampu"), "text", {
-              .prompt(t("Unikátní jméno pro vaši lampu vám ji pomůže odlišit od ostatních."), "LED_", t("Pojmenujte svoji lampu"), "text", {
+              // TODO add option for funny random names (for smarthome usage)
+              .prompt(t("Unikátní jméno pro vaši lampu vám ji pomůže odlišit od ostatních."), lastprefix + (Number(lastnumber) + 1 + "").padStart(3, "0"), t("Pojmenujte svoji lampu"), "text", {
                 placeholder: "Spectoda",
                 regex: /^[a-zA-Z0-9_ ]{1,16}$/,
                 invalidText: t("Název obsahuje nepovolené znaky"),
@@ -489,9 +489,12 @@ export class Spectoda {
             }
           }
           while (!newDeviceId || (typeof newDeviceId !== "number" && !newDeviceId.match(/^[\d]+/))) {
+            let potencialnumber = newDeviceName.match(/\d+/)[0];
+
+            
             newDeviceId = await window
               // @ts-ignore
-              .prompt(t("Prosím, zadejte ID zařízení v rozmezí 0-255."), "0", t("Přidělte ID svému zařízení"), "number", { min: 0, max: 255 });
+              .prompt(t("Prosím, zadejte ID zařízení v rozmezí 0-255."), Number(potencialnumber) + "", t("Přidělte ID svému zařízení"), "number", { min: 0, max: 255 });
             // @ts-ignore
 
             if (!newDeviceId) {
@@ -561,6 +564,10 @@ export class Spectoda {
                   logging.error(e);
                 })
                 .then(() => {
+                  lastnumber = newDeviceName.match(/\d+/)[0];
+                  lastprefix = newDeviceName.replace(/\d+/g, "");
+
+
                   return {
                     mac: device_mac,
                     ownerSignature: this.#ownerSignature,
