@@ -1,15 +1,4 @@
-import {
-  colorToBytes,
-  computeTnglFingerprint,
-  czechHackyToEnglish,
-  detectSpectodaConnect, hexStringToUint8Array,
-  labelToBytes,
-  numberToBytes,
-  percentageToBytes,
-  sleep,
-  stringToBytes,
-  strMacToBytes
-} from "./functions.js";
+import { colorToBytes, computeTnglFingerprint, czechHackyToEnglish, detectSpectodaConnect, hexStringToUint8Array, labelToBytes, numberToBytes, percentageToBytes, sleep, stringToBytes, strMacToBytes } from "./functions.js";
 import { changeLanguage, t } from "./i18n.js";
 import { io } from "./lib/socketio.js";
 import { logging, setLoggingLevel } from "./Logging.js";
@@ -473,6 +462,11 @@ export class Spectoda {
           while (!newDeviceName || !newDeviceName.match(/^[\w_ ]+/)) {
             let exit = false;
 
+            // TODO CR MISA
+            // - remove comments
+            // - remove ts-ignore (add types to window.d.ts tak jak je to ve Studiu)
+            // - rename errorů na formát NOVÝ_ERROR_FORMÁT_JAK_JSEM_SE_BAVIL (dělal bych to tak že ve funkci, které jsem se dotknul změním formáty errorů - takhle to budeme moct postupně formátovat)
+
             newDeviceName = await window
               // @ts-ignore
               // .prompt(t("Unikátní jméno pro vaši lampu vám ji pomůže odlišit od ostatních."), random_names[Math.floor(Math.random() * random_names.length)], t("Pojmenujte svoji lampu"), "text", {
@@ -491,7 +485,6 @@ export class Spectoda {
           while (!newDeviceId || (typeof newDeviceId !== "number" && !newDeviceId.match(/^[\d]+/))) {
             let potencialnumber = newDeviceName.match(/\d+/)[0];
 
-            
             newDeviceId = await window
               // @ts-ignore
               .prompt(t("Prosím, zadejte ID zařízení v rozmezí 0-255."), Number(potencialnumber) + "", t("Přidělte ID svému zařízení"), "number", { min: 0, max: 255 });
@@ -566,7 +559,6 @@ export class Spectoda {
                 .then(() => {
                   lastnumber = newDeviceName.match(/\d+/)[0];
                   lastprefix = newDeviceName.replace(/\d+/g, "");
-
 
                   return {
                     mac: device_mac,
