@@ -43,7 +43,6 @@ if (typeof window !== "undefined") {
 function onWasmLoad() {
   Module.onRuntimeInitialized = () => {
     moduleInitilized = true;
-    console.log("Spectoda WASM loaded!");
 
     waitingQueue.forEach(wait => {
       wait.resolve();

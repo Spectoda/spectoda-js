@@ -11,10 +11,6 @@ import "./TnglReader.js";
 import { TnglReader } from "./TnglReader.js";
 import "./TnglWriter.js";
 
-// import { SpectodaRuntime } from "./src/SpectodaRuntime.js"
-// console.log(SpectodaRuntime);
-console.log({ Interface });
-
 let lastEvents = {};
 /////////////////////////////////////////////////////////////////////////
 let lastnumber = "000";
