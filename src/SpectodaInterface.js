@@ -1,4 +1,4 @@
-import { SpectodaWasm } from "../wasm/SpectodaWasm.js";
+import { SpectodaWasm } from "./SpectodaWasm.js";
 
 // Implements SpectodaInterface in javascript
 

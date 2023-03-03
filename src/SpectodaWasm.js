@@ -26,13 +26,32 @@ function injectScript(src) {
   });
 }
 
+/* This script was for the case when wasm was in spectoda-js */
+
+// if (typeof window !== "undefined") {
+//   injectScript("/wasm/spectoda-wasm-release.js")
+//     .then(onWasmLoad)
+//     .catch(error => {
+//       console.error(error);
+//       // Fallback when wasm not found on absolute / path
+//       injectScript("./wasm/spectoda-wasm-release.js")
+//         .then(onWasmLoad)
+//         .catch(error => {
+//           console.error(error);
+//         });
+//     });
+// }
+
+const wasm_js_file = "DEBUG_0.9.0_20230302.js";
+
 if (typeof window !== "undefined") {
-  injectScript("/wasm/spectoda-wasm-release.js")
+  // First try to load local version
+  injectScript(`http://localhost:5555/webassembly/builds/${wasm_js_file}`)
     .then(onWasmLoad)
     .catch(error => {
       console.error(error);
-      // Fallback when wasm not found on absolute / path
-      injectScript("./wasm/spectoda-wasm-release.js")
+      // if local version fails, load public file
+      injectScript(`https://updates.spectoda.com/subdom/updates/webassembly/daily/${wasm_js_file}`)
         .then(onWasmLoad)
         .catch(error => {
           console.error(error);
@@ -43,6 +62,8 @@ if (typeof window !== "undefined") {
 function onWasmLoad() {
   Module.onRuntimeInitialized = () => {
     moduleInitilized = true;
+
+    console.log("Webassembly runtime initilized");
 
     waitingQueue.forEach(wait => {
       wait.resolve();
