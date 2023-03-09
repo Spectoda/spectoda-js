@@ -25,7 +25,7 @@ import { SpectodaDummyConnector } from "./SpectodaDummyConnector.js";
 import { SpectodaWebBluetoothConnector } from "./SpectodaWebBluetoothConnector.js";
 import { SpectodaWebSerialConnector } from "./SpectodaWebSerialConnector.js";
 // import { SpectodaConnectConnector } from "./SpectodaConnectConnector.js";
-import { SpectodaWebSocketsConnector } from "./SpectodaWebSocketsConnector.js";
+// import { SpectodaWebSocketsConnector } from "./SpectodaWebSocketsConnector.js";
 import { TimeTrack } from "./TimeTrack.js";
 import "./TnglReader.js";
 import "./TnglWriter.js";
@@ -208,7 +208,7 @@ export class SpectodaInterfaceLegacy {
 
     this.clock = new TimeTrack(0);
 
-    this.connector = /** @type {SpectodaDummyConnector | SpectodaWebBluetoothConnector | SpectodaWebSerialConnector | SpectodaConnectConnector | FlutterConnector | SpectodaWebSocketsConnector | null} */ (null);
+    this.connector = /** @type {SpectodaDummyConnector | SpectodaWebBluetoothConnector | SpectodaWebSerialConnector | SpectodaConnectConnector | FlutterConnector  | null} */ (null);
 
     this.#eventEmitter = createNanoEvents();
     this.#wakeLock = null;
@@ -330,19 +330,21 @@ export class SpectodaInterfaceLegacy {
       });
     }
 
-    window.addEventListener("beforeunload", e => {
-      // If I cant disconnect right now for some readon
-      // return this.disconnect(false).catch(reason => {
-      //   if (reason == "CurrentlyWriting") {
-      //     e.preventDefault();
-      //     e.cancelBubble = true;
-      //     e.returnValue = "Právě probíhá update připojeného zařízení, neopouštějte tuto stránku.";
-      //     window.confirm("Právě probíhá update připojeného zařízení, neopouštějte tuto stránku.");
-      //   }
-      // });
+    if (typeof window !== "undefined") {
+      window.addEventListener("beforeunload", e => {
+        // If I cant disconnect right now for some readon
+        // return this.disconnect(false).catch(reason => {
+        //   if (reason == "CurrentlyWriting") {
+        //     e.preventDefault();
+        //     e.cancelBubble = true;
+        //     e.returnValue = "Právě probíhá update připojeného zařízení, neopouštějte tuto stránku.";
+        //     window.confirm("Právě probíhá update připojeného zařízení, neopouštějte tuto stránku.");
+        //   }
+        // });
 
-      this.destroyConnector();
-    });
+        this.destroyConnector();
+      });
+    }
   }
 
   /**
@@ -402,7 +404,6 @@ export class SpectodaInterfaceLegacy {
 
     // leave this at info, for faster debug
     logging.info(`> Assigning ${connector_type} connector...`);
-
     if ((!this.connector && connector_type === "none") || (this.connector && this.connector.type === connector_type)) {
       logging.warn("Trying to reassign current connector.");
       return Promise.resolve();
@@ -524,7 +525,7 @@ export class SpectodaInterfaceLegacy {
             break;
 
           case "websockets":
-            this.connector = new SpectodaWebSocketsConnector(this);
+            // this.connector = new SpectodaWebSocketsConnector(this);
             break;
 
           default:

@@ -4,7 +4,7 @@ import { io } from "./lib/socketio.js";
 import { logging, setLoggingLevel } from "./Logging.js";
 import { COMMAND_FLAGS, SpectodaInterfaceLegacy } from "./SpectodaInterfaceLegacy.js";
 import { TnglCodeParser } from "./SpectodaParser.js";
-import { WEBSOCKET_URL } from "./SpectodaWebSocketsConnector.js";
+// import { WEBSOCKET_URL } from "./SpectodaWebSocketsConnector.js";
 import { Interface } from "./src/SpectodaInterface.js";
 import { TimeTrack } from "./TimeTrack.js";
 import "./TnglReader.js";
@@ -36,9 +36,9 @@ export class Spectoda {
 
   #reconnectRC;
 
-  constructor(connectorType = "default", reconnectionInterval = 1000) {
+  constructor(connectorType = "default", reconnectionInterval = 1000, runOnServer = false) {
     // nextjs
-    if (typeof window === "undefined") {
+    if (typeof window === "undefined" && !runOnServer) {
       return;
     }
 
@@ -177,7 +177,7 @@ export class Spectoda {
     if (!this.socket) {
       // TODO - scopovani dle apky
       // TODO - authentifikace
-      this.socket = io(WEBSOCKET_URL, {
+      this.socket = io("", {
         transports: ["websocket"],
       });
 
