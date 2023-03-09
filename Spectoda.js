@@ -467,7 +467,7 @@ export class Spectoda {
               // @ts-ignore
               // .prompt(t("Unikátní jméno pro vaši lampu vám ji pomůže odlišit od ostatních."), random_names[Math.floor(Math.random() * random_names.length)], t("Pojmenujte svoji lampu"), "text", {
               // TODO add option for funny random names (for smarthome usage)
-              .prompt(t("Unikátní jméno pro vaši lampu vám ji pomůže odlišit od ostatních."), lastprefix + (Number(lastnumber) + 1 + "").padStart(3, "0"), t("Pojmenujte svoji lampu"), "text", {
+              .prompt(t("Unikátní jméno pro vaši lampu vám ji pomůže odlišit od ostatních."), lastprefix + (lastnumber ? (Number(lastnumber) + 1 + "").padStart(3, "0") : ""), t("Pojmenujte svoji lampu"), "text", {
                 placeholder: "Spectoda",
                 regex: /^[a-zA-Z0-9_ ]{1,16}$/,
                 invalidText: t("Název obsahuje nepovolené znaky"),
@@ -479,7 +479,12 @@ export class Spectoda {
             }
           }
           while (!newDeviceId || (typeof newDeviceId !== "number" && !newDeviceId.match(/^[\d]+/))) {
-            let potencialnumber = newDeviceName.match(/\d+/)[0];
+            let potencialnumber = newDeviceName.match(/\d+/);
+            if (potencialnumber) {
+              potencialnumber = potencialnumber[0];
+            } else {
+              potencialnumber = 0;
+            }
 
             newDeviceId = await window
               // @ts-ignore
@@ -497,7 +502,7 @@ export class Spectoda {
           newDeviceName = newDeviceName.match(/^[\w_ ]+/)[0]; // do final match of only supported chars
 
           if (typeof newDeviceId !== "number") {
-            newDeviceId = Number(newDeviceId.match(/^[\d]+/)[0]);
+            newDeviceId = Number(newDeviceId.match(/^[\d]+/) ? newDeviceId.match(/^[\d]+/)[0] : 0);
           }
         } catch (e) {
           logging.error(e);
@@ -553,7 +558,7 @@ export class Spectoda {
                   logging.error(e);
                 })
                 .then(() => {
-                  lastnumber = newDeviceName.match(/\d+/)[0];
+                  lastnumber = newDeviceName.match(/\d+/) ? newDeviceName.match(/\d+/)[0] : "";
                   lastprefix = newDeviceName.replace(/\d+/g, "");
 
                   return {
