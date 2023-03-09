@@ -1,4 +1,4 @@
-const WASM_VERSION = "DEBUG_0.9.0_20230308";
+const WASM_VERSION = "DEBUG_0.9.0_20230309";
 
 console.log("spectoda-js wasm version " + WASM_VERSION);
 
@@ -64,7 +64,6 @@ if (typeof window !== "undefined") {
 
 // This class binds the JS world with the webassembly's C
 export const SpectodaWasm = {
-
   // const std::vector<uint8_t>&  makePort(const char port_char, const uint32_t port_size, const uint8_t port_brightness, const uint8_t port_power, bool port_visible, bool port_reversed)
   // void                         begin(const std::string& name_string, const std::string& mac_string, const deviceID_t device_id_offset)
   // void                         end()
@@ -72,17 +71,17 @@ export const SpectodaWasm = {
   // clock_ms                     getClockTimestamp()
   // evaluate_result_t            execute(const std::vector<uint8_t>& commands_bytecode_vector, const connection_handle_t source_connection)
   // evaluate_result_t            request(const std::vector<uint8_t>& request_bytecode_vector, std::vector<uint8_t>& response_bytecode_vector_out, const tngl::connection_handle_t source_connection)
- 
+
   // clone()
   // delete()
 
   /**
    * @type { {
-   * begin: ()=>{}, 
-   * end: ()=>{}
+   *   begin: () => void,
+   *   end: () => void
    * } }
    */
-  WasmInterface: null,
+  WasmInterface: null, // Uint8Array;    let array = new Uint8Array()
 
   // get(arg0)
   // push_back(arg0)
@@ -96,6 +95,15 @@ export const SpectodaWasm = {
 
   evaluate_result_t: null,
   send_result_t: null,
+
+  // oposite of convertJSArrayToNumberVector() in https://emscripten.org/docs/api_reference/val.h.html
+  convertNumberVectorToJSArray(vector) {
+    let array = new Uint8Array(vector.size());
+    for (let i = 0; i < array.length; i++) {
+      array[i] = vector.get(i);
+    }
+    return array;
+  },
 
   // TODO make it a getter?
   /**
