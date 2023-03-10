@@ -13,8 +13,8 @@ import "./TnglWriter.js";
 
 let lastEvents = {};
 /////////////////////////////////////////////////////////////////////////
-let lastnumber = "000";
-let lastprefix = "L_";
+let lastnumber = "000",
+  lastprefix = "L_";
 
 // should not create more than one object!
 // the destruction of the Spectoda is not well implemented
