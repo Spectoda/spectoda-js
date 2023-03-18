@@ -26,7 +26,7 @@ function injectScript(src) {
   });
 }
 
-function onWasmLoad() {
+export function onWasmLoad() {
   console.log("Webassembly loaded");
 
   Module.onRuntimeInitialized = () => {
