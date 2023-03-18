@@ -1,9 +1,13 @@
+//// @ts-nocheck
+
 // npm install --save-dev @types/web-bluetooth
 /// <reference types="web-bluetooth" />
 
+import NodeBle, { createBluetooth } from "node-ble";
+
 import { logging } from "./Logging.js";
 import { detectAndroid, detectSafari, hexStringToUint8Array, numberToBytes, sleep, toBytes } from "./functions.js";
-import { COMMAND_FLAGS } from "./SpectodaInterfaceLegacy.js";
+import { COMMAND_FLAGS, SpectodaInterfaceLegacy } from "./SpectodaInterfaceLegacy.js";
 import { TimeTrack } from "./TimeTrack.js";
 import { TnglReader } from "./TnglReader.js";
 
@@ -20,35 +24,35 @@ import { TnglReader } from "./TnglReader.js";
     is renamed Transmitter. Helper class for WebBluetoothConnector.js
 */
 export class NodeBLEConnection {
-  #interfaceReference;
+  #interfaceReference: SpectodaInterfaceLegacy;
   // private fields
-  #service;
-  #networkChar;
-  #clockChar;
-  #deviceChar;
+  #service: BluetoothRemoteGATTService | null;
+  #networkChar : BluetoothRemoteGATTCharacteristic | null;
+  #clockChar: BluetoothRemoteGATTCharacteristic | null;
+  #deviceChar: BluetoothRemoteGATTCharacteristic | null;
   #writing;
   #uuidCounter;
 
-  constructor(interfaceReference) {
+  constructor(interfaceReference: SpectodaInterfaceLegacy) {
     this.#interfaceReference = interfaceReference;
 
     /*
       BLE Spectoda Service
     */
-    this.#service = /** @type {BluetoothRemoteGATTService} */ (null);
+    this.#service = null;
 
     /*  
       Network Characteristics governs the communication with the Spectoda Netwok.
       That means tngl uploads, timeline manipulation, event emitting...
       You can access it only if you are authenticated via the Device Characteristics
     */
-    this.#networkChar = /** @type {BluetoothRemoteGATTCharacteristic} */ (null); // ? only accesable when connected to the mesh network
+    this.#networkChar = null; // ? only accesable when connected to the mesh network
 
     /*  
       The whole purpuse of clock characteristics is to synchronize clock time
       of the application with the Spectoda network
     */
-    this.#clockChar = /** @type {BluetoothRemoteGATTCharacteristic} */ (null); // ? always accesable
+    this.#clockChar =  null; // ? always accesable
 
     /*  
       Device Characteristics is renamed Update Characteristics
@@ -59,7 +63,7 @@ export class NodeBLEConnection {
       access and manipulate json config of the device, adopt device, 
       and authenticate the application client with the spectoda network
     */
-    this.#deviceChar = /** @type {BluetoothRemoteGATTCharacteristic} */ (null);
+    this.#deviceChar = null;
 
     /*
       simple mutex indicating that communication over BLE is in progress
@@ -483,7 +487,6 @@ export class NodeBLEConnection {
 
   destroy() {
     this.reset();
-    this.#interfaceReference = null;
   }
 }
 
@@ -492,34 +495,45 @@ export class NodeBLEConnection {
 // Connector connects the application with one Spectoda Device, that is then in a
 // position of a controller for other Spectoda Devices
 export class SpectodaNodeBluetoothConnector {
+
+  readonly type = "nodebluetooth";
+
+  readonly FW_PRE_0_7_SERVICE_UUID = "0000ffe0-0000-1000-8000-00805f9b34fb";
+  readonly FW_0_7_0_SERVICE_UUID = "60cb125a-0000-0007-0000-5ad20c574c10";
+  readonly FW_0_7_1_SERVICE_UUID = "60cb125a-0000-0007-0001-5ad20c574c10";
+  readonly FW_0_7_2_SERVICE_UUID = "60cb125a-0000-0007-0002-5ad20c574c10";
+  readonly FW_0_7_3_SERVICE_UUID = "60cb125a-0000-0007-0003-5ad20c574c10";
+  readonly FW_0_7_4_SERVICE_UUID = "60cb125a-0000-0007-0004-5ad20c574c10";
+  readonly SPECTODA_SERVICE_UUID = "cc540e31-80be-44af-b64a-5d2def886bf5";
+  readonly SPECTODA_ADOPTING_SERVICE_UUID = "723247e6-3e2d-4279-ad8e-85a13b74d4a5";
+  readonly TERMINAL_CHAR_UUID = "33a0937e-0c61-41ea-b770-007ade2c79fa";
+  readonly CLOCK_CHAR_UUID = "7a1e0e3a-6b9b-49ef-b9b7-65c81b714a19";
+  readonly DEVICE_CHAR_UUID = "9ebe2e4b-10c7-4a81-ac83-49540d1135a5";
+
   #interfaceReference;
 
-  #webBTDevice;
+  #bluetooth: NodeBle.Bluetooth;
+  #bluetoothDestroy: () => void;
+  #bluetoothAdapter: NodeBle.Adapter | null;
+  #bluetoothDevice: NodeBle.Device | null;
+
   #connection;
   #reconection;
   #criteria;
   #connectedGuard;
 
-  constructor(interfaceReference) {
-    this.type = "nodebluetooth";
-
+  constructor(interfaceReference: SpectodaInterfaceLegacy) {
+ 
     this.#interfaceReference = interfaceReference;
 
-    this.FW_PRE_0_7_SERVICE_UUID = "0000ffe0-0000-1000-8000-00805f9b34fb";
-    this.FW_0_7_0_SERVICE_UUID = "60cb125a-0000-0007-0000-5ad20c574c10";
-    this.FW_0_7_1_SERVICE_UUID = "60cb125a-0000-0007-0001-5ad20c574c10";
-    this.FW_0_7_2_SERVICE_UUID = "60cb125a-0000-0007-0002-5ad20c574c10";
-    this.FW_0_7_3_SERVICE_UUID = "60cb125a-0000-0007-0003-5ad20c574c10";
-    this.FW_0_7_4_SERVICE_UUID = "60cb125a-0000-0007-0004-5ad20c574c10";
-    this.SPECTODA_SERVICE_UUID = "cc540e31-80be-44af-b64a-5d2def886bf5";
-    this.SPECTODA_ADOPTING_SERVICE_UUID = "723247e6-3e2d-4279-ad8e-85a13b74d4a5";
+    const { bluetooth: bluetoothDevice, destroy: bluetoothDestroy } = createBluetooth();
 
-    this.TERMINAL_CHAR_UUID = "33a0937e-0c61-41ea-b770-007ade2c79fa";
-    this.CLOCK_CHAR_UUID = "7a1e0e3a-6b9b-49ef-b9b7-65c81b714a19";
-    this.DEVICE_CHAR_UUID = "9ebe2e4b-10c7-4a81-ac83-49540d1135a5";
+    this.#bluetooth = bluetoothDevice;
+    this.#bluetoothDestroy =  bluetoothDestroy;
+    this.#bluetoothAdapter = null;
+    this.#bluetoothDevice = null;
 
-    this.#webBTDevice = null;
-    this.#connection = new WebBLEConnection(interfaceReference);
+    this.#connection = new NodeBLEConnection(interfaceReference);
     this.#reconection = false;
     this.#criteria = {};
 
@@ -577,8 +591,15 @@ criteria example:
   // if no criteria are set, then show all Spectoda devices visible.
   // first bonds the BLE device with the PC/Phone/Tablet if it is needed.
   // Then selects the device
-  userSelect(criteria, timeout) {
+  userSelect(criteria: object, timeout: number): Promise<object> {
     //logging.debug("choose()");
+
+    if (!this.#bluetoothAdapter) {
+      return this.#bluetooth.defaultAdapter().then(adapter => {
+        this.#bluetoothAdapter = adapter;
+        return this.userSelect(criteria, timeout);
+      });
+    }
 
     if (this.#connected()) {
       return this.disconnect()
@@ -770,6 +791,7 @@ criteria example:
 
         return { connector: this.type };
       });
+
   }
 
   // takes the criteria, scans for scan_period and automatically selects the device,
@@ -781,11 +803,19 @@ criteria example:
   // if no criteria are provided, all Spectoda enabled devices (with all different FWs and Owners and such)
   // are eligible.
 
-  autoSelect(criteria, scan_period, timeout) {
+  autoSelect(criteria: object, scan_period: number, timeout: number): Promise<object> {
     // step 1. for the scan_period scan the surroundings for BLE devices.
     // step 2. if some devices matching the criteria are found, then select the one with
     //         the greatest signal strength. If no device is found until the timeout,
     //         then return error
+
+    if (!this.#bluetoothAdapter) {
+      return this.#bluetooth.defaultAdapter().then(adapter => {
+        this.#bluetoothAdapter = adapter;
+        return this.autoSelect(criteria, scan_period, timeout);
+      });
+    }
+
 
     if (this.#connected()) {
       return this.disconnect()
@@ -797,17 +827,35 @@ criteria example:
         });
     }
 
-    // // web bluetooth cant really auto select bluetooth device. This is the closest you can get.
-    // if (this.#selected() && criteria.ownerSignature === this.#criteria.ownerSignature) {
-    //   return Promise.resolve();
-    // }
+    return this.#bluetoothAdapter.isDiscovering().then(async discovering => {
 
-    this.#criteria = criteria;
+      if (discovering) {
+        throw "AdaperAlreadyDiscovering";
+      }
 
-    // Web Bluetooth nepodporuje možnost automatické volby zařízení.
-    // Proto je to tady implementováno totožně jako userSelect.
+      this.#criteria = criteria;
 
-    return this.userSelect(criteria);
+       // TODO scan for devices for the scan_period
+      await this.#bluetoothAdapter?.startDiscovery();
+      await sleep(scan_period);
+      await this.#bluetoothAdapter?.stopDiscovery();
+
+      // TODO if no devices were found, scan until the timeout
+
+      // TODO choose device with the strongest signal
+
+      const choosen_device_uuid = "";
+
+      this.#bluetoothDevice = await this.#bluetoothAdapter?.getDevice(choosen_device_uuid);
+
+      // TODO return info about the device
+      return { "connector": "nodebluetooth", "mac": "00:00:00:00:00:00" };
+    });
+
+
+   
+
+   
   }
 
   // if device is conneced, then disconnect it
@@ -831,7 +879,6 @@ criteria example:
   scan(criteria, scan_period) {
     // returns devices like autoSelect scan() function
     return Promise.resolve("{}");
-
   }
 
   // connect Connector to the selected Spectoda Device. Also can be used to reconnect.
@@ -885,7 +932,7 @@ criteria example:
         if (!this.#connectedGuard) {
           this.#interfaceReference.emit("#connected");
         }
-        return { connector: "webbluetooth" };
+        return { connector: "nodebluetooth" };
       })
       .catch(error => {
         logging.warn(error.name);
@@ -1056,6 +1103,9 @@ criteria example:
       .then(() => {
         return this.unselect();
       })
-      .catch(() => {});
+      .catch(() => {})
+      .finally(() => {
+        this.#bluetoothDestroy();
+      });
   }
 }

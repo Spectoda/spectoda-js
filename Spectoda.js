@@ -800,7 +800,7 @@ export class Spectoda {
     // }, 5000);
 
     const func = device_id => {
-      const payload = [COMMAND_FLAGS.FLAG_EMIT_EVENT, ...labelToBytes(event_label), ...numberToBytes(this.timeline.millis(), 4), numberToBytes(device_id, 2)];
+      const payload = [COMMAND_FLAGS.FLAG_EMIT_EVENT, ...labelToBytes(event_label), ...numberToBytes(this.interface.clock.millis() + 10, 6), numberToBytes(device_id, 1)];
       return this.interface.execute(payload, force_delivery ? null : "E" + event_label + device_id);
     };
 
