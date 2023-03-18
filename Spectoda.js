@@ -509,11 +509,15 @@ export class Spectoda {
       .then(() => {
         const owner_signature_bytes = hexStringToUint8Array(this.#ownerSignature, 16);
         const owner_key_bytes = hexStringToUint8Array(this.#ownerKey, 16);
+
+        logging.info("owner_signature_bytes", owner_signature_bytes);
+        logging.info("owner_key_bytes", owner_key_bytes);
+
         const device_name_bytes = stringToBytes(newDeviceName.slice(0, 11), 16);
         const device_id = newDeviceId;
 
         const request_uuid = this.#getUUID();
-        const bytes = [COMMAND_FLAGS.FLAG_ADOPT_REQUEST, ...numberToBytes(request_uuid, 4), ...owner_signature_bytes, ...owner_key_bytes, ...device_name_bytes, ...numberToBytes(device_id, 1)];
+        const bytes = [COMMAND_FLAGS.FLAG_ADOPT_REQUEST, ...numberToBytes(request_uuid, 4), ...owner_signature_bytes, ...owner_key_bytes/*, ...device_name_bytes, ...numberToBytes(device_id, 1)*/];
 
         logging.debug("> Adopting device...");
 
@@ -1075,7 +1079,10 @@ export class Spectoda {
           await this.interface.execute(command_bytes, null, 20000);
         }
 
-        await sleep(10000);
+        // TODO optimalize this begin by detecting when all controllers have erased its flash
+        // TODO also, right now the gateway controller sends to other controlles to erase flash after it is done.
+        // TODO that slows things down
+        await sleep(20000);
 
         {
           //===========// WRITE //===========//
@@ -1097,6 +1104,8 @@ export class Spectoda {
 
             index_from += chunk_size;
             index_to = index_from + chunk_size;
+
+            await sleep(250);
           }
         }
 
@@ -1110,7 +1119,7 @@ export class Spectoda {
           await this.interface.execute(command_bytes, null);
         }
 
-        await sleep(5000);
+        await sleep(3000);
 
         logging.debug("Rebooting whole network...");
 

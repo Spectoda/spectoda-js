@@ -8,12 +8,7 @@ import { createNanoEvents } from "../functions";
 
 // InterfaceWrapper
 export class Interface {
-  /**
-   * @type {
-   *   begin: () => void,
-   *   end: () => void
-   * }
-   */
+
   #instance;
 
   #eventEmitter;
@@ -163,44 +158,6 @@ export class Interface {
       throw "EvaluateError";
     }
   }
-
-  // /**
-  //  * If request_evaluate_result is not SUCCESS the promise is rejected with an exception
-  //  * @param {Uint8Array} command
-  //  * @return {Uint8Array}
-  //  */
-  // request(request_bytecode, connection_handle) {
-  //   if (!this.#instance) {
-  //     throw "NotConstructed";
-  //   }
-
-  //   let request_vector = new SpectodaWasm.Uint8Vector();
-  //   let response_vector = new SpectodaWasm.Uint8Vector();
-
-  //   request_vector.resize(request_bytecode.length, 0);
-
-  //   for (let i = 0; i < request_bytecode.length; i++) {
-  //     request_vector.set(i, request_bytecode[i]);
-  //   }
-
-  //   const evaluate_result = this.#instance.request(request_vector, response_vector, connection_handle);
-
-  //   request_vector.delete();
-
-  //   let response_bytecode = new Uint8Array(response_vector.size());
-
-  //   for (let i = 0; i < response_vector.size(); i++) {
-  //     response_bytecode[i] = response_vector[i];
-  //   }
-
-  //   response_vector.delete();
-
-  //   if (evaluate_result != SpectodaWasm.evaluate_result_t.COMMAND_SUCCESS) {
-  //     throw "EvaluateError";
-  //   }
-
-  //   return response_bytecode;
-  // }
 
   /**
    * If request_evaluate_result is not SUCCESS the promise is rejected with an exception
