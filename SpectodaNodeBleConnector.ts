@@ -682,6 +682,8 @@ criteria example:
     logging.verbose("stopping scanner");
     await this.#bluetoothAdapter.stopDiscovery();
 
+    this.#bluetoothDevice.on("disconnect", this.#onDisconnected);
+
     logging.verbose("connect done");
     return {
       connector: this.type,
@@ -862,7 +864,7 @@ criteria example:
   // synchronously. So that only after all event handlers (one after the other) are done,
   // only then start this.connect() to reconnect to the bluetooth device
   #onDisconnected = () => {
-    logging.debug("connected()");
+    logging.debug("onDisconnected()");
 
     logging.debug("> Bluetooth Device disconnected");
     this.#connection.reset();
