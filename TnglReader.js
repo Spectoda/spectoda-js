@@ -50,7 +50,8 @@ export class TnglReader {
       this.forward(byteCount);
       return val;
     } catch {
-      throw "Read_Out_Of_Range";
+      console.error("End of the data");
+      throw "ReadOutOfRange";
     }
   }
 
@@ -67,7 +68,7 @@ export class TnglReader {
       return bytes;
     } else {
       console.error("End of the data");
-      throw "Bytes read out of range";
+      throw "ReadOutOfRange";
     }
   }
 
@@ -89,7 +90,7 @@ export class TnglReader {
       return string;
     } else {
       console.warn("End of the data");
-      throw "Bytes read out of range";
+      throw "ReadOutOfRange";
     }
   }
 

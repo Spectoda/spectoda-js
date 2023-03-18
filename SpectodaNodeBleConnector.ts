@@ -1,16 +1,11 @@
 //// @ts-nocheck
-
-// npm install --save-dev @types/web-bluetooth
-/// <reference types="web-bluetooth" />
-
 import NodeBle, { createBluetooth } from "node-ble";
 
 import { logging } from "./Logging.js";
-import { detectAndroid, detectSafari, hexStringToUint8Array, numberToBytes, sleep, toBytes } from "./functions.js";
+import { numberToBytes, sleep, toBytes } from "./functions.js";
 import { COMMAND_FLAGS, SpectodaInterfaceLegacy } from "./SpectodaInterfaceLegacy.js";
 import { TimeTrack } from "./TimeTrack.js";
 import { TnglReader } from "./TnglReader.js";
-import { VoidFunctionComponent } from "react";
 
 // od 0.8.0 maji vsechny spectoda enabled BLE zarizeni jednotne SPECTODA_DEVICE_UUID.
 // kazdy typ (produkt) Spectoda Zarizeni ma svuj kod v manufacturer data
@@ -75,6 +70,8 @@ export class NodeBLEConnection {
   }
 
   #getUUID() {
+    logging.verbose("#getUUID()");
+
     // valid UUIDs are in range [1..4294967295] (32 bit number)
     if (this.#uuidCounter >= 4294967295) {
       this.#uuidCounter = 0;
@@ -84,6 +81,8 @@ export class NodeBLEConnection {
   }
 
   #writeBytes(characteristic: NodeBle.GattCharacteristic, bytes: Uint8Array, response: boolean): Promise<void> {
+    logging.verbose("#writeBytes()", characteristic, bytes, response);
+
     const write_uuid = this.#getUUID(); // two messages near to each other must not have the same UUID!
     const packet_header_size = 12; // 3x 4byte integers: write_uuid, index_from, payload.length
     const packet_size = 512; // min size packet_header_size + 1 !!!! ANDROID NEEDS PACKET SIZE <= 212!!!!
@@ -129,22 +128,27 @@ export class NodeBLEConnection {
   }
 
   #readBytes(characteristic: NodeBle.GattCharacteristic): Promise<DataView> {
+    logging.verbose("#readBytes()", characteristic);
+
     // read the requested value
 
     // TODO write this function effectivelly
     return new Promise(async (resolve, reject) => {
-      let bytes = new Uint8Array((await characteristic.readValue()).buffer);
+      const data = await characteristic.readValue();
+      const bytes = new Uint8Array(data.buffer, data.byteOffset, data.byteLength)
 
-      // console.log(bytes);
+      logging.debug("bytes:", bytes);
 
       let total_bytes = [...bytes];
 
       while (bytes.length == 512) {
-        bytes = new Uint8Array((await characteristic.readValue()).buffer);
+        const data = await characteristic.readValue();
+        const bytes = new Uint8Array(data.buffer, data.byteOffset, data.byteLength)
+
         total_bytes = [...total_bytes, ...bytes];
       }
 
-      // console.log(total_bytes);
+      logging.debug("total_bytes:", total_bytes);
 
       resolve(new DataView(new Uint8Array(total_bytes).buffer));
     });
@@ -152,29 +156,35 @@ export class NodeBLEConnection {
 
   // WIP, event handling from spectoda network to application
   // timeline changes from spectoda network to application ...
-  #onNetworkNotification(event: any) {
-    // logging.debug(event);
+  #onNetworkNotification(data: Buffer) {
+    logging.verbose("onNetworkNotification()", data);
 
-    logging.warn(event);
+    // logging.warn(event);
 
     // this.#interfaceReference.process(event.target.value);
   }
 
   // WIP
-  #onDeviceNotification(event: any) {
+  #onDeviceNotification(data: Buffer) {
+    logging.verbose("onDeviceNotification()", data);
 
-    logging.warn(event);
+    // logging.warn(event);
 
   }
 
   // WIP
-  #onClockNotification(event: any) {
+  #onClockNotification(data: Buffer) {
+    logging.verbose("onClockNotification()", data);
 
-    logging.warn(event);
+    const array = data.buffer.slice(data.byteOffset, data.byteOffset + data.byteLength);
+
+    // logging.warn(event);
 
   }
 
   attach(service: NodeBle.GattService, networkUUID: string, clockUUID: string, deviceUUID: string) {
+    logging.verbose("attach()", service, networkUUID, clockUUID, deviceUUID);
+
     this.#service = service;
 
     logging.debug("> Getting Network Characteristics...");
@@ -240,6 +250,8 @@ export class NodeBLEConnection {
   // dont need to wait for it to resolve, and spam deliver() as you please.
   // transmering queue will handle it
   deliver(payload: Uint8Array, timeout: number): Promise<void> {
+    logging.verbose("deliver()", payload, timeout);
+
     if (!this.#networkChar) {
       logging.warn("Network characteristics is null");
       return Promise.reject("DeliverFailed");
@@ -266,6 +278,8 @@ export class NodeBLEConnection {
   // if deliver or another transmit is being executed at the moment
   // returns promise that will be resolved when message is physically send (only transmittion, not receive)
   transmit(payload: Uint8Array, timeout: number): Promise<void> {
+    logging.verbose("transmit()", payload, timeout);
+
     if (!this.#networkChar) {
       logging.warn("Network characteristics is null");
       return Promise.reject("TransmitFailed");
@@ -291,6 +305,8 @@ export class NodeBLEConnection {
   // request first writes the request to the Device Characteristics
   // and then reads the response also from the Device Characteristics
   request(payload: Uint8Array, read_response: boolean, timeout: number): Promise<DataView | undefined> {
+    logging.verbose("request()", payload, read_response, timeout);
+
     if (!this.#deviceChar) {
       logging.warn("Device characteristics is null");
       return Promise.reject("RequestFailed");
@@ -324,6 +340,8 @@ export class NodeBLEConnection {
 
   // write timestamp to clock characteristics as fast as possible
   writeClock(timestamp: number): Promise<void> {
+    logging.verbose("writeClock()", timestamp);
+
     if (!this.#clockChar) {
       logging.warn("Sync characteristics is null");
       return Promise.reject("ClockWriteFailed");
@@ -352,7 +370,7 @@ export class NodeBLEConnection {
   // reads the current clock characteristics timestamp from the device
   // as fast as possible
   readClock(): Promise<number | undefined> {
-    // return Promise.reject("SimulatedFail");
+    logging.verbose("readClock()");
 
     if (!this.#clockChar) {
       logging.warn("Sync characteristics is null");
@@ -366,9 +384,9 @@ export class NodeBLEConnection {
 
     this.#writing = true;
 
-    return this.#clockChar
-      .readValue()
+    return this.#readBytes(this.#clockChar)
       .then(dataView => {
+        logging.debug(dataView)
         let reader = new TnglReader(dataView);
         return reader.readUint64();
       })
@@ -382,6 +400,8 @@ export class NodeBLEConnection {
   }
 
   async updateFirmware(firmware: number[]): Promise<unknown> {
+    logging.verbose("updateFirmware()", firmware);
+
     if (!this.#deviceChar) {
       logging.warn("Device characteristics is null");
       return Promise.reject("UpdateFailed");
@@ -484,6 +504,9 @@ export class NodeBLEConnection {
 
   // resets the Communations, discarding command queue
   reset() {
+    logging.verbose("reset()");
+
+
     this.#service = undefined;
     this.#networkChar = undefined;
     this.#clockChar = undefined;
@@ -492,6 +515,8 @@ export class NodeBLEConnection {
   }
 
   destroy() {
+    logging.verbose("destroy()");
+
     this.reset();
   }
 }
@@ -502,8 +527,13 @@ export class NodeBLEConnection {
 // position of a controller for other Spectoda Devices
 
 interface Criteria {
-  namePrefix?: string;
-  mac?: string;
+  name?: string
+  namePrefix?: string
+  fwVersion?: string
+  ownerSignature?: string
+  productCode?: number
+  adoptionFlag?: boolean
+  mac?: string
 }
 export class SpectodaNodeBluetoothConnector {
 
@@ -596,7 +626,8 @@ criteria example:
   // first bonds the BLE device with the PC/Phone/Tablet if it is needed.
   // Then selects the device
   userSelect(criteria: object, timeout: number): Promise<object> {
-    //logging.debug("choose()");
+    logging.debug("userSelect()", criteria, timeout);
+
 
     throw "NotImplemented";
   }
@@ -611,12 +642,15 @@ criteria example:
   // are eligible.
 
   async autoSelect(criteria: Criteria[], scanPeriod: number, timeout: number): Promise<object> {
+    logging.debug("autoSelect()", criteria, scanPeriod, timeout);
+
     // step 1. for the scanPeriod scan the surroundings for BLE devices.
     // step 2. if some devices matching the criteria are found, then select the one with
     //         the greatest signal strength. If no device is found until the timeout,
     //         then return error
 
     if (await this.#connected()) {
+      logging.verbose("disconnecting device");
       await this.disconnect().then(() => sleep(1000));
     }
 
@@ -625,24 +659,30 @@ criteria example:
       throw "NotSupported";
     }
 
-    // Device UUID === Device MAC address
-    const deviceMacAddress = criteria[0].mac;
-
     if (!this.#bluetoothAdapter) {
+      logging.verbose("requesting default bluetooth adapter");
       this.#bluetoothAdapter = await this.#bluetooth.defaultAdapter();
     }
 
     this.#criteria = criteria;
 
     if (!await this.#bluetoothAdapter.isDiscovering()) {
+      logging.verbose("starting scanner");
       await this.#bluetoothAdapter.startDiscovery();
     }
 
+    // Device UUID === Device MAC address
+    const deviceMacAddress = criteria[0].mac;
+
+    logging.verbose(`waiting for the device ${deviceMacAddress} to show up`);
     this.#bluetoothDevice = await this.#bluetoothAdapter.waitDevice(deviceMacAddress, timeout, scanPeriod);
 
     await sleep(1000);
+
+    logging.verbose("stopping scanner");
     await this.#bluetoothAdapter.stopDiscovery();
 
+    logging.verbose("connect done");
     return {
       connector: this.type,
       mac: await this.#bluetoothDevice.getAddress(),
@@ -653,6 +693,8 @@ criteria example:
 
   // if device is conneced, then disconnect it
   async unselect(): Promise<void> {
+    logging.debug("unselect()");
+
 
     if (await this.#connected()) {
       await this.disconnect();
@@ -668,6 +710,9 @@ criteria example:
   }
 
   async selected() {
+    logging.debug("selected()");
+
+
     if (!this.#bluetoothDevice) {
       return null;
     }
@@ -680,15 +725,15 @@ criteria example:
   }
 
   scan(criteria: Criteria, scanPeriod: number) {
+    logging.debug("scan()", criteria, scanPeriod);
 
     throw "NotImplemented";
-
   }
 
   // connect Connector to the selected Spectoda Device. Also can be used to reconnect.
   // Fails if no device is selected
   async connect(timeout: number = 10000) {
-    logging.verbose(`connect(timeout=${timeout}})`);
+    logging.debug(`connect(timeout=${timeout}})`);
 
     if (timeout <= 0) {
       logging.debug("> Connect timeout have expired");
@@ -704,7 +749,8 @@ criteria example:
 
     if (await this.#connected()) {
       logging.debug("> Bluetooth Device is already connected");
-      return Promise.resolve();
+      await this.disconnect().then(() => sleep(1000));
+      // return Promise.resolve();
     }
 
     const timeout_handle = setTimeout(
@@ -771,6 +817,7 @@ criteria example:
 
   // there #connected returns boolean true if connected, false if not connected
   #connected(): Promise<boolean> {
+    logging.debug("#connected()");
 
     if (!this.#bluetoothDevice) {
       return Promise.resolve(false);
@@ -781,15 +828,21 @@ criteria example:
 
   // connected() is an interface function that needs to return a Promise
   connected() {
+    logging.debug("connected()");
+
     return this.#connected().then(connected => Promise.resolve(connected ? { connector: this.type } : null));
   }
 
   #disconnect() {
+    logging.debug("#disconnect()");
+
     return this.#bluetoothDevice?.disconnect();
   }
 
   // disconnect Connector from the connected Spectoda Device. But keep it selected
   async disconnect() {
+    logging.debug("disconnect()");
+
     this.#reconection = false;
 
     logging.debug("> Disconnecting from Bluetooth Device...");
@@ -809,6 +862,8 @@ criteria example:
   // synchronously. So that only after all event handlers (one after the other) are done,
   // only then start this.connect() to reconnect to the bluetooth device
   #onDisconnected = () => {
+    logging.debug("connected()");
+
     logging.debug("> Bluetooth Device disconnected");
     this.#connection.reset();
     if (this.#connectedGuard) {
@@ -820,6 +875,8 @@ criteria example:
   // deliver handles the communication with the Spectoda network in a way
   // that the command is guaranteed to arrive
   deliver(payload: Uint8Array, timeout: number) {
+    logging.debug("deliver()", payload, timeout);
+
     if (!this.#connected()) {
       return Promise.reject("DeviceDisconnected");
     }
@@ -829,7 +886,10 @@ criteria example:
 
   // transmit handles the communication with the Spectoda network in a way
   // that the command is NOT guaranteed to arrive
-  transmit(payload:Uint8Array, timeout:number) {
+  transmit(payload: Uint8Array, timeout: number) {
+    logging.debug("transmit()", payload, timeout);
+
+
     if (!this.#connected()) {
       return Promise.reject("DeviceDisconnected");
     }
@@ -839,7 +899,10 @@ criteria example:
 
   // request handles the requests on the Spectoda network. The command request
   // is guaranteed to get a response
-  request(payload:Uint8Array, read_response:boolean, timeout:number) {
+  request(payload: Uint8Array, read_response: boolean, timeout: number) {
+    logging.debug("transmit()", payload, read_response, timeout);
+
+
     if (!this.#connected()) {
       return Promise.reject("DeviceDisconnected");
     }
@@ -850,7 +913,7 @@ criteria example:
   // synchronizes the device internal clock with the provided TimeTrack clock
   // of the application as precisely as possible
   setClock(clock: TimeTrack): Promise<void> {
-    logging.verbose("setClock()");
+    logging.debug("setClock()", clock);
 
     if (!this.#connected()) {
       return Promise.reject("DeviceDisconnected");
@@ -877,7 +940,7 @@ criteria example:
   // returns a TimeTrack clock object that is synchronized with the internal clock
   // of the device as precisely as possible
   getClock() {
-    logging.verbose("getClock()");
+    logging.debug("getClock()");
 
     if (!this.#connected()) {
       return Promise.reject("DeviceDisconnected");
@@ -904,6 +967,9 @@ criteria example:
   // handles the firmware updating. Sends "ota" events
   // to all handlers
   updateFW(firmware: number[]) {
+    logging.debug("updateFW()", firmware);
+
+
     if (!this.#connected()) {
       return Promise.reject("DeviceDisconnected");
     }
@@ -914,6 +980,9 @@ criteria example:
   }
 
   destroy() {
+    logging.debug("destroy()");
+
+
     //this.#interfaceReference = null; // dont know if I need to destroy this reference.. But I guess I dont need to?
     return this.disconnect()
       .catch(() => { })

@@ -32,7 +32,7 @@ import "./TnglWriter.js";
 import { TnglReader } from "./TnglReader.js";
 import { FlutterConnector } from "./FlutterConnector.js";
 import { t } from "./i18n.js";
-import { NodeBLEConnection } from "./SpectodaNodeBleConnector.ts";
+import { SpectodaNodeBluetoothConnector } from "./SpectodaNodeBleConnector.ts";
 
 export const COMMAND_FLAGS = Object.freeze({
   FLAG_UNSUPPORTED_COMMND_RESPONSE: 255, // TODO fix FLAG_OTA_BEGIN to not be 255.
@@ -508,7 +508,7 @@ export class SpectodaInterfaceLegacy {
             break;
 
           case "nodebluetooth":     
-            this.connector = new NodeBLEConnection(this);
+            this.connector = new SpectodaNodeBluetoothConnector(this);
           break;
 
           case "webserial":
