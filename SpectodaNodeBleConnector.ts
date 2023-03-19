@@ -161,7 +161,13 @@ export class NodeBLEConnection {
 
     // logging.warn(event);
 
-    // this.#interfaceReference.process(event.target.value);
+    // const bytes = new Uint8Array(data.buffer, data.byteOffset, data.byteLength);
+    const view = new DataView(data.buffer, data.byteOffset, data.byteLength);
+
+    // logging.verbose("bytes", bytes);
+    logging.verbose("view", view);
+
+    this.#interfaceReference.process(view);
   }
 
   // WIP
@@ -672,23 +678,32 @@ criteria example:
     }
 
     // Device UUID === Device MAC address
-    const deviceMacAddress = criteria[0].mac;
+    const deviceMacAddress = criteria[0].mac.toUpperCase();
 
     logging.verbose(`waiting for the device ${deviceMacAddress} to show up`);
     this.#bluetoothDevice = await this.#bluetoothAdapter.waitDevice(deviceMacAddress, timeout, scanPeriod);
 
-    await sleep(1000);
+    // await sleep(1000);
 
-    logging.verbose("stopping scanner");
-    await this.#bluetoothAdapter.stopDiscovery();
+    // logging.verbose("stopping scanner");
+    // await this.#bluetoothAdapter.stopDiscovery();
 
     this.#bluetoothDevice.on("disconnect", this.#onDisconnected);
 
-    logging.verbose("connect done");
+    logging.debug("getting device address");
+    const mac = await this.#bluetoothDevice.getAddress();
+    logging.debug("getting device name");
+    const name = await this.#bluetoothDevice.getName();
+
+    // const mac = "";
+    // const name = "";
+
+    logging.verbose("select done");
+
     return {
       connector: this.type,
-      mac: await this.#bluetoothDevice.getAddress(),
-      name: await this.#bluetoothDevice.getName()
+      mac: mac,
+      name: name
     };
 
   }
@@ -713,7 +728,6 @@ criteria example:
 
   async selected() {
     logging.debug("selected()");
-
 
     if (!this.#bluetoothDevice) {
       return null;
@@ -749,27 +763,32 @@ criteria example:
       return Promise.reject("DeviceNotSelected");
     }
 
-    if (await this.#connected()) {
-      logging.debug("> Bluetooth Device is already connected");
-      await this.disconnect().then(() => sleep(1000));
-      // return Promise.resolve();
+    const alreadyConnected = await this.#connected();
+
+    if (!alreadyConnected) {
+
+   
+      logging.debug("> Connecting to Bluetooth device...");
+
+      try {
+
+        const paired = await this.#bluetoothDevice.isPaired();
+
+        if (paired) {
+          await this.#bluetoothDevice.connect()
+        } else {
+          await this.#bluetoothDevice.pair()
+        }
+
+      }
+
+      catch {
+        throw "ConnectionFailed";
+      }
+
     }
 
-    const timeout_handle = setTimeout(
-      () => {
-        logging.warn("Timeout triggered");
-        this.disconnect();
-      },
-      timeout < 10000 ? 10000 : timeout,
-    );
-
-    logging.debug("> Connecting to Bluetooth device...");
-
-
-    const paired = await this.#bluetoothDevice.isPaired();
-
-    return (paired ? this.#bluetoothDevice.connect() : this.#bluetoothDevice.pair())
-      .then(() => this.#bluetoothDevice?.gatt())
+    return this.#bluetoothDevice.gatt()
       .then(server => {
         this.#connection.reset();
 
@@ -778,8 +797,6 @@ criteria example:
       })
       .then(service => {
         logging.debug("> Getting the Service Characteristic...");
-
-        clearTimeout(timeout_handle);
 
         if (!service) {
           throw "Error";
@@ -798,22 +815,8 @@ criteria example:
 
         logging.warn(error);
 
-        clearTimeout(timeout_handle);
-
         throw "ConnectionFailed";
 
-        // // If the device is far away, sometimes this "NetworkError" happends
-        // if (error.name == "NetworkError") {
-        //   return sleep(1000).then(() => {
-        //     if (!this.#reconection) {
-        //       return Promise.reject("ConnectionFailed");
-        //     }
-        //     const passed = new Date().getTime() - start;
-        //     return this.connect(timeout - passed);
-        //   });
-        // } else {
-        //   throw error;
-        // }
       });
   }
 
