@@ -36,6 +36,8 @@ export class Spectoda {
 
   #reconnectRC;
 
+  #infiniteReconnection;
+
   constructor(connectorType = "default", reconnectionInterval = 1000, runOnServer = false) {
     // nextjs
     if (typeof window === "undefined" && !runOnServer) {
@@ -70,6 +72,8 @@ export class Spectoda {
     //   this.#onDisconnected(e);
     // });
 
+    this.#infiniteReconnection = false;
+
     this.interface.onConnected = event => {
       if (!this.#adopting) {
         logging.info("> Device connected");
@@ -95,12 +99,20 @@ export class Spectoda {
     // auto clock sync loop
     setInterval(() => {
       if (!this.#updating && this.interface.connector) {
-        this.connected().then(connected => {
+        return this.connected()
+        .then((connected) => {
           if (connected) {
-            this.syncClock().catch(error => {
+            return this.syncClock().catch((error) => {
+              logging.warn(error);
+            });
+          } else if (this.#infiniteReconnection) {
+            return this.interface.connect().catch((error) => {
               logging.warn(error);
             });
           }
+        })
+        .catch((e) => {
+          logging.error(e);
         });
       }
     }, 30000);
@@ -607,8 +619,10 @@ export class Spectoda {
 
   // devices: [ {name:"Lampa 1", mac:"12:34:56:78:9a:bc"}, {name:"Lampa 2", mac:"12:34:56:78:9a:bc"} ]
 
-  connect(devices = null, autoConnect = true, ownerSignature = null, ownerKey = null, connectAny = false, fwVersion = "") {
-    logging.info(`connect(devices=${devices}, autoConnect=${autoConnect}, ownerSignature=${ownerSignature}, ownerKey=${ownerKey}, connectAny=${connectAny}, fwVersion=${fwVersion})`);
+  connect(devices = null, autoConnect = true, ownerSignature = null, ownerKey = null, connectAny = false, fwVersion = "", infiniteReconnection = false) {
+    logging.info(`connect(devices=${devices}, autoConnect=${autoConnect}, ownerSignature=${ownerSignature}, ownerKey=${ownerKey}, connectAny=${connectAny}, fwVersion=${fwVersion}, infiniteReconnection=${infiniteReconnection})`);
+
+    this.#infiniteReconnection = infiniteReconnection;
 
     if (this.#connecting) {
       return Promise.reject("ConnectingInProgress");
@@ -684,6 +698,12 @@ export class Spectoda {
           });
       })
       .catch(error => {
+        
+        if (!this.#infiniteReconnection) {
+          logging.warn("Skipping error alerting");
+          return;
+        }
+
         // TODO: tady tento catch by mel dal thrownout error jako ze nepodarilo pripojit.
         logging.error(error);
         if (error === "UserCanceledSelection") {
@@ -702,6 +722,8 @@ export class Spectoda {
   }
 
   disconnect() {
+    this.#infiniteReconnection = false;
+
     return this.interface.disconnect().catch(e => {
       logging.warn(e);
     });

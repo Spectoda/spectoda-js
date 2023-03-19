@@ -650,61 +650,67 @@ criteria example:
   async autoSelect(criteria: Criteria[], scanPeriod: number, timeout: number): Promise<object> {
     logging.debug("autoSelect()", criteria, scanPeriod, timeout);
 
-    // step 1. for the scanPeriod scan the surroundings for BLE devices.
-    // step 2. if some devices matching the criteria are found, then select the one with
-    //         the greatest signal strength. If no device is found until the timeout,
-    //         then return error
+    try {
 
-    if (await this.#connected()) {
-      logging.verbose("disconnecting device");
-      await this.disconnect().then(() => sleep(1000));
+      // step 1. for the scanPeriod scan the surroundings for BLE devices.
+      // step 2. if some devices matching the criteria are found, then select the one with
+      //         the greatest signal strength. If no device is found until the timeout,
+      //         then return error
+
+      if (await this.#connected()) {
+        logging.verbose("disconnecting device");
+        await this.disconnect().then(() => sleep(1000));
+      }
+
+      if (!criteria || criteria.length != 1 || typeof criteria[0]?.mac !== "string") {
+        logging.error("Criteria must be an array of 1 object with specified MAC address: [{mac:'AA:BB:CC:DD:EE:FF'}]");
+        throw "NotSupported";
+      }
+
+      if (!this.#bluetoothAdapter) {
+        logging.verbose("requesting default bluetooth adapter");
+        this.#bluetoothAdapter = await this.#bluetooth.defaultAdapter();
+      }
+
+      this.#criteria = criteria;
+
+      if (!await this.#bluetoothAdapter.isDiscovering()) {
+        logging.verbose("starting scanner");
+        await this.#bluetoothAdapter.startDiscovery();
+      }
+
+      // Device UUID === Device MAC address
+      const deviceMacAddress = criteria[0].mac.toUpperCase();
+
+      logging.verbose(`waiting for the device ${deviceMacAddress} to show up`);
+      this.#bluetoothDevice = await this.#bluetoothAdapter.waitDevice(deviceMacAddress, timeout, scanPeriod);
+
+      // await sleep(1000);
+
+      // logging.verbose("stopping scanner");
+      // await this.#bluetoothAdapter.stopDiscovery();
+
+      this.#bluetoothDevice.on("disconnect", this.#onDisconnected);
+
+      logging.debug("getting device address");
+      const mac = await this.#bluetoothDevice.getAddress();
+      logging.debug("getting device name");
+      const name = await this.#bluetoothDevice.getName();
+
+      // const mac = "";
+      // const name = "";
+
+      logging.verbose("select done");
+
+      return {
+        connector: this.type,
+        mac: mac,
+        name: name
+      };
+
+    } catch {
+      throw "SelectionFailed";
     }
-
-    if (!criteria || criteria.length != 1 || typeof criteria[0]?.mac !== "string") {
-      logging.error("Criteria must be an array of 1 object with specified MAC address: [{mac:'AA:BB:CC:DD:EE:FF'}]");
-      throw "NotSupported";
-    }
-
-    if (!this.#bluetoothAdapter) {
-      logging.verbose("requesting default bluetooth adapter");
-      this.#bluetoothAdapter = await this.#bluetooth.defaultAdapter();
-    }
-
-    this.#criteria = criteria;
-
-    if (!await this.#bluetoothAdapter.isDiscovering()) {
-      logging.verbose("starting scanner");
-      await this.#bluetoothAdapter.startDiscovery();
-    }
-
-    // Device UUID === Device MAC address
-    const deviceMacAddress = criteria[0].mac.toUpperCase();
-
-    logging.verbose(`waiting for the device ${deviceMacAddress} to show up`);
-    this.#bluetoothDevice = await this.#bluetoothAdapter.waitDevice(deviceMacAddress, timeout, scanPeriod);
-
-    // await sleep(1000);
-
-    // logging.verbose("stopping scanner");
-    // await this.#bluetoothAdapter.stopDiscovery();
-
-    this.#bluetoothDevice.on("disconnect", this.#onDisconnected);
-
-    logging.debug("getting device address");
-    const mac = await this.#bluetoothDevice.getAddress();
-    logging.debug("getting device name");
-    const name = await this.#bluetoothDevice.getName();
-
-    // const mac = "";
-    // const name = "";
-
-    logging.verbose("select done");
-
-    return {
-      connector: this.type,
-      mac: mac,
-      name: name
-    };
 
   }
 
