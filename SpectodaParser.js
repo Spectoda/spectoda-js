@@ -74,6 +74,33 @@ const TNGL_FLAGS = Object.freeze({
   ANIMATION_INL_ANI: 126,
   ANIMATION_DEFINED: 127,
 
+  /* sensors (43 - 125)*/
+
+  OPERATION_BOOLEAN: 43,
+  OPERATION_INTEGER: 44,
+  OPERATION_PERCENTAGE: 45,
+  OPERATION_PULSE: 46,
+  OPERATION_AND: 47,
+  OPERATION_COMPARATOR_EQUAL: 48,
+  OPERATION_COMPARATOR_GREATER: 49,
+  OPERATION_COMPARATOR_LESS: 50,
+  OPERATION_COUNTER: 51,
+  OPERATION_DELAY_STACK: 52,
+  OPERATION_DELAY_OVERWRITE: 53,
+  OPERATION_OR: 54,
+  OPERATION_REPEATER: 55,
+  OPERATION_XOR: 56,
+  OPERATION_NEGATE: 57,
+  OPERATION_EVENT_RELAY: 58,
+  OPERATION_EVENT_TOGGLE: 59,
+  OPERATION_IF: 60,
+
+  PROVIDER_TOUCH: 61,
+  PROVIDER_PROXIMITY: 62,
+  PROVIDER_BUTTON: 63,
+
+  OPERATION_CONNECTION: 125,
+
   /* modifiers */
   MODIFIER_BRIGHTNESS: 128,
   MODIFIER_TIMELINE: 129,
@@ -792,6 +819,91 @@ export class TnglCompiler {
         this.#tnglWriter.writeUint8(CONSTANTS.MODIFIER_SWITCH_BR);
         break;
 
+      // === Sensors ===
+      case "TouchProvider":
+        this.#tnglWriter.writeFlag(TNGL_FLAGS.PROVIDER_TOUCH);
+        break;
+
+      case "ButtonProvider":
+        this.#tnglWriter.writeFlag(TNGL_FLAGS.PROVIDER_BUTTON);
+        break;
+
+      case "ProximityProvider":
+        this.#tnglWriter.writeFlag(TNGL_FLAGS.PROVIDER_PROXIMITY);
+        break;
+
+      case "Boolean":
+        this.#tnglWriter.writeFlag(TNGL_FLAGS.OPERATION_BOOLEAN);
+        break;
+
+      case "Integer":
+        this.#tnglWriter.writeFlag(TNGL_FLAGS.OPERATION_INTEGER);
+        break;
+
+      case "Percentage":
+        this.#tnglWriter.writeFlag(TNGL_FLAGS.OPERATION_PERCENTAGE);
+        break;
+
+      case "Pulse":
+        this.#tnglWriter.writeFlag(TNGL_FLAGS.OPERATION_PULSE);
+        break;
+
+      case "And":
+        this.#tnglWriter.writeFlag(TNGL_FLAGS.OPERATION_AND);
+        break;
+
+      case "ComparatorEqual":
+        this.#tnglWriter.writeFlag(TNGL_FLAGS.OPERATION_COMPARATOR_EQUAL);
+        break;
+
+      case "ComparatorGreater":
+        this.#tnglWriter.writeFlag(TNGL_FLAGS.OPERATION_COMPARATOR_GREATER);
+        break;
+
+      case "ComparatorLess":
+        this.#tnglWriter.writeFlag(TNGL_FLAGS.OPERATION_COMPARATOR_LESS);
+        break;
+
+      case "Counter":
+        this.#tnglWriter.writeFlag(TNGL_FLAGS.OPERATION_COUNTER);
+        break;
+
+      case "DelayStack":
+        this.#tnglWriter.writeFlag(TNGL_FLAGS.OPERATION_DELAY_STACK);
+        break;
+
+      case "DelayOverwrite":
+        this.#tnglWriter.writeFlag(TNGL_FLAGS.OPERATION_DELAY_OVERWRITE);
+        break;
+
+      case "Or":
+        this.#tnglWriter.writeFlag(TNGL_FLAGS.OPERATION_OR);
+        break;
+
+      case "Repeater":
+        this.#tnglWriter.writeFlag(TNGL_FLAGS.OPERATION_REPEATER);
+        break;
+
+      case "Xor":
+        this.#tnglWriter.writeFlag(TNGL_FLAGS.OPERATION_XOR);
+        break;
+
+      case "Negate":
+        this.#tnglWriter.writeFlag(TNGL_FLAGS.OPERATION_NEGATE);
+        break;
+
+      case "EventRelay":
+        this.#tnglWriter.writeFlag(TNGL_FLAGS.OPERATION_EVENT_RELAY);
+        break;
+
+      case "EventToggle":
+        this.#tnglWriter.writeFlag(TNGL_FLAGS.OPERATION_EVENT_TOGGLE);
+        break;
+
+      case "If":
+        this.#tnglWriter.writeFlag(TNGL_FLAGS.OPERATION_IF);
+        break;
+
       default:
         // TODO look for variable_name in the variable_name->variable_address map
 
@@ -838,6 +950,55 @@ export class TnglCompiler {
       default:
         break;
     }
+  }
+
+  compileConnection(connection) {
+    // connection is in this format:
+    // origin->[0x00]destination
+    // using regex, we can split the connection into 3 parts:
+    // origin -> [0x00] -> destination
+    const regex = /([A-Za-z]+)->\[(0x[0-9A-Fa-f]+)\]([A-Za-z]+);/;
+
+    const match = connection.match(regex);
+    if (match === null) {
+      logging.error("Failed to compile connection");
+      return;
+    }
+
+    const origin = match[1];
+    const destination = match[3];
+    const pin = parseInt(match[2], 16);
+
+    // find the variable address
+    let origin_variable_address = undefined;
+    let destination_variable_address = undefined;
+
+    // check if the variable is already declared
+    // look for the latest variable address on the stack
+    for (let i = this.#variable_declarations_stack.length - 1; i >= 0; i--) {
+      const declaration = this.#variable_declarations_stack[i];
+      if (declaration.name === origin) {
+        origin_variable_address = declaration.address;
+      }
+      if (declaration.name === destination) {
+        destination_variable_address = declaration.address;
+      }
+    }
+
+    if (origin_variable_address === undefined) {
+      logging.error("Failed to find origin variable address");
+      return;
+    }
+
+    if (destination_variable_address === undefined) {
+      logging.error("Failed to find destination variable address");
+      return;
+    }
+
+    this.#tnglWriter.writeFlag(TNGL_FLAGS.OPERATION_CONNECTION);
+    this.#tnglWriter.writeUint16(origin_variable_address);
+    this.#tnglWriter.writeUint16(destination_variable_address);
+    this.#tnglWriter.writeUint8(pin);
   }
 
   get tnglBytes() {
@@ -941,6 +1102,10 @@ export class TnglCodeParser {
           this.#compiler.compilePunctuation(element.token);
           break;
 
+        case "connection":
+          this.#compiler.compileConnection(element.token);
+          break;
+
         default:
           logging.warn("Unknown token type >", element.type, "<");
           break;
@@ -958,6 +1123,7 @@ export class TnglCodeParser {
   }
 
   static #parses = {
+    connection: /[A-Za-z]+->\[.*\][A-Za-z]+.*;/,
     undefined: /undefined/,
     const_variale_declaration: /const +[A-Za-z_][\w]* *=/,
     comment: /\/\/[^\n]*/,
