@@ -369,235 +369,243 @@ export class Spectoda {
 
     const criteria = /** @type {any} */ ([{ adoptionFlag: true }]);
 
-    return (autoSelect ? this.interface.autoSelect(criteria, 4000) : this.interface.userSelect(criteria, 60000))
-      .then(() => {
-        this.#adopting = true;
-        return this.interface.connect(10000, true);
-      })
-      .then(async () => {
-        const random_names = [
-          "Karel",
-          "Kobliha",
-          "Lucie",
-          "Anna",
-          "Julie",
-          "Emanuel",
-          "Leontynka",
-          "Maxipes Fik",
-          "Otesanek",
-          "Karkulka",
-          "Popelka",
-          "Malenka",
-          "Fifinka",
-          "Myspulin",
-          "Brumda",
-          "Cmelda",
-          "Saxana",
-          "Petronel",
-          "Odetta",
-          "Vecernice",
-          "Trautenberk",
-          "Rakosnicek",
-          "Asterix",
-          "Obelix",
-          "Gargamel",
-          "Dasenka",
-          "Pucmeloud",
-          "Fantomas",
-          "Skrblik",
-          "Rumburak",
-          "Arabela",
-          "Xenie",
-          "Rumcajs",
-          "Cipisek",
-          "Sarka Farka",
-          "Lotrando",
-          "Zubejda",
-          "Fido",
-          "Canfourek",
-          "Hurvinek",
-          "Spejbl",
-          "Manicka",
-          "Manka",
-          "Macourek",
-          "Ferda",
-          "Beruska",
-          "Vydrysek",
-          "Bolek",
-          "Lolek",
-          "Pepina",
-          "Bambi",
-          "Krakonos",
-          "Lucifek",
-          "Vetrnik",
-          "Laskonka",
-          "Kremrole",
-          "Bombicka",
-          "Kokoska",
-          "Marlenka",
-          "Bobinka",
-          "Louskacek",
-          "Bila pani",
-          "Bob",
-          "Bobek",
-          "Brouk Pytlik",
-          "Kremilek",
-          "Vochomurka",
-          "Kubula",
-          "Locika",
-          "Otesanek",
-          "Petr Pan",
-          "Snehurka",
-          "Smoulinka",
-          "Vila Amalka",
-          "Zlata rybka",
-          "Zvonilka",
-        ];
+    return (
+      (autoSelect ? this.interface.autoSelect(criteria, 4000) : this.interface.userSelect(criteria, 60000))
+        .then(() => {
+          this.#adopting = true;
+          return this.interface.connect(10000, true);
+        })
+        // .then(async () => {
+        // const random_names = [
+        //   "Karel",
+        //   "Kobliha",
+        //   "Lucie",
+        //   "Anna",
+        //   "Julie",
+        //   "Emanuel",
+        //   "Leontynka",
+        //   "Maxipes Fik",
+        //   "Otesanek",
+        //   "Karkulka",
+        //   "Popelka",
+        //   "Malenka",
+        //   "Fifinka",
+        //   "Myspulin",
+        //   "Brumda",
+        //   "Cmelda",
+        //   "Saxana",
+        //   "Petronel",
+        //   "Odetta",
+        //   "Vecernice",
+        //   "Trautenberk",
+        //   "Rakosnicek",
+        //   "Asterix",
+        //   "Obelix",
+        //   "Gargamel",
+        //   "Dasenka",
+        //   "Pucmeloud",
+        //   "Fantomas",
+        //   "Skrblik",
+        //   "Rumburak",
+        //   "Arabela",
+        //   "Xenie",
+        //   "Rumcajs",
+        //   "Cipisek",
+        //   "Sarka Farka",
+        //   "Lotrando",
+        //   "Zubejda",
+        //   "Fido",
+        //   "Canfourek",
+        //   "Hurvinek",
+        //   "Spejbl",
+        //   "Manicka",
+        //   "Manka",
+        //   "Macourek",
+        //   "Ferda",
+        //   "Beruska",
+        //   "Vydrysek",
+        //   "Bolek",
+        //   "Lolek",
+        //   "Pepina",
+        //   "Bambi",
+        //   "Krakonos",
+        //   "Lucifek",
+        //   "Vetrnik",
+        //   "Laskonka",
+        //   "Kremrole",
+        //   "Bombicka",
+        //   "Kokoska",
+        //   "Marlenka",
+        //   "Bobinka",
+        //   "Louskacek",
+        //   "Bila pani",
+        //   "Bob",
+        //   "Bobek",
+        //   "Brouk Pytlik",
+        //   "Kremilek",
+        //   "Vochomurka",
+        //   "Kubula",
+        //   "Locika",
+        //   "Otesanek",
+        //   "Petr Pan",
+        //   "Snehurka",
+        //   "Smoulinka",
+        //   "Vila Amalka",
+        //   "Zlata rybka",
+        //   "Zvonilka",
+        // ];
 
-        try {
-          while (!newDeviceName || !newDeviceName.match(/^[\w_ ]+/)) {
-            let exit = false;
+        // try {
+        //   while (!newDeviceName || !newDeviceName.match(/^[\w_ ]+/)) {
+        //     let exit = false;
 
-            // TODO CR MISA
-            // - remove comments
-            // - remove ts-ignore (add types to window.d.ts tak jak je to ve Studiu)
-            // - rename errorů na formát NOVÝ_ERROR_FORMÁT_JAK_JSEM_SE_BAVIL (dělal bych to tak že ve funkci, které jsem se dotknul změním formáty errorů - takhle to budeme moct postupně formátovat)
+        //     // TODO CR MISA
+        //     // - remove comments
+        //     // - remove ts-ignore (add types to window.d.ts tak jak je to ve Studiu)
+        //     // - rename errorů na formát NOVÝ_ERROR_FORMÁT_JAK_JSEM_SE_BAVIL (dělal bych to tak že ve funkci, které jsem se dotknul změním formáty errorů - takhle to budeme moct postupně formátovat)
 
-            newDeviceName = await window
-              // @ts-ignore
-              // .prompt(t("Unikátní jméno pro vaši lampu vám ji pomůže odlišit od ostatních."), random_names[Math.floor(Math.random() * random_names.length)], t("Pojmenujte svoji lampu"), "text", {
-              // TODO add option for funny random names (for smarthome usage)
-              .prompt(t("Unikátní jméno pro vaši lampu vám ji pomůže odlišit od ostatních."), lastprefix + (Number(lastnumber) + 1 + "").padStart(3, "0"), t("Pojmenujte svoji lampu"), "text", {
-                placeholder: "Spectoda",
-                regex: /^[a-zA-Z0-9_ ]{1,16}$/,
-                invalidText: t("Název obsahuje nepovolené znaky"),
-                maxlength: 16,
-              });
+        //     newDeviceName = await window
+        //       // @ts-ignore
+        //       // .prompt(t("Unikátní jméno pro vaši lampu vám ji pomůže odlišit od ostatních."), random_names[Math.floor(Math.random() * random_names.length)], t("Pojmenujte svoji lampu"), "text", {
+        //       // TODO add option for funny random names (for smarthome usage)
+        //       .prompt(t("Unikátní jméno pro vaši lampu vám ji pomůže odlišit od ostatních."), lastprefix + (Number(lastnumber) + 1 + "").padStart(3, "0"), t("Pojmenujte svoji lampu"), "text", {
+        //         placeholder: "Spectoda",
+        //         regex: /^[a-zA-Z0-9_ ]{1,16}$/,
+        //         invalidText: t("Název obsahuje nepovolené znaky"),
+        //         maxlength: 16,
+        //       });
 
-            if (!newDeviceName) {
-              throw "AdoptionCanceled";
-            }
-          }
-          while (!newDeviceId || (typeof newDeviceId !== "number" && !newDeviceId.match(/^[\d]+/))) {
-            let potencialnumber = newDeviceName.match(/\d+/)[0];
+        //     if (!newDeviceName) {
+        //       throw "AdoptionCanceled";
+        //     }
+        //   }
+        //   while (!newDeviceId || (typeof newDeviceId !== "number" && !newDeviceId.match(/^[\d]+/))) {
+        //     let potencialnumber = newDeviceName.match(/\d+/)[0];
 
-            newDeviceId = await window
-              // @ts-ignore
-              .prompt(t("Prosím, zadejte ID zařízení v rozmezí 0-255."), Number(potencialnumber) + "", t("Přidělte ID svému zařízení"), "number", { min: 0, max: 255 });
-            // @ts-ignore
+        //     newDeviceId = await window
+        //       // @ts-ignore
+        //       .prompt(t("Prosím, zadejte ID zařízení v rozmezí 0-255."), Number(potencialnumber) + "", t("Přidělte ID svému zařízení"), "number", { min: 0, max: 255 });
+        //     // @ts-ignore
 
-            if (!newDeviceId) {
-              throw "AdoptionCanceled";
-            }
-          }
+        //     if (!newDeviceId) {
+        //       throw "AdoptionCanceled";
+        //     }
+        //   }
 
-          newDeviceName = czechHackyToEnglish(newDeviceName); // replace all hacky carky with english letters
-          newDeviceName = newDeviceName.replace(/((?![\w_ ]).)/g, " "); // replace all unsupported characters with whitespaces
-          newDeviceName = newDeviceName.trim(); // trim whitespaces on start and end
-          newDeviceName = newDeviceName.match(/^[\w_ ]+/)[0]; // do final match of only supported chars
+        //   newDeviceName = czechHackyToEnglish(newDeviceName); // replace all hacky carky with english letters
+        //   newDeviceName = newDeviceName.replace(/((?![\w_ ]).)/g, " "); // replace all unsupported characters with whitespaces
+        //   newDeviceName = newDeviceName.trim(); // trim whitespaces on start and end
+        //   newDeviceName = newDeviceName.match(/^[\w_ ]+/)[0]; // do final match of only supported chars
 
-          if (typeof newDeviceId !== "number") {
-            newDeviceId = Number(newDeviceId.match(/^[\d]+/)[0]);
-          }
-        } catch (e) {
-          logging.error(e);
-          await this.disconnect();
-          return Promise.reject("UserRefused");
-        }
-        return Promise.resolve();
-      })
-      .then(() => {
-        const owner_signature_bytes = hexStringToUint8Array(this.#ownerSignature, 16);
-        const owner_key_bytes = hexStringToUint8Array(this.#ownerKey, 16);
+        //   if (typeof newDeviceId !== "number") {
+        //     newDeviceId = Number(newDeviceId.match(/^[\d]+/)[0]);
+        //   }
+        // } catch (e) {
+        //   logging.error(e);
+        //   await this.disconnect();
+        //   return Promise.reject("UserRefused");
+        // }
+        //   return Promise.resolve();
+        // })
+        .then(() => {
+          const owner_signature_bytes = hexStringToUint8Array(this.#ownerSignature, 16);
+          const owner_key_bytes = hexStringToUint8Array(this.#ownerKey, 16);
 
-        logging.info("owner_signature_bytes", owner_signature_bytes);
-        logging.info("owner_key_bytes", owner_key_bytes);
+          logging.info("owner_signature_bytes", owner_signature_bytes);
+          logging.info("owner_key_bytes", owner_key_bytes);
 
-        const device_name_bytes = stringToBytes(newDeviceName.slice(0, 11), 16);
-        const device_id = newDeviceId;
+          // const device_name_bytes = stringToBytes(newDeviceName.slice(0, 11), 16);
+          // const device_id = newDeviceId;
 
-        const request_uuid = this.#getUUID();
-        const bytes = [COMMAND_FLAGS.FLAG_ADOPT_REQUEST, ...numberToBytes(request_uuid, 4), ...owner_signature_bytes, ...owner_key_bytes/*, ...device_name_bytes, ...numberToBytes(device_id, 1)*/];
+          const request_uuid = this.#getUUID();
+          const bytes = [COMMAND_FLAGS.FLAG_ADOPT_REQUEST, ...numberToBytes(request_uuid, 4), ...owner_signature_bytes, ...owner_key_bytes /*, ...device_name_bytes, ...numberToBytes(device_id, 1)*/];
 
-        logging.debug("> Adopting device...");
+          logging.debug("> Adopting device...");
 
-        logging.verbose(bytes);
+          logging.verbose(bytes);
 
-        return this.interface
-          .request(bytes, true)
-          .then(response => {
-            let reader = new TnglReader(response);
+          return this.interface
+            .request(bytes, true)
+            .then(response => {
+              let reader = new TnglReader(response);
 
-            logging.debug("> Got response:", response);
+              logging.debug("> Got response:", response);
 
-            if (reader.readFlag() !== COMMAND_FLAGS.FLAG_ADOPT_RESPONSE) {
-              throw "InvalidResponse";
-            }
+              if (reader.readFlag() !== COMMAND_FLAGS.FLAG_ADOPT_RESPONSE) {
+                throw "InvalidResponse";
+              }
 
-            const response_uuid = reader.readUint32();
+              const response_uuid = reader.readUint32();
 
-            if (response_uuid != request_uuid) {
-              throw "InvalidResponse";
-            }
+              if (response_uuid != request_uuid) {
+                throw "InvalidResponse";
+              }
 
-            const error_code = reader.readUint8();
-            const device_mac_bytes = error_code === 0 ? reader.readBytes(6) : [0, 0, 0, 0, 0, 0];
+              let device_mac = "null";
 
-            const device_mac = Array.from(device_mac_bytes, function (byte) {
-              return ("0" + (byte & 0xff).toString(16)).slice(-2);
-            }).join(":");
+              const error_code = reader.readUint8();
 
-            logging.verbose(`error_code=${error_code}, device_mac=${device_mac}`);
+              // error_code 0 is success
+              if (error_code === 0) {
+                const device_mac_bytes = reader.readBytes(6);
 
-            if (error_code === 0) {
-              logging.info("Adopted ", newDeviceName, "id: " + device_id, device_mac, "successfully");
+                device_mac = Array.from(device_mac_bytes, function (byte) {
+                  return ("0" + (byte & 0xff).toString(16)).slice(-2);
+                }).join(":");
+              }
 
-              return this.rebootAndDisconnectDevice()
-                .catch(e => {
-                  logging.error(e);
-                })
-                .then(() => {
-                  lastnumber = newDeviceName.match(/\d+/)[0];
-                  lastprefix = newDeviceName.replace(/\d+/g, "");
+              logging.verbose(`error_code=${error_code}, device_mac=${device_mac}`);
 
-                  return {
-                    mac: device_mac,
-                    ownerSignature: this.#ownerSignature,
-                    ownerKey: this.#ownerKey,
-                    name: newDeviceName,
-                    id: newDeviceId,
-                  };
+              if (error_code === 0) {
+                logging.info(`Adopted ${device_mac} successfully`);
+
+                return this.rebootAndDisconnectDevice()
+                  .catch(e => {
+                    logging.error(e);
+                  })
+                  .then(() => {
+                    // lastnumber = newDeviceName.match(/\d+/)[0];
+                    // lastprefix = newDeviceName.replace(/\d+/g, "");
+
+                    return {
+                      mac: device_mac,
+                      ownerSignature: this.#ownerSignature,
+                      ownerKey: this.#ownerKey,
+                      // name: newDeviceName,
+                      // id: newDeviceId,
+                    };
+                  });
+              } else {
+                logging.warn("Adoption refused.");
+                window.alert(t("Zkuste to, prosím, později."), t("Přidání se nezdařilo"), { confirm: t("OK") });
+
+                return this.rebootAndDisconnectDevice().catch(() => {
+                  // @ts-ignore
+                  throw "AdoptionRefused";
                 });
-            } else {
-              logging.warn("Adoption refused.");
-              window.alert(t("Zkuste to, prosím, později."), t("Přidání se nezdařilo"), { confirm: t("OK") });
-
-              return this.rebootAndDisconnectDevice().catch(() => {
+              }
+            })
+            .catch(e => {
+              logging.error(e);
+              this.disconnect().finally(() => {
                 // @ts-ignore
-                throw "AdoptionRefused";
+                throw "AdoptionFailed";
               });
-            }
-          })
-          .catch(e => {
-            logging.error(e);
-            this.disconnect().finally(() => {
-              // @ts-ignore
-              throw "AdoptionFailed";
             });
-          });
-      })
-      .catch(error => {
-        logging.warn(error);
-        if (error === "UserCanceledSelection") {
-          return this.connected().then(result => {
-            if (!result) throw "UserCanceledSelection";
-          });
-        }
-      })
-      .finally(() => {
-        this.#adoptingGuard = false;
-        this.#adopting = false;
-      });
+        })
+        .catch(error => {
+          logging.warn(error);
+          if (error === "UserCanceledSelection") {
+            return this.connected().then(result => {
+              if (!result) throw "UserCanceledSelection";
+            });
+          }
+        })
+        .finally(() => {
+          this.#adoptingGuard = false;
+          this.#adopting = false;
+        })
+    );
   }
 
   // devices: [ {name:"Lampa 1", mac:"12:34:56:78:9a:bc"}, {name:"Lampa 2", mac:"12:34:56:78:9a:bc"} ]
@@ -795,7 +803,7 @@ export class Spectoda {
     // }, 5000);
 
     const func = device_id => {
-      const payload = [COMMAND_FLAGS.FLAG_EMIT_EVENT, ...labelToBytes(event_label), ...numberToBytes(this.timeline.millis(), 4), numberToBytes(device_id, 2)];
+      const payload = [COMMAND_FLAGS.FLAG_EMIT_EVENT, ...labelToBytes(event_label), ...numberToBytes(this.interface.clock.millis() + 10, 6), numberToBytes(device_id, 1)];
       return this.interface.execute(payload, force_delivery ? null : "E" + event_label + device_id);
     };
 
@@ -1099,13 +1107,11 @@ export class Spectoda {
             written += index_to - index_from;
 
             const percentage = Math.floor((written * 10000) / firmware.length) / 100;
-            logging.debug(percentage + "%");
+            logging.info(percentage + "%");
             this.interface.emit("ota_progress", percentage);
 
             index_from += chunk_size;
             index_to = index_from + chunk_size;
-
-            await sleep(250);
           }
         }
 
@@ -1719,6 +1725,35 @@ export class Spectoda {
         throw "Fail";
       }
     });
+  }
+
+  eraseEventHistory() {
+    logging.debug("> Erasing event history...");
+
+    const request_uuid = this.#getUUID();
+    const bytes = [COMMAND_FLAGS.FLAG_ERASE_EVENT_HISTORY_REQUEST, ...numberToBytes(request_uuid, 4)];
+
+    return this.interface.execute(bytes, true);
+
+    // return this.interface.request(bytes, true).then(response => {
+    //   let reader = new TnglReader(response);
+
+    //   logging.info(`response.byteLength=${response.byteLength}`);
+
+    //   if (reader.readFlag() !== COMMAND_FLAGS.FLAG_ERASE_EVENT_HISTORY_RESPONSE) {
+    //     throw "InvalidResponseFlag";
+    //   }
+
+    //   const response_uuid = reader.readUint32();
+
+    //   if (response_uuid != request_uuid) {
+    //     throw "InvalidResponseUuid";
+    //   }
+
+    //   const error_code = reader.readUint8();
+
+    //   logging.info(`error_code=${error_code}`);
+    // });
   }
 
   deviceSleep() {

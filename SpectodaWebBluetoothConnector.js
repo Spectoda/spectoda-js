@@ -332,6 +332,9 @@ export class WebBLEConnection {
     const bytes = toBytes(timestamp, 8);
     return this.#clockChar
       .writeValueWithoutResponse(new Uint8Array(bytes))
+      .then(() => {
+        logging.debug("Clock characteristics written");
+      })
       .catch(e => {
         logging.error(e);
         throw "ClockWriteFailed";
