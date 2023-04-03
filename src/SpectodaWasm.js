@@ -69,8 +69,8 @@ export const SpectodaWasm = {
   // void                         end()
   // void                         setClockTimestamp(const clock_ms timestamp)
   // clock_ms                     getClockTimestamp()
-  // evaluate_result_t            execute(const std::vector<uint8_t>& commands_bytecode_vector, const connection_handle_t source_connection)
-  // evaluate_result_t            request(const std::vector<uint8_t>& request_bytecode_vector, std::vector<uint8_t>& response_bytecode_vector_out, const tngl::connection_handle_t source_connection)
+  // evaluate_result_t            execute(const std::vector<uint8_t>& commands_bytecode_vector, const connection_t source_connection)
+  // evaluate_result_t            request(const std::vector<uint8_t>& request_bytecode_vector, std::vector<uint8_t>& response_bytecode_vector_out, const tngl::connection_t source_connection)
 
   // clone()
   // delete()

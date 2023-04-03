@@ -145,7 +145,7 @@ export class WebBLEConnection {
   // WIP, event handling from spectoda network to application
   // timeline changes from spectoda network to application ...
   #onNetworkNotification(event) {
-    // logging.debug(event);
+    logging.debug("#onNetworkNotification", event);
 
     // let value = event.target.value;
     // let a = [];
@@ -159,6 +159,21 @@ export class WebBLEConnection {
 
   // WIP
   #onDeviceNotification(event) {
+    logging.debug("#onDeviceNotification", event);
+
+    // let value = event.target.value;
+    // let a = [];
+    // for (let i = 0; i < value.byteLength; i++) {
+    //   a.push("0x" + ("00" + value.getUint8(i).toString(16)).slice(-2));
+    // }
+    // logging.debug("> " + a.join(" "));
+    // this.#interfaceReference.process(event.target.value);
+  }
+
+  // WIP
+  #onClockNotification(event) {
+    logging.debug("#onClockNotification", event);
+
     // let value = event.target.value;
     // let a = [];
     // for (let i = 0; i < value.byteLength; i++) {
@@ -199,6 +214,18 @@ export class WebBLEConnection {
       })
       .then(characteristic => {
         this.#clockChar = characteristic;
+
+        return this.#clockChar
+          .startNotifications()
+          .then(() => {
+            logging.debug("> Clock notifications started");
+            this.#clockChar.oncharacteristicvaluechanged = event => {
+              this.#onClockNotification(event);
+            };
+          })
+          .catch(e => {
+            logging.warn(e);
+          });
       })
       .catch(e => {
         logging.warn(e);
@@ -332,6 +359,9 @@ export class WebBLEConnection {
     const bytes = toBytes(timestamp, 8);
     return this.#clockChar
       .writeValueWithoutResponse(new Uint8Array(bytes))
+      .then(() => {
+        logging.debug("Clock characteristics written");
+      })
       .catch(e => {
         logging.error(e);
         throw "ClockWriteFailed";
