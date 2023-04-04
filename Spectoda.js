@@ -96,26 +96,26 @@ export class Spectoda {
       }
     };
 
-    // auto clock sync loop
-    setInterval(() => {
-      if (!this.#updating && this.interface.connector) {
-        return this.connected()
-        .then((connected) => {
-          if (connected) {
-            return this.syncClock().catch((error) => {
-              logging.warn(error);
-            });
-          } else if (this.#infiniteReconnection) {
-            return this.interface.connect().catch((error) => {
-              logging.warn(error);
-            });
-          }
-        })
-        .catch((e) => {
-          logging.error(e);
-        });
-      }
-    }, 30000);
+    // // auto clock sync loop
+    // setInterval(() => {
+    //   if (!this.#updating && this.interface.connector) {
+    //     return this.connected()
+    //     .then((connected) => {
+    //       if (connected) {
+    //         return this.syncClock().catch((error) => {
+    //           logging.warn(error);
+    //         });
+    //       } else if (this.#infiniteReconnection) {
+    //         return this.interface.connect().catch((error) => {
+    //           logging.warn(error);
+    //         });
+    //       }
+    //     })
+    //     .catch((e) => {
+    //       logging.error(e);
+    //     });
+    //   }
+    // }, 30000);
   }
 
   requestWakeLock() {

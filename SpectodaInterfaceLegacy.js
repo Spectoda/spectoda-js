@@ -696,6 +696,7 @@ export class SpectodaInterfaceLegacy {
   }
 
   connect(timeout = 10000, supportLegacy = false) {
+
     if (timeout < 1000) {
       logging.error("Timeout is too short.");
       return Promise.reject("InvalidTimeout");
@@ -1018,12 +1019,14 @@ export class SpectodaInterfaceLegacy {
                 await this.connector
                   .connect(item.a, item.b) // a = timeout, b = supportLegacy
                   .then(device => {
+                    logging.debug("> Device connected")
                     if (!this.#connectGuard) {
                       logging.error("Connection logic error. #connected not called during successful connect()?");
                       logging.warn("Emitting #connected");
                       this.#eventEmitter.emit("#connected");
                     }
 
+                    logging.debug("> Requesting clock")
                     return (
                       this.connector
                         .getClock()
@@ -1065,12 +1068,12 @@ export class SpectodaInterfaceLegacy {
               case Query.TYPE_DISCONNECT:
                 this.#reconection = false;
                 this.#disconnectQuery = new Query();
-                await this.connector
-                  .request([COMMAND_FLAGS.FLAG_DEVICE_DISCONNECT_REQUEST], false)
-                  .catch(() => {})
-                  .then(() => {
-                    return this.connector.disconnect();
-                  })
+                // await this.connector
+                //   .request([COMMAND_FLAGS.FLAG_DEVICE_DISCONNECT_REQUEST], false)
+                //   .catch(() => {})
+                //   .then(() => {
+                    return this.connector.disconnect()
+                  // })
                   .then(this.#disconnectQuery.promise)
                   .then(() => {
                     this.#disconnectQuery = null;

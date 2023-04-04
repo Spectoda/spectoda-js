@@ -128,7 +128,7 @@ export class NodeBLEConnection {
   }
 
   #readBytes(characteristic: NodeBle.GattCharacteristic): Promise<DataView> {
-    logging.verbose("#readBytes()", characteristic);
+    logging.verbose(`#readBytes()`);
 
     // read the requested value
 
@@ -197,6 +197,7 @@ export class NodeBLEConnection {
     return this.#service
       .getCharacteristic(networkUUID)
       .then(characteristic => {
+        logging.info("#networkChar", characteristic);
         this.#networkChar = characteristic;
 
         return this.#networkChar
@@ -213,24 +214,26 @@ export class NodeBLEConnection {
       })
       .catch(e => {
         logging.warn(e);
-        throw "ConnectionFailed";
+        throw "ConnectionFailed3";
       })
       .then(() => {
         logging.debug("> Getting Clock Characteristics...");
         return this.#service?.getCharacteristic(clockUUID);
       })
       .then(characteristic => {
+        logging.info("#clockChar", characteristic);
         this.#clockChar = characteristic;
       })
       .catch(e => {
         logging.warn(e);
-        throw "ConnectionFailed";
+        throw "ConnectionFailed4";
       })
       .then(() => {
         logging.debug("> Getting Device Characteristics...");
         return this.#service?.getCharacteristic(deviceUUID);
       })
       .then(characteristic => {
+        logging.info("#deviceChar", characteristic);
         this.#deviceChar = characteristic;
 
         return this.#deviceChar?.startNotifications()
@@ -246,7 +249,7 @@ export class NodeBLEConnection {
       })
       .catch(e => {
         logging.warn(e);
-        throw "ConnectionFailed";
+        throw "ConnectionFailed7";
       });
   }
 
@@ -542,7 +545,6 @@ interface Criteria {
   mac?: string
 }
 export class SpectodaNodeBluetoothConnector {
-
   readonly type = "nodebluetooth";
 
   readonly SPECTODA_SERVICE_UUID = "cc540e31-80be-44af-b64a-5d2def886bf5";
@@ -563,6 +565,7 @@ export class SpectodaNodeBluetoothConnector {
   #connectedGuard;
 
   constructor(interfaceReference: SpectodaInterfaceLegacy) {
+    console.debug("Initilizing nodebluetooth connector");
 
     this.#interfaceReference = interfaceReference;
 
@@ -633,7 +636,6 @@ criteria example:
   // Then selects the device
   userSelect(criteria: object, timeout: number): Promise<object> {
     logging.debug("userSelect()", criteria, timeout);
-
 
     throw "NotImplemented";
   }
@@ -718,7 +720,6 @@ criteria example:
   async unselect(): Promise<void> {
     logging.debug("unselect()");
 
-
     if (await this.#connected()) {
       await this.disconnect();
     }
@@ -754,8 +755,10 @@ criteria example:
 
   // connect Connector to the selected Spectoda Device. Also can be used to reconnect.
   // Fails if no device is selected
-  async connect(timeout: number = 10000) {
+  async connect(timeout: number = 60000) {
     logging.debug(`connect(timeout=${timeout}})`);
+
+    // await sleep(5000);
 
     if (timeout <= 0) {
       logging.debug("> Connect timeout have expired");
@@ -773,41 +776,47 @@ criteria example:
 
     if (!alreadyConnected) {
 
-   
       logging.debug("> Connecting to Bluetooth device...");
 
       try {
 
-        const paired = await this.#bluetoothDevice.isPaired();
+        // const paired = await this.#bluetoothDevice.isPaired();
 
-        if (paired) {
+        // if (paired) {
           await this.#bluetoothDevice.connect()
-        } else {
-          await this.#bluetoothDevice.pair()
-        }
+        // } else {
+        //   await this.#bluetoothDevice.pair()
+        // }
 
       }
 
-      catch {
-        throw "ConnectionFailed";
+      catch (e) {
+        logging.error(e);
+        throw "ConnectionFailed6";
       }
 
     }
+
+    logging.debug("> Getting the GATT server...");
 
     return this.#bluetoothDevice.gatt()
       .then(server => {
         this.#connection.reset();
 
+        if (!server) {
+          throw "Error";
+        }
+
         logging.debug("> Getting the Bluetooth Service...");
-        return server?.getPrimaryService(this.SPECTODA_SERVICE_UUID);
+        return server.getPrimaryService(this.SPECTODA_SERVICE_UUID);
       })
       .then(service => {
-        logging.debug("> Getting the Service Characteristic...");
-
+      
         if (!service) {
           throw "Error";
         }
 
+        logging.debug("> Getting the Service Characteristic...");
         return this.#connection.attach(service, this.TERMINAL_CHAR_UUID, this.CLOCK_CHAR_UUID, this.DEVICE_CHAR_UUID);
       })
       .then(() => {
@@ -821,7 +830,7 @@ criteria example:
 
         logging.warn(error);
 
-        throw "ConnectionFailed";
+        throw "ConnectionFailed5";
 
       });
   }
@@ -873,8 +882,6 @@ criteria example:
   // synchronously. So that only after all event handlers (one after the other) are done,
   // only then start this.connect() to reconnect to the bluetooth device
   #onDisconnected = () => {
-    logging.debug("onDisconnected()");
-
     logging.debug("> Bluetooth Device disconnected");
     this.#connection.reset();
     if (this.#connectedGuard) {
@@ -900,7 +907,6 @@ criteria example:
   transmit(payload: Uint8Array, timeout: number) {
     logging.debug("transmit()", payload, timeout);
 
-
     if (!this.#connected()) {
       return Promise.reject("DeviceDisconnected");
     }
@@ -911,8 +917,7 @@ criteria example:
   // request handles the requests on the Spectoda network. The command request
   // is guaranteed to get a response
   request(payload: Uint8Array, read_response: boolean, timeout: number) {
-    logging.debug("transmit()", payload, read_response, timeout);
-
+    logging.debug("request()", payload, read_response, timeout);
 
     if (!this.#connected()) {
       return Promise.reject("DeviceDisconnected");

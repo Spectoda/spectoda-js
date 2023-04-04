@@ -531,6 +531,8 @@ export class SpectodaWebBluetoothConnector {
   #connectedGuard;
 
   constructor(interfaceReference) {
+    console.debug("Initilizing webbluetooth connector");
+    
     this.type = "webbluetooth";
 
     this.#interfaceReference = interfaceReference;
