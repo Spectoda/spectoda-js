@@ -783,7 +783,7 @@ criteria example:
         // const paired = await this.#bluetoothDevice.isPaired();
 
         // if (paired) {
-          await this.#bluetoothDevice.connect()
+        await this.#bluetoothDevice.connect()
         // } else {
         //   await this.#bluetoothDevice.pair()
         // }
