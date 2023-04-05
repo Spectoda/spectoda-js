@@ -32,7 +32,7 @@ import "./TnglWriter.js";
 import { TnglReader } from "./TnglReader.js";
 import { FlutterConnector } from "./FlutterConnector.js";
 import { t } from "./i18n.js";
-import { SpectodaNodeBluetoothConnector } from "./SpectodaNodeBleConnector.ts";
+import { SpectodaNodeBluetoothConnector } from "./SpectodaNodeBleConnector";
 
 export const COMMAND_FLAGS = Object.freeze({
   FLAG_UNSUPPORTED_COMMND_RESPONSE: 255, // TODO fix FLAG_OTA_BEGIN to not be 255.
@@ -513,9 +513,9 @@ export class SpectodaInterfaceLegacy {
 
             break;
 
-          case "nodebluetooth":     
+          case "nodebluetooth":
             this.connector = new SpectodaNodeBluetoothConnector(this);
-          break;
+            break;
 
           case "webserial":
             if (detectChrome()) {
@@ -696,7 +696,6 @@ export class SpectodaInterfaceLegacy {
   }
 
   connect(timeout = 10000, supportLegacy = false) {
-
     if (timeout < 1000) {
       logging.error("Timeout is too short.");
       return Promise.reject("InvalidTimeout");

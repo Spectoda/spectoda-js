@@ -1,4 +1,4 @@
-//// @ts-nocheck
+// @ts-nocheck
 import NodeBle, { createBluetooth } from "node-ble";
 
 import { logging } from "./Logging.js";
