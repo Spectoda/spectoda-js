@@ -1019,14 +1019,14 @@ export class SpectodaInterfaceLegacy {
                 await this.connector
                   .connect(item.a, item.b) // a = timeout, b = supportLegacy
                   .then(device => {
-                    logging.debug("> Device connected")
+                    logging.debug("> Device connected");
                     if (!this.#connectGuard) {
                       logging.error("Connection logic error. #connected not called during successful connect()?");
                       logging.warn("Emitting #connected");
                       this.#eventEmitter.emit("#connected");
                     }
 
-                    logging.debug("> Requesting clock")
+                    logging.debug("> Requesting clock");
                     return (
                       this.connector
                         .getClock()
@@ -1068,12 +1068,12 @@ export class SpectodaInterfaceLegacy {
               case Query.TYPE_DISCONNECT:
                 this.#reconection = false;
                 this.#disconnectQuery = new Query();
-                // await this.connector
-                //   .request([COMMAND_FLAGS.FLAG_DEVICE_DISCONNECT_REQUEST], false)
-                //   .catch(() => {})
-                //   .then(() => {
-                    return this.connector.disconnect()
-                  // })
+                await this.connector
+                  .request([COMMAND_FLAGS.FLAG_DEVICE_DISCONNECT_REQUEST], false)
+                  .catch(() => {})
+                  .then(() => {
+                    return this.connector.disconnect();
+                  })
                   .then(this.#disconnectQuery.promise)
                   .then(() => {
                     this.#disconnectQuery = null;
@@ -1404,39 +1404,6 @@ export class SpectodaInterfaceLegacy {
             }
           }
           break;
-
-        // case COMMAND_FLAGS.FLAG_RSSI_DATA:
-        //   {
-        //     let obj = {};
-
-        //     logging.verbose("FLAG_RSSI_DATA");
-        //     reader.readFlag(); // COMMAND_FLAGS.FLAG_RSSI_DATA
-
-        //     obj.device_mac = reader
-        //       .readBytes(6)
-        //       .map(v => v.toString(16).padStart(2, "0"))
-        //       .join(":");
-        //     logging.verbose("obj.device_mac =", obj.device_mac);
-
-        //     const rssi_data_items = reader.readUint32();
-        //     obj.rssi = [];
-
-        //     for (let i = 0; i < rssi_data_items; i++) {
-        //       let item = {};
-        //       item.mac = reader
-        //         .readBytes(6)
-        //         .map(v => v.toString(16).padStart(2, "0"))
-        //         .join(":");
-        //       item.value = reader.readInt16() / 256;
-        //       logging.verbose("mac =", item.mac);
-        //       logging.verbose("rssi =", item.value);
-        //       obj.rssi.push(item);
-        //     }
-
-        //     logging.verbose(obj);
-        //     this.#eventEmitter.emit("rssi_data", obj);
-        //   }
-        //   break;
 
         case COMMAND_FLAGS.FLAG_PEER_CONNECTED:
           {
