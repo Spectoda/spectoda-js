@@ -74,33 +74,6 @@ const TNGL_FLAGS = Object.freeze({
   ANIMATION_INL_ANI: 126,
   ANIMATION_DEFINED: 127,
 
-  /* sensors (43 - 125)*/
-
-  OPERATION_BOOLEAN: 43,
-  OPERATION_INTEGER: 44,
-  OPERATION_PERCENTAGE: 45,
-  OPERATION_PULSE: 46,
-  OPERATION_AND: 47,
-  OPERATION_COMPARATOR_EQUAL: 48,
-  OPERATION_COMPARATOR_GREATER: 49,
-  OPERATION_COMPARATOR_LESS: 50,
-  OPERATION_COUNTER: 51,
-  OPERATION_DELAY_STACK: 52,
-  OPERATION_DELAY_OVERWRITE: 53,
-  OPERATION_OR: 54,
-  OPERATION_REPEATER: 55,
-  OPERATION_XOR: 56,
-  OPERATION_NEGATE: 57,
-  OPERATION_EVENT_RELAY: 58,
-  OPERATION_EVENT_TOGGLE: 59,
-  OPERATION_IF: 60,
-
-  PROVIDER_TOUCH: 61,
-  PROVIDER_PROXIMITY: 62,
-  PROVIDER_BUTTON: 63,
-
-  OPERATION_CONNECTION: 125,
-
   /* modifiers */
   MODIFIER_BRIGHTNESS: 128,
   MODIFIER_TIMELINE: 129,
@@ -173,10 +146,42 @@ const TNGL_FLAGS = Object.freeze({
 
   // ======================
 
+  /* special sesnsor commands */
+  SENSOR_DEFINITION_BEGIN : 205,
+  SENSOR_DEFINITION_END : 206,
+
   /* command ends */
   END_OF_SCOPE: 254,
   END_OF_TNGL_BYTES: 255,
 });
+
+const SENSORS_FLAGS = Object.freeze({
+  OPERATION_BOOLEAN: 1,
+  OPERATION_INTEGER: 2,
+  OPERATION_PERCENTAGE: 3,
+  OPERATION_PULSE: 4,
+  OPERATION_AND: 5,
+  OPERATION_COMPARATOR_EQUAL: 6,
+  OPERATION_COMPARATOR_GREATER: 7,
+  OPERATION_COMPARATOR_LESS: 8,
+  OPERATION_COUNTER: 9,
+  OPERATION_DELAY_STACK: 10,
+  OPERATION_DELAY_OVERWRITE: 11,
+  OPERATION_OR: 12,
+  OPERATION_REPEATER: 13,
+  OPERATION_XOR: 14,
+  OPERATION_NEGATE: 15,
+  OPERATION_EVENT_RELAY: 16,
+  OPERATION_EVENT_TOGGLE: 17,
+  OPERATION_IF: 18,
+
+  PROVIDER_PROXIMITY: 151,
+  PROVIDER_BUTTON: 152,
+  PROVIDER_TOUCH: 153,
+
+  OPERATION_CONNECTION: 254,
+});
+
 
 export class TnglCompiler {
   #tnglWriter;
@@ -821,88 +826,97 @@ export class TnglCompiler {
 
       // === Sensors ===
       case "TouchProvider":
-        this.#tnglWriter.writeFlag(TNGL_FLAGS.PROVIDER_TOUCH);
+        this.#tnglWriter.writeFlag(SENSORS_FLAGS.PROVIDER_TOUCH);
         break;
 
       case "ButtonProvider":
-        this.#tnglWriter.writeFlag(TNGL_FLAGS.PROVIDER_BUTTON);
+        this.#tnglWriter.writeFlag(SENSORS_FLAGS.PROVIDER_BUTTON);
         break;
 
       case "ProximityProvider":
-        this.#tnglWriter.writeFlag(TNGL_FLAGS.PROVIDER_PROXIMITY);
+        this.#tnglWriter.writeFlag(SENSORS_FLAGS.PROVIDER_PROXIMITY);
         break;
 
       case "Boolean":
-        this.#tnglWriter.writeFlag(TNGL_FLAGS.OPERATION_BOOLEAN);
+        this.#tnglWriter.writeFlag(SENSORS_FLAGS.OPERATION_BOOLEAN);
         break;
 
       case "Integer":
-        this.#tnglWriter.writeFlag(TNGL_FLAGS.OPERATION_INTEGER);
+        this.#tnglWriter.writeFlag(SENSORS_FLAGS.OPERATION_INTEGER);
         break;
 
       case "Percentage":
-        this.#tnglWriter.writeFlag(TNGL_FLAGS.OPERATION_PERCENTAGE);
+        this.#tnglWriter.writeFlag(SENSORS_FLAGS.OPERATION_PERCENTAGE);
         break;
 
       case "Pulse":
-        this.#tnglWriter.writeFlag(TNGL_FLAGS.OPERATION_PULSE);
+        this.#tnglWriter.writeFlag(SENSORS_FLAGS.OPERATION_PULSE);
         break;
 
       case "And":
-        this.#tnglWriter.writeFlag(TNGL_FLAGS.OPERATION_AND);
+        this.#tnglWriter.writeFlag(SENSORS_FLAGS.OPERATION_AND);
         break;
 
       case "ComparatorEqual":
-        this.#tnglWriter.writeFlag(TNGL_FLAGS.OPERATION_COMPARATOR_EQUAL);
+        this.#tnglWriter.writeFlag(SENSORS_FLAGS.OPERATION_COMPARATOR_EQUAL);
         break;
 
       case "ComparatorGreater":
-        this.#tnglWriter.writeFlag(TNGL_FLAGS.OPERATION_COMPARATOR_GREATER);
+        this.#tnglWriter.writeFlag(SENSORS_FLAGS.OPERATION_COMPARATOR_GREATER);
         break;
 
       case "ComparatorLess":
-        this.#tnglWriter.writeFlag(TNGL_FLAGS.OPERATION_COMPARATOR_LESS);
+        this.#tnglWriter.writeFlag(SENSORS_FLAGS.OPERATION_COMPARATOR_LESS);
         break;
 
       case "Counter":
-        this.#tnglWriter.writeFlag(TNGL_FLAGS.OPERATION_COUNTER);
+        this.#tnglWriter.writeFlag(SENSORS_FLAGS.OPERATION_COUNTER);
         break;
 
       case "DelayStack":
-        this.#tnglWriter.writeFlag(TNGL_FLAGS.OPERATION_DELAY_STACK);
+        this.#tnglWriter.writeFlag(SENSORS_FLAGS.OPERATION_DELAY_STACK);
         break;
 
       case "DelayOverwrite":
-        this.#tnglWriter.writeFlag(TNGL_FLAGS.OPERATION_DELAY_OVERWRITE);
+        this.#tnglWriter.writeFlag(SENSORS_FLAGS.OPERATION_DELAY_OVERWRITE);
         break;
 
       case "Or":
-        this.#tnglWriter.writeFlag(TNGL_FLAGS.OPERATION_OR);
+        this.#tnglWriter.writeFlag(SENSORS_FLAGS.OPERATION_OR);
         break;
 
       case "Repeater":
-        this.#tnglWriter.writeFlag(TNGL_FLAGS.OPERATION_REPEATER);
+        this.#tnglWriter.writeFlag(SENSORS_FLAGS.OPERATION_REPEATER);
         break;
 
       case "Xor":
-        this.#tnglWriter.writeFlag(TNGL_FLAGS.OPERATION_XOR);
+        this.#tnglWriter.writeFlag(SENSORS_FLAGS.OPERATION_XOR);
         break;
 
       case "Negate":
-        this.#tnglWriter.writeFlag(TNGL_FLAGS.OPERATION_NEGATE);
+        this.#tnglWriter.writeFlag(SENSORS_FLAGS.OPERATION_NEGATE);
         break;
 
       case "EventRelay":
-        this.#tnglWriter.writeFlag(TNGL_FLAGS.OPERATION_EVENT_RELAY);
+        this.#tnglWriter.writeFlag(SENSORS_FLAGS.OPERATION_EVENT_RELAY);
         break;
 
       case "EventToggle":
-        this.#tnglWriter.writeFlag(TNGL_FLAGS.OPERATION_EVENT_TOGGLE);
+        this.#tnglWriter.writeFlag(SENSORS_FLAGS.OPERATION_EVENT_TOGGLE);
         break;
 
       case "If":
-        this.#tnglWriter.writeFlag(TNGL_FLAGS.OPERATION_IF);
+        this.#tnglWriter.writeFlag(SENSORS_FLAGS.OPERATION_IF);
         break;
+
+      case "beginSensorDefinition":
+        this.#tnglWriter.writeFlag(TNGL_FLAGS.SENSOR_DEFINITION_BEGIN);
+        break;
+
+      case "endSensorDefinition":
+        this.#tnglWriter.writeFlag(TNGL_FLAGS.SENSOR_DEFINITION_END);
+        break;
+      
 
       default:
         // TODO look for variable_name in the variable_name->variable_address map
@@ -995,7 +1009,7 @@ export class TnglCompiler {
       return;
     }
 
-    this.#tnglWriter.writeFlag(TNGL_FLAGS.OPERATION_CONNECTION);
+    this.#tnglWriter.writeFlag(SENSORS_FLAGS.OPERATION_CONNECTION);
     this.#tnglWriter.writeUint16(origin_variable_address);
     this.#tnglWriter.writeUint16(destination_variable_address);
     this.#tnglWriter.writeUint8(pin);
