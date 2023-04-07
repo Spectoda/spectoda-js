@@ -971,7 +971,7 @@ export class TnglCompiler {
     // origin->[0x00]destination
     // using regex, we can split the connection into 3 parts:
     // origin -> [0x00] -> destination
-    const regex = /([a-zA-Z0-9]+)->\[0x([0-9a-fA-F]+)\]([a-zA-Z0-9]+)/;
+    const regex = /([a-zA-Z0-9_]+)->\[0x([0-9a-fA-F]+)\]([a-zA-Z0-9_]+)/;
 
     const match = connection.match(regex);
     if (match === null) {
@@ -1000,12 +1000,12 @@ export class TnglCompiler {
     }
 
     if (origin_variable_address === undefined) {
-      logging.error("Failed to find origin variable address");
+      logging.error(`Failed to find origin variable address [${origin}]`);
       return;
     }
 
     if (destination_variable_address === undefined) {
-      logging.error("Failed to find destination variable address");
+      logging.error(`Failed to find destination variable address [${destination}]`);
       return;
     }
 
@@ -1137,7 +1137,7 @@ export class TnglCodeParser {
   }
 
   static #parses = {
-    connection: /[A-Za-z0-9]+->\[.*\][A-Za-z0-9]+.*;/,
+    connection: /[A-Za-z0-9_]+->\[.*\][A-Za-z0-9_]+.*;/,
     undefined: /undefined/,
     const_variale_declaration: /const +[A-Za-z_][\w]* *=/,
     comment: /\/\/[^\n]*/,
