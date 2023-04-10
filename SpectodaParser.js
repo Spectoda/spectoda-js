@@ -151,6 +151,34 @@ const TNGL_FLAGS = Object.freeze({
   END_OF_TNGL_BYTES: 255,
 });
 
+const SENSORS_FLAGS = Object.freeze({
+  OPERATION_BOOLEAN: 1,
+  OPERATION_INTEGER: 2,
+  OPERATION_PERCENTAGE: 3,
+  OPERATION_PULSE: 4,
+  OPERATION_AND: 5,
+  OPERATION_COMPARATOR_EQUAL: 6,
+  OPERATION_COMPARATOR_GREATER: 7,
+  OPERATION_COMPARATOR_LESS: 8,
+  OPERATION_COUNTER: 9,
+  OPERATION_DELAY_STACK: 10,
+  OPERATION_DELAY_OVERWRITE: 11,
+  OPERATION_OR: 12,
+  OPERATION_REPEATER: 13,
+  OPERATION_XOR: 14,
+  OPERATION_NEGATE: 15,
+  OPERATION_EVENT_RELAY: 16,
+  OPERATION_EVENT_TOGGLE: 17,
+  OPERATION_IF: 18,
+
+  PROVIDER_PROXIMITY: 151,
+  PROVIDER_BUTTON: 152,
+  PROVIDER_TOUCH: 153,
+
+  OPERATION_CONNECTION: 253,
+});
+
+
 export class TnglCompiler {
   #tnglWriter;
   #variable_address_counter;
@@ -792,6 +820,100 @@ export class TnglCompiler {
         this.#tnglWriter.writeUint8(CONSTANTS.MODIFIER_SWITCH_BR);
         break;
 
+      // === Sensors ===
+      case "TouchProvider":
+        this.#tnglWriter.writeFlag(SENSORS_FLAGS.PROVIDER_TOUCH);
+        break;
+
+      case "ButtonProvider":
+        this.#tnglWriter.writeFlag(SENSORS_FLAGS.PROVIDER_BUTTON);
+        break;
+
+      case "ProximityProvider":
+        this.#tnglWriter.writeFlag(SENSORS_FLAGS.PROVIDER_PROXIMITY);
+        break;
+
+      case "Boolean":
+        this.#tnglWriter.writeFlag(SENSORS_FLAGS.OPERATION_BOOLEAN);
+        break;
+
+      case "Integer":
+        this.#tnglWriter.writeFlag(SENSORS_FLAGS.OPERATION_INTEGER);
+        break;
+
+      case "Percentage":
+        this.#tnglWriter.writeFlag(SENSORS_FLAGS.OPERATION_PERCENTAGE);
+        break;
+
+      case "Pulse":
+        this.#tnglWriter.writeFlag(SENSORS_FLAGS.OPERATION_PULSE);
+        break;
+
+      case "And":
+        this.#tnglWriter.writeFlag(SENSORS_FLAGS.OPERATION_AND);
+        break;
+
+      case "ComparatorEqual":
+        this.#tnglWriter.writeFlag(SENSORS_FLAGS.OPERATION_COMPARATOR_EQUAL);
+        break;
+
+      case "ComparatorGreater":
+        this.#tnglWriter.writeFlag(SENSORS_FLAGS.OPERATION_COMPARATOR_GREATER);
+        break;
+
+      case "ComparatorLess":
+        this.#tnglWriter.writeFlag(SENSORS_FLAGS.OPERATION_COMPARATOR_LESS);
+        break;
+
+      case "Counter":
+        this.#tnglWriter.writeFlag(SENSORS_FLAGS.OPERATION_COUNTER);
+        break;
+
+      case "DelayStack":
+        this.#tnglWriter.writeFlag(SENSORS_FLAGS.OPERATION_DELAY_STACK);
+        break;
+
+      case "DelayOverwrite":
+        this.#tnglWriter.writeFlag(SENSORS_FLAGS.OPERATION_DELAY_OVERWRITE);
+        break;
+
+      case "Or":
+        this.#tnglWriter.writeFlag(SENSORS_FLAGS.OPERATION_OR);
+        break;
+
+      case "Repeater":
+        this.#tnglWriter.writeFlag(SENSORS_FLAGS.OPERATION_REPEATER);
+        break;
+
+      case "Xor":
+        this.#tnglWriter.writeFlag(SENSORS_FLAGS.OPERATION_XOR);
+        break;
+
+      case "Negate":
+        this.#tnglWriter.writeFlag(SENSORS_FLAGS.OPERATION_NEGATE);
+        break;
+
+      case "EventRelay":
+        this.#tnglWriter.writeFlag(SENSORS_FLAGS.OPERATION_EVENT_RELAY);
+        break;
+
+      case "EventToggle":
+        this.#tnglWriter.writeFlag(SENSORS_FLAGS.OPERATION_EVENT_TOGGLE);
+        break;
+
+      case "If":
+        this.#tnglWriter.writeFlag(SENSORS_FLAGS.OPERATION_IF);
+        break;
+
+      case "beginSensorDefinition":
+        this.#tnglWriter.writeFlag(TNGL_FLAGS.SENSOR_DEFINITION_BEGIN);
+        break;
+
+      case "endSensorDefinition":
+        this.#tnglWriter.writeFlag(TNGL_FLAGS.SENSOR_DEFINITION_END);
+        break;
+      
+
       default:
         // TODO look for variable_name in the variable_name->variable_address map
 
@@ -838,6 +960,55 @@ export class TnglCompiler {
       default:
         break;
     }
+  }
+
+  compileConnection(connection) {
+    // connection is in this format:
+    // origin->[0x00]destination
+    // using regex, we can split the connection into 3 parts:
+    // origin -> [0x00] -> destination
+    const regex = /([a-zA-Z0-9_]+)->\[0x([0-9a-fA-F]+)\]([a-zA-Z0-9_]+)/;
+
+    const match = connection.match(regex);
+    if (match === null) {
+      logging.error("Failed to compile connection");
+      return;
+    }
+
+    const origin = match[1];
+    const destination = match[3];
+    const pin = parseInt(match[2], 16);
+
+    // find the variable address
+    let origin_variable_address = undefined;
+    let destination_variable_address = undefined;
+
+    // check if the variable is already declared
+    // look for the latest variable address on the stack
+    for (let i = this.#variable_declarations_stack.length - 1; i >= 0; i--) {
+      const declaration = this.#variable_declarations_stack[i];
+      if (declaration.name === origin) {
+        origin_variable_address = declaration.address;
+      }
+      if (declaration.name === destination) {
+        destination_variable_address = declaration.address;
+      }
+    }
+
+    if (origin_variable_address === undefined) {
+      logging.error(`Failed to find origin variable address [${origin}]`);
+      return;
+    }
+
+    if (destination_variable_address === undefined) {
+      logging.error(`Failed to find destination variable address [${destination}]`);
+      return;
+    }
+
+    this.#tnglWriter.writeFlag(SENSORS_FLAGS.OPERATION_CONNECTION);
+    this.#tnglWriter.writeUint16(origin_variable_address);
+    this.#tnglWriter.writeUint16(destination_variable_address);
+    this.#tnglWriter.writeUint8(pin);
   }
 
   get tnglBytes() {
@@ -941,6 +1112,10 @@ export class TnglCodeParser {
           this.#compiler.compilePunctuation(element.token);
           break;
 
+        case "connection":
+          this.#compiler.compileConnection(element.token);
+          break;
+
         default:
           logging.warn("Unknown token type >", element.type, "<");
           break;
@@ -958,6 +1133,7 @@ export class TnglCodeParser {
   }
 
   static #parses = {
+    connection: /[A-Za-z0-9_]+->\[.*\][A-Za-z0-9_]+.*;/,
     undefined: /undefined/,
     const_variale_declaration: /const +[A-Za-z_][\w]* *=/,
     comment: /\/\/[^\n]*/,
