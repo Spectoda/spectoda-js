@@ -146,10 +146,6 @@ const TNGL_FLAGS = Object.freeze({
 
   // ======================
 
-  /* special sesnsor commands */
-  SENSOR_DEFINITION_BEGIN : 205,
-  SENSOR_DEFINITION_END : 206,
-
   /* command ends */
   END_OF_SCOPE: 254,
   END_OF_TNGL_BYTES: 255,
