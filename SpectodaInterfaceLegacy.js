@@ -1134,6 +1134,8 @@ export class SpectodaInterfaceLegacy {
 
                 logging.debug("EXECUTE", uint8ArrayToHexString(data));
 
+                this.emit("wasm_execute", data);
+
                 await this.connector
                   .deliver(data, timeout)
                   .then(() => {
@@ -1158,6 +1160,8 @@ export class SpectodaInterfaceLegacy {
 
                 logging.debug("REQUEST", uint8ArrayToHexString(item.a));
 
+                this.emit("wasm_request", item.a);
+
                 await this.connector
                   .request(item.a, item.b, item.c)
                   .then(response => {
@@ -1170,6 +1174,8 @@ export class SpectodaInterfaceLegacy {
                 break;
 
               case Query.TYPE_SET_CLOCK:
+                this.emit("wasm_clock", item.a.millis());
+
                 await this.connector
                   .setClock(item.a)
                   .then(response => {
@@ -1184,8 +1190,10 @@ export class SpectodaInterfaceLegacy {
               case Query.TYPE_GET_CLOCK:
                 await this.connector
                   .getClock()
-                  .then(response => {
-                    item.resolve(response);
+                  .then(clock => {
+                    this.emit("wasm_clock", clock.millis());
+
+                    item.resolve(clock);
                   })
                   .catch(error => {
                     //logging.warn(error);
