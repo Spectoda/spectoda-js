@@ -174,6 +174,7 @@ const SENSORS_FLAGS = Object.freeze({
   PROVIDER_PROXIMITY: 151,
   PROVIDER_BUTTON: 152,
   PROVIDER_TOUCH: 153,
+  PROVIDER_VOLTAGE: 154,
 
   OPERATION_CONNECTION: 253,
 });
@@ -905,12 +906,8 @@ export class TnglCompiler {
         this.#tnglWriter.writeFlag(SENSORS_FLAGS.OPERATION_IF);
         break;
 
-      case "beginSensorDefinition":
-        this.#tnglWriter.writeFlag(TNGL_FLAGS.SENSOR_DEFINITION_BEGIN);
-        break;
-
-      case "endSensorDefinition":
-        this.#tnglWriter.writeFlag(TNGL_FLAGS.SENSOR_DEFINITION_END);
+      case "VoltageProvider":
+        this.#tnglWriter.writeFlag(SENSORS_FLAGS.PROVIDER_VOLTAGE);
         break;
       
 
