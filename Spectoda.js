@@ -1566,12 +1566,14 @@ export class Spectoda {
       logging.info(`response.byteLength=${response.byteLength}`);
 
       if (reader.readFlag() !== COMMAND_FLAGS.FLAG_EVENT_HISTORY_BC_RESPONSE) {
+        logging.error("InvalidResponseFlag");
         throw "InvalidResponseFlag";
       }
 
       const response_uuid = reader.readUint32();
 
       if (response_uuid != request_uuid) {
+        logging.error("InvalidResponseUuid");
         throw "InvalidResponseUuid";
       }
 
@@ -1581,9 +1583,9 @@ export class Spectoda {
 
       if (error_code === 0) {
         const historic_events_bytecode_size = reader.readUint16();
-        const historic_events_bytecode = reader.readBytes(historic_events_bytecode_size);
-
         logging.info(`historic_events_bytecode_size=${historic_events_bytecode_size}`);
+
+        const historic_events_bytecode = reader.readBytes(historic_events_bytecode_size);
         logging.verbose(`historic_events_bytecode=[${historic_events_bytecode}]`);
 
         this.interface.process(new DataView(new Uint8Array(historic_events_bytecode).buffer));
