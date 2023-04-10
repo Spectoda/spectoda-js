@@ -80,7 +80,7 @@ class FlutterConnection {
         window.flutterConnection.emit(event);
       });
 
-      // TODO #process is renamed to something else
+      // ! deprecated
       window.addEventListener("#process", e => {
         // @ts-ignore
         const bytes = e.detail.value;
@@ -90,6 +90,29 @@ class FlutterConnection {
         // @ts-ignore
         window.flutterConnection.process(bytes);
       });
+
+      window.addEventListener("#network", e => {
+        // @ts-ignore
+        const bytes = e.detail.value;
+        logging.debug(`Triggered #network: [${bytes}]`, bytes);
+
+
+        // @ts-ignore
+        window.flutterConnection.process(bytes);
+      });
+
+      window.addEventListener("#device", e => {
+        // @ts-ignore
+        const bytes = e.detail.value;
+        logging.debug(`Triggered #device: [${bytes}]`, bytes);
+      });
+
+      window.addEventListener("#clock", e => {
+        // @ts-ignore
+        const bytes = e.detail.value;
+        logging.debug(`Triggered #clock: [${bytes}]`, bytes);
+      });
+
     } else {
       logging.debug("flutter_inappwebview in window NOT detected");
       logging.info("Simulating Flutter Functions");
