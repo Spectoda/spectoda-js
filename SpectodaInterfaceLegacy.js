@@ -34,11 +34,11 @@ import { FlutterConnector } from "./FlutterConnector.js";
 import { t } from "./i18n.js";
 
 export const COMMAND_FLAGS = Object.freeze({
-  FLAG_UNSUPPORTED_COMMND_RESPONSE: 255, // TODO fix FLAG_OTA_BEGIN to not be 255.
+  FLAG_UNSUPPORTED_COMMND_RESPONSE: 255, // TODO change FLAG_OTA_BEGIN to not be 255.
 
   // legacy FW update flags
   FLAG_OTA_BEGIN: 255, // legacy
-  FLAG_OTA_WRITE: 0, // legacy
+  FLAG_OTA_WRITE: 0, // legacy // TODO change FLAG_OTA_WRITE to not be 0.
   FLAG_OTA_END: 254, // legacy
   FLAG_OTA_RESET: 253, // legacy
 
@@ -958,15 +958,31 @@ export class SpectodaInterfaceLegacy {
                   });
                 break;
 
+              // case Query.TYPE_DISCONNECT:
+              //   this.#reconection = false;
+              //   this.#disconnectQuery = new Query();
+              //   await this.connector
+              //     .request([COMMAND_FLAGS.FLAG_DEVICE_DISCONNECT_REQUEST], false)
+              //     .catch(() => {})
+              //     .then(() => {
+              //       return this.connector.disconnect();
+              //     })
+              //     .then(this.#disconnectQuery.promise)
+              //     .then(() => {
+              //       this.#disconnectQuery = null;
+              //       item.resolve();
+              //     })
+              //     .catch(error => {
+              //       //logging.warn(error);
+              //       item.reject(error);
+              //     });
+              //   break;
+
               case Query.TYPE_DISCONNECT:
                 this.#reconection = false;
                 this.#disconnectQuery = new Query();
                 await this.connector
-                  .request([COMMAND_FLAGS.FLAG_DEVICE_DISCONNECT_REQUEST], false)
-                  .catch(() => {})
-                  .then(() => {
-                    return this.connector.disconnect();
-                  })
+                  .disconnect()
                   .then(this.#disconnectQuery.promise)
                   .then(() => {
                     this.#disconnectQuery = null;
@@ -1131,6 +1147,9 @@ export class SpectodaInterfaceLegacy {
   }
 
   process(bytecode) {
+
+    this.emit("wasm_execute", new Uint8Array(bytecode.buffer));
+
     let reader = new TnglReader(bytecode);
 
     const utc_timestamp = new Date().getTime();

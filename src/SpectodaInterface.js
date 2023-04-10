@@ -50,8 +50,8 @@ export class Interface {
           return undefined;
         },
 
-        _sendExecute: (commands_bytecode_vector, source_connection) => {
-          logging.debug("_sendExecute", commands_bytecode_vector, source_connection);
+        _onExecute: (commands_bytecode_vector, source_connection) => {
+          logging.debug("_onExecute", commands_bytecode_vector, source_connection);
 
           try {
             // dont know how to make Uint8Array in C++ yet. So I am forced to give data out in C++ std::vector
@@ -101,9 +101,9 @@ export class Interface {
       throw "AlreadyDestructed";
     }
 
-    this.#instance.end();
-    this.#instance.delete();
-    this.#instance = null;
+    this.#instance.end(); // end the spectoda stuff
+    this.#instance.delete(); // delete (free) C++ object
+    this.#instance = null; // remove javascript reference
   }
 
   /**
