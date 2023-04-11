@@ -225,7 +225,6 @@ criteria example:
         return;
       }
 
-      this.#interfaceReference.emit("wasm_execute", payload);
 
       resolve();
     });
@@ -247,8 +246,6 @@ criteria example:
         reject("TransmitFailed");
         return;
       }
-
-      this.#interfaceReference.emit("wasm_execute", payload);
 
       resolve();
     });
@@ -273,8 +270,6 @@ criteria example:
         reject("RequestFailed");
         return;
       }
-
-      this.#interfaceReference.emit("wasm_request", payload);
 
       let reader = new TnglReader(new DataView(new Uint8Array(payload).buffer));
 
@@ -479,8 +474,6 @@ criteria example:
       }
       this.#clock.setMillis(clock.millis());
 
-      this.#interfaceReference.emit("wasm_clock", this.#clock.millis());
-
       resolve();
     });
   }
@@ -500,8 +493,6 @@ criteria example:
         reject("ClockReadFailed");
         return;
       }
-
-      this.#interfaceReference.emit("wasm_clock", this.#clock.millis());
 
       resolve(this.#clock);
     });

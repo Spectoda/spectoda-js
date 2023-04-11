@@ -145,7 +145,7 @@ export class WebBLEConnection {
   // WIP, event handling from spectoda network to application
   // timeline changes from spectoda network to application ...
   #onNetworkNotification(event) {
-    logging.debug("#onNetworkNotification", event);
+    logging.verbose("#onNetworkNotification", event);
 
     // let value = event.target.value;
     // let a = [];
@@ -159,7 +159,7 @@ export class WebBLEConnection {
 
   // WIP
   #onDeviceNotification(event) {
-    logging.debug("#onDeviceNotification", event);
+    logging.verbose("#onDeviceNotification", event);
 
     // let value = event.target.value;
     // let a = [];
@@ -168,11 +168,13 @@ export class WebBLEConnection {
     // }
     // logging.debug("> " + a.join(" "));
     // this.#interfaceReference.process(event.target.value);
+
+    // TODO process request
   }
 
   // WIP
   #onClockNotification(event) {
-    logging.debug("#onClockNotification", event);
+    logging.verbose("#onClockNotification", event);
 
     // let value = event.target.value;
     // let a = [];
@@ -181,6 +183,8 @@ export class WebBLEConnection {
     // }
     // logging.debug("> " + a.join(" "));
     // this.#interfaceReference.process(event.target.value);
+
+    // TODO process synchronize
   }
 
   attach(service, networkUUID, clockUUID, deviceUUID) {
@@ -863,7 +867,6 @@ criteria example:
   scan(criteria, scan_period) {
     // returns devices like autoSelect scan() function
     return Promise.resolve("{}");
-
   }
 
   // connect Connector to the selected Spectoda Device. Also can be used to reconnect.
