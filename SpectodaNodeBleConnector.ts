@@ -660,31 +660,31 @@ criteria example:
       //         then return error
 
       if (await this.#connected()) {
-        logging.verbose("disconnecting device");
+        logging.verbose("> Disconnecting device");
         await this.disconnect().then(() => sleep(1000));
       }
 
       if (!criteria || criteria.length != 1 || typeof criteria[0]?.mac !== "string") {
         logging.error("Criteria must be an array of 1 object with specified MAC address: [{mac:'AA:BB:CC:DD:EE:FF'}]");
-        throw "NotSupported";
+        throw "CriteriaNotSupported";
       }
 
       if (!this.#bluetoothAdapter) {
-        logging.verbose("requesting default bluetooth adapter");
+        logging.verbose("> Requesting default bluetooth adapter");
         this.#bluetoothAdapter = await this.#bluetooth.defaultAdapter();
       }
 
       this.#criteria = criteria;
 
       if (!await this.#bluetoothAdapter.isDiscovering()) {
-        logging.verbose("starting scanner");
+        logging.verbose("> Starting BLE scanner");
         await this.#bluetoothAdapter.startDiscovery();
       }
 
       // Device UUID === Device MAC address
       const deviceMacAddress = criteria[0].mac.toUpperCase();
 
-      logging.verbose(`waiting for the device ${deviceMacAddress} to show up`);
+      logging.verbose(`> Waiting for the device ${deviceMacAddress} to show up`);
       this.#bluetoothDevice = await this.#bluetoothAdapter.waitDevice(deviceMacAddress, timeout, scanPeriod);
 
       // await sleep(1000);
@@ -694,15 +694,10 @@ criteria example:
 
       this.#bluetoothDevice.on("disconnect", this.#onDisconnected);
 
-      logging.debug("getting device address");
-      const mac = await this.#bluetoothDevice.getAddress();
-      logging.debug("getting device name");
-      const name = await this.#bluetoothDevice.getName();
-
-      // const mac = "";
-      // const name = "";
-
-      logging.verbose("select done");
+      logging.debug("> Getting BLE device mac address");
+      const mac = await this.#bluetoothDevice.getAddress().catch(e => console.error(e));
+      logging.debug("> Getting BLE device name");
+      const name = await this.#bluetoothDevice.getName().catch(e => console.error(e));
 
       return {
         connector: this.type,
@@ -710,7 +705,8 @@ criteria example:
         name: name
       };
 
-    } catch {
+    } catch (e) {
+      logging.error(e);
       throw "SelectionFailed";
     }
 
@@ -728,10 +724,10 @@ criteria example:
     this.#connection.reset();
   }
 
-  // #selected returns boolean if a device is selected
-  #selected() {
-    return Promise.resolve(this.#bluetoothDevice ? true : false);
-  }
+  // // #selected returns boolean if a device is selected
+  // #selected() {
+  //   return Promise.resolve(this.#bluetoothDevice ? true : false);
+  // }
 
   async selected() {
     logging.debug("selected()");
@@ -740,10 +736,15 @@ criteria example:
       return null;
     }
 
+    logging.debug("> Getting BLE device mac address");
+    const mac = await this.#bluetoothDevice.getAddress().catch(e => console.error(e));
+    logging.debug("> Getting BLE device name");
+    const name = await this.#bluetoothDevice.getName().catch(e => console.error(e));
+
     return {
       connector: this.type,
-      mac: await this.#bluetoothDevice.getAddress(),
-      name: await this.#bluetoothDevice.getName()
+      mac: mac,
+      name: name
     };
   }
 
