@@ -175,6 +175,8 @@ const SENSORS_FLAGS = Object.freeze({
   PROVIDER_BUTTON: 152,
   PROVIDER_TOUCH: 153,
   PROVIDER_VOLTAGE: 154,
+  PROVIDER_PIR: 155,
+  PROVIDER_SLIDER: 156,
 
   OPERATION_CONNECTION: 253,
 });
@@ -908,6 +910,14 @@ export class TnglCompiler {
 
       case "VoltageProvider":
         this.#tnglWriter.writeFlag(SENSORS_FLAGS.PROVIDER_VOLTAGE);
+        break;
+
+      case "PIRProvider": 
+        this.#tnglWriter.writeFlag(SENSORS_FLAGS.PROVIDER_PIR);
+        break;
+
+      case "SliderProvider":
+        this.#tnglWriter.writeFlag(SENSORS_FLAGS.PROVIDER_SLIDER);
         break;
       
 
