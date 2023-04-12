@@ -521,15 +521,17 @@ export class Spectoda {
       let devices_criteria = /** @type {any} */ ([]);
 
       for (let i = 0; i < devices.length; i++) {
-        let criterium = {};
+        let criterium = { ownerSignature: this.#ownerSignature };
 
         if (devices[i].name) {
-          criterium.ownerSignature = this.#ownerSignature;
           criterium.name = devices[i].name.slice(0, 11);
-          devices_criteria.push(criterium);
-        } else if (devices[i].mac) {
-          criterium.ownerSignature = this.#ownerSignature;
+        }  
+        
+        if (devices[i].mac) {
           criterium.mac = devices[i].mac;
+        }
+
+        if(devices[i].name || devices[i].mac) {
           devices_criteria.push(criterium);
         }
       }

@@ -684,14 +684,14 @@ criteria example:
       //         the greatest signal strength. If no device is found until the timeout,
       //         then return error
 
-      if (!criteria || criteria.length != 1 || typeof criteria[0]?.mac !== "string") {
-        logging.error("Criteria must be an array of 1 object with specified MAC address: [{mac:'AA:BB:CC:DD:EE:FF'}]");
+      if (!criteria || criteria.length < 1 || typeof criteria[0]?.mac !== "string") {
+        logging.error("Criteria must be an array of at least 1 object with specified MAC address: [{mac:'AA:BB:CC:DD:EE:FF'}]");
         throw "CriteriaNotSupported";
       }
 
       this.#criteria = criteria;
 
-      if (await this.#connected()) {
+      if (await this.connected()) {
         logging.verbose("> Disconnecting device");
         await this.disconnect().catch(e => logging.error(e));
         await sleep(1000);
@@ -746,7 +746,7 @@ criteria example:
   async unselect(): Promise<void> {
     logging.debug("unselect()");
 
-    if (await this.#connected()) {
+    if (await this.connected()) {
       await this.disconnect();
     }
 
@@ -791,7 +791,7 @@ criteria example:
 
       // this.#criteria = criteria;
 
-      if (await this.#connected()) {
+      if (await this.connected()) {
         logging.debug("> Disconnecting device");
         await this.disconnect().catch(e => logging.error(e));
         await sleep(1000);
@@ -814,9 +814,9 @@ criteria example:
       await sleep(scanPeriod);
 
       const devices = await this.#bluetoothAdapter.devices();
-      logging.info(devices);
+      logging.debug("> Devices Scanned:", devices);
 
-      let eligibleDevicesFound = [];
+      let eligibleControllersFound = [];
 
       for (const mac of devices) {
 
@@ -834,7 +834,7 @@ criteria example:
           const found_empty_criteria = criteria.some(criterium => Object.keys(criterium).length === 0);
 
           if (found_in_criteria || found_empty_criteria) {
-            eligibleDevicesFound.push({
+            eligibleControllersFound.push({
               connector: this.type,
               mac: mac,
               name: name,
@@ -847,10 +847,9 @@ criteria example:
         }
       }
 
-      // eligibleDevicesFound.sort((a, b) => a.rssi - b.rssi);
-      logging.info(eligibleDevicesFound);
-
-      return eligibleDevicesFound;
+      // eligibleControllersFound.sort((a, b) => a.rssi - b.rssi);
+      logging.info("Controlles Found:", eligibleControllersFound);
+      return eligibleControllersFound;
 
     } catch (e) {
       logging.error(e);
@@ -877,7 +876,7 @@ criteria example:
       return Promise.reject("DeviceNotSelected");
     }
 
-    const alreadyConnected = await this.#connected();
+    const alreadyConnected = await this.connected();
 
     if (!alreadyConnected) {
 
@@ -941,21 +940,21 @@ criteria example:
   }
 
   // there #connected returns boolean true if connected, false if not connected
-  #connected(): Promise<boolean> {
+  #connected(): boolean {
     logging.debug("#connected()");
 
-    if (!this.#bluetoothDevice) {
-      return Promise.resolve(false);
-    }
-
-    return this.#bluetoothDevice.isConnected();
+    return this.#connectedGuard;
   }
 
   // connected() is an interface function that needs to return a Promise
-  connected() {
+  connected(): Promise<boolean> {
     logging.debug("connected()");
 
-    return this.#connected().then(connected => Promise.resolve(connected ? { connector: this.type } : null));
+    if (!this.#bluetoothDevice) {
+      return Promise.resolve(null);
+    }
+
+    return this.#bluetoothDevice.isConnected().then(connected => Promise.resolve(connected ? { connector: this.type } : null));
   }
 
   #disconnect() {
