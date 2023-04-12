@@ -349,8 +349,8 @@ export class Spectoda {
   //   });
   // }
 
-  scan(scan_period = 5000) {
-    return this.interface.scan([{}], scan_period);
+  scan(scan_criteria = [{}], scan_period = 5000) {
+    return this.interface.scan(scan_criteria, scan_period);
   }
 
   adopt(newDeviceName = null, newDeviceId = null, tnglCode = null, ownerSignature = null, ownerKey = null, autoSelect = false) {

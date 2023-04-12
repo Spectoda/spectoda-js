@@ -1,11 +1,13 @@
 // @ts-nocheck
-import NodeBle, { createBluetooth } from "node-ble";
+import NodeBle, { createBluetooth } from "../node-ble/src/index";
 
 import { logging } from "./Logging.js";
 import { numberToBytes, sleep, toBytes } from "./functions.js";
 import { COMMAND_FLAGS, SpectodaInterfaceLegacy } from "./SpectodaInterfaceLegacy.js";
 import { TimeTrack } from "./TimeTrack.js";
 import { TnglReader } from "./TnglReader.js";
+
+const fs = require('fs');
 
 // od 0.8.0 maji vsechny spectoda enabled BLE zarizeni jednotne SPECTODA_DEVICE_UUID.
 // kazdy typ (produkt) Spectoda Zarizeni ma svuj kod v manufacturer data
@@ -15,6 +17,9 @@ import { TnglReader } from "./TnglReader.js";
 // jedním zařízením v jednu chvíli
 
 //////////////////////////////////////////////////////////////////////////
+
+// ESP Registered MAC address ranges used for device scanning 
+const ESP_MAC_PREFIXES = ["08:3A:8D", "08:3A:F2", "08:B6:1F", "08:F9:E0", "0C:8B:95", "0C:B8:15", "0C:DC:7E", "10:52:1C", "10:91:A8", "10:97:BD", "18:FE:34", "1C:9D:C2", "24:0A:C4", "24:4C:AB", "24:62:AB", "24:6F:28", "24:A1:60", "24:B2:DE", "24:D7:EB", "24:DC:C3", "2C:3A:E8", "2C:F4:32", "30:83:98", "30:AE:A4", "30:C6:F7", "34:85:18", "34:86:5D", "34:94:54", "34:98:7A", "34:AB:95", "34:B4:72", "3C:61:05", "3C:71:BF", "3C:E9:0E", "40:22:D8", "40:4C:CA", "40:91:51", "40:F5:20", "44:17:93", "48:27:E2", "48:31:B7", "48:3F:DA", "48:55:19", "48:E7:29", "4C:11:AE", "4C:75:25", "4C:EB:D6", "50:02:91", "54:32:04", "54:43:B2", "54:5A:A6", "58:BF:25", "58:CF:79", "5C:CF:7F", "60:01:94", "60:55:F9", "64:B7:08", "64:E8:33", "68:67:25", "68:B6:B3", "68:C6:3A", "70:03:9F", "70:04:1D", "70:B8:F6", "78:21:84", "78:E3:6D", "7C:87:CE", "7C:9E:BD", "7C:DF:A1", "80:64:6F", "80:7D:3A", "84:0D:8E", "84:CC:A8", "84:F3:EB", "84:F7:03", "84:FC:E6", "8C:4B:14", "8C:AA:B5", "8C:CE:4E", "90:38:0C", "90:97:D5", "94:3C:C6", "94:B5:55", "94:B9:7E", "94:E6:86", "98:CD:AC", "98:F4:AB", "9C:9C:1F", "A0:20:A6", "A0:76:4E", "A0:A3:B3", "A0:B7:65", "A4:7B:9D", "A4:CF:12", "A4:E5:7C", "A8:03:2A", "A8:42:E3", "A8:48:FA", "AC:0B:FB", "AC:67:B2", "AC:D0:74", "B0:A7:32", "B0:B2:1C", "B4:8A:0A", "B4:E6:2D", "B8:D6:1A", "B8:F0:09", "BC:DD:C2", "BC:FF:4D", "C0:49:EF", "C0:4E:30", "C4:4F:33", "C4:5B:BE", "C4:DD:57", "C4:DE:E2", "C8:2B:96", "C8:C9:A3", "C8:F0:9E", "CC:50:E3", "CC:DB:A7", "D4:D4:DA", "D4:F9:8D", "D8:A0:1D", "D8:BF:C0", "D8:F1:5B", "DC:4F:22", "DC:54:75", "E0:5A:1B", "E0:98:06", "E0:E2:E6", "E8:31:CD", "E8:68:E7", "E8:9F:6D", "E8:DB:84", "EC:62:60", "EC:94:CB", "EC:DA:3B", "EC:FA:BC", "F0:08:D1", "F4:12:FA", "F4:CF:A2", "FC:F5:C4"];
 
 /*
     is renamed Transmitter. Helper class for WebBluetoothConnector.js
@@ -81,7 +86,7 @@ export class NodeBLEConnection {
   }
 
   #writeBytes(characteristic: NodeBle.GattCharacteristic, bytes: Uint8Array, response: boolean): Promise<void> {
-    logging.verbose("#writeBytes()", characteristic, bytes, response);
+    logging.verbose("#writeBytes()", bytes, response);
 
     const write_uuid = this.#getUUID(); // two messages near to each other must not have the same UUID!
     const packet_header_size = 12; // 3x 4byte integers: write_uuid, index_from, payload.length
@@ -113,8 +118,10 @@ export class NodeBLEConnection {
 
         try {
           await characteristic.writeValue(Buffer.from(payload), { offset: 0, type: "request" });
+
         } catch (e) {
           logging.warn(e);
+
           reject(e);
           return;
         }
@@ -122,36 +129,49 @@ export class NodeBLEConnection {
         index_from += bytes_size;
         index_to = index_from + bytes_size;
       }
+
       resolve();
       return;
     });
   }
 
   #readBytes(characteristic: NodeBle.GattCharacteristic): Promise<DataView> {
-    logging.verbose(`#readBytes()`);
-
+    logging.debug("#readBytes()");
     // read the requested value
 
     // TODO write this function effectivelly
     return new Promise(async (resolve, reject) => {
-      const data = await characteristic.readValue();
-      const bytes = new Uint8Array(data.buffer, data.byteOffset, data.byteLength)
 
-      logging.debug("bytes:", bytes);
+      let value = undefined;
+      let bytes = undefined;
 
-      let total_bytes = [...bytes];
+      let total_bytes = [];
 
-      while (bytes.length == 512) {
-        const data = await characteristic.readValue();
-        const bytes = new Uint8Array(data.buffer, data.byteOffset, data.byteLength)
+      do {
+
+        try {
+          value = await characteristic.readValue();
+          logging.debug("value", value);
+
+        } catch (e) {
+          logging.warn(e);
+
+          reject(e);
+          return;
+        }
+
+        bytes = new Uint8Array(value.buffer, value.byteOffset, value.byteLength);
+        logging.debug("bytes", bytes);
 
         total_bytes = [...total_bytes, ...bytes];
-      }
+        logging.debug("total_bytes", total_bytes);
 
-      logging.debug("total_bytes:", total_bytes);
+      } while (bytes.length == 512);
 
       resolve(new DataView(new Uint8Array(total_bytes).buffer));
+      return;
     });
+
   }
 
   // WIP, event handling from spectoda network to application
@@ -165,7 +185,7 @@ export class NodeBLEConnection {
     const view = new DataView(data.buffer, data.byteOffset, data.byteLength);
 
     // logging.verbose("bytes", bytes);
-    logging.verbose("view", view);
+    // logging.verbose("view", view);
 
     this.#interfaceReference.process(view);
   }
@@ -182,10 +202,7 @@ export class NodeBLEConnection {
   #onClockNotification(data: Buffer) {
     logging.verbose("onClockNotification()", data);
 
-    const array = data.buffer.slice(data.byteOffset, data.byteOffset + data.byteLength);
-
     // logging.warn(event);
-
   }
 
   attach(service: NodeBle.GattService, networkUUID: string, clockUUID: string, deviceUUID: string) {
@@ -214,7 +231,7 @@ export class NodeBLEConnection {
       })
       .catch(e => {
         logging.warn(e);
-        throw "ConnectionFailed3";
+        throw "ConnectionFailed";
       })
       .then(() => {
         logging.debug("> Getting Clock Characteristics...");
@@ -223,10 +240,21 @@ export class NodeBLEConnection {
       .then(characteristic => {
         logging.info("#clockChar", characteristic);
         this.#clockChar = characteristic;
+
+        return this.#clockChar?.startNotifications()
+          .then(() => {
+            logging.debug("> Clock notifications started");
+            this.#clockChar?.on("valuechanged", event => {
+              this.#onClockNotification(event);
+            });
+          })
+          .catch(e => {
+            logging.warn(e);
+          });
       })
       .catch(e => {
         logging.warn(e);
-        throw "ConnectionFailed4";
+        throw "ConnectionFailed";
       })
       .then(() => {
         logging.debug("> Getting Device Characteristics...");
@@ -249,7 +277,7 @@ export class NodeBLEConnection {
       })
       .catch(e => {
         logging.warn(e);
-        throw "ConnectionFailed7";
+        throw "ConnectionFailed";
       });
   }
 
@@ -515,7 +543,6 @@ export class NodeBLEConnection {
   reset() {
     logging.verbose("reset()");
 
-
     this.#service = undefined;
     this.#networkChar = undefined;
     this.#clockChar = undefined;
@@ -565,8 +592,6 @@ export class SpectodaNodeBluetoothConnector {
   #connectedGuard;
 
   constructor(interfaceReference: SpectodaInterfaceLegacy) {
-    console.debug("Initilizing nodebluetooth connector");
-
     this.#interfaceReference = interfaceReference;
 
     const { bluetooth: bluetoothDevice, destroy: bluetoothDestroy } = createBluetooth();
@@ -659,14 +684,17 @@ criteria example:
       //         the greatest signal strength. If no device is found until the timeout,
       //         then return error
 
-      if (await this.#connected()) {
-        logging.verbose("> Disconnecting device");
-        await this.disconnect().then(() => sleep(1000));
-      }
-
       if (!criteria || criteria.length != 1 || typeof criteria[0]?.mac !== "string") {
         logging.error("Criteria must be an array of 1 object with specified MAC address: [{mac:'AA:BB:CC:DD:EE:FF'}]");
         throw "CriteriaNotSupported";
+      }
+
+      this.#criteria = criteria;
+
+      if (await this.#connected()) {
+        logging.verbose("> Disconnecting device");
+        await this.disconnect().catch(e => logging.error(e));
+        await sleep(1000);
       }
 
       if (!this.#bluetoothAdapter) {
@@ -674,17 +702,19 @@ criteria example:
         this.#bluetoothAdapter = await this.#bluetooth.defaultAdapter();
       }
 
-      this.#criteria = criteria;
-
       if (!await this.#bluetoothAdapter.isDiscovering()) {
-        logging.verbose("> Starting BLE scanner");
+        logging.debug("> Starting BLE scanner");
+        await this.#bluetoothAdapter.startDiscovery();
+      } else {
+        logging.debug("> Restarting BLE scanner");
+        await this.#bluetoothAdapter.stopDiscovery();
         await this.#bluetoothAdapter.startDiscovery();
       }
 
       // Device UUID === Device MAC address
       const deviceMacAddress = criteria[0].mac.toUpperCase();
 
-      logging.verbose(`> Waiting for the device ${deviceMacAddress} to show up`);
+      logging.debug(`> Waiting for the device ${deviceMacAddress} to show up`);
       this.#bluetoothDevice = await this.#bluetoothAdapter.waitDevice(deviceMacAddress, timeout, scanPeriod);
 
       // await sleep(1000);
@@ -748,10 +778,84 @@ criteria example:
     };
   }
 
-  scan(criteria: Criteria, scanPeriod: number) {
+  //
+  async scan(criteria: Criteria[], scanPeriod: number = 10000): Promise<object[]> {
     logging.debug("scan()", criteria, scanPeriod);
 
-    throw "NotImplemented";
+    try {
+
+      // if (!criteria || criteria.length != 1 || typeof criteria[0]?.mac !== "string") {
+      //   logging.error("Criteria must be an array of 1 object with specified MAC address: [{mac:'AA:BB:CC:DD:EE:FF'}]");
+      //   throw "CriteriaNotSupported";
+      // }
+
+      // this.#criteria = criteria;
+
+      if (await this.#connected()) {
+        logging.debug("> Disconnecting device");
+        await this.disconnect().catch(e => logging.error(e));
+        await sleep(1000);
+      }
+
+      if (!this.#bluetoothAdapter) {
+        logging.debug("> Requesting default bluetooth adapter");
+        this.#bluetoothAdapter = await this.#bluetooth.defaultAdapter()
+      }
+
+      if (!await this.#bluetoothAdapter.isDiscovering()) {
+        logging.debug("> Starting BLE scanner");
+        await this.#bluetoothAdapter.startDiscovery();
+      } else {
+        logging.debug("> Restarting BLE scanner");
+        await this.#bluetoothAdapter.stopDiscovery();
+        await this.#bluetoothAdapter.startDiscovery();
+      }
+
+      await sleep(scanPeriod);
+
+      const devices = await this.#bluetoothAdapter.devices();
+      logging.info(devices);
+
+      let eligibleDevicesFound = [];
+
+      for (const mac of devices) {
+
+        if (!ESP_MAC_PREFIXES.some(prefix => mac.startsWith(prefix))) {
+          continue;
+        }
+
+        try {
+          const device = await this.#bluetoothAdapter.getDevice(mac);
+          const name = await device.getName();
+          // const rssi = await device.getRSSI(); // Seems like RSSI is not available in dbus
+          // const gatt = await device.gatt(); // Seems like this function freezes
+
+          const found_in_criteria = criteria.some(criterium => criterium.name === name);
+          const found_empty_criteria = criteria.some(criterium => Object.keys(criterium).length === 0);
+
+          if (found_in_criteria || found_empty_criteria) {
+            eligibleDevicesFound.push({
+              connector: this.type,
+              mac: mac,
+              name: name,
+              // rssi: rssi
+            });
+          }
+
+        } catch (e) {
+          console.error(e);
+        }
+      }
+
+      // eligibleDevicesFound.sort((a, b) => a.rssi - b.rssi);
+      logging.info(eligibleDevicesFound);
+
+      return eligibleDevicesFound;
+
+    } catch (e) {
+      logging.error(e);
+      throw "ScanFailed";
+    }
   }
 
   // connect Connector to the selected Spectoda Device. Also can be used to reconnect.
@@ -793,7 +897,7 @@ criteria example:
 
       catch (e) {
         logging.error(e);
-        throw "ConnectionFailed6";
+        throw "ConnectionFailed";
       }
 
     }
@@ -812,7 +916,7 @@ criteria example:
         return server.getPrimaryService(this.SPECTODA_SERVICE_UUID);
       })
       .then(service => {
-      
+
         if (!service) {
           throw "Error";
         }
@@ -831,7 +935,7 @@ criteria example:
 
         logging.warn(error);
 
-        throw "ConnectionFailed5";
+        throw "ConnectionFailed";
 
       });
   }
