@@ -214,11 +214,10 @@ export class NodeBLEConnection {
     return this.#service
       .getCharacteristic(networkUUID)
       .then(characteristic => {
-        logging.info("#networkChar", characteristic);
+        logging.debug("#networkChar", characteristic);
         this.#networkChar = characteristic;
 
-        return this.#networkChar
-          .startNotifications()
+        return this.#networkChar.startNotifications()
           .then(() => {
             logging.debug("> Network notifications started");
             this.#networkChar?.on("valuechanged", event => {
@@ -238,7 +237,7 @@ export class NodeBLEConnection {
         return this.#service?.getCharacteristic(clockUUID);
       })
       .then(characteristic => {
-        logging.info("#clockChar", characteristic);
+        logging.debug("#clockChar", characteristic);
         this.#clockChar = characteristic;
 
         return this.#clockChar?.startNotifications()
@@ -261,7 +260,7 @@ export class NodeBLEConnection {
         return this.#service?.getCharacteristic(deviceUUID);
       })
       .then(characteristic => {
-        logging.info("#deviceChar", characteristic);
+        logging.debug("#deviceChar", characteristic);
         this.#deviceChar = characteristic;
 
         return this.#deviceChar?.startNotifications()
@@ -543,16 +542,24 @@ export class NodeBLEConnection {
   reset() {
     logging.verbose("reset()");
 
+    this.#networkChar?.stopNotifications();
+    this.#networkChar?.removeAllListeners("valuechanged");
+    this.#clockChar?.stopNotifications();
+    this.#clockChar?.removeAllListeners("valuechanged");
+    this.#deviceChar?.stopNotifications();
+    this.#deviceChar?.removeAllListeners("valuechanged");
+
     this.#service = undefined;
     this.#networkChar = undefined;
     this.#clockChar = undefined;
     this.#deviceChar = undefined;
+
+    this.#service = undefined;
     this.#writing = false;
   }
 
   destroy() {
     logging.verbose("destroy()");
-
     this.reset();
   }
 }
@@ -714,14 +721,15 @@ criteria example:
       // Device UUID === Device MAC address
       const deviceMacAddress = criteria[0].mac.toUpperCase();
 
+      this.#bluetoothDevice?.removeAllListeners("disconnect");
+
       logging.debug(`> Waiting for the device ${deviceMacAddress} to show up`);
       this.#bluetoothDevice = await this.#bluetoothAdapter.waitDevice(deviceMacAddress, timeout, scanPeriod);
 
-      // await sleep(1000);
+      await sleep(100);
 
       // logging.verbose("stopping scanner");
       // await this.#bluetoothAdapter.stopDiscovery();
-
       this.#bluetoothDevice.on("disconnect", this.#onDisconnected);
 
       logging.debug("> Getting BLE device mac address");
@@ -744,12 +752,13 @@ criteria example:
 
   // if device is conneced, then disconnect it
   async unselect(): Promise<void> {
-    logging.debug("unselect()");
+    logging.debug("unselect()");ƒ
 
     if (await this.connected()) {
       await this.disconnect();
     }
 
+    this.#bluetoothDevice?.removeAllListeners("disconnect");
     this.#bluetoothDevice = undefined;
     this.#connection.reset();
   }
@@ -960,7 +969,7 @@ criteria example:
   #disconnect() {
     logging.debug("#disconnect()");
 
-    return this.#bluetoothDevice?.disconnect();
+    return this.#bluetoothDevice?.disconnect().then(() => this.#onDisconnected());
   }
 
   // disconnect Connector from the connected Spectoda Device. But keep it selected
@@ -1094,9 +1103,7 @@ criteria example:
       return Promise.reject("DeviceDisconnected");
     }
 
-    return this.#connection.updateFirmware(firmware).finally(() => {
-      return this.disconnect();
-    });
+    return this.#connection.updateFirmware(firmware);
   }
 
   destroy() {

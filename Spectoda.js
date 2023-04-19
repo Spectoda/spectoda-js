@@ -350,10 +350,14 @@ export class Spectoda {
   // }
 
   scan(scan_criteria = [{}], scan_period = 5000) {
+    logging.info("> Scanning Spectoda Controllers...");
+
     return this.interface.scan(scan_criteria, scan_period);
   }
 
   adopt(newDeviceName = null, newDeviceId = null, tnglCode = null, ownerSignature = null, ownerKey = null, autoSelect = false) {
+    logging.info("> Adopting Spectoda Controller...");
+    
     if (this.#adoptingGuard) {
       return Promise.reject("AdoptingInProgress");
     }
@@ -489,7 +493,9 @@ export class Spectoda {
   // devices: [ {name:"Lampa 1", mac:"12:34:56:78:9a:bc"}, {name:"Lampa 2", mac:"12:34:56:78:9a:bc"} ]
 
   connect(devices = null, autoConnect = true, ownerSignature = null, ownerKey = null, connectAny = false, fwVersion = "", infiniteReconnection = false) {
-    logging.info(`connect(devices=${devices}, autoConnect=${autoConnect}, ownerSignature=${ownerSignature}, ownerKey=${ownerKey}, connectAny=${connectAny}, fwVersion=${fwVersion}, infiniteReconnection=${infiniteReconnection})`);
+    logging.debug(`connect(devices=${devices}, autoConnect=${autoConnect}, ownerSignature=${ownerSignature}, ownerKey=${ownerKey}, connectAny=${connectAny}, fwVersion=${fwVersion}, infiniteReconnection=${infiniteReconnection})`);
+    
+    logging.info("> Connecting to Spectoda Controller...");
 
     this.#infiniteReconnection = infiniteReconnection;
 
@@ -593,6 +599,8 @@ export class Spectoda {
   }
 
   disconnect() {
+    logging.info(`> Disconnecting controller...`);
+
     this.#infiniteReconnection = false;
 
     return this.interface.disconnect().catch(e => {
@@ -892,6 +900,8 @@ export class Spectoda {
   }
 
   syncTimeline() {
+    logging.info(`> Synchronizing timeline`);
+
     logging.verbose("syncTimeline()");
     const flags = this.timeline.paused() ? 0b00010000 : 0b00000000; // flags: [reserved,reserved,reserved,timeline_paused,reserved,reserved,reserved,reserved]
     const payload = [COMMAND_FLAGS.FLAG_SET_TIMELINE, ...numberToBytes(this.interface.clock.millis(), 6), ...numberToBytes(this.timeline.millis(), 4), flags];
@@ -899,7 +909,7 @@ export class Spectoda {
   }
 
   syncClock() {
-    logging.debug("> Syncing clock from device");
+    logging.info("> Syncing clock from device");
     return this.interface.syncClock().then(() => {
       logging.debug("> App clock synchronized");
     });
@@ -907,7 +917,7 @@ export class Spectoda {
 
   // TODO add
   syncState(deviceId) {
-    logging.debug("> Synchronizing state...");
+    logging.info("> Synchronizing state...");
 
     const request_uuid = this.#getUUID();
     const device_request = [COMMAND_FLAGS.FLAG_SYNC_STATE_REQUEST, ...numberToBytes(request_uuid, 4), deviceId];
@@ -915,6 +925,8 @@ export class Spectoda {
   }
 
   updateDeviceFirmware(firmware) {
+    logging.info(`> Updating Controller FW...`);
+
     logging.verbose(`updateDeviceFirmware(firmware.length=${firmware?.length})`);
 
     if (!firmware || firmware.length < 10000) {
@@ -922,12 +934,14 @@ export class Spectoda {
       return Promise.reject("InvalidFirmware");
     }
 
-    return this.interface.updateFW(firmware).then(() => {
-      this.disconnect();
+    return this.interface.updateFW(firmware).finally(() => {
+      return this.rebootDevice().catch(e => { console.warn(e) });
     });
   }
 
   updateNetworkFirmware(firmware) {
+    logging.info(`> Updating Network FW...`);
+
     logging.verbose(`updateNetworkFirmware(firmware.length=${firmware?.length})`);
 
     if (!firmware || firmware.length < 10000) {
@@ -1017,12 +1031,12 @@ export class Spectoda {
 
         await sleep(3000);
 
-        logging.debug("Rebooting whole network...");
+        logging.info("Rebooting whole network...");
 
         const command_bytes = [COMMAND_FLAGS.FLAG_DEVICE_REBOOT_REQUEST];
         await this.interface.execute(command_bytes, null);
 
-        logging.debug("Firmware written in " + (new Date().getTime() - start_timestamp) / 1000 + " seconds");
+        logging.info("Firmware written in " + (new Date().getTime() - start_timestamp) / 1000 + " seconds");
 
         this.interface.emit("ota_status", "success");
 
@@ -1034,9 +1048,9 @@ export class Spectoda {
         return;
       }
     })
-      .then(() => {
-        return this.disconnect();
-      })
+      // .then(() => {
+      //   return this.disconnect();
+      // })
 
       .finally(() => {
         this.interface.releaseWakeLock();
@@ -1045,6 +1059,8 @@ export class Spectoda {
   }
 
   async updatePeerFirmware(peer) {
+    logging.info(`> Updating Peer ${peer} FW...`);
+
     logging.debug(`updatePeerFirmware(peer=${peer})`);
 
     if (peer === null || peer === undefined) {
@@ -1097,7 +1113,7 @@ export class Spectoda {
    */
 
   readDeviceConfig(mac = "ee:33:fa:89:08:08") {
-    logging.debug("> Reading device config...");
+    logging.info("> Reading device config...");
 
     const request_uuid = this.#getUUID();
     const bytes = [COMMAND_FLAGS.FLAG_DEVICE_CONFIG_REQUEST, ...numberToBytes(request_uuid, 4)];
@@ -1153,7 +1169,7 @@ export class Spectoda {
    */
 
   updateDeviceConfig(config) {
-    logging.debug("> Updating config...");
+    logging.info("> Updating config...");
 
     const encoder = new TextEncoder();
     const config_bytes = encoder.encode(config);
@@ -1201,7 +1217,7 @@ export class Spectoda {
    */
 
   updateNetworkConfig(config) {
-    logging.debug("> Updating config of whole network...");
+    logging.info("> Updating config of whole network...");
 
     const encoder = new TextEncoder();
     const config_bytes = encoder.encode(config);
@@ -1219,7 +1235,7 @@ export class Spectoda {
   }
 
   requestTimeline() {
-    logging.debug("> Requesting timeline...");
+    logging.info("> Requesting timeline...");
 
     const request_uuid = this.#getUUID();
     const bytes = [COMMAND_FLAGS.FLAG_TIMELINE_REQUEST, ...numberToBytes(request_uuid, 4)];
@@ -1257,21 +1273,21 @@ export class Spectoda {
 
   // Code.device.interface.execute([240,1,0,0,0,5],null)
   rebootNetwork() {
-    logging.debug("> Rebooting network...");
+    logging.info("> Rebooting network...");
 
     const payload = [COMMAND_FLAGS.FLAG_DEVICE_REBOOT_REQUEST];
     return this.interface.execute(payload, null);
   }
 
   rebootDevice() {
-    logging.debug("> Rebooting device...");
+    logging.info("> Rebooting device...");
 
     const payload = [COMMAND_FLAGS.FLAG_DEVICE_REBOOT_REQUEST];
     return this.interface.request(payload, false);
   }
 
   rebootAndDisconnectDevice() {
-    logging.debug("> Rebooting and disconnecting device...");
+    logging.info("> Rebooting and disconnecting device...");
 
     this.interface.reconnection(false);
 
@@ -1282,7 +1298,7 @@ export class Spectoda {
   }
 
   removeOwner() {
-    logging.debug("> Removing owner...");
+    logging.info("> Removing owner...");
 
     const request_uuid = this.#getUUID();
     const bytes = [COMMAND_FLAGS.FLAG_ERASE_OWNER_REQUEST, ...numberToBytes(request_uuid, 4)];
@@ -1329,7 +1345,7 @@ export class Spectoda {
   }
 
   removeNetworkOwner() {
-    logging.debug("> Removing network owner...");
+    logging.info("> Removing network owner...");
 
     const request_uuid = this.#getUUID();
     const bytes = [COMMAND_FLAGS.FLAG_ERASE_OWNER_REQUEST, ...numberToBytes(request_uuid, 4)];
@@ -1338,12 +1354,12 @@ export class Spectoda {
   }
 
   getFwVersion() {
-    logging.debug("> Requesting fw version...");
+    logging.info("> Requesting fw version...");
 
     const request_uuid = this.#getUUID();
     const bytes = [COMMAND_FLAGS.FLAG_FW_VERSION_REQUEST, ...numberToBytes(request_uuid, 4)];
 
-    logging.info("getFwVersion", { bytes });
+    logging.debug("getFwVersion", { bytes });
 
     return this.interface.request(bytes, true).then(response => {
       let reader = new TnglReader(response);
@@ -1380,7 +1396,7 @@ export class Spectoda {
   }
 
   getTnglFingerprint(tngl_bank = 0) {
-    logging.debug("> Getting TNGL fingerprint...");
+    logging.info("> Getting TNGL fingerprint...");
 
     if (tngl_bank === null || tngl_bank === undefined) {
       tngl_bank = 0;
@@ -1431,7 +1447,7 @@ export class Spectoda {
 
   // datarate in bits per second
   setNetworkDatarate(datarate) {
-    logging.debug(`> Setting network datarate to ${datarate} bsp...`);
+    logging.info(`> Setting network datarate to ${datarate} bsp...`);
 
     const request_uuid = this.#getUUID();
     const payload = [COMMAND_FLAGS.FLAG_CHANGE_DATARATE_REQUEST, ...numberToBytes(request_uuid, 4), ...numberToBytes(datarate, 4)];
@@ -1440,7 +1456,7 @@ export class Spectoda {
   }
 
   readRomPhyVdd33() {
-    logging.debug("> Requesting rom_phy_vdd33 ...");
+    logging.info("> Requesting rom_phy_vdd33 ...");
 
     const request_uuid = this.#getUUID();
     const bytes = [COMMAND_FLAGS.FLAG_ROM_PHY_VDD33_REQUEST, ...numberToBytes(request_uuid, 4)];
@@ -1478,7 +1494,7 @@ export class Spectoda {
   }
 
   readPinVoltage(pin) {
-    logging.debug(`> Requesting pin ${pin} voltage ...`);
+    logging.info(`> Requesting pin ${pin} voltage ...`);
 
     const request_uuid = this.#getUUID();
     const bytes = [COMMAND_FLAGS.FLAG_VOLTAGE_ON_PIN_REQUEST, ...numberToBytes(request_uuid, 4), pin];
@@ -1579,7 +1595,7 @@ export class Spectoda {
   }
 
   readEventHistory() {
-    logging.debug("> Requesting event history bytecode...");
+    logging.info("> Requesting event history bytecode...");
 
     const request_uuid = this.#getUUID();
     const bytes = [COMMAND_FLAGS.FLAG_EVENT_HISTORY_BC_REQUEST, ...numberToBytes(request_uuid, 4)];
@@ -1620,7 +1636,7 @@ export class Spectoda {
   }
 
   eraseEventHistory() {
-    logging.debug("> Erasing event history...");
+    logging.info("> Erasing event history...");
 
     const request_uuid = this.#getUUID();
     const bytes = [COMMAND_FLAGS.FLAG_ERASE_EVENT_HISTORY_REQUEST, ...numberToBytes(request_uuid, 4)];
@@ -1660,7 +1676,7 @@ export class Spectoda {
   }
 
   getControllerInfo() {
-    logging.debug("> Requesting controller info ...");
+    logging.info("> Requesting controller info ...");
 
     const request_uuid = this.#getUUID();
     const bytes = [DEVICE_FLAGS.FLAG_CONTROLLER_INFO_REQUEST, ...numberToBytes(request_uuid, 4)];

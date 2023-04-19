@@ -704,7 +704,7 @@ export class SpectodaInterfaceLegacy {
     this.onDisconnected(event);
 
     if (this.#reconection && this.#reconnectionInterval) {
-      logging.info("Reconnecting...");
+      logging.info("> Reconnecting Device in 2s ...");
       setTimeout(() => {
         logging.debug("Reconnecting device");
         return this.connect(this.#reconnectionInterval).catch(() => {
@@ -1248,7 +1248,7 @@ export class SpectodaInterfaceLegacy {
                 // logging.error("ERROR");
                 break;
             }
-
+ 
             // logging.verbose(`is_lazy = ${is_lazy ? "true" : "false"}`);
             logging.verbose(`event_value = ${event_value}`);
 
