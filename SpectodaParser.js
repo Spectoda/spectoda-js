@@ -170,6 +170,7 @@ const SENSORS_FLAGS = Object.freeze({
   OPERATION_EVENT_RELAY: 16,
   OPERATION_EVENT_TOGGLE: 17,
   OPERATION_IF: 18,
+  OPERATION_EVENT_VOID: 19,
 
   PROVIDER_PROXIMITY: 151,
   PROVIDER_BUTTON: 152,
@@ -918,6 +919,10 @@ export class TnglCompiler {
 
       case "SliderProvider":
         this.#tnglWriter.writeFlag(SENSORS_FLAGS.PROVIDER_SLIDER);
+        break;
+
+      case "EventVoid": 
+        this.#tnglWriter.writeFlag(SENSORS_FLAGS.OPERATION_EVENT_VOID);
         break;
       
 
