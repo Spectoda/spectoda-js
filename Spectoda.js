@@ -1676,4 +1676,82 @@ export class Spectoda {
       return { pcb_code: pcb_code, product_code: product_code };
     });
   }
+
+  writeOwner(ownerSignature = "00000000000000000000000000000000", ownerKey = "00000000000000000000000000000000") {
+    logging.debug("> Writing owner to device...");
+
+    const owner_signature_bytes = hexStringToUint8Array(ownerSignature, 16);
+    const owner_key_bytes = hexStringToUint8Array(ownerKey, 16);
+
+    logging.info("owner_signature_bytes", owner_signature_bytes);
+    logging.info("owner_key_bytes", owner_key_bytes);
+
+    const request_uuid = this.#getUUID();
+    const bytes = [COMMAND_FLAGS.FLAG_ADOPT_REQUEST, ...numberToBytes(request_uuid, 4), ...owner_signature_bytes, ...owner_key_bytes];
+
+    logging.verbose(bytes);
+
+    return this.interface
+      .request(bytes, true)
+      .then(response => {
+        let reader = new TnglReader(response);
+
+        logging.debug("> Got response:", response);
+
+        if (reader.readFlag() !== COMMAND_FLAGS.FLAG_ADOPT_RESPONSE) {
+          throw "InvalidResponse";
+        }
+
+        const response_uuid = reader.readUint32();
+
+        if (response_uuid != request_uuid) {
+          throw "InvalidResponse";
+        }
+
+        let device_mac = "null";
+
+        const error_code = reader.readUint8();
+
+        // error_code 0 is success
+        if (error_code === 0) {
+          const device_mac_bytes = reader.readBytes(6);
+
+          device_mac = Array.from(device_mac_bytes, function (byte) {
+            return ("0" + (byte & 0xff).toString(16)).slice(-2);
+          }).join(":");
+        }
+
+        logging.debug(`error_code=${error_code}, device_mac=${device_mac}`);
+
+        if (error_code === 0) {
+          logging.info(`Adopted ${device_mac} successfully`);
+
+          return this.rebootAndDisconnectDevice()
+            .catch(e => {
+              logging.error(e);
+            })
+            .then(() => {
+              return {
+                mac: device_mac,
+                ownerSignature: this.#ownerSignature,
+                ownerKey: this.#ownerKey,
+                // name: newDeviceName,
+                // id: newDeviceId,
+              };
+            });
+        } else {
+          logging.warn("Adoption refused.");
+          window.alert(t("Zkuste to, prosím, později."), t("Přidání se nezdařilo"), { confirm: t("OK") });
+
+          return this.rebootAndDisconnectDevice().catch(() => {
+            // @ts-ignore
+            throw "AdoptionRefused";
+          });
+        }
+      })
+      .catch(e => {
+        logging.error(e);
+        throw "AdoptionFailed";
+      });
+  }
 }
