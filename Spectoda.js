@@ -1725,28 +1725,18 @@ export class Spectoda {
 
         if (error_code === 0) {
           logging.info(`Adopted ${device_mac} successfully`);
+          return {
+            mac: device_mac,
+            ownerSignature: this.#ownerSignature,
+            ownerKey: this.#ownerKey,
+            // name: newDeviceName,
+            // id: newDeviceId,
+          };
+          
 
-          return this.rebootAndDisconnectDevice()
-            .catch(e => {
-              logging.error(e);
-            })
-            .then(() => {
-              return {
-                mac: device_mac,
-                ownerSignature: this.#ownerSignature,
-                ownerKey: this.#ownerKey,
-                // name: newDeviceName,
-                // id: newDeviceId,
-              };
-            });
         } else {
-          logging.warn("Adoption refused.");
-          window.alert(t("Zkuste to, prosím, později."), t("Přidání se nezdařilo"), { confirm: t("OK") });
-
-          return this.rebootAndDisconnectDevice().catch(() => {
-            // @ts-ignore
-            throw "AdoptionRefused";
-          });
+          logging.warn("Adoption refused by device.");
+          throw "AdoptionRefused";
         }
       })
       .catch(e => {
