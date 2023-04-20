@@ -796,7 +796,7 @@ export class Spectoda {
     //   this.saveState();
     // }, 5000);
 
-    if (!event_value || !event_value.match(/#[\dabcdefABCDEF]{6}/g)) {
+    if (!event_value || !event_value.match(/#?[\dabcdefABCDEF]{6}/g)) {
       logging.error("Invalid event value. event_value=", event_value);
       event_value = "#000000";
     }

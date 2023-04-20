@@ -163,7 +163,7 @@ export function colorToBytes(color_hex_code) {
     return [0, 0, 0];
   }
 
-  let reg = color_hex_code.match(/#([0-9a-f][0-9a-f])([0-9a-f][0-9a-f])([0-9a-f][0-9a-f])/i);
+  let reg = color_hex_code.match(/#?([0-9a-f][0-9a-f])([0-9a-f][0-9a-f])([0-9a-f][0-9a-f])/i);
   if (!reg) {
     console.error('Wrong color code: "' + color_hex_code + '"');
     return [0, 0, 0];
