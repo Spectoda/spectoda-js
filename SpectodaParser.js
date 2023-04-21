@@ -1145,7 +1145,7 @@ export class TnglCodeParser {
   }
 
   static #parses = {
-    connection: /[A-Za-z0-9_]+->\[.*\][A-Za-z0-9_]+.*;/,
+    connection: /[\w]+->\[\w*\][\w]+\s*;/,
     undefined: /undefined/,
     const_variale_declaration: /const +[A-Za-z_][\w]* *=/,
     comment: /\/\/[^\n]*/,
