@@ -171,6 +171,8 @@ const SENSORS_FLAGS = Object.freeze({
   OPERATION_EVENT_TOGGLE: 17,
   OPERATION_IF: 18,
   OPERATION_EVENT_VOID: 19,
+  OPERATION_EVENT_STEPPER: 20,
+  OPERATION_MODULO: 21,
 
   PROVIDER_PROXIMITY: 151,
   PROVIDER_BUTTON: 152,
@@ -924,6 +926,15 @@ export class TnglCompiler {
       case "EventVoid": 
         this.#tnglWriter.writeFlag(SENSORS_FLAGS.OPERATION_EVENT_VOID);
         break;
+
+      case "EventStepper":
+        this.#tnglWriter.writeFlag(SENSORS_FLAGS.OPERATION_EVENT_STEPPER);
+        break;
+
+      case "Modulo":
+        this.#tnglWriter.writeFlag(SENSORS_FLAGS.OPERATION_MODULO);
+        break;
+        
       
 
       default:
