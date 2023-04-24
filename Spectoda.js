@@ -1732,7 +1732,7 @@ export class Spectoda {
             // name: newDeviceName,
             // id: newDeviceId,
           };
-          
+
 
         } else {
           logging.warn("Adoption refused by device.");
@@ -1743,5 +1743,22 @@ export class Spectoda {
         logging.error(e);
         throw "AdoptionFailed";
       });
+  }
+
+  writeNetworkOwner(ownerSignature = "00000000000000000000000000000000", ownerKey = "00000000000000000000000000000000") {
+    logging.debug("> Writing owner to network...");
+
+    const owner_signature_bytes = hexStringToUint8Array(ownerSignature, 16);
+    const owner_key_bytes = hexStringToUint8Array(ownerKey, 16);
+
+    logging.info("owner_signature_bytes", owner_signature_bytes);
+    logging.info("owner_key_bytes", owner_key_bytes);
+
+    const request_uuid = this.#getUUID();
+    const bytes = [COMMAND_FLAGS.FLAG_ADOPT_REQUEST, ...numberToBytes(request_uuid, 4), ...owner_signature_bytes, ...owner_key_bytes];
+
+    logging.verbose(bytes);
+
+    return this.interface.execute(bytes, true);
   }
 }
