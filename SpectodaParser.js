@@ -180,6 +180,7 @@ const SENSORS_FLAGS = Object.freeze({
   PROVIDER_VOLTAGE: 154,
   PROVIDER_PIR: 155,
   PROVIDER_SLIDER: 156,
+  PROVIDER_SONOFF_ULTIMATE: 157,
 
   OPERATION_CONNECTION: 253,
 });
@@ -936,6 +937,9 @@ export class TnglCompiler {
         break;
         
       
+      case "SonoffUltimateProvider":
+        this.#tnglWriter.writeFlag(SENSORS_FLAGS.PROVIDER_SONOFF_ULTIMATE);
+        break;
 
       default:
         // TODO look for variable_name in the variable_name->variable_address map
