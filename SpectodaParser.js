@@ -173,6 +173,7 @@ const SENSORS_FLAGS = Object.freeze({
   OPERATION_EVENT_VOID: 19,
   OPERATION_EVENT_STEPPER: 20,
   OPERATION_MODULO: 21,
+  OPERATION_EVENT_SET: 22,
 
   PROVIDER_PROXIMITY: 151,
   PROVIDER_BUTTON: 152,
@@ -939,6 +940,10 @@ export class TnglCompiler {
       
       case "SonoffUltimateProvider":
         this.#tnglWriter.writeFlag(SENSORS_FLAGS.PROVIDER_SONOFF_ULTIMATE);
+        break;
+
+      case "EventSet":
+        this.#tnglWriter.writeFlag(SENSORS_FLAGS.OPERATION_EVENT_SET);
         break;
 
       default:
