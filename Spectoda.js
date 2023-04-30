@@ -798,7 +798,7 @@ export class Spectoda {
 
     event_value = cssColorToHex(event_value);
 
-    if (!event_value || !event_value.match(/#?[\dabcdefABCDEF]{6}/g)) {
+    if (typeof event_value !== 'string' || !event_value.match(/#?[\dabcdefABCDEF]{6}/g)) {
       logging.error("Invalid event value. event_value=", event_value);
       event_value = "#000000";
     }
