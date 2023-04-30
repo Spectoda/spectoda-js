@@ -694,7 +694,7 @@ if (typeof window !== "undefined") {
 }
 
 
-// function cssColorToHex(color) {
+// export function cssColorToHex(color) {
 //   if (typeof color !== 'string' || color.trim() === '') {
 //     return null;
 //   }
@@ -738,9 +738,14 @@ if (typeof window !== "undefined") {
 
 const Color = require('color');
 
-function cssColorToHex(color) {
+export function cssColorToHex(color) {
   if (typeof color !== 'string' || color.trim() === '') {
     return null;
+  }
+
+  // Add a '#' symbol before the hexadecimal color code if it's missing
+  if (/^[0-9a-fA-F]{6}$/.test(color)) {
+    color = `#${color}`;
   }
 
   try {
