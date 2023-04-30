@@ -1,4 +1,4 @@
-import { colorToBytes, computeTnglFingerprint, detectSpectodaConnect, hexStringToUint8Array, labelToBytes, numberToBytes, percentageToBytes, sleep, strMacToBytes } from "./functions.js";
+import { cssColorToHex, colorToBytes, computeTnglFingerprint, detectSpectodaConnect, hexStringToUint8Array, labelToBytes, numberToBytes, percentageToBytes, sleep, strMacToBytes } from "./functions.js";
 import { changeLanguage, t } from "./i18n.js";
 import { io } from "./lib/socketio.js";
 import { logging, setLoggingLevel } from "./Logging.js";
@@ -795,6 +795,8 @@ export class Spectoda {
     // this.#saveStateTimeoutHandle = setTimeout(() => {
     //   this.saveState();
     // }, 5000);
+
+    event_value = cssColorToHex(event_value);
 
     if (!event_value || !event_value.match(/#?[\dabcdefABCDEF]{6}/g)) {
       logging.error("Invalid event value. event_value=", event_value);

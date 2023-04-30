@@ -694,3 +694,47 @@ if (typeof window !== "undefined") {
 }
 
 
+function cssColorToHex(color) {
+  if (typeof color !== 'string' || color.trim() === '') {
+    return null;
+  }
+
+  // Create a temporary HTML element
+  const tempElement = document.createElement('div');
+
+  // Apply the CSS color string as the element's style
+  tempElement.style.color = color;
+
+  // Append the element to the document (offscreen) to compute the style
+  tempElement.style.display = 'none';
+  document.body.appendChild(tempElement);
+
+  // Get the computed RGB color code
+  const computedColor = getComputedStyle(tempElement).color;
+
+  // Remove the temporary element from the document
+  document.body.removeChild(tempElement);
+
+  // Validate the computed color
+  if (computedColor === '' || !/^rgba?\(/.test(computedColor)) {
+    return null;
+  }
+
+  // Parse the RGB color code and convert it to a hex color code
+  const rgbMatch = computedColor.match(/^rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*\d*\.?\d*)?\)$/);
+  if (rgbMatch) {
+    const r = parseInt(rgbMatch[1]);
+    const g = parseInt(rgbMatch[2]);
+    const b = parseInt(rgbMatch[3]);
+
+    const hexColor = ((r << 16) | (g << 8) | b).toString(16).padStart(6, '0');
+    return `#${hexColor}`;
+  }
+
+  return null;
+}
+
+// Usage:
+console.log(cssColorToHex('red')); // Output: #ff0000
+console.log(cssColorToHex('blue')); // Output: #0000ff
+console.log(cssColorToHex('invalidColor')); // Output: null
