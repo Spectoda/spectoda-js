@@ -97,20 +97,20 @@ export class Spectoda {
     setInterval(() => {
       if (!this.#updating && this.interface.connector) {
         return this.connected()
-        .then((connected) => {
-          if (connected) {
-            return this.syncClock().catch((error) => {
-              logging.warn(error);
-            });
-          } else if (this.#infiniteReconnection) {
-            return this.interface.connect().catch((error) => {
-              logging.warn(error);
-            });
-          }
-        })
-        .catch((e) => {
-          logging.error(e);
-        });
+          .then((connected) => {
+            if (connected) {
+              return this.syncClock().catch((error) => {
+                logging.warn(error);
+              });
+            } else if (this.#infiniteReconnection) {
+              return this.interface.connect().catch((error) => {
+                logging.warn(error);
+              });
+            }
+          })
+          .catch((e) => {
+            logging.error(e);
+          });
       }
     }, 30000);
   }
@@ -357,7 +357,7 @@ export class Spectoda {
 
   adopt(newDeviceName = null, newDeviceId = null, tnglCode = null, ownerSignature = null, ownerKey = null, autoSelect = false) {
     logging.info("> Adopting Spectoda Controller...");
-    
+
     if (this.#adoptingGuard) {
       return Promise.reject("AdoptingInProgress");
     }
@@ -388,7 +388,7 @@ export class Spectoda {
           this.#adopting = true;
           return this.interface.connect(10000, true);
         })
-      
+
         .then(() => {
           const owner_signature_bytes = hexStringToUint8Array(this.#ownerSignature, 16);
           const owner_key_bytes = hexStringToUint8Array(this.#ownerKey, 16);
@@ -492,14 +492,14 @@ export class Spectoda {
 
   // devices: [ {name:"Lampa 1", mac:"12:34:56:78:9a:bc"}, {name:"Lampa 2", mac:"12:34:56:78:9a:bc"} ]
 
-  connect(devices = null, autoConnect = true, ownerSignature = null, ownerKey = null, connectAny = false, fwVersion = "", infiniteReconnection = false) {
-    logging.debug(`connect(devices=${devices}, autoConnect=${autoConnect}, ownerSignature=${ownerSignature}, ownerKey=${ownerKey}, connectAny=${connectAny}, fwVersion=${fwVersion}, infiniteReconnection=${infiniteReconnection})`);
-    
+  connect(devices = null, autoConnect = true, ownerSignature = null, ownerKey = null, connectAny = false, fwVersion = "", infiniteReconnection = false, overrideConnection = false) {
+    logging.debug(`connect(devices=${devices}, autoConnect=${autoConnect}, ownerSignature=${ownerSignature}, ownerKey=${ownerKey}, connectAny=${connectAny}, fwVersion=${fwVersion}, infiniteReconnection=${infiniteReconnection}, overrideConnection=${overrideConnection})`);
+
     logging.info("> Connecting to Spectoda Controller...");
 
     this.#infiniteReconnection = infiniteReconnection;
 
-    if (this.#connecting) {
+    if (!overrideConnection && this.#connecting) {
       return Promise.reject("ConnectingInProgress");
     }
 
@@ -531,13 +531,13 @@ export class Spectoda {
 
         if (devices[i].name) {
           criterium.name = devices[i].name.slice(0, 11);
-        }  
-        
+        }
+
         if (devices[i].mac) {
           criterium.mac = devices[i].mac;
         }
 
-        if(devices[i].name || devices[i].mac) {
+        if (devices[i].name || devices[i].mac) {
           devices_criteria.push(criterium);
         }
       }
@@ -575,7 +575,7 @@ export class Spectoda {
           });
       })
       .catch(error => {
-        
+
         if (!this.#infiniteReconnection) {
           logging.warn("Skipping error alerting");
           return;
@@ -1329,7 +1329,7 @@ export class Spectoda {
       const removed_device_mac_bytes = reader.readBytes(6);
 
       return this.rebootAndDisconnectDevice()
-        .catch(() => {})
+        .catch(() => { })
         .then(() => {
           let removed_device_mac = "00:00:00:00:00:00";
           if (removed_device_mac_bytes.length >= 6) {
