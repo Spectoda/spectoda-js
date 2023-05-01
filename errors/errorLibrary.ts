@@ -95,6 +95,18 @@ export const general = {
     title: "Network already loaded",
     message: "The network you are trying to load is already loaded.",
   },
+  ActiveNetworkNotFoundAddController: {
+    title: "Could not add controller",
+    message: "We could not find the network you are trying to add a controller to due to a technical issue on our end. Please contact support for assistance.",
+  },
+  ActiveNetworkNotFoundEditDevice: {
+    title: "Could not edit device",
+    message: "We could not find the network you are trying to edit a device on due to a technical issue on our end. Please contact support for assistance.",
+  },
+  ControllerNameAlreadyExists: {
+    title: "Controller name already exists",
+    message: "The controller name you are trying to use already exists. Please choose a different name.",
+  },
 } as const;
 
 // Appears when error is not defined above
