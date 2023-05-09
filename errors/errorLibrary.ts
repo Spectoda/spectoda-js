@@ -38,7 +38,7 @@ interface ErrorList {
 }
 
 // Errors specific for NARA
-export const nara = {
+export const app: ErrorList = {
   MicAccessDenied: {
     title: t("Mikrofon se nepodařilo spustit."),
     message: t("Zkontrolujte, zda jste v Nastavení povolili aplikaci přístup k mikrofonu."),
