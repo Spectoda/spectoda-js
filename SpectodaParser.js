@@ -182,6 +182,7 @@ const SENSORS_FLAGS = Object.freeze({
   PROVIDER_PIR: 155,
   PROVIDER_SLIDER: 156,
   PROVIDER_SONOFF_ULTIMATE: 157,
+  PROVIDER_ESPBOOT: 158,
 
   OPERATION_CONNECTION: 253,
 });
@@ -944,6 +945,10 @@ export class TnglCompiler {
 
       case "EventSet":
         this.#tnglWriter.writeFlag(SENSORS_FLAGS.OPERATION_EVENT_SET);
+        break;
+
+      case "ESPBootProvider":
+        this.#tnglWriter.writeFlag(SENSORS_FLAGS.PROVIDER_ESPBOOT);
         break;
 
       default:
