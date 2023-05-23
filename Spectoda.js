@@ -1547,6 +1547,8 @@ export class Spectoda {
 
         // logging.info(`count=${count}, peers=`, peers);
         logging.info(`count=${count}, peers=\n${peers.map(x => `mac:${x.mac},rssi:${x.rssi}`).join("\n")}`);
+        this.interface.eraseConnectedPeers();
+        this.interface.setConnectedPeers(peers.map(x => x.mac));
         return peers;
       } else {
         throw "Fail";

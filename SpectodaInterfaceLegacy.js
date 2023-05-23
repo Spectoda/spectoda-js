@@ -204,6 +204,8 @@ export class SpectodaInterfaceLegacy {
   #lastUpdateTime;
   #lastUpdatePercentage;
 
+  #connectedPeers;
+
   constructor(deviceReference, reconnectionInterval = 1000) {
     this.#deviceReference = deviceReference;
 
@@ -228,6 +230,8 @@ export class SpectodaInterfaceLegacy {
 
     this.#lastUpdateTime = new Date().getTime();
     this.#lastUpdatePercentage = 0;
+
+    this.#connectedPeers = [];
 
     this.onConnected = e => {};
     this.onDisconnected = e => {};
@@ -678,6 +682,14 @@ export class SpectodaInterfaceLegacy {
     this.#connectGuard = true;
     this.onConnected(event);
   };
+
+  eraseConnectedPeers() {
+    this.#connectedPeers = [];
+  }
+
+  setConnectedPeers(peers) {
+    this.#connectedPeers = peers;
+  }
 
   disconnect() {
     this.#reconection = false;
@@ -1309,7 +1321,11 @@ export class SpectodaInterfaceLegacy {
               .map(v => v.toString(16).padStart(2, "0"))
               .join(":");
 
-            this.#eventEmitter.emit("peer_connected", device_mac);
+            if (this.#connectedPeers.includes(device_mac) === false) {
+              this.#connectedPeers.push(device_mac);
+              this.#eventEmitter.emit("peer_connected", device_mac);
+            }
+
           }
           break;
 

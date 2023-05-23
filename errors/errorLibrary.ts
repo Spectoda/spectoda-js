@@ -107,6 +107,10 @@ export const general = {
     title: "Controller name already exists",
     message: "The controller name you are trying to use already exists. Please choose a different name.",
   },
+  DeviceAlreadyDisconnected: {
+    title: "Device already disconnected",
+    message: "The device you are trying to disconnect is already disconnected.",
+  },
 } as const;
 
 // Appears when error is not defined above

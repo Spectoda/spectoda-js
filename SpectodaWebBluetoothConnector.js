@@ -967,6 +967,7 @@ criteria example:
       this.#disconnect();
     } else {
       logging.debug("Bluetooth Device is already disconnected");
+      throw "DeviceAlreadyDisconnected";
     }
 
     return Promise.resolve();
