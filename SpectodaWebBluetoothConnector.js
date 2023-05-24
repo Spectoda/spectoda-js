@@ -37,26 +37,26 @@ export class WebBLEConnection {
     */
     this.#service = /** @type {BluetoothRemoteGATTService} */ (null);
 
-    /*  
+    /*
       Network Characteristics governs the communication with the Spectoda Netwok.
       That means tngl uploads, timeline manipulation, event emitting...
       You can access it only if you are authenticated via the Device Characteristics
     */
     this.#networkChar = /** @type {BluetoothRemoteGATTCharacteristic} */ (null); // ? only accesable when connected to the mesh network
 
-    /*  
+    /*
       The whole purpuse of clock characteristics is to synchronize clock time
       of the application with the Spectoda network
     */
     this.#clockChar = /** @type {BluetoothRemoteGATTCharacteristic} */ (null); // ? always accesable
 
-    /*  
+    /*
       Device Characteristics is renamed Update Characteristics
-      Device Characteristics handles ALL CONCEPTS WITH THE 
-      PHYSICAL CONNECTED DEVICE. On the other hand Network Characteristics 
-      handles concepts connected with the whole spectoda network - all devices 
-      With Device Charactristics you can upload FW to the single device, 
-      access and manipulate json config of the device, adopt device, 
+      Device Characteristics handles ALL CONCEPTS WITH THE
+      PHYSICAL CONNECTED DEVICE. On the other hand Network Characteristics
+      handles concepts connected with the whole spectoda network - all devices
+      With Device Charactristics you can upload FW to the single device,
+      access and manipulate json config of the device, adopt device,
       and authenticate the application client with the spectoda network
     */
     this.#deviceChar = /** @type {BluetoothRemoteGATTCharacteristic} */ (null);
@@ -590,14 +590,14 @@ criteria example:
   // adopted by the owner with "baf2398ff5e6a7b8c9d097d54a9f865f" signature.
   // Product code is 1 what means NARA Alpha
   {
-    name:"NARA Alpha" 
+    name:"NARA Alpha"
     fwVersion:"0.8.0"
     ownerSignature:"baf2398ff5e6a7b8c9d097d54a9f865f"
     productCode:1
   },
-  // all the devices with the name starting with "NARA", without the 0.8.0 FW and 
+  // all the devices with the name starting with "NARA", without the 0.8.0 FW and
   // that are not adopted by anyone
-  // Product code is 2 what means NARA Beta 
+  // Product code is 2 what means NARA Beta
   {
     namePrefix:"NARA"
     fwVersion:"!0.8.0"
@@ -967,7 +967,8 @@ criteria example:
       this.#disconnect();
     } else {
       logging.debug("Bluetooth Device is already disconnected");
-      throw "DeviceAlreadyDisconnected";
+      // todo make this throw error without breaking /init/pws
+      // throw "DeviceAlreadyDisconnected";
     }
 
     return Promise.resolve();
