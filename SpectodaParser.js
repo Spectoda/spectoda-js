@@ -183,6 +183,7 @@ const SENSORS_FLAGS = Object.freeze({
   PROVIDER_SLIDER: 156,
   PROVIDER_SONOFF_ULTIMATE: 157,
   PROVIDER_NETWORKSYNC: 158,
+  PROVIDER_AMBIENT_LIGHT: 159,
 
   OPERATION_CONNECTION: 253,
 });
@@ -949,6 +950,10 @@ export class TnglCompiler {
 
       case "NetworkSyncProvider":
         this.#tnglWriter.writeFlag(SENSORS_FLAGS.PROVIDER_NETWORKSYNC);
+        break;
+
+      case "AmbientLightProvider":
+        this.#tnglWriter.writeFlag(SENSORS_FLAGS.PROVIDER_AMBIENT_LIGHT);
         break;
 
       default:
