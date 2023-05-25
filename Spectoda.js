@@ -16,7 +16,7 @@ let lastEvents = {};
 // should not create more than one object!
 // the destruction of the Spectoda is not well implemented
 
-// TODO - kdyz zavolam spectodaDevice.connect(), kdyz jsem pripojeny, tak nechci aby se do interfacu poslal select
+// TODO - kdyz zavolam spectoda.connect(), kdyz jsem pripojeny, tak nechci aby se do interfacu poslal select
 // TODO - kdyz zavolam funkci connect a uz jsem pripojeny, tak vyslu event connected, pokud si myslim ze nejsem pripojeny.
 // TODO - "watchdog timer" pro resolve/reject z TC
 

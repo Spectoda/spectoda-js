@@ -197,13 +197,24 @@ export function strMacToBytes(mac_str) {
     return bytes;
 }
 
+// export function numberToBytes(value, byteCount) {
+//   let number = Math.round(value);
+//   var byteArray = [];
+//   for (let index = 0; index < byteCount; index++) {
+//     const byte = number & 0xff;
+//     byteArray.push(byte);
+//     number = number >> 8;
+//   }
+//   return byteArray;
+// }
+
 export function numberToBytes(value, byteCount) {
-  let number = Math.round(value);
+  let number = BigInt(Math.round(value));
   var byteArray = [];
   for (let index = 0; index < byteCount; index++) {
-    const byte = number & 0xff;
-    byteArray.push(byte);
-    number = number >> 8;
+    const byte = number & 0xffn;
+    byteArray.push(Number(byte));
+    number = number >> 8n;
   }
   return byteArray;
 }
