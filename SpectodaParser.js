@@ -192,6 +192,8 @@ const SENSORS_FLAGS = Object.freeze({
 export class TnglCompiler {
   #tnglWriter;
   #variable_address_counter;
+  #variable_address_let_counter;
+  #variable_declarations_let_stack;
   #variable_declarations_stack;
   #variable_scope_depth_stack;
 
@@ -200,7 +202,9 @@ export class TnglCompiler {
     // @type number
     this.#variable_address_counter = 0x0001; // addresses starts from 0x0001 to 0xfffe. 0x0000 is a "nullptr", 0xffff is unknown address
     // @type array of {name: "variable", address: 0x0001};
+    this.#variable_address_let_counter = 0x0001;
     this.#variable_declarations_stack = []; // stack of variable name-address pairs
+    this.#variable_declarations_let_stack = [];
     // @type array of numers
     this.#variable_scope_depth_stack = []; // stack of variable depths in scopes
   }
@@ -563,6 +567,25 @@ export class TnglCompiler {
     this.#tnglWriter.writeUint16(variable_address);
   }
 
+  compileLetVariableDeclaration(variable_declaration) {
+    logging.verbose(`compileLetVariableDeclaration(${variable_declaration})`);
+
+    let reg = variable_declaration.match(/let +([A-Za-z_][\w]*) *=/);
+    if (!reg) {
+      logging.error("Failed to compile let variable declaration");
+      return;
+    }
+
+    const variable_name = reg[1];
+    let variable_address = this.#variable_address_let_counter++;
+    // insert the variable_name into variable_name->variable_address map
+    this.#variable_declarations_let_stack.push({ name: variable_name, address: variable_address });
+
+    logging.verbose(`DECLARE_VARIABLE_LET name=${variable_name} address=${variable_address}`);
+    // retrieve the variable_address and write the TNGL_FLAGS with uint16_t variable address value.
+    this.#tnglWriter.writeFlag(TNGL_FLAGS.DECLARE_VARIABLE);
+    this.#tnglWriter.writeUint16(variable_address);
+  }
   compileWord(word) {
     switch (word) {
       // === canvas operations ===
@@ -919,7 +942,7 @@ export class TnglCompiler {
         this.#tnglWriter.writeFlag(SENSORS_FLAGS.PROVIDER_VOLTAGE);
         break;
 
-      case "PIRProvider": 
+      case "PIRProvider":
         this.#tnglWriter.writeFlag(SENSORS_FLAGS.PROVIDER_PIR);
         break;
 
@@ -927,7 +950,7 @@ export class TnglCompiler {
         this.#tnglWriter.writeFlag(SENSORS_FLAGS.PROVIDER_SLIDER);
         break;
 
-      case "EventVoid": 
+      case "EventVoid":
         this.#tnglWriter.writeFlag(SENSORS_FLAGS.OPERATION_EVENT_VOID);
         break;
 
@@ -938,8 +961,8 @@ export class TnglCompiler {
       case "Modulo":
         this.#tnglWriter.writeFlag(SENSORS_FLAGS.OPERATION_MODULO);
         break;
-        
-      
+
+
       case "SonoffUltimateProvider":
         this.#tnglWriter.writeFlag(SENSORS_FLAGS.PROVIDER_SONOFF_ULTIMATE);
         break;
@@ -970,6 +993,15 @@ export class TnglCompiler {
             break;
           }
         }
+
+        for (let i = this.#variable_declarations_let_stack.length - 1; i >= 0; i--) {
+          const declaration = this.#variable_declarations_let_stack[i];
+          if (declaration.name === word) {
+            possible_variable_address = declaration.address;
+            break;
+          }
+        }
+
 
         if (possible_variable_address !== undefined) {
           logging.debug(`VARIABLE_READ name=${word}, address=${possible_variable_address}`);
@@ -1027,8 +1059,8 @@ export class TnglCompiler {
 
     // check if the variable is already declared
     // look for the latest variable address on the stack
-    for (let i = this.#variable_declarations_stack.length - 1; i >= 0; i--) {
-      const declaration = this.#variable_declarations_stack[i];
+    for (let i = this.#variable_declarations_let_stack.length - 1; i >= 0; i--) {
+      const declaration = this.#variable_declarations_let_stack[i];
       if (declaration.name === origin) {
         origin_variable_address = declaration.address;
       }
@@ -1085,6 +1117,9 @@ export class TnglCodeParser {
         case "const_variale_declaration":
           this.#compiler.compileConstVariableDeclaration(element.token);
           break;
+
+        case "let_variable_declaration":
+          this.#compiler.compileLetVariableDeclaration(element.token);
 
         case "comment":
           // skip
@@ -1178,6 +1213,7 @@ export class TnglCodeParser {
     connection: /[\w]+->\[\w*\][\w]+\s*;/,
     undefined: /undefined/,
     const_variale_declaration: /const +[A-Za-z_][\w]* *=/,
+    let_variable_declaration: /let +[A-Za-z_][\w]* *=/,
     comment: /\/\/[^\n]*/,
     htmlrgb: /#[0-9a-f]{6}/i,
     infinity: /[+-]?Infinity/,
