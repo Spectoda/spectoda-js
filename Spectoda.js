@@ -578,7 +578,7 @@ export class Spectoda {
 
   connected() {
     if (this.#connecting || this.#adopting) {
-      return Promise.resolve();
+      return Promise.resolve(null); // resolve nothing === not connected
     }
 
     return this.interface.connected();

@@ -540,29 +540,10 @@ export class SpectodaInterfaceLegacy {
 
     const item = new Query(Query.TYPE_USERSELECT, criteria, timeout);
     this.#process(item);
+
     return item.promise.finally(() => {
       this.#selecting = false;
     });
-
-    // =========================================
-
-    // this.#reconection = false;
-
-    // if (this.#selecting) {
-    //   return Promise.reject("SelectingInProgress");
-    // }
-
-    // this.#selecting = true;
-
-    // return this.connector
-    //   .disconnect()
-    //   .catch(() => {})
-    //   .then(() => {
-    //     return this.connector.userSelect(criteria, timeout);
-    //   })
-    //   .finally(() => {
-    //     this.#selecting = false;
-    //   });
   }
 
   autoSelect(criteria, scan_period = 4000, timeout = 10000) {
@@ -589,49 +570,23 @@ export class SpectodaInterfaceLegacy {
 
     const item = new Query(Query.TYPE_AUTOSELECT, criteria, scan_period, timeout);
     this.#process(item);
+
     return item.promise.finally(() => {
       this.#selecting = false;
     });
 
-    // =========================================
-
-    // this.#reconection = false;
-
-    // if (this.#selecting) {
-    //   return Promise.reject("SelectingInProgress");
-    // }
-
-    // this.#selecting = true;
-
-    // return this.connector
-    //   .disconnect()
-    //   .catch(() => {})
-    //   .then(() => {
-    //     return this.connector.autoSelect(criteria, scan_period, timeout);
-    //   })
-    //   .finally(() => {
-    //     this.#selecting = false;
-    //   });
   }
 
   unselect() {
     const item = new Query(Query.TYPE_UNSELECT);
     this.#process(item);
     return item.promise;
-
-    //========================================
-
-    // return this.connector.unselect();
   }
 
   selected() {
     const item = new Query(Query.TYPE_SELECTED);
     this.#process(item);
     return item.promise;
-
-    //========================================
-
-    // return this.connector.selected();
   }
 
   scan(criteria, scan_period = 5000) {
@@ -969,26 +924,6 @@ export class SpectodaInterfaceLegacy {
                     item.reject(error);
                   });
                 break;
-
-              // case Query.TYPE_DISCONNECT:
-              //   this.#reconection = false;
-              //   this.#disconnectQuery = new Query();
-              //   await this.connector
-              //     .request([COMMAND_FLAGS.FLAG_DEVICE_DISCONNECT_REQUEST], false)
-              //     .catch(() => {})
-              //     .then(() => {
-              //       return this.connector.disconnect();
-              //     })
-              //     .then(this.#disconnectQuery.promise)
-              //     .then(() => {
-              //       this.#disconnectQuery = null;
-              //       item.resolve();
-              //     })
-              //     .catch(error => {
-              //       //logging.warn(error);
-              //       item.reject(error);
-              //     });
-              //   break;
 
               case Query.TYPE_DISCONNECT:
                 this.#reconection = false;
