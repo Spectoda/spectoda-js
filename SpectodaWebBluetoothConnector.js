@@ -125,20 +125,26 @@ export class WebBLEConnection {
 
     // TODO write this function effectivelly
     return new Promise(async (resolve, reject) => {
-      let bytes = new Uint8Array((await characteristic.readValue()).buffer);
+      try {
+        let bytes = new Uint8Array((await characteristic.readValue()).buffer);
 
-      // console.log(bytes);
+        // console.log(bytes);
 
-      let total_bytes = [...bytes];
+        let total_bytes = [...bytes];
 
-      while (bytes.length == 512) {
-        bytes = new Uint8Array((await characteristic.readValue()).buffer);
-        total_bytes = [...total_bytes, ...bytes];
+        while (bytes.length == 512) {
+          bytes = new Uint8Array((await characteristic.readValue()).buffer);
+          total_bytes = [...total_bytes, ...bytes];
+        }
+
+        // console.log(total_bytes);
+
+        resolve(new DataView(new Uint8Array(total_bytes).buffer));
       }
-
-      // console.log(total_bytes);
-
-      resolve(new DataView(new Uint8Array(total_bytes).buffer));
+      catch (e) {
+        logging.error(e);
+        reject("ReadError");
+      }
     });
   }
 
@@ -892,7 +898,7 @@ criteria example:
     const timeout_handle = setTimeout(
       () => {
         logging.warn("Timeout triggered");
-        this.disconnect();
+        this.#webBTDevice.gatt.disconnect();
       },
       timeout < 10000 ? 10000 : timeout,
     );
@@ -967,8 +973,6 @@ criteria example:
       this.#disconnect();
     } else {
       logging.debug("Bluetooth Device is already disconnected");
-      // todo make this throw error without breaking /init/pws
-      // throw "DeviceAlreadyDisconnected";
     }
 
     return Promise.resolve();

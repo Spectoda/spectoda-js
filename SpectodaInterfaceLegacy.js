@@ -193,7 +193,7 @@ export class SpectodaInterfaceLegacy {
 
   #chunkSize;
 
-  #reconection;
+  // #reconection;
   #selecting;
   #disconnectQuery;
 
@@ -206,7 +206,7 @@ export class SpectodaInterfaceLegacy {
 
   #connectedPeers;
 
-  constructor(deviceReference, reconnectionInterval = 1000) {
+  constructor(deviceReference /*, reconnectionInterval = 1000*/) {
     this.#deviceReference = deviceReference;
 
     this.clock = new TimeTrack(0);
@@ -220,11 +220,11 @@ export class SpectodaInterfaceLegacy {
     this.#processing = false;
     this.#chunkSize = 208; // 208 is ESPNOW chunk size
 
-    this.#reconection = false;
+    // this.#reconection = false;
     this.#selecting = false;
     this.#disconnectQuery = null;
 
-    this.#reconnectionInterval = reconnectionInterval;
+    // this.#reconnectionInterval = reconnectionInterval;
 
     this.#connectGuard = false;
 
@@ -382,8 +382,8 @@ export class SpectodaInterfaceLegacy {
     logging.info(`> Assigning ${connector_type} connector...`);
 
     if ((!this.connector && connector_type === "none") || (this.connector && this.connector.type === connector_type)) {
-      logging.warn("Trying to reassign current connector.");
-      return Promise.resolve();
+      logging.warn("Reassigning current connector.");
+      // return Promise.resolve();
     }
 
     if (connector_type == "default" || connector_type == "automatic") {
@@ -512,9 +512,9 @@ export class SpectodaInterfaceLegacy {
       });
   }
 
-  reconnection(enable) {
-    this.#reconection = enable;
-  }
+  // reconnection(enable) {
+  //   this.#reconection = enable;
+  // }
 
   userSelect(criteria, timeout = 600000) {
     // this.#reconection = false;
@@ -647,7 +647,7 @@ export class SpectodaInterfaceLegacy {
   }
 
   disconnect() {
-    this.#reconection = false;
+    // this.#reconection = false;
 
     const item = new Query(Query.TYPE_DISCONNECT);
     this.#process(item);
@@ -664,15 +664,15 @@ export class SpectodaInterfaceLegacy {
     this.#connectGuard = false;
     this.onDisconnected(event);
 
-    if (this.#reconection && this.#reconnectionInterval) {
-      logging.info("Reconnecting...");
-      setTimeout(() => {
-        logging.debug("Reconnecting device");
-        return this.connect(this.#reconnectionInterval).catch(() => {
-          logging.warn("Reconnection failed.");
-        });
-      }, 2000);
-    }
+    // if (this.#reconection && this.#reconnectionInterval) {
+    //   logging.info("Reconnecting...");
+    //   setTimeout(() => {
+    //     logging.debug("Reconnecting device");
+    //     return this.connect(this.#reconnectionInterval).catch(() => {
+    //       logging.warn("Reconnection failed.");
+    //     });
+    //   }, 2000);
+    // }
 
     if (this.#disconnectQuery) {
       this.#disconnectQuery.resolve();
@@ -813,7 +813,7 @@ export class SpectodaInterfaceLegacy {
 
             switch (item.type) {
               case Query.TYPE_USERSELECT:
-                this.#reconection = false;
+                // this.#reconection = false;
                 await this.connector
                   .userSelect(item.a, item.b) // criteria, timeout
                   .then(device => {
@@ -826,7 +826,7 @@ export class SpectodaInterfaceLegacy {
                 break;
 
               case Query.TYPE_AUTOSELECT:
-                this.#reconection = false;
+                // this.#reconection = false;
                 await this.connector
                   .autoSelect(item.a, item.b, item.c) // criteria, scan_period, timeout
                   .then(device => {
@@ -851,7 +851,7 @@ export class SpectodaInterfaceLegacy {
                 break;
 
               case Query.TYPE_UNSELECT:
-                this.#reconection = false;
+                // this.#reconection = false;
                 await this.connector
                   .unselect()
                   .then(() => {
@@ -876,11 +876,12 @@ export class SpectodaInterfaceLegacy {
                 break;
 
               case Query.TYPE_CONNECT:
-                this.#reconection = true;
+                // this.#reconection = true;
                 logging.verbose("TYPE_CONNECT begin");
                 await this.connector
                   .connect(item.a, item.b) // a = timeout, b = supportLegacy
                   .then(device => {
+
                     if (!this.#connectGuard) {
                       logging.error("Connection logic error. #connected not called during successful connect()?");
                       logging.warn("Emitting #connected");
@@ -926,7 +927,7 @@ export class SpectodaInterfaceLegacy {
                 break;
 
               case Query.TYPE_DISCONNECT:
-                this.#reconection = false;
+                // this.#reconection = false;
                 this.#disconnectQuery = new Query();
                 await this.connector
                   .disconnect()
@@ -1007,7 +1008,7 @@ export class SpectodaInterfaceLegacy {
                     item.resolve(response);
                   })
                   .catch(error => {
-                    //logging.warn(error);
+                    logging.warn(error);
                     item.reject(error);
                   });
                 break;
@@ -1059,7 +1060,7 @@ export class SpectodaInterfaceLegacy {
                 break;
 
               case Query.TYPE_DESTROY:
-                this.#reconection = false;
+                // this.#reconection = false;
                 await this.connector
                   .request([COMMAND_FLAGS.FLAG_DEVICE_DISCONNECT_REQUEST], false)
                   .catch(() => {})
