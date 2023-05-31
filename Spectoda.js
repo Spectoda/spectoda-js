@@ -1,4 +1,4 @@
-import { colorToBytes, computeTnglFingerprint, detectSpectodaConnect, hexStringToUint8Array, labelToBytes, numberToBytes, percentageToBytes, sleep, strMacToBytes } from "./functions.js";
+import { colorToBytes, computeTnglFingerprint, detectSpectodaConnect, hexStringToUint8Array, labelToBytes, numberToBytes, percentageToBytes, sleep, strMacToBytes, stringToBytes } from "./functions.js";
 import { changeLanguage, t } from "./i18n.js";
 import { io } from "./lib/socketio.js";
 import { logging, setLoggingLevel } from "./Logging.js";
@@ -1691,8 +1691,6 @@ export class Spectoda {
   }
 
   deviceSleep() {
-    throw "WorkInProgress";
-
     logging.debug("> Sleep device...");
 
     const request_uuid = this.#getUUID();
@@ -1701,8 +1699,6 @@ export class Spectoda {
   }
 
   networkSleep() {
-    throw "WorkInProgress";
-
     logging.debug("> Sleep device...");
 
     const request_uuid = this.#getUUID();
@@ -1845,5 +1841,54 @@ export class Spectoda {
     logging.verbose(bytes);
 
     return this.interface.execute(bytes, true);
+  }
+
+  // name as string
+  writeControllerName(name) {
+    logging.debug("> Writing Controller Name...");
+
+    const request_uuid = this.#getUUID();
+    const payload = [COMMAND_FLAGS.FLAG_WRITE_CONTROLLER_NAME_REQUEST, ...numberToBytes(request_uuid, 4), ...stringToBytes(name, 16)];
+    return this.interface.request(payload, false);
+  }
+
+  readControllerName() {
+    logging.debug("> Reading Controller Name...");
+
+    const request_uuid = this.#getUUID();
+    const bytes = [COMMAND_FLAGS.FLAG_READ_CONTROLLER_NAME_REQUEST, ...numberToBytes(request_uuid, 4)];
+
+    return this.interface.request(bytes, true).then(response => {
+      let reader = new TnglReader(response);
+
+      logging.info(`response.byteLength=${response.byteLength}`);
+
+      if (reader.readFlag() !== COMMAND_FLAGS.FLAG_READ_CONTROLLER_NAME_RESPONSE) {
+        throw "InvalidResponseFlag";
+      }
+
+      const response_uuid = reader.readUint32();
+
+      if (response_uuid != request_uuid) {
+        throw "InvalidResponseUuid";
+      }
+
+      const error_code = reader.readUint8();
+
+      logging.verbose(`error_code=${error_code}`);
+
+      let name = null;
+
+      if (error_code === 0) {
+        name = reader.readString(16);
+      } else {
+        throw "Fail";
+      }
+
+      logging.verbose(`name=${name}`);
+      logging.debug(`> Controller Name: ${name}`);
+
+      return name;
+    });
   }
 }
