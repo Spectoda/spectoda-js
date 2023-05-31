@@ -4,45 +4,34 @@ export class TnglReader {
     this._index = 0;
   }
 
+  // TODO optimize this function 
   peekValue(byteCount, unsigned) {
-    const masks = [0x00, 0x80, 0x8000, 0x800000, 0x80000000];
-    const offsets = [0x00, 0x100, 0x10000, 0x1000000, 0x100000000];
-
+    const masks = [0x00n, 0x80n, 0x8000n, 0x800000n, 0x80000000n];
+    const offsets = [0x00n, 0x100n, 0x10000n, 0x1000000n, 0x100000000n];
+  
     if (this._index + byteCount > this._dataView.byteLength) {
       console.error("End of the data");
       throw "PeekOutOfRange";
     }
-
-    let value = 0;
-
-    // if (byteCount == 1) {
-    //   if (unsigned) {
-    //     value = this._dataView.getUint8(this._index);
-    //   } else {
-    //     value = this._dataView.getInt8(this._index);
-    //   }
-    // }
-    // else {
+  
+    let value = 0n;
     for (let i = byteCount; i > 0; i--) {
-      value <<= 8;
-      value |= this._dataView.getUint8(this._index + i - 1);
+      value <<= 8n;
+      value |= BigInt(this._dataView.getUint8(this._index + i - 1));
     }
-    // }
-    // return unsigned ? value >>> 0 : value;
-
+  
     if (unsigned) {
-      return value >>> 0;
+      return Number(value);
     } else {
       if (byteCount < 4) {
-        value >>>= 0;
-        if ((value & masks[byteCount]) != 0) {
-          return value - offsets[byteCount];
+        if ((value & masks[byteCount]) != 0n) {
+          return Number(value - offsets[byteCount]);
         }
       } else {
-        return value;
+        return Number(value);
       }
     }
-  }
+  }  
 
   readValue(byteCount, unsigned) {
     try {
