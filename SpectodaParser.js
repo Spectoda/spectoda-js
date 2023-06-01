@@ -170,11 +170,20 @@ const SENSORS_FLAGS = Object.freeze({
   OPERATION_EVENT_RELAY: 16,
   OPERATION_EVENT_TOGGLE: 17,
   OPERATION_IF: 18,
+  OPERATION_EVENT_VOID: 19,
+  OPERATION_EVENT_STEPPER: 20,
+  OPERATION_MODULO: 21,
+  OPERATION_EVENT_SET: 22,
 
   PROVIDER_PROXIMITY: 151,
   PROVIDER_BUTTON: 152,
   PROVIDER_TOUCH: 153,
   PROVIDER_VOLTAGE: 154,
+  PROVIDER_PIR: 155,
+  PROVIDER_SLIDER: 156,
+  PROVIDER_SONOFF_ULTIMATE: 157,
+  PROVIDER_NETWORKSYNC: 158,
+  PROVIDER_AMBIENT_LIGHT: 159,
 
   OPERATION_CONNECTION: 253,
 });
@@ -909,7 +918,43 @@ export class TnglCompiler {
       case "VoltageProvider":
         this.#tnglWriter.writeFlag(SENSORS_FLAGS.PROVIDER_VOLTAGE);
         break;
+
+      case "PIRProvider": 
+        this.#tnglWriter.writeFlag(SENSORS_FLAGS.PROVIDER_PIR);
+        break;
+
+      case "SliderProvider":
+        this.#tnglWriter.writeFlag(SENSORS_FLAGS.PROVIDER_SLIDER);
+        break;
+
+      case "EventVoid": 
+        this.#tnglWriter.writeFlag(SENSORS_FLAGS.OPERATION_EVENT_VOID);
+        break;
+
+      case "EventStepper":
+        this.#tnglWriter.writeFlag(SENSORS_FLAGS.OPERATION_EVENT_STEPPER);
+        break;
+
+      case "Modulo":
+        this.#tnglWriter.writeFlag(SENSORS_FLAGS.OPERATION_MODULO);
+        break;
+        
       
+      case "SonoffUltimateProvider":
+        this.#tnglWriter.writeFlag(SENSORS_FLAGS.PROVIDER_SONOFF_ULTIMATE);
+        break;
+
+      case "EventSet":
+        this.#tnglWriter.writeFlag(SENSORS_FLAGS.OPERATION_EVENT_SET);
+        break;
+
+      case "NetworkSyncProvider":
+        this.#tnglWriter.writeFlag(SENSORS_FLAGS.PROVIDER_NETWORKSYNC);
+        break;
+
+      case "AmbientLightProvider":
+        this.#tnglWriter.writeFlag(SENSORS_FLAGS.PROVIDER_AMBIENT_LIGHT);
+        break;
 
       default:
         // TODO look for variable_name in the variable_name->variable_address map
@@ -1130,7 +1175,7 @@ export class TnglCodeParser {
   }
 
   static #parses = {
-    connection: /[A-Za-z0-9_]+->\[.*\][A-Za-z0-9_]+.*;/,
+    connection: /[\w]+->\[\w*\][\w]+\s*;/,
     undefined: /undefined/,
     const_variale_declaration: /const +[A-Za-z_][\w]* *=/,
     comment: /\/\/[^\n]*/,

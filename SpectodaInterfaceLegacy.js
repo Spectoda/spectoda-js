@@ -205,6 +205,8 @@ export class SpectodaInterfaceLegacy {
   #lastUpdateTime;
   #lastUpdatePercentage;
 
+  #connectedPeers;
+
   constructor(deviceReference, reconnectionInterval = 1000) {
     this.#deviceReference = deviceReference;
 
@@ -229,6 +231,8 @@ export class SpectodaInterfaceLegacy {
 
     this.#lastUpdateTime = new Date().getTime();
     this.#lastUpdatePercentage = 0;
+
+    this.#connectedPeers = [];
 
     this.onConnected = e => {};
     this.onDisconnected = e => {};
@@ -684,6 +688,14 @@ export class SpectodaInterfaceLegacy {
     this.#connectGuard = true;
     this.onConnected(event);
   };
+
+  eraseConnectedPeers() {
+    this.#connectedPeers = [];
+  }
+
+  setConnectedPeers(peers) {
+    this.#connectedPeers = peers;
+  }
 
   disconnect() {
     this.#reconection = false;
@@ -1160,7 +1172,7 @@ export class SpectodaInterfaceLegacy {
 
     let reader = new TnglReader(bytecode);
 
-    const utc_timestamp = new Date().getTime();
+    let utc_timestamp = new Date().getTime();
 
     logging.verbose(reader);
 
@@ -1261,13 +1273,13 @@ export class SpectodaInterfaceLegacy {
             const event_device_id = reader.readUint8(); // 1 byte
             logging.verbose(`event_device_id = ${event_device_id}`);
 
-            emitted_events.push({
+            emitted_events.unshift({
               type: event_type, // The type of the event as string "none", "timestamp", "color", "percentage", "label"
               value: event_value, // null (type="none"), number (type="timestamp"), string e.g. "#ff00ff" (type="color"), number (type="percentage"), string (type="label")
               label: event_label, // Label label as a string e.g. "event"
               timestamp: event_timestamp, // TNGL Network Clock Timestamp as number
               id: event_device_id, // Event destination ID as number
-              timestamp_utc: utc_timestamp,
+              timestamp_utc: utc_timestamp--,
               info: `${event_device_id.toString().padStart(3)} -> $${event_label}: ${log_value_prefix + event_value + log_value_postfix} [${event_timestamp}ms]`, // debug information
             });
           }
@@ -1317,7 +1329,11 @@ export class SpectodaInterfaceLegacy {
               .map(v => v.toString(16).padStart(2, "0"))
               .join(":");
 
-            this.#eventEmitter.emit("peer_connected", device_mac);
+            if (this.#connectedPeers.includes(device_mac) === false) {
+              this.#connectedPeers.push(device_mac);
+              this.#eventEmitter.emit("peer_connected", device_mac);
+            }
+
           }
           break;
 

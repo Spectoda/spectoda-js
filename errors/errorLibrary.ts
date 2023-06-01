@@ -38,7 +38,7 @@ interface ErrorList {
 }
 
 // Errors specific for NARA
-export const nara: ErrorList = {
+export const app: ErrorList = {
   MicAccessDenied: {
     title: t("Mikrofon se nepodařilo spustit."),
     message: t("Zkontrolujte, zda jste v Nastavení povolili aplikaci přístup k mikrofonu."),
@@ -47,18 +47,18 @@ export const nara: ErrorList = {
     title: t("Spárování nové lampy se nezdařilo"),
     message: t("Pro připojení již spárované lampy prosím stiskněte jakýkoli symbol") + ' "🛑"',
   },
-};
+} as const;
 
 // Errors specific for STUDIO
-export const studio: ErrorList = {
+export const studio = {
   MicAccessDenied: {
     title: "Microphone access denied",
     message: "Make sure you've enabled microphone access in Settings. If so, refresh the current page, delete cookies and try again.",
   },
-};
+} as const;
 
 // General error messages
-export const general: ErrorList = {
+export const general = {
   DeviceDisconnected: {
     title: "Device Disconnected",
     message: "The device has been disconnected. Please reconnect the device and try again.",
@@ -79,10 +79,44 @@ export const general: ErrorList = {
     title: "Internal Processing Error",
     message: "Something went wrong while processing your request. Please try again later or contact support for assistance.",
   },
-};
+  UserNotLoggedInSwitchToIntegratedNetwork: {
+    title: "You are not logged in",
+    message: "Please log in to your account to switch networks.",
+  },
+  NetworkDoesNotExistSwitchNetwork: {
+    title: "Network does not exist",
+    message: "The network you are trying to switch to does not exist. Please contact support for assistance.",
+  },
+  NetworkNotFound: {
+    title: "Network not found",
+    message: "The network you are trying to access does not exist. Please contact support for assistance.",
+  },
+  NetworkAlreadyLoaded: {
+    title: "Network already loaded",
+    message: "The network you are trying to load is already loaded.",
+  },
+  ActiveNetworkNotFoundAddController: {
+    title: "Could not add controller",
+    message: "We could not find the network you are trying to add a controller to due to a technical issue on our end. Please contact support for assistance.",
+  },
+  ActiveNetworkNotFoundEditDevice: {
+    title: "Could not edit device",
+    message: "We could not find the network you are trying to edit a device on due to a technical issue on our end. Please contact support for assistance.",
+  },
+  ControllerNameAlreadyExists: {
+    title: "Controller name already exists",
+    message: "The controller name you are trying to use already exists. Please choose a different name.",
+  },
+  DeviceAlreadyDisconnected: {
+    title: "Device already disconnected",
+    message: "The device you are trying to disconnect is already disconnected.",
+  },
+} as const;
 
 // Appears when error is not defined above
 export const unknownError = {
   title: "Unknown Error",
   message: "An unknown error has occurred. Please contact us for support.",
 };
+
+export type ErrorCode = keyof typeof general;
