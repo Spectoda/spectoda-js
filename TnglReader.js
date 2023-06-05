@@ -4,34 +4,39 @@ export class TnglReader {
     this._index = 0;
   }
 
-  // TODO optimize this function 
-  peekValue(byteCount, unsigned) {
-    const masks = [0x00n, 0x80n, 0x8000n, 0x800000n, 0x80000000n];
-    const offsets = [0x00n, 0x100n, 0x10000n, 0x1000000n, 0x100000000n];
-  
+  // TODO optimize and test this function 
+  peekValue(byteCount, unsigned = true) {
+
+    if (byteCount > 8) {
+      console.error("Byte count is too big");
+      throw new RangeError("ByteCountOutOfRange");
+    }
+
     if (this._index + byteCount > this._dataView.byteLength) {
       console.error("End of the data");
-      throw "PeekOutOfRange";
+      throw new RangeError("PeekOutOfRange");
     }
-  
+
     let value = 0n;
     for (let i = byteCount; i > 0; i--) {
       value <<= 8n;
       value |= BigInt(this._dataView.getUint8(this._index + i - 1));
     }
-  
-    if (unsigned) {
-      return Number(value);
-    } else {
-      if (byteCount < 4) {
-        if ((value & masks[byteCount]) != 0n) {
-          return Number(value - offsets[byteCount]);
-        }
-      } else {
-        return Number(value);
-      }
+
+    let result = value;
+
+    if (!unsigned && (value & (1n << (BigInt(byteCount * 8) - 1n)))) {
+      // Two's complement conversion
+      result = value - (1n << BigInt(byteCount * 8));
     }
-  }  
+
+    if (result > BigInt(Number.MAX_SAFE_INTEGER) || result < BigInt(Number.MIN_SAFE_INTEGER)) {
+      console.error("Value is outside of safe integer range");
+      // TODO handle this error better than loosing precision in conversion to Number
+    }
+
+    return Number(result);
+  }
 
   readValue(byteCount, unsigned) {
     try {
