@@ -25,6 +25,7 @@ export class TnglReader {
 
     let result = value;
 
+    // Check if the sign bit is set
     if (!unsigned && (value & (1n << (BigInt(byteCount * 8) - 1n)))) {
       // Two's complement conversion
       result = value - (1n << BigInt(byteCount * 8));
@@ -33,6 +34,7 @@ export class TnglReader {
     if (result > BigInt(Number.MAX_SAFE_INTEGER) || result < BigInt(Number.MIN_SAFE_INTEGER)) {
       console.error("Value is outside of safe integer range");
       // TODO handle this error better than loosing precision in conversion to Number
+      throw new RangeError("ValueOutOfRange");
     }
 
     return Number(result);
