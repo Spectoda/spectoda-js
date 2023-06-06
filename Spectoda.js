@@ -548,6 +548,8 @@ export class Spectoda {
   connect(devices = null, autoConnect = true, ownerSignature = null, ownerKey = null, connectAny = false, fwVersion = "") {
     logging.info(`connect(devices=${devices}, autoConnect=${autoConnect}, ownerSignature=${ownerSignature}, ownerKey=${ownerKey}, connectAny=${connectAny}, fwVersion=${fwVersion})`);
 
+    autoConnect = true;
+
     if (this.#connecting) {
       return Promise.reject("ConnectingInProgress");
     }
@@ -631,7 +633,9 @@ export class Spectoda {
       .catch(error => {
         // TODO: tady tento catch by mel dal thrownout error jako ze nepodarilo pripojit.
         this.#setConnectionState("disconnected");
-        logging.error(error);
+
+        window.alert(error);
+        
         if (error === "UserCanceledSelection") {
           throw "UserCanceledSelection";
         }
