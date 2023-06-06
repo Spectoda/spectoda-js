@@ -584,7 +584,7 @@ export class TnglCompiler {
   ///////////////////////////////////////////////////////////
 
   compileConstDeclaration(variable_declaration) {
-    logging.verbose(`compileConstDeclaration(${variable_declaration})`);
+    logging.verbose(`compileConstDeclaration("${variable_declaration}")`);
 
     let reg = variable_declaration.match(/const +([A-Za-z_][\w]*) *=/);
     if (!reg) {
@@ -1113,26 +1113,18 @@ export class TnglCompiler {
     // look for the latest variable address on the stack
     for (let i = this.#const_declarations_stack.length - 1; i >= 0; i--) {
       const declaration = this.#const_declarations_stack[i];
-      if (declaration.name === origin) {
+      if (!origin_value_address && declaration.name === origin) {
         origin_value_address = declaration.address;
       }
-      if (declaration.name === destination) {
+      if (!destination_variable_address && declaration.name === destination) {
         destination_variable_address = declaration.address;
+      }
+      if (origin_value_address && destination_variable_address) {
+        break;
       }
     }
 
     // TODO Theory: if the variable is not found in the const stack, it must be in the let stack or var stack?
-    // // check if the variable is already declared
-    // // look for the latest variable address on the stack
-    // for (let i = this.#let_declarations_stack.length - 1; i >= 0; i--) {
-    //   const declaration = this.#let_declarations_stack[i];
-    //   if (declaration.name === origin) {
-    //     origin_value_address = declaration.address;
-    //   }
-    //   if (declaration.name === destination) {
-    //     destination_variable_address = declaration.address;
-    //   }
-    // }
 
     if (origin_value_address === undefined) {
       logging.error(`Failed to find origin variable address [${origin}]`);
