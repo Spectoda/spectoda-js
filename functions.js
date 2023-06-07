@@ -736,14 +736,76 @@ if (typeof window !== "undefined") {
 
 const Color = require('color');
 
+const barvy = {
+  "vypnuto": "#000000",
+  "černá": "#000000",
+  "bílá": "#ffffff",
+  "červená": "#ff0000",
+  "rudá": "#ff0000",
+  "modrá": "#0000ff",
+  "zelená": "#00ff00",
+  "žlutá": "#ffff00",
+  "růžová": "#ffc0cb",
+  "fialová": "#ff00ff",
+  "oranžová": "#ff7700",
+  "šedá": "#808080",
+  "hnědá": "#a52a2a",
+  "azurová": "#b0ffff",
+  "limetková": "#00ff00",
+  "mandlová": "#ff6b5d",
+  "purpurová": "#800080",
+  "stříbrná": "#c0c0c0",
+  "tyrkysová": "#40e0d0",
+  "zlatá": "#ffd700",
+  "indigo": "#4b0082",
+  "khaki": "#f0e68c",
+  "lavendulová": "#e6e6fa",
+  "měď": "#b87333",
+};
+
+const barvy_bez_hacku = {
+  "vypnuto": "#000000",
+  "cerna": "#000000",
+  "bila": "#ffffff",
+  "cervena": "#ff0000",
+  "ruda": "#ff0000",
+  "modra": "#0000ff",
+  "zelena": "#00ff00",
+  "zluta": "#ffff00",
+  "ruzova": "#ffc0cb",
+  "fialova": "#ff00ff",
+  "oranzova": "#ff7700",
+  "seda": "#808080",
+  "hneda": "#a52a2a",
+  "azurova": "#b0ffff",
+  "limetkova": "#00ff00",
+  "mandlova": "#ff6b5d",
+  "purpurova": "#800080",
+  "stribrna": "#c0c0c0",
+  "tyrkysova": "#40e0d0",
+  "zlata": "#ffd700",
+  "indigo": "#4b0082",
+  "khaki": "#f0e68c",
+  "lavendulova": "#e6e6fa",
+  "med": "#b87333"
+};
+
 export function cssColorToHex(color) {
   if (typeof color !== 'string' || color.trim() === '') {
     return null;
   }
 
+  if (color.toLocaleLowerCase() in barvy) {
+    return barvy[color];
+  }
+
+  if (color.toLocaleLowerCase() in barvy_bez_hacku) {
+    return barvy_bez_hacku[color];
+  }
+
   // Add a '#' symbol before the hexadecimal color code if it's missing
   if (/^[0-9a-fA-F]{6}$/.test(color)) {
-    color = `#${color}`;
+    return `#${color}`.toLocaleLowerCase();
   }
 
   try {
