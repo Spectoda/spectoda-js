@@ -195,6 +195,7 @@ const OBJECT_TYPE = Object.freeze({
   PROVIDER_NETWORKSYNC: 158,
   PROVIDER_AMBIENT_LIGHT: 159,
   PROVIDER_LUXV30B: 160,
+  PROVIDER_VEML7700: 161,
 
   // TODO OPERATION_CONNECTION should be FLAG in TNGL_FLAGS
   OPERATION_CONNECTION: 253,
@@ -1034,7 +1035,11 @@ export class TnglCompiler {
         break;
 
       case "LUXv30BProvider":
-        this.#tnglWriter.writeFlag(SENSORS_FLAGS.PROVIDER_LUXV30B);
+        this.#tnglWriter.writeFlag(OBJECT_TYPE.PROVIDER_LUXV30B);
+        break;
+
+      case "VEML7700Provider":
+        this.#tnglWriter.writeFlag(OBJECT_TYPE.PROVIDER_VEML7700);
         break;
 
       default:
