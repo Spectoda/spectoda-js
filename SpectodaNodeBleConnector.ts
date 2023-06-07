@@ -746,7 +746,7 @@ criteria example:
       };
 
     } catch (e) {
-      logging.error(e);
+      logging.warn(e);
       throw "SelectionFailed";
     }
 

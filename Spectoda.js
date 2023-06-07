@@ -34,12 +34,13 @@ export class Spectoda {
 
   #reconnectRC;
 
-  #reconnectionInterval;
+  // #reconnectionInterval;
+  #reconnecting;
   #connectionState;
 
   #autonomousConnection;
 
-  constructor(connectorType = "default", reconnectionInterval = 1000, runOnServer = false) {
+  constructor(connectorType = "default", reconnecting = true, runOnServer = false) {
     // nextjs
     if (typeof window === "undefined" && !runOnServer) {
       return;
@@ -65,7 +66,9 @@ export class Spectoda {
 
     this.#reconnectRC = false;
 
-    this.#reconnectionInterval = reconnectionInterval;
+    
+    //this.#reconnectionInterval = reconnectionInterval;
+    this.#reconnecting = reconnecting ? true : false;
     this.#connectionState = "disconnected";
 
     // this.interface.on("#connected", e => {
@@ -98,24 +101,27 @@ export class Spectoda {
       //   logging.verbose("disconnected event skipped because of adopt");
       // }
 
-      const TIME = 2000;
+      if (this.#connectionState === "connected" && this.#reconnecting) {
+        // const TIME = 2000;
+        // logging.info(`Reconnecting device in ${TIME}ms`);
+        // this.#setConnectionState("connecting");
 
-      if (this.#connectionState === "connected" && this.#reconnectionInterval) {
-        logging.info(`Reconnecting device in ${TIME}ms`);
-        this.#setConnectionState("connecting");
+        // setTimeout(() => {
+        //   logging.info("Reconnecting device...");
+        //   return this.interface.connect(this.#reconnectionInterval)
+        //     .then(() => {
+        //       logging.info("Reconnection successful.");
+        //       this.#setConnectionState("connected");
+        //     })
+        //     .catch(() => {
+        //       logging.warn("Reconnection failed.");
+        //       this.#setConnectionState("disconnected");
+        //     });
+        // }, TIME);
 
-        setTimeout(() => {
-          logging.info("Reconnecting device...");
-          return this.interface.connect(this.#reconnectionInterval)
-            .then(() => {
-              logging.info("Reconnection successful.");
-              this.#setConnectionState("connected");
-            })
-            .catch(() => {
-              logging.warn("Reconnection failed.");
-              this.#setConnectionState("disconnected");
-            });
-        }, TIME);
+        return this.#connect(true).catch((error) => {
+          logging.warn("Reconnection failed.", error);
+        });
       }
 
       else {
@@ -128,22 +134,20 @@ export class Spectoda {
     setInterval(async () => {
       if (!this.#updating && this.interface.connector) {
 
-        let deviceConnected = await this.connected();
-
-        if (deviceConnected) {
+        if (this.#getConnectionState() === "connected") {
           return this.syncClock().catch((error) => {
             logging.warn(error);
           });
         }
 
-        else if (!deviceConnected && this.#autonomousConnection) {
+        else if (this.#getConnectionState() === "disconnected" && this.#autonomousConnection) {
           return this.#connect(true).catch((error) => {
             logging.warn(error);
           });
         }
 
       }
-    }, 30000);
+    }, 60000);
   }
 
   #setConnectionState(connectionState) {
@@ -921,7 +925,7 @@ export class Spectoda {
    * @returns
    */
   emitPercentageEvent(event_label, event_value, device_ids = [0xff], force_delivery = false) {
-    logging.info(`emitPercentageEvent(label=${event_label},value=${event_value},id=${device_ids},force=${force_delivery})`);
+    logging.verbose(`emitPercentageEvent(label=${event_label},value=${event_value},id=${device_ids},force=${force_delivery})`);
     lastEvents[event_label] = { value: event_value, type: "percentage" };
 
     // clearTimeout(this.#saveStateTimeoutHandle);
@@ -1006,7 +1010,7 @@ export class Spectoda {
 
   syncClock() {
     logging.info("> Syncing clock from device");
-    
+
     return this.interface.syncClock().then(() => {
       logging.info("> App clock synchronized");
     });
