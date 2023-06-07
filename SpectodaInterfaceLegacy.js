@@ -15,6 +15,7 @@ import {
   detectAndroid,
   detectSafari,
   detectChrome,
+  detectNode,
   detectWindows,
   detectLinux,
   detectIPhone,
@@ -493,7 +494,14 @@ export class SpectodaInterfaceLegacy {
             break;
 
           case "nodebluetooth":
-            this.connector = new SpectodaNodeBluetoothConnector(this);
+
+            if (detectNode()) {
+              this.connector = new SpectodaNodeBluetoothConnector(this);
+            } else {
+              logging.error("Error: Assigning unsupported connector");
+              this.connector = null;
+            }
+
             break;
 
           case "webserial":

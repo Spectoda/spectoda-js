@@ -214,7 +214,7 @@ export class NodeBLEConnection {
     return this.#service
       .getCharacteristic(networkUUID)
       .then(characteristic => {
-        logging.debug("#networkChar", characteristic);
+        logging.verbose("#networkChar", characteristic);
         this.#networkChar = characteristic;
 
         return this.#networkChar.startNotifications()
@@ -237,7 +237,7 @@ export class NodeBLEConnection {
         return this.#service?.getCharacteristic(clockUUID);
       })
       .then(characteristic => {
-        logging.debug("#clockChar", characteristic);
+        logging.verbose("#clockChar", characteristic);
         this.#clockChar = characteristic;
 
         return this.#clockChar?.startNotifications()
@@ -260,7 +260,7 @@ export class NodeBLEConnection {
         return this.#service?.getCharacteristic(deviceUUID);
       })
       .then(characteristic => {
-        logging.debug("#deviceChar", characteristic);
+        logging.verbose("#deviceChar", characteristic);
         this.#deviceChar = characteristic;
 
         return this.#deviceChar?.startNotifications()
@@ -721,6 +721,7 @@ criteria example:
       // Device UUID === Device MAC address
       const deviceMacAddress = criteria[0].mac.toUpperCase();
 
+      this.#bluetoothDevice?.removeAllListeners("connect");
       this.#bluetoothDevice?.removeAllListeners("disconnect");
 
       logging.debug(`> Waiting for the device ${deviceMacAddress} to show up`);
@@ -728,14 +729,15 @@ criteria example:
 
       await sleep(100);
 
-      // logging.verbose("stopping scanner");
-      // await this.#bluetoothAdapter.stopDiscovery();
-      this.#bluetoothDevice.on("disconnect", this.#onDisconnected);
-
       logging.debug("> Getting BLE device mac address");
       const mac = await this.#bluetoothDevice.getAddress().catch(e => console.error(e));
       logging.debug("> Getting BLE device name");
       const name = await this.#bluetoothDevice.getName().catch(e => console.error(e));
+
+      // logging.verbose("stopping scanner");
+      // await this.#bluetoothAdapter.stopDiscovery();
+      this.#bluetoothDevice.on("connect", this.#onConnected);
+      this.#bluetoothDevice.on("disconnect", this.#onDisconnected);
 
       return {
         connector: this.type,
@@ -885,30 +887,35 @@ criteria example:
       return Promise.reject("DeviceNotSelected");
     }
 
-    const alreadyConnected = await this.connected();
+    // const alreadyConnected = await this.connected();
 
-    if (!alreadyConnected) {
+    // if (!alreadyConnected) {
 
-      logging.debug("> Connecting to Bluetooth device...");
+    //   logging.debug("> Connecting to Bluetooth device...");
 
-      try {
+    //   try {
 
-        // const paired = await this.#bluetoothDevice.isPaired();
+    //     // const paired = await this.#bluetoothDevice.isPaired();
 
-        // if (paired) {
-        await this.#bluetoothDevice.connect()
-        // } else {
-        //   await this.#bluetoothDevice.pair()
-        // }
+    //     // if (paired) {
+    //     await this.#bluetoothDevice.connect()
+    //     // } else {
+    //     //   await this.#bluetoothDevice.pair()
+    //     // }
 
-      }
+    //   }
 
-      catch (e) {
-        logging.error(e);
-        throw "ConnectionFailed";
-      }
+    //   catch (e) {
+    //     logging.error(e);
+    //     throw "ConnectionFailed";
+    //   }
 
-    }
+    // }
+
+    await this.#bluetoothDevice.disconnect().catch(e => logging.error(e));
+
+    logging.debug("> Connecting to Bluetooth device...");
+    await this.#bluetoothDevice.connect().catch(e => { logging.error(e); throw "ConnectionFailed"; });
 
     logging.debug("> Getting the GATT server...");
 
@@ -995,11 +1002,24 @@ criteria example:
   // synchronously. So that only after all event handlers (one after the other) are done,
   // only then start this.connect() to reconnect to the bluetooth device
   #onDisconnected = () => {
-    logging.debug("> Bluetooth Device disconnected");
+    logging.info("> NodeBLE Device disconnected");
     this.#connection.reset();
     if (this.#connectedGuard) {
       logging.verbose("emitting #disconnected");
       this.#interfaceReference.emit("#disconnected");
+    }
+  };
+
+  // when the device is disconnected, the javascript Connector.js layer decides
+  // if it should be revonnected. Here is implemented that it should be
+  // reconnected only if the this.#reconection is true. The event handlers are fired
+  // synchronously. So that only after all event handlers (one after the other) are done,
+  // only then start this.connect() to reconnect to the bluetooth device
+  #onConnected = () => {
+    logging.info("> NodeBLE Device Connected");
+    if (!this.#connectedGuard) {
+      logging.verbose("emitting #connected");
+      this.#interfaceReference.emit("#connected");
     }
   };
 

@@ -212,6 +212,10 @@ export function strMacToBytes(mac_str) {
 // IPhone SE Spectoda Connect       Mozilla/5.0 (iPhone; CPU iPhone OS 15_6_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148
 // IPhone SE Safari                 Mozilla/5.0 (iPhone; CPU iPhone OS 15_6_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/15.6.1 Mobile/15E148 Safari/604.1
 
+export function detectNode() {
+  return typeof process !== 'undefined' && process.versions && process.versions.node;
+}
+
 const spectodaConnectDetected = typeof window !== "undefined" && "flutter_inappwebview" in window;
 export function detectSpectodaConnect() {
   return spectodaConnectDetected;

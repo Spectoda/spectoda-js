@@ -30,11 +30,14 @@ export class Spectoda {
   #updating;
   #selected;
   #saveStateTimeoutHandle;
+  #criteria;
 
   #reconnectRC;
 
   #reconnectionInterval;
   #connectionState;
+
+  #autonomousConnection;
 
   constructor(connectorType = "default", reconnectionInterval = 1000, runOnServer = false) {
     // nextjs
@@ -55,7 +58,6 @@ export class Spectoda {
       this.interface.assignConnector(connectorType);
     }
 
-    this.#connecting = false;
     // this.#adoptingFlag = false;
     this.#adopting = false;
     this.#updating = false;
@@ -73,7 +75,7 @@ export class Spectoda {
     //   this.#onDisconnected(e);
     // });
 
-    this.#infiniteReconnection = false;
+    this.#autonomousConnection = false;
 
     this.interface.onConnected = event => {
       // if (!this.#adoptingFlag) {
@@ -99,11 +101,11 @@ export class Spectoda {
       const TIME = 2000;
 
       if (this.#connectionState === "connected" && this.#reconnectionInterval) {
-        logging.info(`Reconnecting in ${TIME}ms`);
+        logging.info(`Reconnecting device in ${TIME}ms`);
         this.#setConnectionState("connecting");
 
         setTimeout(() => {
-          logging.debug("Reconnecting device");
+          logging.info("Reconnecting device...");
           return this.interface.connect(this.#reconnectionInterval)
             .then(() => {
               logging.info("Reconnection successful.");
@@ -123,23 +125,23 @@ export class Spectoda {
     };
 
     // auto clock sync loop
-    setInterval(() => {
+    setInterval(async () => {
       if (!this.#updating && this.interface.connector) {
-        return this.connected()
-          .then((connected) => {
-            if (connected) {
-              return this.syncClock().catch((error) => {
-                logging.warn(error);
-              });
-            } else if (this.#infiniteReconnection) {
-              return this.interface.connect().catch((error) => {
-                logging.warn(error);
-              });
-            }
-          })
-          .catch((e) => {
-            logging.error(e);
+
+        let deviceConnected = await this.connected();
+
+        if (deviceConnected) {
+          return this.syncClock().catch((error) => {
+            logging.warn(error);
           });
+        }
+
+        else if (!deviceConnected && this.#autonomousConnection) {
+          return this.#connect(true).catch((error) => {
+            logging.warn(error);
+          });
+        }
+
       }
     }, 30000);
   }
@@ -556,20 +558,72 @@ export class Spectoda {
     );
   }
 
-  // devices: [ {name:"Lampa 1", mac:"12:34:56:78:9a:bc"}, {name:"Lampa 2", mac:"12:34:56:78:9a:bc"} ]
+  #connect(autoConnect) {
 
-  connect(devices = null, autoConnect = true, ownerSignature = null, ownerKey = null, connectAny = false, fwVersion = "", infiniteReconnection = false, overrideConnection = false) {
-    logging.debug(`connect(devices=${devices}, autoConnect=${autoConnect}, ownerSignature=${ownerSignature}, ownerKey=${ownerKey}, connectAny=${connectAny}, fwVersion=${fwVersion}, infiniteReconnection=${infiniteReconnection}, overrideConnection=${overrideConnection})`);
-    
-    logging.info("> Connecting to Spectoda Controller...");
-
-    this.#infiniteReconnection = infiniteReconnection;
-
-    if (!overrideConnection && this.#connecting) {
-      return Promise.reject("ConnectingInProgress");
-    }
+    logging.info("> Connecting Spectoda Controller");
 
     this.#setConnectionState("connecting");
+
+    logging.info("> Selecting device...");
+    return (autoConnect ? this.interface.autoSelect(this.#criteria) : this.interface.userSelect(this.#criteria))
+      .then(() => {
+        logging.info("> Connecting to device...");
+        return this.interface.connect();
+      })
+      .then(connectedDeviceInfo => {
+        logging.info("> Requesting timeline...");
+        return this.requestTimeline().catch(e => {
+          logging.error("Timeline request after reconnection failed.", e);
+        })
+          .then(() => {
+            logging.info("> Requesting event history...");
+            return this.readEventHistory().catch(e => {
+              logging.error("History request after reconnection failed.", e);
+            })
+          }).then(() => {
+            logging.info("> Spectoda controller connected successfully.");
+            this.#setConnectionState("connected");
+            return connectedDeviceInfo;
+          });
+      })
+      .catch(error => {
+
+        logging.warn("> Connection failed with error: ", error);
+
+        // TODO: tady tento catch by mel dal thrownout error jako ze nepodarilo pripojit.
+        this.#setConnectionState("disconnected");
+        
+        // if (!this.#autonomousConnection) {
+        //   logging.warn("Skipping error alerting");
+        //   return;
+        // }
+
+        // if (error === "UserCanceledSelection") {
+        //   throw "UserCanceledSelection";
+        // }
+
+        // if (error === "SecurityError") {
+        //   logging.error(error);
+        //   return;
+        // }
+
+        //@ts-ignore
+        throw error.toString();
+      });
+  }
+
+  // devices: [ {name:"Lampa 1", mac:"12:34:56:78:9a:bc"}, {name:"Lampa 2", mac:"12:34:56:78:9a:bc"} ]
+
+  connect(devices = null, autoConnect = true, ownerSignature = null, ownerKey = null, connectAny = false, fwVersion = "", autonomousConnection = false, overrideConnection = false) {
+    logging.debug(`connect(devices=${devices}, autoConnect=${autoConnect}, ownerSignature=${ownerSignature}, ownerKey=${ownerKey}, connectAny=${connectAny}, fwVersion=${fwVersion}, autonomousConnection=${autonomousConnection}, overrideConnection=${overrideConnection})`);
+
+    logging.info("> Connecting to Spectoda Controller...");
+
+    this.#autonomousConnection = autonomousConnection;
+
+    if (!overrideConnection && this.#getConnectionState() === "connecting") {
+      return Promise.reject("ConnectingInProgress");
+    }
 
     if (ownerSignature) {
       this.setOwnerSignature(ownerSignature);
@@ -586,8 +640,6 @@ export class Spectoda {
     if (!this.#ownerKey) {
       throw "OwnerKeyNotAssigned";
     }
-
-    this.#connecting = true;
 
     let criteria = /** @type {any} */ ([{ ownerSignature: this.#ownerSignature }]);
 
@@ -629,53 +681,13 @@ export class Spectoda {
       }
     }
 
-    return (autoConnect ? this.interface.autoSelect(criteria) : this.interface.userSelect(criteria))
-      .then(() => {
-        return this.interface.connect();
-      })
-      .then(connectedDeviceInfo => {
+    this.#criteria = criteria;
 
-        return this.requestTimeline().catch(e => {
-          logging.error("Timeline request after reconnection failed.", e);
-        })
-          .then(() => {
-            return this.readEventHistory().catch(e => {
-              logging.error("History request after reconnection failed.", e);
-            })
-          }).then(() => {
-            this.#setConnectionState("connected");
-            return connectedDeviceInfo;
-          });
-      })
-      .catch(error => {
-
-        if (!this.#infiniteReconnection) {
-          logging.warn("Skipping error alerting");
-          return;
-        }
-
-        // TODO: tady tento catch by mel dal thrownout error jako ze nepodarilo pripojit.
-        this.#setConnectionState("disconnected");
-
-        logging.error(error);
-        
-        if (error === "UserCanceledSelection") {
-          throw "UserCanceledSelection";
-        }
-        if (error === "SecurityError") {
-          logging.error(error);
-          return;
-        }
-        //@ts-ignore
-        throw error.toString();
-      })
-      .finally(() => {
-        this.#connecting = false;
-      });
+    return this.#connect(autoConnect);
   }
 
   disconnect() {
-    this.#infiniteReconnection = false;
+    this.#autonomousConnection = false;
     
     if (this.#connectionState === "disconnected") {
       Promise.reject("DeviceAlreadyDisconnected");
@@ -691,11 +703,13 @@ export class Spectoda {
   }
 
   connected() {
-    if (this.#connecting || this.#adopting) {
-      return Promise.resolve(null); // resolve nothing === not connected
-    }
+    // if (this.#connecting || this.#adopting) {
+    //   return Promise.resolve(null); // resolve nothing === not connected
+    // }
 
-    return this.interface.connected();
+    // return this.interface.connected();
+
+    return this.#getConnectionState() === "connected" ? this.interface.connected() : Promise.resolve(null);
   }
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
