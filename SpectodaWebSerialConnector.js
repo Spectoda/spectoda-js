@@ -282,7 +282,7 @@ criteria example:
 
   connect(timeout = 15000) {
     if (timeout <= 0) {
-      logging.debug("> Connect timeout have expired");
+      logging.info("> Connect timeout have expired");
       return Promise.reject("ConnectionFailed");
     }
 
@@ -330,7 +330,7 @@ criteria example:
             setTimeout(() => {
               if (result) {
                 this.#connected = true;
-                logging.debug("> Serial Connector Connected");
+                logging.info("> Serial Connector Connected");
                 this.#interfaceReference.emit("#connected");
                 resolve({ connector: this.type });
               } else {
@@ -359,7 +359,7 @@ criteria example:
 
   // disconnect Connector from the connected Spectoda Device. But keep it selected
   async disconnect() {
-    logging.debug("> Closing serial port...");
+    logging.info("> Closing serial port...");
 
     if (!this.#serialPort) {
       logging.debug("No Serial Port selected");
@@ -399,7 +399,7 @@ criteria example:
       .close()
       .then(() => {
         this.#opened = false;
-        logging.debug("> Serial port closed");
+        logging.info("> Serial port closed");
       })
       .catch(error => {
         logging.error("Failed to close serial port. Error: " + error);

@@ -210,7 +210,7 @@ export class NodeBLEConnection {
 
     this.#service = service;
 
-    logging.debug("> Getting Network Characteristics...");
+    logging.info("> Getting Network Characteristics...");
     return this.#service
       .getCharacteristic(networkUUID)
       .then(characteristic => {
@@ -219,7 +219,7 @@ export class NodeBLEConnection {
 
         return this.#networkChar.startNotifications()
           .then(() => {
-            logging.debug("> Network notifications started");
+            logging.info("> Network notifications started");
             this.#networkChar?.on("valuechanged", event => {
               this.#onNetworkNotification(event);
             });
@@ -233,7 +233,7 @@ export class NodeBLEConnection {
         throw "ConnectionFailed";
       })
       .then(() => {
-        logging.debug("> Getting Clock Characteristics...");
+        logging.info("> Getting Clock Characteristics...");
         return this.#service?.getCharacteristic(clockUUID);
       })
       .then(characteristic => {
@@ -242,7 +242,7 @@ export class NodeBLEConnection {
 
         return this.#clockChar?.startNotifications()
           .then(() => {
-            logging.debug("> Clock notifications started");
+            logging.info("> Clock notifications started");
             this.#clockChar?.on("valuechanged", event => {
               this.#onClockNotification(event);
             });
@@ -256,7 +256,7 @@ export class NodeBLEConnection {
         throw "ConnectionFailed";
       })
       .then(() => {
-        logging.debug("> Getting Device Characteristics...");
+        logging.info("> Getting Device Characteristics...");
         return this.#service?.getCharacteristic(deviceUUID);
       })
       .then(characteristic => {
@@ -265,7 +265,7 @@ export class NodeBLEConnection {
 
         return this.#deviceChar?.startNotifications()
           .then(() => {
-            logging.debug("> Device notifications started");
+            logging.info("> Device notifications started");
             this.#deviceChar?.on("valuechanged", event => {
               this.#onDeviceNotification(event);
             });
@@ -710,10 +710,10 @@ criteria example:
       }
 
       if (!await this.#bluetoothAdapter.isDiscovering()) {
-        logging.debug("> Starting BLE scanner");
+        logging.info("> Starting BLE scanner");
         await this.#bluetoothAdapter.startDiscovery();
       } else {
-        logging.debug("> Restarting BLE scanner");
+        logging.info("> Restarting BLE scanner");
         await this.#bluetoothAdapter.stopDiscovery();
         await this.#bluetoothAdapter.startDiscovery();
       }
@@ -729,9 +729,9 @@ criteria example:
 
       await sleep(100);
 
-      logging.debug("> Getting BLE device mac address");
+      logging.info("> Getting BLE device mac address");
       const mac = await this.#bluetoothDevice.getAddress().catch(e => console.error(e));
-      logging.debug("> Getting BLE device name");
+      logging.info("> Getting BLE device name");
       const name = await this.#bluetoothDevice.getName().catch(e => console.error(e));
 
       // logging.verbose("stopping scanner");
@@ -777,9 +777,9 @@ criteria example:
       return null;
     }
 
-    logging.debug("> Getting BLE device mac address");
+    logging.info("> Getting BLE device mac address");
     const mac = await this.#bluetoothDevice.getAddress().catch(e => console.error(e));
-    logging.debug("> Getting BLE device name");
+    logging.info("> Getting BLE device name");
     const name = await this.#bluetoothDevice.getName().catch(e => console.error(e));
 
     return {
@@ -803,21 +803,21 @@ criteria example:
       // this.#criteria = criteria;
 
       if (await this.connected()) {
-        logging.debug("> Disconnecting device");
+        logging.info("> Disconnecting device");
         await this.disconnect().catch(e => logging.error(e));
         await sleep(1000);
       }
 
       if (!this.#bluetoothAdapter) {
-        logging.debug("> Requesting default bluetooth adapter");
+        logging.info("> Requesting default bluetooth adapter");
         this.#bluetoothAdapter = await this.#bluetooth.defaultAdapter()
       }
 
       if (!await this.#bluetoothAdapter.isDiscovering()) {
-        logging.debug("> Starting BLE scanner");
+        logging.info("> Starting BLE scanner");
         await this.#bluetoothAdapter.startDiscovery();
       } else {
-        logging.debug("> Restarting BLE scanner");
+        logging.info("> Restarting BLE scanner");
         await this.#bluetoothAdapter.stopDiscovery();
         await this.#bluetoothAdapter.startDiscovery();
       }
@@ -825,7 +825,7 @@ criteria example:
       await sleep(scanPeriod);
 
       const devices = await this.#bluetoothAdapter.devices();
-      logging.debug("> Devices Scanned:", devices);
+      logging.info("> Devices Scanned:", devices);
 
       let eligibleControllersFound = [];
 
@@ -876,7 +876,7 @@ criteria example:
     // await sleep(5000);
 
     if (timeout <= 0) {
-      logging.debug("> Connect timeout have expired");
+      logging.info("> Connect timeout have expired");
       return Promise.reject("ConnectionFailed");
     }
 
@@ -891,7 +891,7 @@ criteria example:
 
     // if (!alreadyConnected) {
 
-    //   logging.debug("> Connecting to Bluetooth device...");
+    //   logging.info("> Connecting to Bluetooth device...");
 
     //   try {
 
@@ -914,10 +914,10 @@ criteria example:
 
     await this.#bluetoothDevice.disconnect().catch(e => logging.error(e));
 
-    logging.debug("> Connecting to Bluetooth device...");
+    logging.info("> Connecting to Bluetooth device...");
     await this.#bluetoothDevice.connect().catch(e => { logging.error(e); throw "ConnectionFailed"; });
 
-    logging.debug("> Getting the GATT server...");
+    logging.info("> Getting the GATT server...");
 
     return this.#bluetoothDevice.gatt()
       .then(server => {
@@ -927,7 +927,7 @@ criteria example:
           throw "Error";
         }
 
-        logging.debug("> Getting the Bluetooth Service...");
+        logging.info("> Getting the Bluetooth Service...");
         return server.getPrimaryService(this.SPECTODA_SERVICE_UUID);
       })
       .then(service => {
@@ -936,11 +936,11 @@ criteria example:
           throw "Error";
         }
 
-        logging.debug("> Getting the Service Characteristic...");
+        logging.info("> Getting the Service Characteristic...");
         return this.#connection.attach(service, this.TERMINAL_CHAR_UUID, this.CLOCK_CHAR_UUID, this.DEVICE_CHAR_UUID);
       })
       .then(() => {
-        logging.debug("> Bluetooth Device Connected");
+        logging.info("> Bluetooth Device Connected");
         if (!this.#connectedGuard) {
           this.#interfaceReference.emit("#connected");
         }
@@ -985,7 +985,7 @@ criteria example:
 
     this.#reconection = false;
 
-    logging.debug("> Disconnecting from Bluetooth Device...");
+    logging.info("> Disconnecting from Bluetooth Device...");
 
     this.#connection.reset();
 

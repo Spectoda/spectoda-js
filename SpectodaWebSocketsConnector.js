@@ -65,7 +65,7 @@ export class SpectodaWebSocketsConnector {
             logging.debug(this.socket);
 
             this.socket.on("connect", socket => {
-              logging.debug("> Connected to remote control");
+              logging.info("> Connected to remote control");
 
               // socket.join("sans-souci");
 
@@ -78,7 +78,7 @@ export class SpectodaWebSocketsConnector {
             });
 
             this.socket.on("disconnect", () => {
-              logging.debug("> Disconnected from remote control");
+              logging.info("> Disconnected from remote control");
 
               this.#connected = false;
 

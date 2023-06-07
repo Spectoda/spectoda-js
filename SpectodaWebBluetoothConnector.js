@@ -158,7 +158,7 @@ export class WebBLEConnection {
     // for (let i = 0; i < value.byteLength; i++) {
     //   a.push("0x" + ("00" + value.getUint8(i).toString(16)).slice(-2));
     // }
-    // logging.debug("> " + a.join(" "));
+    // logging.info("> " + a.join(" "));
 
     this.#interfaceReference.process(event.target.value);
   }
@@ -172,7 +172,7 @@ export class WebBLEConnection {
     // for (let i = 0; i < value.byteLength; i++) {
     //   a.push("0x" + ("00" + value.getUint8(i).toString(16)).slice(-2));
     // }
-    // logging.debug("> " + a.join(" "));
+    // logging.info("> " + a.join(" "));
     // this.#interfaceReference.process(event.target.value);
 
     // TODO process request
@@ -187,7 +187,7 @@ export class WebBLEConnection {
     // for (let i = 0; i < value.byteLength; i++) {
     //   a.push("0x" + ("00" + value.getUint8(i).toString(16)).slice(-2));
     // }
-    // logging.debug("> " + a.join(" "));
+    // logging.info("> " + a.join(" "));
     // this.#interfaceReference.process(event.target.value);
 
     // TODO process synchronize
@@ -196,7 +196,7 @@ export class WebBLEConnection {
   attach(service, networkUUID, clockUUID, deviceUUID) {
     this.#service = service;
 
-    logging.debug("> Getting Network Characteristics...");
+    logging.info("> Getting Network Characteristics...");
     return this.#service
       .getCharacteristic(networkUUID)
       .then(characteristic => {
@@ -205,7 +205,7 @@ export class WebBLEConnection {
         return this.#networkChar
           .startNotifications()
           .then(() => {
-            logging.debug("> Network notifications started");
+            logging.info("> Network notifications started");
             this.#networkChar.oncharacteristicvaluechanged = event => {
               this.#onNetworkNotification(event);
             };
@@ -219,7 +219,7 @@ export class WebBLEConnection {
         throw "ConnectionFailed";
       })
       .then(() => {
-        logging.debug("> Getting Clock Characteristics...");
+        logging.info("> Getting Clock Characteristics...");
         return this.#service.getCharacteristic(clockUUID);
       })
       .then(characteristic => {
@@ -228,7 +228,7 @@ export class WebBLEConnection {
         return this.#clockChar
           .startNotifications()
           .then(() => {
-            logging.debug("> Clock notifications started");
+            logging.info("> Clock notifications started");
             this.#clockChar.oncharacteristicvaluechanged = event => {
               this.#onClockNotification(event);
             };
@@ -242,7 +242,7 @@ export class WebBLEConnection {
         throw "ConnectionFailed";
       })
       .then(() => {
-        logging.debug("> Getting Device Characteristics...");
+        logging.info("> Getting Device Characteristics...");
         return this.#service.getCharacteristic(deviceUUID);
       })
       .then(characteristic => {
@@ -251,7 +251,7 @@ export class WebBLEConnection {
         return this.#deviceChar
           .startNotifications()
           .then(() => {
-            logging.debug("> Device notifications started");
+            logging.info("> Device notifications started");
             this.#deviceChar.oncharacteristicvaluechanged = event => {
               this.#onDeviceNotification(event);
             };
@@ -881,7 +881,7 @@ criteria example:
     logging.verbose(`connect(timeout=${timeout}})`);
 
     if (timeout <= 0) {
-      logging.debug("> Connect timeout have expired");
+      logging.info("> Connect timeout have expired");
       return Promise.reject("ConnectionFailed");
     }
 
@@ -893,7 +893,7 @@ criteria example:
     }
 
     if (this.#connected()) {
-      logging.debug("> Bluetooth Device is already connected");
+      logging.info("> Bluetooth Device is already connected");
       return Promise.resolve();
     }
 
@@ -905,24 +905,24 @@ criteria example:
       timeout < 10000 ? 10000 : timeout,
     );
 
-    logging.debug("> Connecting to Bluetooth device...");
+    logging.info("> Connecting to Bluetooth device...");
     return this.#webBTDevice.gatt
       .connect()
       .then(server => {
         this.#connection.reset();
 
-        logging.debug("> Getting the Bluetooth Service...");
+        logging.info("> Getting the Bluetooth Service...");
         return server.getPrimaryService(this.SPECTODA_SERVICE_UUID);
       })
       .then(service => {
-        logging.debug("> Getting the Service Characteristic...");
+        logging.info("> Getting the Service Characteristic...");
 
         clearTimeout(timeout_handle);
 
         return this.#connection.attach(service, this.TERMINAL_CHAR_UUID, this.CLOCK_CHAR_UUID, this.DEVICE_CHAR_UUID);
       })
       .then(() => {
-        logging.debug("> Bluetooth Device Connected");
+        logging.info("> Bluetooth Device Connected");
         if (!this.#connectedGuard) {
           this.#interfaceReference.emit("#connected");
         }
@@ -967,7 +967,7 @@ criteria example:
   disconnect() {
     this.#reconection = false;
 
-    logging.debug("> Disconnecting from Bluetooth Device...");
+    logging.info("> Disconnecting from Bluetooth Device...");
 
     this.#connection.reset();
 
@@ -986,7 +986,7 @@ criteria example:
   // synchronously. So that only after all event handlers (one after the other) are done,
   // only then start this.connect() to reconnect to the bluetooth device
   #onDisconnected = event => {
-    logging.debug("> Bluetooth Device disconnected");
+    logging.info("> Bluetooth Device disconnected");
     this.#connection.reset();
     if (this.#connectedGuard) {
       logging.verbose("emitting #disconnected");

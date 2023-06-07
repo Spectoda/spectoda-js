@@ -362,7 +362,7 @@ export class SpectodaInterfaceLegacy {
   }
 
   requestWakeLock() {
-    logging.debug("> Activating wakeLock...");
+    logging.info("> Activating wakeLock...");
     if (detectSpectodaConnect()) {
       return window.flutter_inappwebview.callHandler("setWakeLock", true);
     } else {
@@ -371,7 +371,7 @@ export class SpectodaInterfaceLegacy {
   }
 
   releaseWakeLock() {
-    logging.debug("> Deactivating wakeLock...");
+    logging.info("> Deactivating wakeLock...");
     if (detectSpectodaConnect()) {
       return window.flutter_inappwebview.callHandler("setWakeLock", false);
     } else {
@@ -902,7 +902,7 @@ export class SpectodaInterfaceLegacy {
                 await this.connector
                   .connect(item.a, item.b) // a = timeout, b = supportLegacy
                   .then(device => {
-                    logging.debug("> Device connected");
+                    logging.info("> Device connected");
                     
                     if (!this.#connectGuard) {
                       logging.error("Connection logic error. #connected not called during successful connect()?");
@@ -910,7 +910,7 @@ export class SpectodaInterfaceLegacy {
                       this.#eventEmitter.emit("#connected");
                     }
 
-                    logging.debug("> Requesting clock");
+                    logging.info("> Requesting clock");
                     return (
                       this.connector
                         .getClock()
