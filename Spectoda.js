@@ -481,7 +481,7 @@ export class Spectoda {
             .then(response => {
               let reader = new TnglReader(response);
 
-              logging.info("> Got response:", response);
+              logging.debug("response:", response);
 
               if (reader.readFlag() !== COMMAND_FLAGS.FLAG_ADOPT_RESPONSE) {
                 throw "InvalidResponse";
@@ -567,16 +567,14 @@ export class Spectoda {
     logging.info("> Selecting device...");
     return (autoConnect ? this.interface.autoSelect(this.#criteria) : this.interface.userSelect(this.#criteria))
       .then(() => {
-        logging.info("> Connecting to device...");
+        logging.info("> Connecting interface...");
         return this.interface.connect();
       })
       .then(connectedDeviceInfo => {
-        logging.info("> Requesting timeline...");
         return this.requestTimeline().catch(e => {
           logging.error("Timeline request after reconnection failed.", e);
         })
           .then(() => {
-            logging.info("> Requesting event history...");
             return this.readEventHistory().catch(e => {
               logging.error("History request after reconnection failed.", e);
             })
@@ -716,7 +714,7 @@ export class Spectoda {
 
   // writes Tngl only if fingerprints does not match
   syncTngl(tngl_code, tngl_bytes = null, tngl_bank = 0) {
-    logging.verbose("syncTngl()");
+    logging.info(`> Syncing Tngl code...`);
 
     if (tngl_code === null && tngl_bytes === null) {
       return Promise.reject("InvalidParameters");
@@ -741,7 +739,7 @@ export class Spectoda {
   }
 
   writeTngl(tngl_code, tngl_bytes = null, memory_bank = 0) {
-    logging.verbose("writeTngl()");
+    logging.info(`> Writing Tngl code...`);
 
     if (memory_bank === null || memory_bank === undefined) {
       memory_bank = 0;
@@ -1008,6 +1006,7 @@ export class Spectoda {
 
   syncClock() {
     logging.info("> Syncing clock from device");
+    
     return this.interface.syncClock().then(() => {
       logging.info("> App clock synchronized");
     });
@@ -1506,7 +1505,7 @@ export class Spectoda {
     return this.interface.request(bytes, true).then(response => {
       let reader = new TnglReader(response);
 
-      logging.info("> Got response:", response);
+      logging.debug("response:", response);
 
       if (reader.readFlag() !== COMMAND_FLAGS.FLAG_TNGL_FINGERPRINT_RESPONSE) {
         throw "InvalidResponseFlag";
@@ -1832,7 +1831,7 @@ export class Spectoda {
       .then(response => {
         let reader = new TnglReader(response);
 
-        logging.info("> Got response:", response);
+        logging.debug("response:", response);
 
         if (reader.readFlag() !== COMMAND_FLAGS.FLAG_ADOPT_RESPONSE) {
           throw "InvalidResponse";
