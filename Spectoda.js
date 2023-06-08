@@ -94,32 +94,12 @@ export class Spectoda {
     };
 
     this.interface.onDisconnected = event => {
-      // if (!this.#adoptingFlag) {
       logging.info("> Interface disconnected");
-      //   this.interface.emit("disconnected", { target: this });
-      // } else {
-      //   logging.verbose("disconnected event skipped because of adopt");
-      // }
 
       if (this.#connectionState === "connected" && this.#reconnecting) {
-        // const TIME = 2000;
-        // logging.info(`Reconnecting device in ${TIME}ms`);
-        // this.#setConnectionState("connecting");
-
-        // setTimeout(() => {
-        //   logging.info("Reconnecting device...");
-        //   return this.interface.connect(this.#reconnectionInterval)
-        //     .then(() => {
-        //       logging.info("Reconnection successful.");
-        //       this.#setConnectionState("connected");
-        //     })
-        //     .catch(() => {
-        //       logging.warn("Reconnection failed.");
-        //       this.#setConnectionState("disconnected");
-        //     });
-        // }, TIME);
-
-        return this.#connect(true).catch((error) => {
+        return sleep(100).then(() => {
+          return this.#connect(true);
+        }).catch((error) => {
           logging.warn("Reconnection failed.", error);
         });
       }
@@ -575,18 +555,18 @@ export class Spectoda {
         return this.interface.connect();
       })
       .then(connectedDeviceInfo => {
+
         return this.requestTimeline().catch(e => {
           logging.error("Timeline request after reconnection failed.", e);
-        })
-          .then(() => {
-            return this.readEventHistory().catch(e => {
-              logging.error("History request after reconnection failed.", e);
-            })
-          }).then(() => {
-            logging.info("> Spectoda controller connected successfully.");
-            this.#setConnectionState("connected");
-            return connectedDeviceInfo;
-          });
+        }).then(() => {
+          return this.readEventHistory().catch(e => {
+            logging.error("History request after reconnection failed.", e);
+          })
+        }).then(() => {
+          logging.info("> Spectoda controller connected successfully.");
+          this.#setConnectionState("connected");
+          return connectedDeviceInfo;
+        });
       })
       .catch(error => {
 
