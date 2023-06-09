@@ -225,6 +225,7 @@ export class NodeBLEConnection {
             });
           })
           .catch(e => {
+            logging.info("> Network notifications failed");
             logging.warn(e);
           });
       })
@@ -248,6 +249,7 @@ export class NodeBLEConnection {
             });
           })
           .catch(e => {
+            logging.info("> Clock notifications failed");
             logging.warn(e);
           });
       })
@@ -271,6 +273,7 @@ export class NodeBLEConnection {
             });
           })
           .catch(e => {
+            logging.info("> Device notifications failed");
             logging.warn(e);
           });
       })
