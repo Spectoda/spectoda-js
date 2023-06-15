@@ -1213,8 +1213,15 @@ export class Spectoda {
    *
    */
 
-  updateDeviceConfig(config) {
+  updateDeviceConfig(config_raw) {
     logging.debug("> Updating config...");
+
+    logging.info(`config_raw=${config_raw}`);
+
+    const condif_object = JSON.parse(config_raw);
+    const config = JSON.stringify(condif_object);
+
+    logging.info(`config=${config}`);
 
     const encoder = new TextEncoder();
     const config_bytes = encoder.encode(config);
