@@ -34,11 +34,11 @@ import { FlutterConnector } from "./FlutterConnector.js";
 import { t } from "./i18n.js";
 
 export const COMMAND_FLAGS = Object.freeze({
-  FLAG_UNSUPPORTED_COMMND_RESPONSE: 255, // TODO fix FLAG_OTA_BEGIN to not be 255.
+  FLAG_UNSUPPORTED_COMMND_RESPONSE: 255, // TODO change FLAG_OTA_BEGIN to not be 255.
 
   // legacy FW update flags
   FLAG_OTA_BEGIN: 255, // legacy
-  FLAG_OTA_WRITE: 0, // legacy
+  FLAG_OTA_WRITE: 0, // legacy // TODO change FLAG_OTA_WRITE to not be 0.
   FLAG_OTA_END: 254, // legacy
   FLAG_OTA_RESET: 253, // legacy
 
@@ -58,11 +58,6 @@ export const COMMAND_FLAGS = Object.freeze({
   FLAG_REINTERPRET_TNGL: 104,
   FLAG_SET_TIMELINE: 105,
 
-  // FLAG_EMIT_LAZY_EVENT:  106,
-  // FLAG_EMIT_LAZY_TIMESTAMP_EVENT:  107,
-  // FLAG_EMIT_LAZY_COLOR_EVENT:  108,
-  // FLAG_EMIT_LAZY_PERCENTAGE_EVENT:  109,
-  // FLAG_EMIT_LAZY_LABEL_EVENT:  110,
 
   FLAG_EMIT_EVENT: 111,
   FLAG_EMIT_TIMESTAMP_EVENT: 112,
@@ -71,6 +66,19 @@ export const COMMAND_FLAGS = Object.freeze({
   FLAG_EMIT_LABEL_EVENT: 115,
 
   // Former CommandFlag end
+
+  FLAG_WRITE_CONTROLLER_NAME_REQUEST: 202,
+  FLAG_WRITE_CONTROLLER_NAME_RESPONSE: 203,
+  FLAG_READ_CONTROLLER_NAME_REQUEST: 204,
+  FLAG_READ_CONTROLLER_NAME_RESPONSE: 205,
+
+  FLAG_MERGE_EVENT_HISTORY_REQUEST: 206,
+  FLAG_MERGE_EVENT_HISTORY_RESPONSE: 207,
+  FLAG_ERASE_EVENT_HISTORY_REQUEST: 208,
+  FLAG_ERASE_EVENT_HISTORY_RESPONSE: 209,
+
+  FLAG_REQUEST_PEER_REQUEST: 210,
+  FLAG_REQUEST_PEER_RESPONSE: 211,
 
   FLAG_EVENT_HISTORY_BC_REQUEST: 212,
   FLAG_EVENT_HISTORY_BC_RESPONSE: 213,
@@ -192,7 +200,7 @@ export class SpectodaInterfaceLegacy {
 
   #chunkSize;
 
-  #reconection;
+  // #reconection;
   #selecting;
   #disconnectQuery;
 
@@ -203,7 +211,9 @@ export class SpectodaInterfaceLegacy {
   #lastUpdateTime;
   #lastUpdatePercentage;
 
-  constructor(deviceReference, reconnectionInterval = 1000) {
+  #connectedPeers;
+
+  constructor(deviceReference /*, reconnectionInterval = 1000*/) {
     this.#deviceReference = deviceReference;
 
     this.clock = new TimeTrack(0);
@@ -217,48 +227,23 @@ export class SpectodaInterfaceLegacy {
     this.#processing = false;
     this.#chunkSize = 208; // 208 is ESPNOW chunk size
 
-    this.#reconection = false;
+    // this.#reconection = false;
     this.#selecting = false;
     this.#disconnectQuery = null;
 
-    this.#reconnectionInterval = reconnectionInterval;
+    // this.#reconnectionInterval = reconnectionInterval;
 
     this.#connectGuard = false;
 
     this.#lastUpdateTime = new Date().getTime();
     this.#lastUpdatePercentage = 0;
 
+    this.#connectedPeers = [];
+
     this.onConnected = e => {};
     this.onDisconnected = e => {};
 
-    // this.#otaStart = new Date().getTime();
-
-    // this.#eventEmitter.on("ota_status", value => {
-
-    //   switch(value) {
-
-    //   }
-    // });
-
     this.#eventEmitter.on("ota_progress", value => {
-      // const now = new Date().getTime();
-
-      // const time_delta = now - this.lastUpdateTime;
-      // logging.verbose("time_delta:", time_delta);
-      // this.lastUpdateTime = now;
-
-      // const percentage_delta = value - this.lastUpdatePercentage;
-      // logging.verbose("percentage_delta:", percentage_delta);
-      // this.lastUpdatePercentage = value;
-
-      // const percentage_left = 100.0 - value;
-      // logging.verbose("percentage_left:", percentage_left);
-
-      // const time_left = (percentage_left / percentage_delta) * time_delta;
-      // logging.verbose("time_left:", time_left);
-
-      // this.emit("ota_timeleft", time_left);
-
       const now = new Date().getTime();
 
       const time_delta = now - this.lastUpdateTime;
@@ -404,8 +389,8 @@ export class SpectodaInterfaceLegacy {
     logging.info(`> Assigning ${connector_type} connector...`);
 
     if ((!this.connector && connector_type === "none") || (this.connector && this.connector.type === connector_type)) {
-      logging.warn("Trying to reassign current connector.");
-      return Promise.resolve();
+      logging.warn("Reassigning current connector.");
+      // return Promise.resolve();
     }
 
     if (connector_type == "default" || connector_type == "automatic") {
@@ -534,9 +519,9 @@ export class SpectodaInterfaceLegacy {
       });
   }
 
-  reconnection(enable) {
-    this.#reconection = enable;
-  }
+  // reconnection(enable) {
+  //   this.#reconection = enable;
+  // }
 
   userSelect(criteria, timeout = 600000) {
     // this.#reconection = false;
@@ -562,29 +547,10 @@ export class SpectodaInterfaceLegacy {
 
     const item = new Query(Query.TYPE_USERSELECT, criteria, timeout);
     this.#process(item);
+
     return item.promise.finally(() => {
       this.#selecting = false;
     });
-
-    // =========================================
-
-    // this.#reconection = false;
-
-    // if (this.#selecting) {
-    //   return Promise.reject("SelectingInProgress");
-    // }
-
-    // this.#selecting = true;
-
-    // return this.connector
-    //   .disconnect()
-    //   .catch(() => {})
-    //   .then(() => {
-    //     return this.connector.userSelect(criteria, timeout);
-    //   })
-    //   .finally(() => {
-    //     this.#selecting = false;
-    //   });
   }
 
   autoSelect(criteria, scan_period = 4000, timeout = 10000) {
@@ -611,49 +577,23 @@ export class SpectodaInterfaceLegacy {
 
     const item = new Query(Query.TYPE_AUTOSELECT, criteria, scan_period, timeout);
     this.#process(item);
+
     return item.promise.finally(() => {
       this.#selecting = false;
     });
 
-    // =========================================
-
-    // this.#reconection = false;
-
-    // if (this.#selecting) {
-    //   return Promise.reject("SelectingInProgress");
-    // }
-
-    // this.#selecting = true;
-
-    // return this.connector
-    //   .disconnect()
-    //   .catch(() => {})
-    //   .then(() => {
-    //     return this.connector.autoSelect(criteria, scan_period, timeout);
-    //   })
-    //   .finally(() => {
-    //     this.#selecting = false;
-    //   });
   }
 
   unselect() {
     const item = new Query(Query.TYPE_UNSELECT);
     this.#process(item);
     return item.promise;
-
-    //========================================
-
-    // return this.connector.unselect();
   }
 
   selected() {
     const item = new Query(Query.TYPE_SELECTED);
     this.#process(item);
     return item.promise;
-
-    //========================================
-
-    // return this.connector.selected();
   }
 
   scan(criteria, scan_period = 5000) {
@@ -692,39 +632,6 @@ export class SpectodaInterfaceLegacy {
     const item = new Query(Query.TYPE_CONNECT, timeout, supportLegacy);
     this.#process(item);
     return item.promise;
-
-    //========================================
-
-    // this.#reconection = true;
-
-    // if (timeout < 1000) {
-    //   logging.error("Timeout is too short.");
-    //   return Promise.reject("InvalidTimeout");
-    // }
-
-    // if (this.#connecting) {
-    //   return Promise.reject("ConnectingInProgress");
-    // }
-
-    // this.#connecting = true;
-
-    // return this.connector
-    //   .connect(timeout)
-    //   .then(() => {
-    //     return this.connector
-    //       .getClock()
-    //       .then(clock => {
-    //         this.clock = clock;
-    //       })
-    //       .catch(e => {
-    //         this.clock = new TimeTrack();
-    //         return this.connector.setClock(this.clock);
-    //       });
-    //   })
-
-    //   .finally(() => {
-    //     this.#connecting = false;
-    //   });
   }
 
   #onConnected = event => {
@@ -738,8 +645,16 @@ export class SpectodaInterfaceLegacy {
     this.onConnected(event);
   };
 
+  eraseConnectedPeers() {
+    this.#connectedPeers = [];
+  }
+
+  setConnectedPeers(peers) {
+    this.#connectedPeers = peers;
+  }
+
   disconnect() {
-    this.#reconection = false;
+    // this.#reconection = false;
 
     const item = new Query(Query.TYPE_DISCONNECT);
     this.#process(item);
@@ -756,20 +671,15 @@ export class SpectodaInterfaceLegacy {
     this.#connectGuard = false;
     this.onDisconnected(event);
 
-    // for (let i = 0; i < this.#queue.length; i++) {
-    //   this.#queue[i].reject("Disconnected");
+    // if (this.#reconection && this.#reconnectionInterval) {
+    //   logging.info("Reconnecting...");
+    //   setTimeout(() => {
+    //     logging.debug("Reconnecting device");
+    //     return this.connect(this.#reconnectionInterval).catch(() => {
+    //       logging.warn("Reconnection failed.");
+    //     });
+    //   }, 2000);
     // }
-    // this.#queue = [];
-
-    if (this.#reconection && this.#reconnectionInterval) {
-      logging.info("Reconnecting...");
-      setTimeout(() => {
-        logging.debug("Reconnecting device");
-        return this.connect(this.#reconnectionInterval).catch(() => {
-          logging.warn("Reconnection failed.");
-        });
-      }, 2000);
-    }
 
     if (this.#disconnectQuery) {
       this.#disconnectQuery.resolve();
@@ -780,35 +690,7 @@ export class SpectodaInterfaceLegacy {
     const item = new Query(Query.TYPE_CONNECTED);
     this.#process(item);
     return item.promise;
-
-    //========================================
-
-    // return this.connector.connected();
   }
-
-  // deliver(bytes, timeout = 5000) {
-  //   if (timeout < 100) {
-  //     logging.error("Timeout is too short.");
-  //     return Promise.reject("InvalidTimeout");
-  //   }
-
-  //   logging.verbose("deliver", { bytes, timeout });
-  //   const item = new Query(Query.TYPE_DELIVER, bytes, timeout);
-  //   this.#process(item);
-  //   return item.promise;
-  // }
-
-  // transmit(bytes, timeout = 1000) {
-  //   if (timeout < 100) {
-  //     logging.error("Timeout is too short.");
-  //     return Promise.reject("InvalidTimeout");
-  //   }
-
-  //   logging.verbose("transmit", { bytes, timeout });
-  //   const item = new Query(Query.TYPE_TRANSMIT, bytes, timeout);
-  //   this.#process(item);
-  //   return item.promise;
-  // }
 
   execute(bytes, bytes_label, timeout = 5000) {
     if (timeout < 100) {
@@ -938,7 +820,7 @@ export class SpectodaInterfaceLegacy {
 
             switch (item.type) {
               case Query.TYPE_USERSELECT:
-                this.#reconection = false;
+                // this.#reconection = false;
                 await this.connector
                   .userSelect(item.a, item.b) // criteria, timeout
                   .then(device => {
@@ -951,7 +833,7 @@ export class SpectodaInterfaceLegacy {
                 break;
 
               case Query.TYPE_AUTOSELECT:
-                this.#reconection = false;
+                // this.#reconection = false;
                 await this.connector
                   .autoSelect(item.a, item.b, item.c) // criteria, scan_period, timeout
                   .then(device => {
@@ -976,7 +858,7 @@ export class SpectodaInterfaceLegacy {
                 break;
 
               case Query.TYPE_UNSELECT:
-                this.#reconection = false;
+                // this.#reconection = false;
                 await this.connector
                   .unselect()
                   .then(() => {
@@ -1001,11 +883,12 @@ export class SpectodaInterfaceLegacy {
                 break;
 
               case Query.TYPE_CONNECT:
-                this.#reconection = true;
+                // this.#reconection = true;
                 logging.verbose("TYPE_CONNECT begin");
                 await this.connector
                   .connect(item.a, item.b) // a = timeout, b = supportLegacy
                   .then(device => {
+
                     if (!this.#connectGuard) {
                       logging.error("Connection logic error. #connected not called during successful connect()?");
                       logging.warn("Emitting #connected");
@@ -1051,14 +934,10 @@ export class SpectodaInterfaceLegacy {
                 break;
 
               case Query.TYPE_DISCONNECT:
-                this.#reconection = false;
+                // this.#reconection = false;
                 this.#disconnectQuery = new Query();
                 await this.connector
-                  .request([COMMAND_FLAGS.FLAG_DEVICE_DISCONNECT_REQUEST], false)
-                  .catch(() => {})
-                  .then(() => {
-                    return this.connector.disconnect();
-                  })
+                  .disconnect()
                   .then(this.#disconnectQuery.promise)
                   .then(() => {
                     this.#disconnectQuery = null;
@@ -1069,32 +948,6 @@ export class SpectodaInterfaceLegacy {
                     item.reject(error);
                   });
                 break;
-
-              // case Query.TYPE_DELIVER:
-              //   await this.connector
-              //     .deliver(item.a, item.b)
-              //     .then(() => {
-              //       this.process(new DataView(new Uint8Array(item.a).buffer));
-              //       item.resolve();
-              //     })
-              //     .catch(error => {
-              //       //logging.warn(error);
-              //       item.reject(error);
-              //     });
-              //   break;
-
-              // case Query.TYPE_TRANSMIT:
-              //   await this.connector
-              //     .transmit(item.a, item.b)
-              //     .then(() => {
-              //       this.process(new DataView(new Uint8Array(item.a).buffer));
-              //       item.resolve();
-              //     })
-              //     .catch(error => {
-              //       //logging.warn(error);
-              //       item.reject(error);
-              //     });
-              //   break;
 
               case Query.TYPE_EXECUTE:
                 let payload = new Uint8Array(0xffff);
@@ -1128,6 +981,8 @@ export class SpectodaInterfaceLegacy {
 
                 logging.debug("EXECUTE", uint8ArrayToHexString(data));
 
+                this.emit("wasm_execute", data);
+
                 await this.connector
                   .deliver(data, timeout)
                   .then(() => {
@@ -1152,18 +1007,22 @@ export class SpectodaInterfaceLegacy {
 
                 logging.debug("REQUEST", uint8ArrayToHexString(item.a));
 
+                this.emit("wasm_request", item.a);
+
                 await this.connector
                   .request(item.a, item.b, item.c)
                   .then(response => {
                     item.resolve(response);
                   })
                   .catch(error => {
-                    //logging.warn(error);
+                    logging.warn(error);
                     item.reject(error);
                   });
                 break;
 
               case Query.TYPE_SET_CLOCK:
+                this.emit("wasm_clock", item.a.millis());
+
                 await this.connector
                   .setClock(item.a)
                   .then(response => {
@@ -1178,8 +1037,10 @@ export class SpectodaInterfaceLegacy {
               case Query.TYPE_GET_CLOCK:
                 await this.connector
                   .getClock()
-                  .then(response => {
-                    item.resolve(response);
+                  .then(clock => {
+                    this.emit("wasm_clock", clock.millis());
+
+                    item.resolve(clock);
                   })
                   .catch(error => {
                     //logging.warn(error);
@@ -1206,7 +1067,7 @@ export class SpectodaInterfaceLegacy {
                 break;
 
               case Query.TYPE_DESTROY:
-                this.#reconection = false;
+                // this.#reconection = false;
                 await this.connector
                   .request([COMMAND_FLAGS.FLAG_DEVICE_DISCONNECT_REQUEST], false)
                   .catch(() => {})
@@ -1241,9 +1102,12 @@ export class SpectodaInterfaceLegacy {
   }
 
   process(bytecode) {
+
+    this.emit("wasm_execute", new Uint8Array(bytecode.buffer));
+
     let reader = new TnglReader(bytecode);
 
-    const utc_timestamp = new Date().getTime();
+    let utc_timestamp = new Date().getTime();
 
     logging.verbose(reader);
 
@@ -1344,13 +1208,13 @@ export class SpectodaInterfaceLegacy {
             const event_device_id = reader.readUint8(); // 1 byte
             logging.verbose(`event_device_id = ${event_device_id}`);
 
-            emitted_events.push({
+            emitted_events.unshift({
               type: event_type, // The type of the event as string "none", "timestamp", "color", "percentage", "label"
               value: event_value, // null (type="none"), number (type="timestamp"), string e.g. "#ff00ff" (type="color"), number (type="percentage"), string (type="label")
               label: event_label, // Label label as a string e.g. "event"
               timestamp: event_timestamp, // TNGL Network Clock Timestamp as number
               id: event_device_id, // Event destination ID as number
-              timestamp_utc: utc_timestamp,
+              timestamp_utc: utc_timestamp--,
               info: `${event_device_id.toString().padStart(3)} -> $${event_label}: ${log_value_prefix + event_value + log_value_postfix} [${event_timestamp}ms]`, // debug information
             });
           }
@@ -1390,39 +1254,6 @@ export class SpectodaInterfaceLegacy {
           }
           break;
 
-        // case COMMAND_FLAGS.FLAG_RSSI_DATA:
-        //   {
-        //     let obj = {};
-
-        //     logging.verbose("FLAG_RSSI_DATA");
-        //     reader.readFlag(); // COMMAND_FLAGS.FLAG_RSSI_DATA
-
-        //     obj.device_mac = reader
-        //       .readBytes(6)
-        //       .map(v => v.toString(16).padStart(2, "0"))
-        //       .join(":");
-        //     logging.verbose("obj.device_mac =", obj.device_mac);
-
-        //     const rssi_data_items = reader.readUint32();
-        //     obj.rssi = [];
-
-        //     for (let i = 0; i < rssi_data_items; i++) {
-        //       let item = {};
-        //       item.mac = reader
-        //         .readBytes(6)
-        //         .map(v => v.toString(16).padStart(2, "0"))
-        //         .join(":");
-        //       item.value = reader.readInt16() / 256;
-        //       logging.verbose("mac =", item.mac);
-        //       logging.verbose("rssi =", item.value);
-        //       obj.rssi.push(item);
-        //     }
-
-        //     logging.verbose(obj);
-        //     this.#eventEmitter.emit("rssi_data", obj);
-        //   }
-        //   break;
-
         case COMMAND_FLAGS.FLAG_PEER_CONNECTED:
           {
             logging.verbose("FLAG_PEER_CONNECTED");
@@ -1433,7 +1264,11 @@ export class SpectodaInterfaceLegacy {
               .map(v => v.toString(16).padStart(2, "0"))
               .join(":");
 
-            this.#eventEmitter.emit("peer_connected", device_mac);
+            if (this.#connectedPeers.includes(device_mac) === false) {
+              this.#connectedPeers.push(device_mac);
+              this.#eventEmitter.emit("peer_connected", device_mac);
+            }
+
           }
           break;
 

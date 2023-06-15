@@ -4,44 +4,40 @@ export class TnglReader {
     this._index = 0;
   }
 
-  peekValue(byteCount, unsigned) {
-    const masks = [0x00, 0x80, 0x8000, 0x800000, 0x80000000];
-    const offsets = [0x00, 0x100, 0x10000, 0x1000000, 0x100000000];
+  // TODO optimize and test this function 
+  peekValue(byteCount, unsigned = true) {
+
+    if (byteCount > 8) {
+      console.error("Byte count is too big");
+      throw new RangeError("ByteCountOutOfRange");
+    }
 
     if (this._index + byteCount > this._dataView.byteLength) {
       console.error("End of the data");
-      throw "PeekOutOfRange";
+      throw new RangeError("PeekOutOfRange");
     }
 
-    let value = 0;
-
-    // if (byteCount == 1) {
-    //   if (unsigned) {
-    //     value = this._dataView.getUint8(this._index);
-    //   } else {
-    //     value = this._dataView.getInt8(this._index);
-    //   }
-    // }
-    // else {
+    let value = 0n;
     for (let i = byteCount; i > 0; i--) {
-      value <<= 8;
-      value |= this._dataView.getUint8(this._index + i - 1);
+      value <<= 8n;
+      value |= BigInt(this._dataView.getUint8(this._index + i - 1));
     }
-    // }
-    // return unsigned ? value >>> 0 : value;
 
-    if (unsigned) {
-      return value >>> 0;
-    } else {
-      if (byteCount < 4) {
-        value >>>= 0;
-        if ((value & masks[byteCount]) != 0) {
-          return value - offsets[byteCount];
-        }
-      } else {
-        return value;
-      }
+    let result = value;
+
+    // Check if the sign bit is set
+    if (!unsigned && (value & (1n << (BigInt(byteCount * 8) - 1n)))) {
+      // Two's complement conversion
+      result = value - (1n << BigInt(byteCount * 8));
     }
+
+    if (result > BigInt(Number.MAX_SAFE_INTEGER) || result < BigInt(Number.MIN_SAFE_INTEGER)) {
+      console.error("Value is outside of safe integer range");
+      // TODO handle this error better than loosing precision in conversion to Number
+      throw new RangeError("ValueOutOfRange");
+    }
+
+    return Number(result);
   }
 
   readValue(byteCount, unsigned) {
@@ -50,7 +46,7 @@ export class TnglReader {
       this.forward(byteCount);
       return val;
     } catch {
-      throw "Read_Out_Of_Range";
+      throw "ReadOutOfRange";
     }
   }
 

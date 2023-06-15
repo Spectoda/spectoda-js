@@ -1,4 +1,4 @@
-import { colorToBytes, computeTnglFingerprint, czechHackyToEnglish, detectSpectodaConnect, hexStringToUint8Array, labelToBytes, numberToBytes, percentageToBytes, sleep, stringToBytes, strMacToBytes } from "./functions.js";
+import { colorToBytes, computeTnglFingerprint, detectSpectodaConnect, hexStringToUint8Array, labelToBytes, numberToBytes, percentageToBytes, sleep, strMacToBytes, stringToBytes } from "./functions.js";
 import { changeLanguage, t } from "./i18n.js";
 import { io } from "./lib/socketio.js";
 import { logging, setLoggingLevel } from "./Logging.js";
@@ -11,14 +11,11 @@ import { TnglReader } from "./TnglReader.js";
 import "./TnglWriter.js";
 
 let lastEvents = {};
-/////////////////////////////////////////////////////////////////////////
-let lastnumber = "000";
-let lastprefix = "L_";
 
 // should not create more than one object!
 // the destruction of the Spectoda is not well implemented
 
-// TODO - kdyz zavolam spectodaDevice.connect(), kdyz jsem pripojeny, tak nechci aby se do interfacu poslal select
+// TODO - kdyz zavolam spectoda.connect(), kdyz jsem pripojeny, tak nechci aby se do interfacu poslal select
 // TODO - kdyz zavolam funkci connect a uz jsem pripojeny, tak vyslu event connected, pokud si myslim ze nejsem pripojeny.
 // TODO - "watchdog timer" pro resolve/reject z TC
 
@@ -27,13 +24,16 @@ export class Spectoda {
   #ownerSignature;
   #ownerKey;
   #connecting;
+  // #adoptingFlag;
   #adopting;
-  #adoptingGuard;
   #updating;
   #selected;
   #saveStateTimeoutHandle;
 
   #reconnectRC;
+
+  #reconnectionInterval;
+  #connectionState;
 
   constructor(connectorType = "default", reconnectionInterval = 1000) {
     // nextjs
@@ -48,19 +48,22 @@ export class Spectoda {
     this.#ownerSignature = null;
     this.#ownerKey = null;
 
-    this.interface = new SpectodaInterfaceLegacy(this, reconnectionInterval);
+    this.interface = new SpectodaInterfaceLegacy(this);
 
     if (connectorType) {
       this.interface.assignConnector(connectorType);
     }
 
     this.#connecting = false;
+    // this.#adoptingFlag = false;
     this.#adopting = false;
-    this.#adoptingGuard = false;
     this.#updating = false;
     // this.#saveStateTimeoutHandle = null;
 
     this.#reconnectRC = false;
+
+    this.#reconnectionInterval = reconnectionInterval;
+    this.#connectionState = "disconnected";
 
     // this.interface.on("#connected", e => {
     //   this.#onConnected(e);
@@ -70,25 +73,50 @@ export class Spectoda {
     // });
 
     this.interface.onConnected = event => {
-      if (!this.#adopting) {
-        logging.info("> Device connected");
-        this.interface.emit("connected", { target: this });
+      // if (!this.#adoptingFlag) {
+      logging.info("> Interface connected");
+      //   this.interface.emit("connected", { target: this });
 
-        this.requestTimeline().catch(e => {
-          logging.error("Timeline request after reconnection failed.", e);
-        });
-      } else {
-        logging.verbose("connected event skipped because of adopt");
-      }
+      //   this.requestTimeline().catch(e => {
+      //     logging.error("Timeline request after reconnection failed.", e);
+      //   });
+      // } else {
+      //   logging.verbose("connected event skipped because of adopt");
+      // }
     };
 
     this.interface.onDisconnected = event => {
-      if (!this.#adopting) {
-        logging.info("> Device disconnected");
-        this.interface.emit("disconnected", { target: this });
-      } else {
-        logging.verbose("disconnected event skipped because of adopt");
+      // if (!this.#adoptingFlag) {
+      logging.info("> Interface disconnected");
+      //   this.interface.emit("disconnected", { target: this });
+      // } else {
+      //   logging.verbose("disconnected event skipped because of adopt");
+      // }
+
+      const TIME = 2000;
+
+      if (this.#connectionState === "connected" && this.#reconnectionInterval) {
+        logging.info(`Reconnecting in ${TIME}ms`);
+        this.#setConnectionState("connecting");
+
+        setTimeout(() => {
+          logging.debug("Reconnecting device");
+          return this.interface.connect(this.#reconnectionInterval)
+            .then(() => {
+              logging.info("Reconnection successful.");
+              this.#setConnectionState("connected");
+            })
+            .catch(() => {
+              logging.warn("Reconnection failed.");
+              this.#setConnectionState("disconnected");
+            });
+        }, TIME);
       }
+
+      else {
+        this.#setConnectionState("disconnected");
+      }
+
     };
 
     // auto clock sync loop
@@ -103,6 +131,45 @@ export class Spectoda {
         });
       }
     }, 30000);
+  }
+
+  #setConnectionState(connectionState) {
+    switch (connectionState) {
+      case "connected":
+        if (connectionState !== this.#connectionState) {
+          console.warn("> Spectoda connected");
+          this.#connectionState = connectionState;
+          this.interface.emit("connected", { target: this });
+        }
+        break;
+      case "connecting":
+        if (connectionState !== this.#connectionState) {
+          console.warn("> Spectoda connecting");
+          this.#connectionState = connectionState;
+          this.interface.emit("connecting", { target: this });
+        }
+        break;
+      case "disconnecting":
+        if (connectionState !== this.#connectionState) {
+          console.warn("> Spectoda disconnecting");
+          this.#connectionState = connectionState;
+          this.interface.emit("disconnecting", { target: this });
+        }
+        break;
+      case "disconnected":
+        if (connectionState !== this.#connectionState) {
+          console.warn("> Spectoda disconnected");
+          this.#connectionState = connectionState;
+          this.interface.emit("disconnected", { target: this });
+        }
+        break;
+      default:
+        throw "InvalidState";
+    }
+  }
+
+  #getConnectionState() {
+    return this.#connectionState;
   }
 
   requestWakeLock() {
@@ -340,15 +407,21 @@ export class Spectoda {
   // }
 
   scan(scan_period = 5000) {
+    logging.info(`scan(scan_period=${scan_period})`);
+
     return this.interface.scan([{}], scan_period);
   }
 
   adopt(newDeviceName = null, newDeviceId = null, tnglCode = null, ownerSignature = null, ownerKey = null, autoSelect = false) {
-    if (this.#adoptingGuard) {
+    logging.info(`adopt(newDeviceName=${newDeviceName}, newDeviceId=${newDeviceId}, tnglCode=${tnglCode}, ownerSignature=${ownerSignature}, ownerKey=${ownerKey}, autoSelect=${autoSelect})`);
+
+    if (this.#adopting) {
       return Promise.reject("AdoptingInProgress");
     }
 
-    this.#adoptingGuard = true;
+    this.#adopting = true;
+
+    this.#setConnectionState("connecting");
 
     if (ownerSignature) {
       this.setOwnerSignature(ownerSignature);
@@ -368,246 +441,117 @@ export class Spectoda {
 
     const criteria = /** @type {any} */ ([{ adoptionFlag: true }]);
 
-    return (autoSelect ? this.interface.autoSelect(criteria, 4000) : this.interface.userSelect(criteria, 60000))
-      .then(() => {
-        this.#adopting = true;
-        return this.interface.connect(10000, true);
-      })
-      .then(async () => {
-        const random_names = [
-          "Karel",
-          "Kobliha",
-          "Lucie",
-          "Anna",
-          "Julie",
-          "Emanuel",
-          "Leontynka",
-          "Maxipes Fik",
-          "Otesanek",
-          "Karkulka",
-          "Popelka",
-          "Malenka",
-          "Fifinka",
-          "Myspulin",
-          "Brumda",
-          "Cmelda",
-          "Saxana",
-          "Petronel",
-          "Odetta",
-          "Vecernice",
-          "Trautenberk",
-          "Rakosnicek",
-          "Asterix",
-          "Obelix",
-          "Gargamel",
-          "Dasenka",
-          "Pucmeloud",
-          "Fantomas",
-          "Skrblik",
-          "Rumburak",
-          "Arabela",
-          "Xenie",
-          "Rumcajs",
-          "Cipisek",
-          "Sarka Farka",
-          "Lotrando",
-          "Zubejda",
-          "Fido",
-          "Canfourek",
-          "Hurvinek",
-          "Spejbl",
-          "Manicka",
-          "Manka",
-          "Macourek",
-          "Ferda",
-          "Beruska",
-          "Vydrysek",
-          "Bolek",
-          "Lolek",
-          "Pepina",
-          "Bambi",
-          "Krakonos",
-          "Lucifek",
-          "Vetrnik",
-          "Laskonka",
-          "Kremrole",
-          "Bombicka",
-          "Kokoska",
-          "Marlenka",
-          "Bobinka",
-          "Louskacek",
-          "Bila pani",
-          "Bob",
-          "Bobek",
-          "Brouk Pytlik",
-          "Kremilek",
-          "Vochomurka",
-          "Kubula",
-          "Locika",
-          "Otesanek",
-          "Petr Pan",
-          "Snehurka",
-          "Smoulinka",
-          "Vila Amalka",
-          "Zlata rybka",
-          "Zvonilka",
-        ];
+    return (
+      (autoSelect ? this.interface.autoSelect(criteria, 4000) : this.interface.userSelect(criteria, 60000))
+        .then(() => {
+          // this.#adoptingFlag = true;
+          return this.interface.connect(10000, true);
+        })
+        .then(() => {
+          const owner_signature_bytes = hexStringToUint8Array(this.#ownerSignature, 16);
+          const owner_key_bytes = hexStringToUint8Array(this.#ownerKey, 16);
 
-        try {
-          while (!newDeviceName || !newDeviceName.match(/^[\w_ ]+/)) {
-            let exit = false;
+          logging.info("owner_signature_bytes", owner_signature_bytes);
+          logging.info("owner_key_bytes", owner_key_bytes);
 
-            // TODO CR MISA
-            // - remove comments
-            // - remove ts-ignore (add types to window.d.ts tak jak je to ve Studiu)
-            // - rename errorů na formát NOVÝ_ERROR_FORMÁT_JAK_JSEM_SE_BAVIL (dělal bych to tak že ve funkci, které jsem se dotknul změním formáty errorů - takhle to budeme moct postupně formátovat)
+          const request_uuid = this.#getUUID();
+          const bytes = [COMMAND_FLAGS.FLAG_ADOPT_REQUEST, ...numberToBytes(request_uuid, 4), ...owner_signature_bytes, ...owner_key_bytes /*, ...device_name_bytes, ...numberToBytes(device_id, 1)*/];
 
-            newDeviceName = await window
-              // @ts-ignore
-              // .prompt(t("Unikátní jméno pro vaši lampu vám ji pomůže odlišit od ostatních."), random_names[Math.floor(Math.random() * random_names.length)], t("Pojmenujte svoji lampu"), "text", {
-              // TODO add option for funny random names (for smarthome usage)
-              .prompt(t("Unikátní jméno pro vaši lampu vám ji pomůže odlišit od ostatních."), lastprefix + (lastnumber ? (Number(lastnumber) + 1 + "").padStart(3, "0") : ""), t("Pojmenujte svoji lampu"), "text", {
-                placeholder: "Spectoda",
-                regex: /^[a-zA-Z0-9_ ]{1,16}$/,
-                invalidText: t("Název obsahuje nepovolené znaky"),
-                maxlength: 16,
-              });
+          logging.debug("> Adopting device...");
+          logging.verbose(bytes);
 
-            if (!newDeviceName) {
-              throw "AdoptionCanceled";
-            }
-          }
-          while (!newDeviceId || (typeof newDeviceId !== "number" && !newDeviceId.match(/^[\d]+/))) {
-            let potencialnumber = newDeviceName.match(/\d+/);
-            if (potencialnumber) {
-              potencialnumber = potencialnumber[0];
-            } else {
-              potencialnumber = 0;
-            }
+          return this.interface
+            .request(bytes, true)
+            .then(response => {
+              let reader = new TnglReader(response);
 
-            newDeviceId = await window
-              // @ts-ignore
-              .prompt(t("Prosím, zadejte ID zařízení v rozmezí 0-255."), Number(potencialnumber) + "", t("Přidělte ID svému zařízení"), "number", { min: 0, max: 255 });
-            // @ts-ignore
+              logging.debug("> Got response:", response);
 
-            if (!newDeviceId) {
-              throw "AdoptionCanceled";
-            }
-          }
+              if (reader.readFlag() !== COMMAND_FLAGS.FLAG_ADOPT_RESPONSE) {
+                throw "InvalidResponse";
+              }
 
-          newDeviceName = czechHackyToEnglish(newDeviceName); // replace all hacky carky with english letters
-          newDeviceName = newDeviceName.replace(/((?![\w_ ]).)/g, " "); // replace all unsupported characters with whitespaces
-          newDeviceName = newDeviceName.trim(); // trim whitespaces on start and end
-          newDeviceName = newDeviceName.match(/^[\w_ ]+/)[0]; // do final match of only supported chars
+              const response_uuid = reader.readUint32();
+              if (response_uuid != request_uuid) {
+                throw "InvalidResponse";
+              }
 
-          if (typeof newDeviceId !== "number") {
-            newDeviceId = Number(newDeviceId.match(/^[\d]+/) ? newDeviceId.match(/^[\d]+/)[0] : 0);
-          }
-        } catch (e) {
-          logging.error(e);
-          await this.disconnect();
-          return Promise.reject("UserRefused");
-        }
-        return Promise.resolve();
-      })
-      .then(() => {
-        const owner_signature_bytes = hexStringToUint8Array(this.#ownerSignature, 16);
-        const owner_key_bytes = hexStringToUint8Array(this.#ownerKey, 16);
-        const device_name_bytes = stringToBytes(newDeviceName.slice(0, 11), 16);
-        const device_id = newDeviceId;
+              const error_code = reader.readUint8();
 
-        const request_uuid = this.#getUUID();
-        const bytes = [COMMAND_FLAGS.FLAG_ADOPT_REQUEST, ...numberToBytes(request_uuid, 4), ...owner_signature_bytes, ...owner_key_bytes, ...device_name_bytes, ...numberToBytes(device_id, 1)];
+              let device_mac = "00:00:00:00:00:00";
+              if (error_code === 0) {  // error_code 0 is success
+                const device_mac_bytes = reader.readBytes(6);
 
-        logging.debug("> Adopting device...");
+                device_mac = Array.from(device_mac_bytes, function (byte) {
+                  return ("0" + (byte & 0xff).toString(16)).slice(-2);
+                }).join(":");
+              }
 
-        logging.verbose(bytes);
+              logging.debug(`error_code=${error_code}, device_mac=${device_mac}`);
 
-        return this.interface
-          .request(bytes, true)
-          .then(response => {
-            let reader = new TnglReader(response);
+              if (error_code === 0) {
+                logging.info(`Adopted ${device_mac} successfully`);
 
-            logging.debug("> Got response:", response);
+                return this.rebootAndDisconnectDevice()
+                  .catch(e => {
+                    logging.error(e);
+                  })
+                  .then(() => {
+                    // lastnumber = newDeviceName.match(/\d+/)[0];
+                    // lastprefix = newDeviceName.replace(/\d+/g, "");
 
-            if (reader.readFlag() !== COMMAND_FLAGS.FLAG_ADOPT_RESPONSE) {
-              throw "InvalidResponse";
-            }
+                    return {
+                      mac: device_mac,
+                      ownerSignature: this.#ownerSignature,
+                      ownerKey: this.#ownerKey,
+                      // name: newDeviceName,
+                      // id: newDeviceId,
+                    };
+                  });
+              }
 
-            const response_uuid = reader.readUint32();
+              if (error_code !== 0) {
+                logging.warn("Adoption refused.");
+                window.alert(t("Zkuste to, prosím, znovu."), t("Přidání se nezdařilo"), { confirm: t("OK") });
 
-            if (response_uuid != request_uuid) {
-              throw "InvalidResponse";
-            }
-
-            const error_code = reader.readUint8();
-            const device_mac_bytes = error_code === 0 ? reader.readBytes(6) : [0, 0, 0, 0, 0, 0];
-
-            const device_mac = Array.from(device_mac_bytes, function (byte) {
-              return ("0" + (byte & 0xff).toString(16)).slice(-2);
-            }).join(":");
-
-            logging.verbose(`error_code=${error_code}, device_mac=${device_mac}`);
-
-            if (error_code === 0) {
-              logging.info("Adopted ", newDeviceName, "id: " + device_id, device_mac, "successfully");
-
-              return this.rebootAndDisconnectDevice()
-                .catch(e => {
-                  logging.error(e);
-                })
-                .then(() => {
-                  lastnumber = newDeviceName.match(/\d+/) ? newDeviceName.match(/\d+/)[0] : "";
-                  lastprefix = newDeviceName.replace(/\d+/g, "");
-
-                  return {
-                    mac: device_mac,
-                    ownerSignature: this.#ownerSignature,
-                    ownerKey: this.#ownerKey,
-                    name: newDeviceName,
-                    id: newDeviceId,
-                  };
-                });
-            } else {
-              logging.warn("Adoption refused.");
-              window.alert(t("Zkuste to, prosím, později."), t("Přidání se nezdařilo"), { confirm: t("OK") });
-
-              return this.rebootAndDisconnectDevice().catch(() => {
-                // @ts-ignore
                 throw "AdoptionRefused";
+              }
+            })
+            .catch(e => {
+              logging.error(e);
+              this.disconnect().finally(() => {
+                // @ts-ignore
+                throw "AdoptionFailed";
               });
-            }
-          })
-          .catch(e => {
-            logging.error(e);
-            this.disconnect().finally(() => {
-              // @ts-ignore
-              throw "AdoptionFailed";
             });
-          });
-      })
-      .catch(error => {
-        logging.warn(error);
-        if (error === "UserCanceledSelection") {
-          return this.connected().then(result => {
-            if (!result) throw "UserCanceledSelection";
-          });
-        }
-      })
-      .finally(() => {
-        this.#adoptingGuard = false;
-        this.#adopting = false;
-      });
+        })
+        .catch(error => {
+          logging.warn(error);
+          if (error === "UserCanceledSelection") {
+            return this.connected().then(result => {
+              if (!result) throw "UserCanceledSelection";
+            });
+          }
+        })
+        .finally(() => {
+          this.#adopting = false;
+          // this.#adoptingFlag = false;
+
+          this.#setConnectionState("disconnected");
+        })
+    );
   }
 
   // devices: [ {name:"Lampa 1", mac:"12:34:56:78:9a:bc"}, {name:"Lampa 2", mac:"12:34:56:78:9a:bc"} ]
 
   connect(devices = null, autoConnect = true, ownerSignature = null, ownerKey = null, connectAny = false, fwVersion = "") {
     logging.info(`connect(devices=${devices}, autoConnect=${autoConnect}, ownerSignature=${ownerSignature}, ownerKey=${ownerKey}, connectAny=${connectAny}, fwVersion=${fwVersion})`);
-
+    
     if (this.#connecting) {
       return Promise.reject("ConnectingInProgress");
     }
+
+    this.#setConnectionState("connecting");
 
     if (ownerSignature) {
       this.setOwnerSignature(ownerSignature);
@@ -670,17 +614,25 @@ export class Spectoda {
         return this.interface.connect();
       })
       .then(connectedDeviceInfo => {
-        return this.readEventHistory()
+
+        return this.requestTimeline().catch(e => {
+          logging.error("Timeline request after reconnection failed.", e);
+        })
           .then(() => {
+            return this.readEventHistory().catch(e => {
+              logging.error("History request after reconnection failed.", e);
+            })
+          }).then(() => {
+            this.#setConnectionState("connected");
             return connectedDeviceInfo;
-          })
-          .catch(e => {
-            console.warn(e);
           });
       })
       .catch(error => {
         // TODO: tady tento catch by mel dal thrownout error jako ze nepodarilo pripojit.
+        this.#setConnectionState("disconnected");
+
         logging.error(error);
+        
         if (error === "UserCanceledSelection") {
           throw "UserCanceledSelection";
         }
@@ -697,14 +649,20 @@ export class Spectoda {
   }
 
   disconnect() {
-    return this.interface.disconnect().catch(e => {
-      logging.warn(e);
-    });
+    if (this.#connectionState === "disconnected") {
+      Promise.reject("DeviceAlreadyDisconnected");
+    }
+
+    this.#setConnectionState("disconnecting");
+    return this.interface.disconnect()
+      .finally(() => {
+        this.#setConnectionState("disconnected");
+      })
   }
 
   connected() {
     if (this.#connecting || this.#adopting) {
-      return Promise.resolve();
+      return Promise.resolve(null); // resolve nothing === not connected
     }
 
     return this.interface.connected();
@@ -795,7 +753,7 @@ export class Spectoda {
     // }, 5000);
 
     const func = device_id => {
-      const payload = [COMMAND_FLAGS.FLAG_EMIT_EVENT, ...labelToBytes(event_label), ...numberToBytes(this.timeline.millis(), 4), numberToBytes(device_id, 2)];
+      const payload = [COMMAND_FLAGS.FLAG_EMIT_EVENT, ...labelToBytes(event_label), ...numberToBytes(this.interface.clock.millis() + 10, 6), numberToBytes(device_id, 1)];
       return this.interface.execute(payload, force_delivery ? null : "E" + event_label + device_id);
     };
 
@@ -1079,7 +1037,10 @@ export class Spectoda {
           await this.interface.execute(command_bytes, null, 20000);
         }
 
-        await sleep(10000);
+        // TODO optimalize this begin by detecting when all controllers have erased its flash
+        // TODO also, right now the gateway controller sends to other controlles to erase flash after it is done.
+        // TODO that slows things down
+        await sleep(20000);
 
         {
           //===========// WRITE //===========//
@@ -1096,7 +1057,7 @@ export class Spectoda {
             written += index_to - index_from;
 
             const percentage = Math.floor((written * 10000) / firmware.length) / 100;
-            logging.debug(percentage + "%");
+            logging.info(percentage + "%");
             this.interface.emit("ota_progress", percentage);
 
             index_from += chunk_size;
@@ -1114,7 +1075,7 @@ export class Spectoda {
           await this.interface.execute(command_bytes, null);
         }
 
-        await sleep(5000);
+        await sleep(3000);
 
         logging.debug("Rebooting whole network...");
 
@@ -1251,8 +1212,15 @@ export class Spectoda {
    *
    */
 
-  updateDeviceConfig(config) {
+  updateDeviceConfig(config_raw) {
     logging.debug("> Updating config...");
+
+    logging.info(`config_raw=${config_raw}`);
+
+    const condif_object = JSON.parse(config_raw);
+    const config = JSON.stringify(condif_object);
+
+    logging.info(`config=${config}`);
 
     const encoder = new TextEncoder();
     const config_bytes = encoder.encode(config);
@@ -1372,11 +1340,11 @@ export class Spectoda {
   rebootAndDisconnectDevice() {
     logging.debug("> Rebooting and disconnecting device...");
 
-    this.interface.reconnection(false);
+    // this.interface.reconnection(false);
 
     const payload = [COMMAND_FLAGS.FLAG_DEVICE_REBOOT_REQUEST];
     return this.interface.request(payload, false).then(() => {
-      return this.interface.disconnect();
+      return this.disconnect();
     });
   }
 
@@ -1412,7 +1380,7 @@ export class Spectoda {
       const removed_device_mac_bytes = reader.readBytes(6);
 
       return this.rebootAndDisconnectDevice()
-        .catch(() => {})
+        .catch(() => { })
         .then(() => {
           let removed_device_mac = "00:00:00:00:00:00";
           if (removed_device_mac_bytes.length >= 6) {
@@ -1670,6 +1638,8 @@ export class Spectoda {
 
         // logging.info(`count=${count}, peers=`, peers);
         logging.info(`count=${count}, peers=\n${peers.map(x => `mac:${x.mac},rssi:${x.rssi}`).join("\n")}`);
+        this.interface.eraseConnectedPeers();
+        this.interface.setConnectedPeers(peers.map(x => x.mac));
         return peers;
       } else {
         throw "Fail";
@@ -1689,12 +1659,14 @@ export class Spectoda {
       logging.info(`response.byteLength=${response.byteLength}`);
 
       if (reader.readFlag() !== COMMAND_FLAGS.FLAG_EVENT_HISTORY_BC_RESPONSE) {
+        logging.error("InvalidResponseFlag");
         throw "InvalidResponseFlag";
       }
 
       const response_uuid = reader.readUint32();
 
       if (response_uuid != request_uuid) {
+        logging.error("InvalidResponseUuid");
         throw "InvalidResponseUuid";
       }
 
@@ -1704,9 +1676,9 @@ export class Spectoda {
 
       if (error_code === 0) {
         const historic_events_bytecode_size = reader.readUint16();
-        const historic_events_bytecode = reader.readBytes(historic_events_bytecode_size);
-
         logging.info(`historic_events_bytecode_size=${historic_events_bytecode_size}`);
+
+        const historic_events_bytecode = reader.readBytes(historic_events_bytecode_size);
         logging.verbose(`historic_events_bytecode=[${historic_events_bytecode}]`);
 
         this.interface.process(new DataView(new Uint8Array(historic_events_bytecode).buffer));
@@ -1716,9 +1688,17 @@ export class Spectoda {
     });
   }
 
-  deviceSleep() {
-    throw "WorkInProgress";
+  eraseEventHistory() {
+    logging.debug("> Erasing event history...");
 
+    const request_uuid = this.#getUUID();
+    const bytes = [COMMAND_FLAGS.FLAG_ERASE_EVENT_HISTORY_REQUEST, ...numberToBytes(request_uuid, 4)];
+
+    return this.interface.execute(bytes, true);
+
+  }
+
+  deviceSleep() {
     logging.debug("> Sleep device...");
 
     const request_uuid = this.#getUUID();
@@ -1727,8 +1707,6 @@ export class Spectoda {
   }
 
   networkSleep() {
-    throw "WorkInProgress";
-
     logging.debug("> Sleep device...");
 
     const request_uuid = this.#getUUID();
@@ -1785,6 +1763,140 @@ export class Spectoda {
       logging.info(`product_code=${product_code}`);
 
       return { pcb_code: pcb_code, product_code: product_code };
+    });
+  }
+
+  writeOwner(ownerSignature = "00000000000000000000000000000000", ownerKey = "00000000000000000000000000000000") {
+    logging.debug("> Writing owner to device...");
+
+    const owner_signature_bytes = hexStringToUint8Array(ownerSignature, 16);
+    const owner_key_bytes = hexStringToUint8Array(ownerKey, 16);
+
+    logging.info("owner_signature_bytes", owner_signature_bytes);
+    logging.info("owner_key_bytes", owner_key_bytes);
+
+    const request_uuid = this.#getUUID();
+    const bytes = [COMMAND_FLAGS.FLAG_ADOPT_REQUEST, ...numberToBytes(request_uuid, 4), ...owner_signature_bytes, ...owner_key_bytes];
+
+    logging.verbose(bytes);
+
+    return this.interface
+      .request(bytes, true)
+      .then(response => {
+        let reader = new TnglReader(response);
+
+        logging.debug("> Got response:", response);
+
+        if (reader.readFlag() !== COMMAND_FLAGS.FLAG_ADOPT_RESPONSE) {
+          throw "InvalidResponse";
+        }
+
+        const response_uuid = reader.readUint32();
+
+        if (response_uuid != request_uuid) {
+          throw "InvalidResponse";
+        }
+
+        let device_mac = "null";
+
+        const error_code = reader.readUint8();
+
+        // error_code 0 is success
+        if (error_code === 0) {
+          const device_mac_bytes = reader.readBytes(6);
+
+          device_mac = Array.from(device_mac_bytes, function (byte) {
+            return ("0" + (byte & 0xff).toString(16)).slice(-2);
+          }).join(":");
+        }
+
+        logging.debug(`error_code=${error_code}, device_mac=${device_mac}`);
+
+        if (error_code === 0) {
+          logging.info(`Adopted ${device_mac} successfully`);
+          return {
+            mac: device_mac,
+            ownerSignature: this.#ownerSignature,
+            ownerKey: this.#ownerKey,
+            // name: newDeviceName,
+            // id: newDeviceId,
+          };
+
+
+        } else {
+          logging.warn("Adoption refused by device.");
+          throw "AdoptionRefused";
+        }
+      })
+      .catch(e => {
+        logging.error(e);
+        throw "AdoptionFailed";
+      });
+  }
+
+  writeNetworkOwner(ownerSignature = "00000000000000000000000000000000", ownerKey = "00000000000000000000000000000000") {
+    logging.debug("> Writing owner to network...");
+
+    const owner_signature_bytes = hexStringToUint8Array(ownerSignature, 16);
+    const owner_key_bytes = hexStringToUint8Array(ownerKey, 16);
+
+    logging.info("owner_signature_bytes", owner_signature_bytes);
+    logging.info("owner_key_bytes", owner_key_bytes);
+
+    const request_uuid = this.#getUUID();
+    const bytes = [COMMAND_FLAGS.FLAG_ADOPT_REQUEST, ...numberToBytes(request_uuid, 4), ...owner_signature_bytes, ...owner_key_bytes];
+
+    logging.verbose(bytes);
+
+    return this.interface.execute(bytes, true);
+  }
+
+  // name as string
+  writeControllerName(name) {
+    logging.debug("> Writing Controller Name...");
+
+    const request_uuid = this.#getUUID();
+    const payload = [COMMAND_FLAGS.FLAG_WRITE_CONTROLLER_NAME_REQUEST, ...numberToBytes(request_uuid, 4), ...stringToBytes(name, 16)];
+    return this.interface.request(payload, false);
+  }
+
+  readControllerName() {
+    logging.debug("> Reading Controller Name...");
+
+    const request_uuid = this.#getUUID();
+    const bytes = [COMMAND_FLAGS.FLAG_READ_CONTROLLER_NAME_REQUEST, ...numberToBytes(request_uuid, 4)];
+
+    return this.interface.request(bytes, true).then(response => {
+      let reader = new TnglReader(response);
+
+      logging.info(`response.byteLength=${response.byteLength}`);
+
+      if (reader.readFlag() !== COMMAND_FLAGS.FLAG_READ_CONTROLLER_NAME_RESPONSE) {
+        throw "InvalidResponseFlag";
+      }
+
+      const response_uuid = reader.readUint32();
+
+      if (response_uuid != request_uuid) {
+        throw "InvalidResponseUuid";
+      }
+
+      const error_code = reader.readUint8();
+
+      logging.verbose(`error_code=${error_code}`);
+
+      let name = null;
+
+      if (error_code === 0) {
+        name = reader.readString(16);
+      } else {
+        throw "Fail";
+      }
+
+      logging.verbose(`name=${name}`);
+      logging.debug(`> Controller Name: ${name}`);
+
+      return name;
     });
   }
 }

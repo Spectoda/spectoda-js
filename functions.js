@@ -1,13 +1,18 @@
 import { logging, setLoggingLevel } from "./Logging.js";
 
 export function toBytes(value, byteCount) {
+  let number = BigInt(Math.round(value));
   var byteArray = [];
   for (let index = 0; index < byteCount; index++) {
-    const byte = value & 0xff;
-    byteArray.push(byte);
-    value = value >> 8;
+    const byte = number & 0xffn;
+    byteArray.push(Number(byte));
+    number = number >> 8n;
   }
   return byteArray;
+}
+
+export function numberToBytes(number_value, byteCount) {
+  return toBytes(number_value, byteCount);
 }
 
 // // timeline_index [0 - 15]
@@ -37,9 +42,6 @@ export function toBytes(value, byteCount) {
 //   return value_int16;
 // }
 
-// function eventParamToBytes(event_param) {
-//   return toBytes(floatingByteToInt16(event_param), 2);
-// }
 
 export const timeOffset = new Date().getTime() % 0x7fffffff;
 // must be positive int32 (4 bytes)
@@ -113,6 +115,9 @@ export const getSeconds = str => {
 };
 
 export function mapValue(x, in_min, in_max, out_min, out_max) {
+
+  logging.verbose("mapValue(x=" + x + ", in_min=" + in_min + ", in_max=" + in_max + ", out_min=" + out_min + ", out_max=" + out_max + ")");
+
   if (in_max == in_min) {
     return out_min / 2 + out_max / 2;
   }
@@ -182,7 +187,7 @@ const PERCENTAGE_MIN = -268435455; // -(2^28)+1  (plus 1 is there for the percen
 
 export function percentageToBytes(percentage_float) {
   const value = mapValue(percentage_float, -100.0, 100.0, PERCENTAGE_MIN, PERCENTAGE_MAX);
-  return toBytes(Math.floor(value), 4);
+  return numberToBytes(Math.floor(value), 4);
 }
 
 export function strMacToBytes(mac_str) {
@@ -195,17 +200,6 @@ export function strMacToBytes(mac_str) {
     });
   
     return bytes;
-}
-
-export function numberToBytes(value, byteCount) {
-  let number = Math.round(value);
-  var byteArray = [];
-  for (let index = 0; index < byteCount; index++) {
-    const byte = number & 0xff;
-    byteArray.push(byte);
-    number = number >> 8;
-  }
-  return byteArray;
 }
 
 // WIN11, Google Chrome:            Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/98.0.4758.82 Safari/537.36

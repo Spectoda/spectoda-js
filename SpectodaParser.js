@@ -2,6 +2,11 @@ import { logging } from "./Logging.js";
 import { mapValue, uint8ArrayToHexString, percentageToBytes } from "./functions.js";
 import { TnglWriter } from "./TnglWriter.js";
 
+// ! must stay this order VAR_VALUE_ADDRESS_OFFSET < CONST_VALUE_ADDRESS_OFFSET < LET_VALUE_ADDRESS_OFFSET
+const VAR_VALUE_ADDRESS_OFFSET = 0x0000;
+const CONST_VALUE_ADDRESS_OFFSET = 0x4000;
+const LET_VALUE_ADDRESS_OFFSET = 0x8000;
+
 const CONSTANTS = Object.freeze({
   MODIFIER_SWITCH_NONE: 0,
   MODIFIER_SWITCH_RG: 1,
@@ -45,7 +50,7 @@ const TNGL_FLAGS = Object.freeze({
   EVENT_CATCHER: 17,
 
   /* definitions scoped */
-  DECLARE_VARIABLE: 18,
+  DECLARE_VALUE_ADDRESS: 18,
 
   // ======================
 
@@ -98,14 +103,14 @@ const TNGL_FLAGS = Object.freeze({
   GENERATOR_PERLIN_NOISE: 154,
 
   /* variable operations gates */
-  VARIABLE_READ: 160,
-  VARIABLE_ADD: 161,
-  VARIABLE_SUB: 162,
-  VARIABLE_MUL: 163,
-  VARIABLE_DIV: 164,
-  VARIABLE_MOD: 165,
-  VARIABLE_SCALE: 166,
-  VARIABLE_MAP: 167,
+  VALUE_READ_ADDRESS: 160,
+  VALUE_ADD: 161,
+  VALUE_SUB: 162,
+  VALUE_MUL: 163,
+  VALUE_DIV: 164,
+  VALUE_MOD: 165,
+  VALUE_SCALE: 166,
+  VALUE_MAP: 167,
 
   /* objects */
   DEVICE: 176,
@@ -132,6 +137,9 @@ const TNGL_FLAGS = Object.freeze({
   PIXELS: 192,
   TUPLE: 193,
 
+  // TODO Operations and Providers should be Object values.
+  // OBJECT: ???, // Operations and Providers are objects
+
   // ======================
 
   /* most used constants */
@@ -151,26 +159,77 @@ const TNGL_FLAGS = Object.freeze({
   END_OF_TNGL_BYTES: 255,
 });
 
+const OBJECT_TYPE = Object.freeze({
+
+  // TODO Operations and Providers should be Object values.
+  OPERATION_BOOLEAN: 1,
+  OPERATION_INTEGER: 2,
+  OPERATION_PERCENTAGE: 3,
+  OPERATION_PULSE: 4,
+  OPERATION_AND: 5,
+  OPERATION_COMPARATOR_EQUAL: 6,
+  OPERATION_COMPARATOR_GREATER: 7,
+  OPERATION_COMPARATOR_LESS: 8,
+  OPERATION_COUNTER: 9,
+  OPERATION_DELAY_STACK: 10,
+  OPERATION_DELAY_OVERWRITE: 11,
+  OPERATION_OR: 12,
+  OPERATION_REPEATER: 13,
+  OPERATION_XOR: 14,
+  OPERATION_NEGATE: 15,
+  OPERATION_EVENT_RELAY: 16,
+  OPERATION_EVENT_TOGGLE: 17,
+  OPERATION_IF: 18,
+  OPERATION_EVENT_VOID: 19,
+  OPERATION_EVENT_STEPPER: 20,
+  OPERATION_MODULO: 21,
+  OPERATION_EVENT_SET: 22,
+  // TODO OPERATIONS and PROVIDERS should be one type of object
+  PROVIDER_PROXIMITY: 151,
+  PROVIDER_BUTTON: 152,
+  PROVIDER_TOUCH: 153,
+  PROVIDER_VOLTAGE: 154,
+  PROVIDER_PIR: 155,
+  PROVIDER_SLIDER: 156,
+  PROVIDER_SONOFF_ULTIMATE: 157,
+  PROVIDER_NETWORKSYNC: 158,
+  PROVIDER_AMBIENT_LIGHT: 159,
+  PROVIDER_LUXV30B: 160,
+  PROVIDER_VEML7700: 161,
+
+  // TODO OPERATION_CONNECTION should be FLAG in TNGL_FLAGS
+  OPERATION_CONNECTION: 253,
+});
+
 export class TnglCompiler {
   #tnglWriter;
-  #variable_address_counter;
-  #variable_declarations_stack;
-  #variable_scope_depth_stack;
+  #const_declarations_stack;
+  #const_scope_depth_stack;
+  #let_declarations_stack;
+  #let_scope_depth_stack;
+  #var_declarations;
 
   constructor() {
     this.#tnglWriter = new TnglWriter();
-    // @type number
-    this.#variable_address_counter = 0x0001; // addresses starts from 0x0001 to 0xfffe. 0x0000 is a "nullptr", 0xffff is unknown address
+   
     // @type array of {name: "variable", address: 0x0001};
-    this.#variable_declarations_stack = []; // stack of variable name-address pairs
+    this.#const_declarations_stack = []; // stack of variable name-address pairs
     // @type array of numers
-    this.#variable_scope_depth_stack = []; // stack of variable depths in scopes
+    this.#const_scope_depth_stack = []; // stack of variable depths in scopes
+    // @type array of {name: "variable", address: 0x0001};
+    this.#let_declarations_stack = []; // stack of variable name-address pairs
+    // @type array of numers
+    this.#let_scope_depth_stack = []; // stack of variable depths in scopes
+    // @type array of {name: "variable", address: 0x0001};
+    this.#var_declarations = []; // addresses starts from 0x0001 to 0xfffe. 0x0000 is a "nullptr", 0xffff is unknown address
   }
 
   reset() {
-    this.#variable_address_counter = 0x0001;
-    this.#variable_declarations_stack.length = 0;
-    this.#variable_scope_depth_stack.length = 0;
+    this.#const_declarations_stack.length = 0;
+    this.#const_scope_depth_stack.length = 0;
+    this.#let_declarations_stack.length = 0;
+    this.#let_scope_depth_stack.length = 0;
+    this.#var_declarations.length = 0;
   }
 
   compileUndefined() {
@@ -234,8 +293,8 @@ export class TnglCompiler {
     }
   }
 
-  compileVariableAddress(variable_reference) {
-    logging.verbose(`compileVariableAddress(${variable_reference})`);
+  compileValueAddress(variable_reference) {
+    logging.verbose(`compileValueAddress(${variable_reference})`);
 
     let reg = variable_reference.match(/&([a-z_][\w]*)/i);
     if (!reg) {
@@ -244,26 +303,46 @@ export class TnglCompiler {
     }
 
     const variable_name = reg[1];
-    let variable_address = undefined;
+    let value_address = undefined;
 
     // check if the variable is already declared
     // look for the latest variable address on the stack
-    for (let i = this.#variable_declarations_stack.length - 1; i >= 0; i--) {
-      const declaration = this.#variable_declarations_stack[i];
+    for (let i = this.#const_declarations_stack.length - 1; i >= 0; i--) {
+      const declaration = this.#const_declarations_stack[i];
       if (declaration.name === variable_name) {
-        variable_address = declaration.address;
+        value_address = declaration.address;
         break;
       }
     }
 
-    if (variable_address === undefined) {
+    // check if the variable is already declared
+    // look for the latest variable address on the stack
+    for (let i = this.#let_declarations_stack.length - 1; i >= 0; i--) {
+      const declaration = this.#let_declarations_stack[i];
+      if (declaration.name === variable_name) {
+        value_address = declaration.address;
+        break;
+      }
+    }
+
+    // check if the variable is already declared
+    // look for the latest variable address on the stack
+    for (let i = this.#var_declarations.length - 1; i >= 0; i--) {
+      const declaration = this.#var_declarations[i];
+      if (declaration.name === variable_name) {
+        value_address = declaration.address;
+        break;
+      }
+    }
+
+    if (value_address === undefined) {
       console.error(`Variable ${variable_name} is not declated`);
       throw "CompilationError";
     }
 
-    logging.verbose(`VALUE_ADDRESS name=${variable_name}, address=${variable_address}`);
+    logging.verbose(`VALUE_ADDRESS name=${variable_name}, address=${value_address}`);
     this.#tnglWriter.writeFlag(TNGL_FLAGS.VALUE_ADDRESS);
-    this.#tnglWriter.writeUint16(variable_address);
+    this.#tnglWriter.writeUint16(value_address);
   }
 
   // takes in time string token like "1.2d+9h2m7.2s-123t" and appeds to payload the total time in ms (tics) as a int32_t: [FLAG.TIMESTAMP, BYTE4, BYTE2, BYTE1, BYTE0]
@@ -505,24 +584,65 @@ export class TnglCompiler {
 
   ///////////////////////////////////////////////////////////
 
-  compileConstVariableDeclaration(variable_declaration) {
-    logging.verbose(`compileConstVariableDeclaration(${variable_declaration})`);
+  compileConstDeclaration(variable_declaration) {
+    logging.verbose(`compileConstDeclaration("${variable_declaration}")`);
 
     let reg = variable_declaration.match(/const +([A-Za-z_][\w]*) *=/);
     if (!reg) {
-      logging.error("Failed to compile variable declaration");
+      logging.error("Failed to compile const declaration");
       return;
     }
 
-    const variable_name = reg[1];
-    let variable_address = this.#variable_address_counter++;
-    // insert the variable_name into variable_name->variable_address map
-    this.#variable_declarations_stack.push({ name: variable_name, address: variable_address });
+    const const_name = reg[1];
+    const const_address = CONST_VALUE_ADDRESS_OFFSET + this.#const_declarations_stack.length + 1;
 
-    logging.verbose(`DECLARE_VARIABLE name=${variable_name} address=${variable_address}`);
-    // retrieve the variable_address and write the TNGL_FLAGS with uint16_t variable address value.
-    this.#tnglWriter.writeFlag(TNGL_FLAGS.DECLARE_VARIABLE);
-    this.#tnglWriter.writeUint16(variable_address);
+    this.#const_declarations_stack.push({ name: const_name, address: const_address });
+
+    logging.debug(`DECLARE_VALUE_ADDRESS name=${const_name} address=${const_address}`);
+    // retrieve the const_address and write the TNGL_FLAGS with uint16_t variable address value.
+    this.#tnglWriter.writeFlag(TNGL_FLAGS.DECLARE_VALUE_ADDRESS);
+    this.#tnglWriter.writeUint16(const_address);
+  }
+
+  compileLetDeclaration(variable_declaration) {
+    logging.verbose(`compileLetDeclaration(${variable_declaration})`);
+
+    let reg = variable_declaration.match(/let +([A-Za-z_][\w]*) *=/);
+    if (!reg) {
+      logging.error("Failed to compile let declaration");
+      return;
+    }
+
+    const let_name = reg[1];
+    const let_address = LET_VALUE_ADDRESS_OFFSET + this.#let_declarations_stack.length + 1;
+
+    this.#let_declarations_stack.push({ name: let_name, address: let_address });
+
+    logging.debug(`DECLARE_VALUE_ADDRESS name=${let_name} address=${let_address}`);
+    // retrieve the let_address and write the TNGL_FLAGS with uint16_t variable address value.
+    this.#tnglWriter.writeFlag(TNGL_FLAGS.DECLARE_VALUE_ADDRESS);
+    this.#tnglWriter.writeUint16(let_address);
+  }
+
+  compileVarDeclaration(variable_declaration) {
+    logging.verbose(`compileVarDeclaration(${variable_declaration})`);
+
+    let reg = variable_declaration.match(/var +([A-Za-z_][\w]*) *=/);
+    if (!reg) {
+      logging.error("Failed to compile var declaration");
+      return;
+    }
+
+    const var_name = reg[1];
+    const var_address = VAR_VALUE_ADDRESS_OFFSET + this.#var_declarations.length + 1;
+
+    // insert the var_name into var_name->var_address map
+    this.#var_declarations.push({ name: var_name, address: var_address });
+
+    logging.debug(`DECLARE_VALUE_ADDRESS name=${var_name} address=${var_address}`);
+    // retrieve the var_address and write the TNGL_FLAGS with uint16_t variable address value.
+    this.#tnglWriter.writeFlag(TNGL_FLAGS.DECLARE_VALUE_ADDRESS);
+    this.#tnglWriter.writeUint16(var_address);
   }
 
   compileWord(word) {
@@ -632,7 +752,7 @@ export class TnglCompiler {
         this.#tnglWriter.writeFlag(TNGL_FLAGS.DEFINE_MARKS);
         break;
       // case "defVariable":
-      //   this.#tnglWriter.writeFlag(TNGL_FLAGS.DECLARE_VARIABLE);
+      //   this.#tnglWriter.writeFlag(TNGL_FLAGS.DECLARE_VALUE_ADDRESS);
       //   break;
 
       // === sifters ===
@@ -743,29 +863,26 @@ export class TnglCompiler {
 
       /* === variable operations === */
 
-      // case "variable":
-      //   this.#tnglWriter.writeFlag(TNGL_FLAGS.VARIABLE_READ);
-      //   break;
       case "addValues":
-        this.#tnglWriter.writeFlag(TNGL_FLAGS.VARIABLE_ADD);
+        this.#tnglWriter.writeFlag(TNGL_FLAGS.VALUE_ADD);
         break;
       case "subValues":
-        this.#tnglWriter.writeFlag(TNGL_FLAGS.VARIABLE_SUB);
+        this.#tnglWriter.writeFlag(TNGL_FLAGS.VALUE_SUB);
         break;
       case "mulValues":
-        this.#tnglWriter.writeFlag(TNGL_FLAGS.VARIABLE_MUL);
+        this.#tnglWriter.writeFlag(TNGL_FLAGS.VALUE_MUL);
         break;
       case "divValues":
-        this.#tnglWriter.writeFlag(TNGL_FLAGS.VARIABLE_DIV);
+        this.#tnglWriter.writeFlag(TNGL_FLAGS.VALUE_DIV);
         break;
       case "modValues":
-        this.#tnglWriter.writeFlag(TNGL_FLAGS.VARIABLE_MOD);
+        this.#tnglWriter.writeFlag(TNGL_FLAGS.VALUE_MOD);
         break;
       case "scaValue":
-        this.#tnglWriter.writeFlag(TNGL_FLAGS.VARIABLE_SCALE);
+        this.#tnglWriter.writeFlag(TNGL_FLAGS.VALUE_SCALE);
         break;
       case "mapValue":
-        this.#tnglWriter.writeFlag(TNGL_FLAGS.VARIABLE_MAP);
+        this.#tnglWriter.writeFlag(TNGL_FLAGS.VALUE_MAP);
         break;
 
       // === constants ===
@@ -792,25 +909,158 @@ export class TnglCompiler {
         this.#tnglWriter.writeUint8(CONSTANTS.MODIFIER_SWITCH_BR);
         break;
 
-      default:
-        // TODO look for variable_name in the variable_name->variable_address map
+      // === Sensors ===
+      case "TouchProvider":
+        this.#tnglWriter.writeFlag(OBJECT_TYPE.PROVIDER_TOUCH);
+        break;
 
-        let possible_variable_address = undefined;
+      case "ButtonProvider":
+        this.#tnglWriter.writeFlag(OBJECT_TYPE.PROVIDER_BUTTON);
+        break;
+
+      case "ProximityProvider":
+        this.#tnglWriter.writeFlag(OBJECT_TYPE.PROVIDER_PROXIMITY);
+        break;
+
+      case "Boolean":
+        this.#tnglWriter.writeFlag(OBJECT_TYPE.OPERATION_BOOLEAN);
+        break;
+
+      case "Integer":
+        this.#tnglWriter.writeFlag(OBJECT_TYPE.OPERATION_INTEGER);
+        break;
+
+      case "Percentage":
+        this.#tnglWriter.writeFlag(OBJECT_TYPE.OPERATION_PERCENTAGE);
+        break;
+
+      case "Pulse":
+        this.#tnglWriter.writeFlag(OBJECT_TYPE.OPERATION_PULSE);
+        break;
+
+      case "And":
+        this.#tnglWriter.writeFlag(OBJECT_TYPE.OPERATION_AND);
+        break;
+
+      case "ComparatorEqual":
+        this.#tnglWriter.writeFlag(OBJECT_TYPE.OPERATION_COMPARATOR_EQUAL);
+        break;
+
+      case "ComparatorGreater":
+        this.#tnglWriter.writeFlag(OBJECT_TYPE.OPERATION_COMPARATOR_GREATER);
+        break;
+
+      case "ComparatorLess":
+        this.#tnglWriter.writeFlag(OBJECT_TYPE.OPERATION_COMPARATOR_LESS);
+        break;
+
+      case "Counter":
+        this.#tnglWriter.writeFlag(OBJECT_TYPE.OPERATION_COUNTER);
+        break;
+
+      case "DelayStack":
+        this.#tnglWriter.writeFlag(OBJECT_TYPE.OPERATION_DELAY_STACK);
+        break;
+
+      case "DelayOverwrite":
+        this.#tnglWriter.writeFlag(OBJECT_TYPE.OPERATION_DELAY_OVERWRITE);
+        break;
+
+      case "Or":
+        this.#tnglWriter.writeFlag(OBJECT_TYPE.OPERATION_OR);
+        break;
+
+      case "Repeater":
+        this.#tnglWriter.writeFlag(OBJECT_TYPE.OPERATION_REPEATER);
+        break;
+
+      case "Xor":
+        this.#tnglWriter.writeFlag(OBJECT_TYPE.OPERATION_XOR);
+        break;
+
+      case "Negate":
+        this.#tnglWriter.writeFlag(OBJECT_TYPE.OPERATION_NEGATE);
+        break;
+
+      case "EventRelay":
+        this.#tnglWriter.writeFlag(OBJECT_TYPE.OPERATION_EVENT_RELAY);
+        break;
+
+      case "EventToggle":
+        this.#tnglWriter.writeFlag(OBJECT_TYPE.OPERATION_EVENT_TOGGLE);
+        break;
+
+      case "If":
+        this.#tnglWriter.writeFlag(OBJECT_TYPE.OPERATION_IF);
+        break;
+
+      case "VoltageProvider":
+        this.#tnglWriter.writeFlag(OBJECT_TYPE.PROVIDER_VOLTAGE);
+        break;
+
+      case "PIRProvider": 
+        this.#tnglWriter.writeFlag(OBJECT_TYPE.PROVIDER_PIR);
+        break;
+
+      case "SliderProvider":
+        this.#tnglWriter.writeFlag(OBJECT_TYPE.PROVIDER_SLIDER);
+        break;
+
+      case "EventVoid": 
+        this.#tnglWriter.writeFlag(OBJECT_TYPE.OPERATION_EVENT_VOID);
+        break;
+
+      case "EventStepper":
+        this.#tnglWriter.writeFlag(OBJECT_TYPE.OPERATION_EVENT_STEPPER);
+        break;
+
+      case "Modulo":
+        this.#tnglWriter.writeFlag(OBJECT_TYPE.OPERATION_MODULO);
+        break;
+        
+      case "SonoffUltimateProvider":
+        this.#tnglWriter.writeFlag(OBJECT_TYPE.PROVIDER_SONOFF_ULTIMATE);
+        break;
+
+      case "EventSet":
+        this.#tnglWriter.writeFlag(OBJECT_TYPE.OPERATION_EVENT_SET);
+        break;
+
+      case "NetworkSyncProvider":
+        this.#tnglWriter.writeFlag(OBJECT_TYPE.PROVIDER_NETWORKSYNC);
+        break;
+
+      case "AmbientLightProvider":
+        this.#tnglWriter.writeFlag(OBJECT_TYPE.PROVIDER_AMBIENT_LIGHT);
+        break;
+
+      case "LUXv30BProvider":
+        this.#tnglWriter.writeFlag(OBJECT_TYPE.PROVIDER_LUXV30B);
+        break;
+
+      case "VEML7700Provider":
+        this.#tnglWriter.writeFlag(OBJECT_TYPE.PROVIDER_VEML7700);
+        break;
+
+      default:
+        // TODO look for variable_name in the variable_name->value_address map
+
+        let var_address = undefined;
 
         // check if the variable is already declared
         // look for the latest variable address on the stack
-        for (let i = this.#variable_declarations_stack.length - 1; i >= 0; i--) {
-          const declaration = this.#variable_declarations_stack[i];
+        for (let i = this.#var_declarations.length - 1; i >= 0; i--) {
+          const declaration = this.#var_declarations[i];
           if (declaration.name === word) {
-            possible_variable_address = declaration.address;
+            var_address = declaration.address;
             break;
           }
         }
 
-        if (possible_variable_address !== undefined) {
-          logging.debug(`VARIABLE_READ name=${word}, address=${possible_variable_address}`);
-          this.#tnglWriter.writeFlag(TNGL_FLAGS.VARIABLE_READ);
-          this.#tnglWriter.writeUint16(possible_variable_address);
+        if (var_address !== undefined) {
+          logging.debug(`VALUE_READ_ADDRESS name=${word}, address=${var_address}`);
+          this.#tnglWriter.writeFlag(TNGL_FLAGS.VALUE_READ_ADDRESS);
+          this.#tnglWriter.writeUint16(var_address);
           break;
         }
 
@@ -824,13 +1074,16 @@ export class TnglCompiler {
     switch (puctuation) {
       case "{":
         // push the current depth of the variable stack to the depth stack
-        this.#variable_scope_depth_stack.push(this.#variable_declarations_stack.length);
+        this.#const_scope_depth_stack.push(this.#const_declarations_stack.length);
+        this.#let_scope_depth_stack.push(this.#let_declarations_stack.length);
         break;
 
       case "}":
         // pop the scope depth of the depth stack variable stack and set the variable stack to the previous depth
-        const depth = this.#variable_scope_depth_stack.pop();
-        this.#variable_declarations_stack.length = depth;
+        const const_depth = this.#const_scope_depth_stack.pop();
+        this.#const_declarations_stack.length = const_depth;
+        const let_depth = this.#let_scope_depth_stack.pop();
+        this.#let_declarations_stack.length = let_depth;
 
         this.#tnglWriter.writeFlag(TNGL_FLAGS.END_OF_SCOPE);
         break;
@@ -838,6 +1091,60 @@ export class TnglCompiler {
       default:
         break;
     }
+  }
+
+  compileConnection(connection) {
+    // connection is in this format:
+    // origin->[0x00]destination
+    // using regex, we can split the connection into 3 parts:
+    // origin -> [0x00] -> destination
+    const regex = /([a-zA-Z0-9_]+)->\[0x([0-9a-fA-F]+)\]([a-zA-Z0-9_]+)/;
+
+    const match = connection.match(regex);
+    if (match === null) {
+      logging.error("Failed to compile connection");
+      return;
+    }
+
+    const origin = match[1];
+    const destination = match[3];
+    const pin = parseInt(match[2], 16);
+
+    // find the variable address
+    let origin_value_address = undefined;
+    let destination_variable_address = undefined;
+
+    // check if the variable is already declared
+    // look for the latest variable address on the stack
+    for (let i = this.#const_declarations_stack.length - 1; i >= 0; i--) {
+      const declaration = this.#const_declarations_stack[i];
+      if (!origin_value_address && declaration.name === origin) {
+        origin_value_address = declaration.address;
+      }
+      if (!destination_variable_address && declaration.name === destination) {
+        destination_variable_address = declaration.address;
+      }
+      if (origin_value_address && destination_variable_address) {
+        break;
+      }
+    }
+
+    // TODO Theory: if the variable is not found in the const stack, it must be in the let stack or var stack?
+
+    if (origin_value_address === undefined) {
+      logging.error(`Failed to find origin variable address [${origin}]`);
+      return;
+    }
+
+    if (destination_variable_address === undefined) {
+      logging.error(`Failed to find destination variable address [${destination}]`);
+      return;
+    }
+
+    this.#tnglWriter.writeFlag(OBJECT_TYPE.OPERATION_CONNECTION);
+    this.#tnglWriter.writeUint16(origin_value_address);
+    this.#tnglWriter.writeUint16(destination_variable_address);
+    this.#tnglWriter.writeUint8(pin);
   }
 
   get tnglBytes() {
@@ -869,8 +1176,12 @@ export class TnglCodeParser {
           this.#compiler.compileUndefined();
           break;
 
-        case "const_variale_declaration":
-          this.#compiler.compileConstVariableDeclaration(element.token);
+        case "const_declaration":
+          this.#compiler.compileConstDeclaration(element.token);
+          break;
+
+        case "var_declaration":
+          this.#compiler.compileVarDeclaration(element.token);
           break;
 
         case "comment":
@@ -889,8 +1200,8 @@ export class TnglCodeParser {
           this.#compiler.compileString(element.token);
           break;
 
-        case "variable_address":
-          this.#compiler.compileVariableAddress(element.token);
+        case "value_address":
+          this.#compiler.compileValueAddress(element.token);
           break;
 
         case "timestamp":
@@ -941,6 +1252,10 @@ export class TnglCodeParser {
           this.#compiler.compilePunctuation(element.token);
           break;
 
+        case "connection":
+          this.#compiler.compileConnection(element.token);
+          break;
+
         default:
           logging.warn("Unknown token type >", element.type, "<");
           break;
@@ -958,13 +1273,15 @@ export class TnglCodeParser {
   }
 
   static #parses = {
+    connection: /[\w]+->\[\w*\][\w]+\s*;/,
     undefined: /undefined/,
-    const_variale_declaration: /const +[A-Za-z_][\w]* *=/,
+    var_declaration: /var +[A-Za-z_][\w]* *=/,
+    const_declaration: /const +[A-Za-z_][\w]* *=/,
     comment: /\/\/[^\n]*/,
     htmlrgb: /#[0-9a-f]{6}/i,
     infinity: /[+-]?Infinity/,
     string: /"[\w ]*"/,
-    variable_address: /&[a-z_][\w]*/i,
+    value_address: /&[a-z_][\w]*/i,
     timestamp: /(_?[+-]?[0-9]*[.]?[0-9]+(d|h|m(?!s)|s|t|ms))+/,
     label: /\$[\w]*/,
     char: /-?'[\W\w]'/,
