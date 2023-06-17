@@ -1,19 +1,9 @@
 import { logging } from "./Logging.js";
 import {
-  colorToBytes,
   createNanoEvents,
-  hexStringToUint8Array,
-  labelToBytes,
-  numberToBytes,
-  percentageToBytes,
   sleep,
-  stringToBytes,
-  noSleep,
   detectSpectodaConnect,
-  mapValue,
-  rgbToHex,
   detectAndroid,
-  detectSafari,
   detectChrome,
   detectWindows,
   detectLinux,
@@ -29,102 +19,9 @@ import { SpectodaWebSocketsConnector } from "./SpectodaWebSocketsConnector.js";
 import { TimeTrack } from "./TimeTrack.js";
 import "./TnglReader.js";
 import "./TnglWriter.js";
-import { TnglReader } from "./TnglReader.js";
 import { FlutterConnector } from "./FlutterConnector.js";
 import { t } from "./i18n.js";
 
-export const COMMAND_FLAGS = Object.freeze({
-  FLAG_UNSUPPORTED_COMMND_RESPONSE: 255, // TODO change FLAG_OTA_BEGIN to not be 255.
-
-  // legacy FW update flags
-  FLAG_OTA_BEGIN: 255, // legacy
-  FLAG_OTA_WRITE: 0, // legacy // TODO change FLAG_OTA_WRITE to not be 0.
-  FLAG_OTA_END: 254, // legacy
-  FLAG_OTA_RESET: 253, // legacy
-
-  FLAG_DEVICE_REBOOT_REQUEST: 5, // legacy
-  FLAG_DEVICE_DISCONNECT_REQUEST: 6,
-
-  FLAG_CONFIG_UPDATE_REQUEST: 10,
-  FLAG_CONFIG_UPDATE_RESPONSE: 11,
-
-  // Former CommandFlag begin
-
-  // FLAG_RSSI_DATA:  100,
-  FLAG_PEER_CONNECTED: 101,
-  FLAG_PEER_DISCONNECTED: 102,
-
-  // FLAG_CONF_BYTES:  103,
-  FLAG_REINTERPRET_TNGL: 104,
-  FLAG_SET_TIMELINE: 105,
-
-
-  FLAG_EMIT_EVENT: 111,
-  FLAG_EMIT_TIMESTAMP_EVENT: 112,
-  FLAG_EMIT_COLOR_EVENT: 113,
-  FLAG_EMIT_PERCENTAGE_EVENT: 114,
-  FLAG_EMIT_LABEL_EVENT: 115,
-
-  // Former CommandFlag end
-
-  FLAG_WRITE_CONTROLLER_NAME_REQUEST: 202,
-  FLAG_WRITE_CONTROLLER_NAME_RESPONSE: 203,
-  FLAG_READ_CONTROLLER_NAME_REQUEST: 204,
-  FLAG_READ_CONTROLLER_NAME_RESPONSE: 205,
-
-  FLAG_MERGE_EVENT_HISTORY_REQUEST: 206,
-  FLAG_MERGE_EVENT_HISTORY_RESPONSE: 207,
-  FLAG_ERASE_EVENT_HISTORY_REQUEST: 208,
-  FLAG_ERASE_EVENT_HISTORY_RESPONSE: 209,
-
-  FLAG_REQUEST_PEER_REQUEST: 210,
-  FLAG_REQUEST_PEER_RESPONSE: 211,
-
-  FLAG_EVENT_HISTORY_BC_REQUEST: 212,
-  FLAG_EVENT_HISTORY_BC_RESPONSE: 213,
-
-  FLAG_VISIBLE_PEERS_REQUEST: 214,
-  FLAG_VISIBLE_PEERS_RESPONSE: 215,
-
-  FLAG_FW_UPDATE_PEER_REQUEST: 216,
-  FLAG_FW_UPDATE_PEER_RESPONSE: 217,
-
-  FLAG_SYNC_STATE_REQUEST: 218,
-  FLAG_SYNC_STATE_RESPONSE: 219,
-
-  FLAG_SAVE_STATE_REQUEST: 220,
-  FLAG_SAVE_STATE_RESPONSE: 221,
-
-  FLAG_SLEEP_REQUEST: 222,
-  FLAG_SLEEP_RESPONSE: 223,
-  FLAG_CONNECTED_PEERS_INFO_REQUEST: 224,
-  FLAG_CONNECTED_PEERS_INFO_RESPONSE: 225,
-
-  FLAG_DEVICE_CONFIG_REQUEST: 226,
-  FLAG_DEVICE_CONFIG_RESPONSE: 227,
-  FLAG_ROM_PHY_VDD33_REQUEST: 228,
-  FLAG_ROM_PHY_VDD33_RESPONSE: 229,
-  FLAG_VOLTAGE_ON_PIN_REQUEST: 230,
-  FLAG_VOLTAGE_ON_PIN_RESPONSE: 231,
-
-  FLAG_CHANGE_DATARATE_REQUEST: 232,
-  FLAG_CHANGE_DATARATE_RESPONSE: 233,
-
-  FLAG_FW_VERSION_REQUEST: 234,
-  FLAG_FW_VERSION_RESPONSE: 235,
-  FLAG_ERASE_OWNER_REQUEST: 236,
-  FLAG_ERASE_OWNER_RESPONSE: 237,
-
-  FLAG_TNGL_FINGERPRINT_REQUEST: 242,
-  FLAG_TNGL_FINGERPRINT_RESPONSE: 243,
-  FLAG_TIMELINE_REQUEST: 244,
-  FLAG_TIMELINE_RESPONSE: 245,
-
-  FLAG_CONNECT_REQUEST: 238,
-  FLAG_CONNECT_RESPONSE: 239,
-  FLAG_ADOPT_REQUEST: 240,
-  FLAG_ADOPT_RESPONSE: 241,
-});
 
 // Spectoda.js -> SpectodaInterfaceLegacy.js -> | SpectodaXXXConnector.js ->
 
@@ -193,27 +90,21 @@ export class SpectodaInterfaceLegacy {
   #deviceReference;
 
   #eventEmitter;
-  #wakeLock;
 
   #queue;
   #processing;
 
   #chunkSize;
 
-  // #reconection;
   #selecting;
   #disconnectQuery;
-
-  #reconnectionInterval;
 
   #connectGuard;
 
   #lastUpdateTime;
   #lastUpdatePercentage;
 
-  #connectedPeers;
-
-  constructor(deviceReference /*, reconnectionInterval = 1000*/) {
+  constructor(deviceReference) {
     this.#deviceReference = deviceReference;
 
     this.clock = new TimeTrack(0);
@@ -221,24 +112,18 @@ export class SpectodaInterfaceLegacy {
     this.connector = /** @type {SpectodaDummyConnector | SpectodaWebBluetoothConnector | SpectodaWebSerialConnector | SpectodaConnectConnector | FlutterConnector | SpectodaWebSocketsConnector | null} */ (null);
 
     this.#eventEmitter = createNanoEvents();
-    this.#wakeLock = null;
 
     this.#queue = /** @type {Query[]} */ ([]);
     this.#processing = false;
     this.#chunkSize = 208; // 208 is ESPNOW chunk size
 
-    // this.#reconection = false;
     this.#selecting = false;
     this.#disconnectQuery = null;
-
-    // this.#reconnectionInterval = reconnectionInterval;
 
     this.#connectGuard = false;
 
     this.#lastUpdateTime = new Date().getTime();
     this.#lastUpdatePercentage = 0;
-
-    this.#connectedPeers = [];
 
     this.onConnected = e => {};
     this.onDisconnected = e => {};
@@ -502,13 +387,7 @@ export class SpectodaInterfaceLegacy {
       });
   }
 
-  // reconnection(enable) {
-  //   this.#reconection = enable;
-  // }
-
   userSelect(criteria, timeout = 600000) {
-    // this.#reconection = false;
-
     if (timeout < 1000) {
       logging.error("Timeout is too short.");
       return Promise.reject("InvalidTimeout");
@@ -537,8 +416,6 @@ export class SpectodaInterfaceLegacy {
   }
 
   autoSelect(criteria, scan_period = 4000, timeout = 10000) {
-    // this.#reconection = false;
-
     if (timeout < 1000) {
       logging.error("Timeout is too short.");
       return Promise.reject("InvalidTimeout");
@@ -580,8 +457,6 @@ export class SpectodaInterfaceLegacy {
   }
 
   scan(criteria, scan_period = 5000) {
-    // this.#reconection = false;
-
     if (scan_period < 1000) {
       logging.error("Scan period is too short.");
       return Promise.reject("InvalidScanPeriod");
@@ -628,17 +503,7 @@ export class SpectodaInterfaceLegacy {
     this.onConnected(event);
   };
 
-  eraseConnectedPeers() {
-    this.#connectedPeers = [];
-  }
-
-  setConnectedPeers(peers) {
-    this.#connectedPeers = peers;
-  }
-
   disconnect() {
-    // this.#reconection = false;
-
     const item = new Query(Query.TYPE_DISCONNECT);
     this.#process(item);
     return item.promise;
@@ -653,16 +518,6 @@ export class SpectodaInterfaceLegacy {
 
     this.#connectGuard = false;
     this.onDisconnected(event);
-
-    // if (this.#reconection && this.#reconnectionInterval) {
-    //   logging.info("Reconnecting...");
-    //   setTimeout(() => {
-    //     logging.debug("Reconnecting device");
-    //     return this.connect(this.#reconnectionInterval).catch(() => {
-    //       logging.warn("Reconnection failed.");
-    //     });
-    //   }, 2000);
-    // }
 
     if (this.#disconnectQuery) {
       this.#disconnectQuery.resolve();
@@ -803,7 +658,6 @@ export class SpectodaInterfaceLegacy {
 
             switch (item.type) {
               case Query.TYPE_USERSELECT:
-                // this.#reconection = false;
                 await this.connector
                   .userSelect(item.a, item.b) // criteria, timeout
                   .then(device => {
@@ -816,7 +670,6 @@ export class SpectodaInterfaceLegacy {
                 break;
 
               case Query.TYPE_AUTOSELECT:
-                // this.#reconection = false;
                 await this.connector
                   .autoSelect(item.a, item.b, item.c) // criteria, scan_period, timeout
                   .then(device => {
@@ -841,7 +694,6 @@ export class SpectodaInterfaceLegacy {
                 break;
 
               case Query.TYPE_UNSELECT:
-                // this.#reconection = false;
                 await this.connector
                   .unselect()
                   .then(() => {
@@ -866,7 +718,6 @@ export class SpectodaInterfaceLegacy {
                 break;
 
               case Query.TYPE_CONNECT:
-                // this.#reconection = true;
                 logging.verbose("TYPE_CONNECT begin");
                 await this.connector
                   .connect(item.a, item.b) // a = timeout, b = supportLegacy
@@ -917,7 +768,6 @@ export class SpectodaInterfaceLegacy {
                 break;
 
               case Query.TYPE_DISCONNECT:
-                // this.#reconection = false;
                 this.#disconnectQuery = new Query();
                 await this.connector
                   .disconnect()
@@ -974,20 +824,15 @@ export class SpectodaInterfaceLegacy {
                     } catch (e) {
                       logging.error(e);
                     }
-                    // item.resolve();
                     executesInPayload.forEach(element => element.resolve());
                   })
                   .catch(error => {
                     //logging.warn(error);
-                    // item.reject(error);
                     executesInPayload.forEach(element => element.reject(error));
                   });
                 break;
 
               case Query.TYPE_REQUEST:
-                // TODO process in internal Interface
-                // this.process(new DataView(data.buffer)).catch((e)=>{console.error(e)});
-
                 logging.debug("REQUEST", uint8ArrayToHexString(item.a));
 
                 this.emit("wasm_request", item.a);
@@ -1004,6 +849,8 @@ export class SpectodaInterfaceLegacy {
                 break;
 
               case Query.TYPE_SET_CLOCK:
+                logging.debug("SET_CLOCK", item.a.millis());
+
                 this.emit("wasm_clock", item.a.millis());
 
                 await this.connector
@@ -1050,13 +897,13 @@ export class SpectodaInterfaceLegacy {
                 break;
 
               case Query.TYPE_DESTROY:
-                // this.#reconection = false;
                 await this.connector
-                  .request([COMMAND_FLAGS.FLAG_DEVICE_DISCONNECT_REQUEST], false)
-                  .catch(() => {})
-                  .then(() => {
-                    return this.connector.disconnect();
-                  })
+                  // .request([COMMAND_FLAGS.FLAG_DEVICE_DISCONNECT_REQUEST], false)
+                  // .catch(() => {})
+                  // .then(() => {
+                  //   return this.connector.disconnect();
+                  // })
+                  .disconnect() // TODO make this forced disconnect
                   .then(() => {
                     return this.connector.destroy();
                   })
@@ -1083,263 +930,5 @@ export class SpectodaInterfaceLegacy {
       })();
     }
   }
-
-  process(bytecode) {
-
-    this.emit("wasm_execute", new Uint8Array(bytecode.buffer));
-
-    let reader = new TnglReader(bytecode);
-
-    let utc_timestamp = new Date().getTime();
-
-    logging.verbose(reader);
-
-    let emitted_events = [];
-
-    while (reader.available > 0) {
-      switch (reader.peekFlag()) {
-        case COMMAND_FLAGS.FLAG_REINTERPRET_TNGL:
-          {
-            logging.verbose("FLAG_REINTERPRET_TNGL");
-            reader.readFlag(); // COMMAND_FLAGS.FLAG_REINTERPRET_TNGL
-
-            const clock_ms = reader.readUint48();
-            const uint8_t = reader.readUint8();
-            const tngl_size = reader.readUint32();
-            //const bytecode_offset = reader.position() + offset;
-            reader.forward(tngl_size);
-
-            logging.verbose(`tngl_size=${tngl_size}`);
-            //logging.debug("bytecode_offset=%u", bytecode_offset);
-
-            // Runtime::feed(reader, bytecode_offset, tngl_size);
-          }
-          break;
-
-        case COMMAND_FLAGS.FLAG_EMIT_EVENT:
-        case COMMAND_FLAGS.FLAG_EMIT_TIMESTAMP_EVENT:
-        case COMMAND_FLAGS.FLAG_EMIT_COLOR_EVENT:
-        case COMMAND_FLAGS.FLAG_EMIT_PERCENTAGE_EVENT:
-        case COMMAND_FLAGS.FLAG_EMIT_LABEL_EVENT:
-          {
-            // let is_lazy = false;
-            let event_value = null;
-            let event_type = "unknown";
-
-            let log_value_prefix = "";
-            let log_value_postfix = "";
-
-            switch (reader.readFlag()) {
-              // case COMMAND_FLAGS.FLAG_EMIT_LAZY_EVENT:
-              //   is_lazy = true;
-              case COMMAND_FLAGS.FLAG_EMIT_EVENT:
-                logging.verbose("FLAG_EVENT");
-                event_value = null;
-                event_type = "none";
-                break;
-
-              // case COMMAND_FLAGS.FLAG_EMIT_LAZY_TIMESTAMP_EVENT:
-              //   is_lazy = true;
-              case COMMAND_FLAGS.FLAG_EMIT_TIMESTAMP_EVENT:
-                logging.verbose("FLAG_TIMESTAMP_EVENT");
-                event_value = reader.readInt32();
-                event_type = "timestamp";
-                log_value_postfix = "ms";
-                break;
-
-              // case COMMAND_FLAGS.FLAG_EMIT_LAZY_COLOR_EVENT:
-              //   is_lazy = true;
-              case COMMAND_FLAGS.FLAG_EMIT_COLOR_EVENT:
-                logging.verbose("FLAG_COLOR_EVENT");
-                const bytes = reader.readBytes(3);
-                event_value = rgbToHex(bytes[0], bytes[1], bytes[2]);
-                event_type = "color";
-                break;
-
-              // case COMMAND_FLAGS.FLAG_EMIT_LAZY_PERCENTAGE_EVENT:
-              //   is_lazy = true;
-              case COMMAND_FLAGS.FLAG_EMIT_PERCENTAGE_EVENT:
-                logging.verbose("FLAG_PERCENTAGE_EVENT");
-                event_value = Math.round(mapValue(reader.readInt32(), -268435455, 268435455, -100, 100) * 1000000.0) / 1000000.0;
-                event_type = "percentage";
-                log_value_postfix = "%";
-                break;
-
-              // case COMMAND_FLAGS.FLAG_EMIT_LAZY_LABEL_EVENT:
-              //   is_lazy = true;
-              case COMMAND_FLAGS.FLAG_EMIT_LABEL_EVENT:
-                logging.verbose("FLAG_LABEL_EVENT");
-                event_value = String.fromCharCode(...reader.readBytes(5)).match(/[\w\d_]*/g)[0];
-                event_type = "label";
-                log_value_prefix = "$";
-                break;
-
-              default:
-                // logging.error("ERROR");
-                break;
-            }
-
-            // logging.verbose(`is_lazy = ${is_lazy ? "true" : "false"}`);
-            logging.verbose(`event_value = ${event_value}`);
-
-            const event_label = String.fromCharCode(...reader.readBytes(5)).match(/[\w\d_]*/g)[0]; // 5 bytes
-            logging.verbose(`event_label = ${event_label}`);
-
-            const event_timestamp = reader.readUint48(); // 6 bytes in 0.9
-            logging.verbose(`event_timestamp = ${event_timestamp} ms`);
-
-            const event_device_id = reader.readUint8(); // 1 byte
-            logging.verbose(`event_device_id = ${event_device_id}`);
-
-            emitted_events.unshift({
-              type: event_type, // The type of the event as string "none", "timestamp", "color", "percentage", "label"
-              value: event_value, // null (type="none"), number (type="timestamp"), string e.g. "#ff00ff" (type="color"), number (type="percentage"), string (type="label")
-              label: event_label, // Label label as a string e.g. "event"
-              timestamp: event_timestamp, // TNGL Network Clock Timestamp as number
-              id: event_device_id, // Event destination ID as number
-              timestamp_utc: utc_timestamp--,
-              info: `${event_device_id.toString().padStart(3)} -> $${event_label}: ${log_value_prefix + event_value + log_value_postfix} [${event_timestamp}ms]`, // debug information
-            });
-          }
-          break;
-
-        case COMMAND_FLAGS.FLAG_SET_TIMELINE:
-          {
-            logging.verbose("FLAG_SET_TIMELINE");
-            reader.readFlag(); // COMMAND_FLAGS.FLAG_SET_TIMELINE
-
-            const PAUSED_FLAG = 1 << 4;
-
-            // (int32_t) = clock_timestamp
-            // (int32_t) = timeline_timestamp
-            // (uint8_t) = timeline_flags bits: [ Reserved,Reserved,Reserved,PausedFLag,IndexBit3,IndexBit2,IndexBit1,IndexBit0]
-
-            const clock_timestamp = reader.readUint48(); // 6 bytes in 0.9
-            const timeline_timestamp = reader.readInt32();
-            const timeline_flags = reader.readUint8();
-            logging.verbose(`clock_timestamp = ${clock_timestamp} ms`);
-            logging.verbose(`timeline_timestamp = ${timeline_timestamp} ms`);
-            logging.verbose(`timeline_flags = ${timeline_flags}`);
-
-            const timeline_paused = timeline_flags & PAUSED_FLAG ? true : false;
-            logging.verbose(`timeline_paused = ${timeline_paused ? "true" : "false"}`);
-
-            if (timeline_paused) {
-              this.#deviceReference.timeline.pause();
-              this.#deviceReference.timeline.setMillis(timeline_timestamp);
-            } else {
-              const time_delta = this.clock.millis() - clock_timestamp;
-              const current_timeline_timestamp = timeline_timestamp + time_delta;
-
-              this.#deviceReference.timeline.unpause();
-              this.#deviceReference.timeline.setMillis(current_timeline_timestamp);
-            }
-          }
-          break;
-
-        case COMMAND_FLAGS.FLAG_PEER_CONNECTED:
-          {
-            logging.verbose("FLAG_PEER_CONNECTED");
-            reader.readFlag(); // CommandFlag::FLAG_PEER_CONNECTED
-
-            const device_mac = reader
-              .readBytes(6)
-              .map(v => v.toString(16).padStart(2, "0"))
-              .join(":");
-
-            if (this.#connectedPeers.includes(device_mac) === false) {
-              this.#connectedPeers.push(device_mac);
-              this.#eventEmitter.emit("peer_connected", device_mac);
-            }
-
-          }
-          break;
-
-        case COMMAND_FLAGS.FLAG_PEER_DISCONNECTED:
-          {
-            logging.verbose("FLAG_PEER_DISCONNECTED");
-            reader.readFlag(); // CommandFlag::FLAG_PEER_DISCONNECTED
-
-            const device_mac = reader
-              .readBytes(6)
-              .map(v => v.toString(16).padStart(2, "0"))
-              .join(":");
-
-            this.#eventEmitter.emit("peer_disconnected", device_mac);
-          }
-          break;
-
-        // // request land
-
-        case COMMAND_FLAGS.FLAG_OTA_BEGIN:
-          {
-            logging.verbose("FLAG_OTA_BEGIN");
-            reader.readFlag(); // FLAG_OTA_BEGIN
-
-            const header_checksum = reader.readUint8();
-            const header_size = reader.readUint32();
-
-            // logging.verbose("header_checksum=%u", header_checksum);
-            // logging.verbose("header_size=%u", header_size);
-          }
-          break;
-
-        case COMMAND_FLAGS.FLAG_OTA_WRITE:
-          {
-            logging.verbose("FLAG_OTA_WRITE");
-            reader.readFlag(); // FLAG_OTA_WRITE
-
-            const header_checksum = reader.readUint8();
-            const header_size = reader.readUint32();
-
-            reader.forward(reader.available);
-
-            // logging.verbose("header_checksum=%u", header_checksum);
-            // logging.verbose("header_size=%u", header_size);
-            // logging.verbose("bytes_size=%u", bytes_size);
-          }
-          break;
-
-        case COMMAND_FLAGS.FLAG_OTA_END:
-          {
-            logging.verbose("FLAG_OTA_END");
-            reader.readFlag(); // FLAG_OTA_END
-
-            const header_checksum = reader.readUint8();
-            const header_size = reader.readUint32();
-
-            // logging.verbose("header_checksum=%u", header_checksum);
-            // logging.verbose("header_size=%u", header_size);
-          }
-          break;
-
-        case COMMAND_FLAGS.FLAG_OTA_RESET:
-          {
-            logging.verbose("FLAG_OTA_RESET");
-            reader.readFlag(); // FLAG_OTA_RESET
-
-            const header_checksum = reader.readUint8();
-            const header_size = reader.readUint32();
-
-            // logging.verbose("header_checksum=%u", header_checksum);
-            // logging.verbose("header_size=%u", header_size);
-          }
-          break;
-
-        default:
-          logging.error(`ERROR flag=${reader.readFlag()}, available=${reader.available}`);
-          reader.forward(reader.available);
-          break;
-      }
-    }
-
-    if (emitted_events.length) {
-      this.emit("emitted_events", emitted_events);
-
-      const informations = emitted_events.map(x => x.info);
-      logging.info(informations.join("\n"));
-    }
-  }
 }
 
-//////////////
