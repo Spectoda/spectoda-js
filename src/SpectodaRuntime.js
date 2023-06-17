@@ -1,4 +1,4 @@
-import { logging } from "./Logging.js";
+import { logging } from "../Logging.js";
 import {
   createNanoEvents,
   sleep,
@@ -10,17 +10,17 @@ import {
   detectIPhone,
   detectMacintosh,
   uint8ArrayToHexString,
-} from "./functions.js";
-import { SpectodaDummyConnector } from "./SpectodaDummyConnector.js";
-import { SpectodaWebBluetoothConnector } from "./SpectodaWebBluetoothConnector.js";
-import { SpectodaWebSerialConnector } from "./SpectodaWebSerialConnector.js";
+} from "../functions.js";
+import { SpectodaDummyConnector } from "../SpectodaDummyConnector.js";
+import { SpectodaWebBluetoothConnector } from "../SpectodaWebBluetoothConnector.js";
+import { SpectodaWebSerialConnector } from "../SpectodaWebSerialConnector.js";
 // import { SpectodaConnectConnector } from "./SpectodaConnectConnector.js";
-import { SpectodaWebSocketsConnector } from "./SpectodaWebSocketsConnector.js";
-import { TimeTrack } from "./TimeTrack.js";
-import "./TnglReader.js";
-import "./TnglWriter.js";
-import { FlutterConnector } from "./FlutterConnector.js";
-import { t } from "./i18n.js";
+import { SpectodaWebSocketsConnector } from "../SpectodaWebSocketsConnector.js";
+import { TimeTrack } from "../TimeTrack.js";
+import "../TnglReader.js";
+import "../TnglWriter.js";
+import { FlutterConnector } from "../FlutterConnector.js";
+import { t } from "../i18n.js";
 
 
 // Spectoda.js -> SpectodaInterfaceLegacy.js -> | SpectodaXXXConnector.js ->
