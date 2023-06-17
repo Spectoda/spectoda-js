@@ -357,24 +357,7 @@ export class SpectodaInterfaceLegacy {
     this.#eventEmitter.emit(event, ...arg);
   }
 
-  requestWakeLock() {
-    logging.debug("> Activating wakeLock...");
-    if (detectSpectodaConnect()) {
-      return window.flutter_inappwebview.callHandler("setWakeLock", true);
-    } else {
-      return noSleep.enable();
-    }
-  }
 
-  releaseWakeLock() {
-    logging.debug("> Deactivating wakeLock...");
-    if (detectSpectodaConnect()) {
-      return window.flutter_inappwebview.callHandler("setWakeLock", false);
-    } else {
-      noSleep.disable();
-      return Promise.resolve();
-    }
-  }
 
   assignConnector(connector_type = "default") {
     if (connector_type === null) {

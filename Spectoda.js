@@ -10,6 +10,8 @@ import "./TnglReader.js";
 import { TnglReader } from "./TnglReader.js";
 import "./TnglWriter.js";
 
+import { Interface } from "./src/SpectodaInterface.js";
+
 let lastEvents = {};
 
 // should not create more than one object!
@@ -173,11 +175,22 @@ export class Spectoda {
   }
 
   requestWakeLock() {
-    return this.interface.requestWakeLock();
+    logging.debug("> Activating wakeLock...");
+    if (detectSpectodaConnect()) {
+      return window.flutter_inappwebview.callHandler("setWakeLock", true);
+    } else {
+      return noSleep.enable();
+    }
   }
 
   releaseWakeLock() {
-    return this.interface.releaseWakeLock();
+    logging.debug("> Deactivating wakeLock...");
+    if (detectSpectodaConnect()) {
+      return window.flutter_inappwebview.callHandler("setWakeLock", false);
+    } else {
+      noSleep.disable();
+      return Promise.resolve();
+    }
   }
 
   setOwnerSignature(ownerSignature) {
