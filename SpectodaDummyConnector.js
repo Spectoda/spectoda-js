@@ -1,5 +1,5 @@
-import { logging } from "./Logging.js";
-import { sleep } from "./functions.js";
+import { logging } from "./logging";
+import { sleep } from "./functions";
 import { TimeTrack } from "./TimeTrack.js";
 import { COMMAND_FLAGS } from "./SpectodaInterfaceLegacy.js";
 import { TnglReader } from "./TnglReader.js";
@@ -224,7 +224,6 @@ criteria example:
         reject("DeliverFailed");
         return;
       }
-
 
       resolve();
     });

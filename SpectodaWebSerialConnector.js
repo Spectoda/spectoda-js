@@ -1,5 +1,5 @@
-import { logging } from "./Logging.js";
-import { sleep, toBytes, numberToBytes, crc8, crc32, hexStringToArray, rgbToHex, stringToBytes } from "./functions.js";
+import { logging } from "./logging";
+import { sleep, toBytes, numberToBytes, crc8, crc32, hexStringToArray, rgbToHex, stringToBytes } from "./functions";
 import { TimeTrack } from "./TimeTrack.js";
 import { COMMAND_FLAGS } from "./SpectodaInterfaceLegacy.js";
 import { TnglWriter } from "./TnglWriter.js";

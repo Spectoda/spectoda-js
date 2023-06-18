@@ -1,8 +1,8 @@
 // npm install --save-dev @types/web-bluetooth
 /// <reference types="web-bluetooth" />
 
-import { logging } from "./Logging.js";
-import { detectAndroid, detectSafari, hexStringToUint8Array, numberToBytes, sleep, toBytes } from "./functions.js";
+import { logging } from "./logging";
+import { detectAndroid, detectSafari, hexStringToUint8Array, numberToBytes, sleep, toBytes } from "./functions";
 import { COMMAND_FLAGS } from "./SpectodaInterfaceLegacy.js";
 import { TimeTrack } from "./TimeTrack.js";
 import { TnglReader } from "./TnglReader.js";
@@ -140,8 +140,7 @@ export class WebBLEConnection {
         // console.log(total_bytes);
 
         resolve(new DataView(new Uint8Array(total_bytes).buffer));
-      }
-      catch (e) {
+      } catch (e) {
         logging.error(e);
         reject("ReadError");
       }

@@ -1,5 +1,5 @@
-import { logging } from "./Logging.js";
-import { sleep, toBytes, detectSpectodaConnect, numberToBytes, detectAndroid } from "./functions.js";
+import { logging } from "./logging";
+import { sleep, toBytes, detectSpectodaConnect, numberToBytes, detectAndroid } from "./functions";
 import { TimeTrack } from "./TimeTrack.js";
 import { TnglReader } from "./TnglReader.js";
 import { COMMAND_FLAGS, SpectodaInterfaceLegacy } from "./SpectodaInterfaceLegacy.js";
@@ -65,7 +65,6 @@ class FlutterConnection {
         const value = e.detail.value;
         logging.debug(`Triggered #reject: [${value}]`);
 
-
         // @ts-ignore
         window.flutterConnection.reject(value);
       });
@@ -74,7 +73,6 @@ class FlutterConnection {
         // @ts-ignore
         const event = e.detail.value;
         logging.debug(`Triggered #emit: ${event}`, event);
-
 
         // @ts-ignore
         window.flutterConnection.emit(event);
@@ -86,7 +84,6 @@ class FlutterConnection {
         const bytes = e.detail.value;
         logging.debug(`Triggered #process: [${bytes}]`, bytes);
 
-
         // @ts-ignore
         window.flutterConnection.process(bytes);
       });
@@ -95,7 +92,6 @@ class FlutterConnection {
         // @ts-ignore
         const bytes = e.detail.value;
         logging.debug(`Triggered #network: [${bytes}]`, bytes);
-
 
         // @ts-ignore
         window.flutterConnection.process(bytes);
@@ -112,7 +108,6 @@ class FlutterConnection {
         const bytes = e.detail.value;
         logging.debug(`Triggered #clock: [${bytes}]`, bytes);
       });
-
     } else {
       logging.debug("flutter_inappwebview in window NOT detected");
       logging.info("Simulating Flutter Functions");
@@ -222,7 +217,6 @@ class FlutterConnection {
               window.flutterConnection.resolve('{"connector":"spectodaconnect"}'); // resolve with json containing the information about the connected device
             }
             break;
-
 
           case "connect":
             {
@@ -517,7 +511,7 @@ criteria example:
   // adopted by the owner with "baf2398ff5e6a7b8c9d097d54a9f865f" signature.
   // Product code is 1 what means NARA Alpha
   {
-    name:"NARA Alpha" 
+    name:"NARA Alpha"
     fwVersion:"0.7.2"
     ownerSignature:"baf2398ff5e6a7b8c9d097d54a9f865f"
     productCode:1
@@ -651,8 +645,8 @@ criteria example:
   }
 
   /*
-  
-  timeout_number ms 
+
+  timeout_number ms
 
   */
   connect(timeout_number = 10000) {

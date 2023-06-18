@@ -1,9 +1,9 @@
-import { logging, setLoggingLevel } from "./Logging.js";
+import { logging, setLoggingLevel } from "./logging";
 import * as n from "nanoevents";
 
 export function toBytes(value, byteCount) {
   let number = BigInt(Math.round(value));
-  var byteArray = [];
+  var byteArray: number[] = [];
   for (let index = 0; index < byteCount; index++) {
     const byte = number & 0xffn;
     byteArray.push(Number(byte));
@@ -74,7 +74,7 @@ export function sleep(ms) {
 // IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 // CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-export const createNanoEvents = n.createNanoEvents();
+export const createNanoEvents = n.createNanoEvents;
 
 /////////////////////////////////////////////// == 0.7 == ///////////////////////////////////////////////////
 
@@ -139,7 +139,7 @@ export function labelToBytes(label_string) {
 }
 
 export function stringToBytes(string, length) {
-  var byteArray = [];
+  var byteArray: number[] = [];
 
   for (let index = 0; index < length; index++) {
     if (index < string.length) {

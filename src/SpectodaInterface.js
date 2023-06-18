@@ -1,6 +1,6 @@
-import { logging } from "../Logging.js";
+import { logging } from "../logging";
 import { SpectodaWasm } from "./SpectodaWasm.js";
-import { createNanoEvents } from "../functions.js";
+import { createNanoEvents } from "../functions";
 
 // Implements SpectodaInterface in javascript
 
@@ -8,7 +8,6 @@ import { createNanoEvents } from "../functions.js";
 
 // InterfaceWrapper
 export class Interface {
-
   #instance;
 
   #eventEmitter;

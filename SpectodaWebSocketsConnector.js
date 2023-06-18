@@ -1,5 +1,5 @@
-import { logging } from "./Logging.js";
-import { sleep, stringToBytes, toBytes, getClockTimestamp } from "./functions.js";
+import { logging } from "./logging";
+import { sleep, stringToBytes, toBytes, getClockTimestamp } from "./functions";
 import { TimeTrack } from "./TimeTrack.js";
 import { io } from "./lib/socketio.js";
 import { nanoid } from "nanoid";

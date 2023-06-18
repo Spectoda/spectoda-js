@@ -1,4 +1,4 @@
-import { logging } from "./Logging.js";
+import { logging } from "./logging";
 import {
   colorToBytes,
   createNanoEvents,
@@ -20,7 +20,7 @@ import {
   detectIPhone,
   detectMacintosh,
   uint8ArrayToHexString,
-} from "./functions.js";
+} from "./functions";
 import { SpectodaDummyConnector } from "./SpectodaDummyConnector.js";
 import { SpectodaWebBluetoothConnector } from "./SpectodaWebBluetoothConnector.js";
 import { SpectodaWebSerialConnector } from "./SpectodaWebSerialConnector.js";
@@ -57,7 +57,6 @@ export const COMMAND_FLAGS = Object.freeze({
   // FLAG_CONF_BYTES:  103,
   FLAG_REINTERPRET_TNGL: 104,
   FLAG_SET_TIMELINE: 105,
-
 
   FLAG_EMIT_EVENT: 111,
   FLAG_EMIT_TIMESTAMP_EVENT: 112,
@@ -581,7 +580,6 @@ export class SpectodaInterfaceLegacy {
     return item.promise.finally(() => {
       this.#selecting = false;
     });
-
   }
 
   unselect() {
@@ -888,7 +886,6 @@ export class SpectodaInterfaceLegacy {
                 await this.connector
                   .connect(item.a, item.b) // a = timeout, b = supportLegacy
                   .then(device => {
-
                     if (!this.#connectGuard) {
                       logging.error("Connection logic error. #connected not called during successful connect()?");
                       logging.warn("Emitting #connected");
@@ -1102,7 +1099,6 @@ export class SpectodaInterfaceLegacy {
   }
 
   process(bytecode) {
-
     this.emit("wasm_execute", new Uint8Array(bytecode.buffer));
 
     let reader = new TnglReader(bytecode);
@@ -1268,7 +1264,6 @@ export class SpectodaInterfaceLegacy {
               this.#connectedPeers.push(device_mac);
               this.#eventEmitter.emit("peer_connected", device_mac);
             }
-
           }
           break;
 
