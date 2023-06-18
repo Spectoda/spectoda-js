@@ -23,6 +23,7 @@ import { FlutterConnector } from "../FlutterConnector.js";
 import { t } from "../i18n.js";
 import { SpectodaInterface } from "./SpectodaInterface.js";
 import { set } from "firebase/database";
+import { SimulationConnector } from "./connector/SimulationConnector.js";
 
 
 // Spectoda.js -> SpectodaRuntime.js -> | SpectodaXXXConnector.js ->
@@ -403,6 +404,10 @@ export class SpectodaRuntime {
 
           case "websockets":
             this.connector = new SpectodaWebSocketsConnector(this);
+            break;
+
+          case "simulation":
+            this.connector = new SimulationConnector(this);
             break;
 
           default:
