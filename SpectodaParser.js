@@ -1,5 +1,5 @@
-import { logging } from "./Logging.js";
-import { mapValue, uint8ArrayToHexString, percentageToBytes } from "./functions.js";
+import { logging } from "./logging";
+import { mapValue, uint8ArrayToHexString, percentageToBytes } from "./functions";
 import { TnglWriter } from "./TnglWriter.js";
 
 // ! must stay this order VAR_VALUE_ADDRESS_OFFSET < CONST_VALUE_ADDRESS_OFFSET < LET_VALUE_ADDRESS_OFFSET
@@ -160,7 +160,6 @@ const TNGL_FLAGS = Object.freeze({
 });
 
 const OBJECT_TYPE = Object.freeze({
-
   // TODO Operations and Providers should be Object values.
   OPERATION_BOOLEAN: 1,
   OPERATION_INTEGER: 2,
@@ -211,7 +210,7 @@ export class TnglCompiler {
 
   constructor() {
     this.#tnglWriter = new TnglWriter();
-   
+
     // @type array of {name: "variable", address: 0x0001};
     this.#const_declarations_stack = []; // stack of variable name-address pairs
     // @type array of numers
@@ -998,7 +997,7 @@ export class TnglCompiler {
         this.#tnglWriter.writeFlag(OBJECT_TYPE.PROVIDER_VOLTAGE);
         break;
 
-      case "PIRProvider": 
+      case "PIRProvider":
         this.#tnglWriter.writeFlag(OBJECT_TYPE.PROVIDER_PIR);
         break;
 
@@ -1006,7 +1005,7 @@ export class TnglCompiler {
         this.#tnglWriter.writeFlag(OBJECT_TYPE.PROVIDER_SLIDER);
         break;
 
-      case "EventVoid": 
+      case "EventVoid":
         this.#tnglWriter.writeFlag(OBJECT_TYPE.OPERATION_EVENT_VOID);
         break;
 
@@ -1017,7 +1016,7 @@ export class TnglCompiler {
       case "Modulo":
         this.#tnglWriter.writeFlag(OBJECT_TYPE.OPERATION_MODULO);
         break;
-        
+
       case "SonoffUltimateProvider":
         this.#tnglWriter.writeFlag(OBJECT_TYPE.PROVIDER_SONOFF_ULTIMATE);
         break;

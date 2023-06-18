@@ -1,6 +1,6 @@
-import { logging } from "../Logging.js";
+import { logging } from "../logging";
 import { SpectodaWasm } from "./SpectodaWasm.js";
-import { createNanoEvents } from "../functions.js";
+import { createNanoEvents } from "../functions";
 
 export const COMMAND_FLAGS = Object.freeze({
   FLAG_UNSUPPORTED_COMMND_RESPONSE: 255, // TODO change FLAG_OTA_BEGIN to not be 255.

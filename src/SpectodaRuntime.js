@@ -466,7 +466,6 @@ export class SpectodaRuntime {
     return item.promise.finally(() => {
       this.#selecting = false;
     });
-
   }
 
   unselect() {
@@ -746,7 +745,6 @@ export class SpectodaRuntime {
                 await this.connector
                   .connect(item.a, item.b) // a = timeout, b = supportLegacy
                   .then(device => {
-
                     if (!this.#connectGuard) {
                       logging.error("Connection logic error. #connected not called during successful connect()?");
                       logging.warn("Emitting #connected");

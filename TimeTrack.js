@@ -1,4 +1,4 @@
-import { createNanoEvents } from "./functions.js";
+import { createNanoEvents } from "./functions";
 
 export class TimeTrack {
   constructor(timestamp, paused) {

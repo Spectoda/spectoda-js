@@ -140,8 +140,7 @@ export class WebBLEConnection {
         // console.log(total_bytes);
 
         resolve(new DataView(new Uint8Array(total_bytes).buffer));
-      }
-      catch (e) {
+      } catch (e) {
         logging.error(e);
         reject("ReadError");
       }

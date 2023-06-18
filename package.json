@@ -1,12 +1,12 @@
 {
   "name": "@spectoda/spectoda-js",
   "version": "0.9.0",
-  "main": "Spectoda.js",
   "types": "types/index.d.ts",
   "devDependencies": {
     "i18next-parser": "^6.0.0"
   },
   "dependencies": {
+    "nanoevents": "^7.0.1",
     "nanoid": "^4.0.0"
   }
 }

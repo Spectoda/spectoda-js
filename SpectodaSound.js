@@ -1,5 +1,5 @@
-import { logging } from "./Logging.js";
-import { createNanoEvents, mapValue, sleep } from "./functions.js";
+import { logging } from "./logging";
+import { createNanoEvents, mapValue, sleep } from "./functions";
 import { FFT } from "./dsp.js";
 import { t } from "./i18n.js";
 
