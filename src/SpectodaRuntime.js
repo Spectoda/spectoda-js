@@ -1,4 +1,4 @@
-import { logging } from "../Logging.js";
+import { logging } from "../logging.ts";
 import {
   createNanoEvents,
   sleep,
@@ -10,7 +10,7 @@ import {
   detectIPhone,
   detectMacintosh,
   uint8ArrayToHexString,
-} from "../functions.js";
+} from "../functions";
 import { SpectodaDummyConnector } from "../SpectodaDummyConnector.js";
 import { SpectodaWebBluetoothConnector } from "../SpectodaWebBluetoothConnector.js";
 import { SpectodaWebSerialConnector } from "../SpectodaWebSerialConnector.js";

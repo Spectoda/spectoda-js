@@ -1,7 +1,7 @@
 import { colorToBytes, computeTnglFingerprint, detectSpectodaConnect, hexStringToUint8Array, labelToBytes, numberToBytes, percentageToBytes, sleep, strMacToBytes, stringToBytes } from "./functions";
 import { changeLanguage, t } from "./i18n.js";
 import { io } from "./lib/socketio.js";
-import { logging, setLoggingLevel } from "./Logging.js";
+import { logging, setLoggingLevel } from "./logging.ts";
 import { COMMAND_FLAGS } from "./src/SpectodaInterface.js";
 import { TnglCodeParser } from "./SpectodaParser.js";
 import { WEBSOCKET_URL } from "./SpectodaWebSocketsConnector.js";
@@ -439,15 +439,13 @@ export class Spectoda {
 
     const criteria = /** @type {any} */ ([{ adoptionFlag: true }]);
 
-    return (
-      (autoSelect ? this.runtime.autoSelect(criteria, 4000) : this.runtime.userSelect(criteria, 60000))
-        .then(() => {
-          // this.#adoptingFlag = true;
-          return this.runtime.connect(10000, true);
-        })
-        .then(() => {
-          const owner_signature_bytes = hexStringToUint8Array(this.#ownerSignature, 16);
-          const owner_key_bytes = hexStringToUint8Array(this.#ownerKey, 16);
+    return (autoSelect ? this.runtime.autoSelect(criteria, 4000) : this.runtime.userSelect(criteria, 60000))
+      .then(() => {
+        return this.runtime.connect(10000, true);
+      })
+      .then(() => {
+        const owner_signature_bytes = hexStringToUint8Array(this.#ownerSignature, 16);
+        const owner_key_bytes = hexStringToUint8Array(this.#ownerKey, 16);
 
         logging.info("owner_signature_bytes", owner_signature_bytes);
         logging.info("owner_key_bytes", owner_key_bytes);
@@ -458,10 +456,10 @@ export class Spectoda {
         logging.debug("> Adopting device...");
         logging.verbose(bytes);
 
-          return this.runtime
-            .request(bytes, true)
-            .then(response => {
-              let reader = new TnglReader(response);
+        return this.runtime
+          .request(bytes, true)
+          .then(response => {
+            let reader = new TnglReader(response);
 
             logging.debug("> Got response:", response);
 
@@ -534,7 +532,6 @@ export class Spectoda {
       })
       .finally(() => {
         this.#adopting = false;
-        // this.#adoptingFlag = false;
 
         this.#setConnectionState("disconnected");
       });

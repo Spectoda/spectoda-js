@@ -106,14 +106,10 @@ export class SpectodaInterface {
 
   #instance;
 
-  // #eventEmitter;
-
   constructor(runtimeReference) {
     this.#runtimeReference = runtimeReference;
 
     this.#instance = null;
-
-    // this.#eventEmitter = createNanoEvents();
   }
 
   // controller_identifier, controller_mac, controller_id_offset, controller_brightness
