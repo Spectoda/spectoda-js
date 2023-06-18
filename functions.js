@@ -1,4 +1,5 @@
 import { logging, setLoggingLevel } from "./Logging.js";
+import * as n from "nanoevents";
 
 export function toBytes(value, byteCount) {
   let number = BigInt(Math.round(value));
@@ -42,7 +43,6 @@ export function numberToBytes(number_value, byteCount) {
 //   return value_int16;
 // }
 
-
 export const timeOffset = new Date().getTime() % 0x7fffffff;
 // must be positive int32 (4 bytes)
 export function getClockTimestamp() {
@@ -74,18 +74,7 @@ export function sleep(ms) {
 // IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 // CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-export const createNanoEvents = () => ({
-  events: {},
-  emit(event, ...args) {
-    (this.events[event] || []).forEach(i => {
-      let res = i(...args);
-    });
-  },
-  on(event, cb) {
-    (this.events[event] = this.events[event] || []).push(cb);
-    return () => (this.events[event] = (this.events[event] || []).filter(i => i !== cb));
-  },
-});
+export const createNanoEvents = n.createNanoEvents();
 
 /////////////////////////////////////////////// == 0.7 == ///////////////////////////////////////////////////
 
@@ -115,7 +104,6 @@ export const getSeconds = str => {
 };
 
 export function mapValue(x, in_min, in_max, out_min, out_max) {
-
   logging.verbose("mapValue(x=" + x + ", in_min=" + in_min + ", in_max=" + in_max + ", out_min=" + out_min + ", out_max=" + out_max + ")");
 
   if (in_max == in_min) {
@@ -191,15 +179,15 @@ export function percentageToBytes(percentage_float) {
 }
 
 export function strMacToBytes(mac_str) {
-    // Split the string into an array of hexadecimal values
-    var hexValues = mac_str.split(":");
+  // Split the string into an array of hexadecimal values
+  var hexValues = mac_str.split(":");
 
-    // Convert each hexadecimal value to a byte
-    var bytes = hexValues.map(function(hex) {
-      return parseInt(hex, 16);
-    });
-  
-    return bytes;
+  // Convert each hexadecimal value to a byte
+  var bytes = hexValues.map(function (hex) {
+    return parseInt(hex, 16);
+  });
+
+  return bytes;
 }
 
 // WIN11, Google Chrome:            Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/98.0.4758.82 Safari/537.36
@@ -648,17 +636,14 @@ export function validateTimestamp(value) {
 }
 
 export function getColorString(r, g, b) {
-  return '#' +
-      ('0' + r.toString(16)).slice(-2) +
-      ('0' + g.toString(16)).slice(-2) +
-      ('0' + b.toString(16)).slice(-2);
+  return "#" + ("0" + r.toString(16)).slice(-2) + ("0" + g.toString(16)).slice(-2) + ("0" + b.toString(16)).slice(-2);
 }
 
 export function toUint8Array(numbers) {
   const arrayBuffer = new ArrayBuffer(numbers.length);
   const uint8Array = new Uint8Array(arrayBuffer);
   for (let i = 0; i < numbers.length; i++) {
-      uint8Array[i] = numbers[i];
+    uint8Array[i] = numbers[i];
   }
   return uint8Array;
 }
@@ -666,13 +651,12 @@ export function toUint8Array(numbers) {
 export function hexStringToNumberArray(hexString) {
   var numberArray = [];
   for (var i = 0; i < hexString.length; i += 2) {
-      var hexPair = hexString.substr(i, 2);
-      var number = parseInt(hexPair, 16);
-      numberArray.push(number);
+    var hexPair = hexString.substr(i, 2);
+    var number = parseInt(hexPair, 16);
+    numberArray.push(number);
   }
   return numberArray;
 }
-
 
 if (typeof window !== "undefined") {
   window.validateTimestamp = validateTimestamp;
@@ -686,5 +670,3 @@ if (typeof window !== "undefined") {
 
   window.mapValue = mapValue;
 }
-
-
