@@ -1,4 +1,4 @@
-const WASM_VERSION = "DEBUG_0.9.0_20230309";
+const WASM_VERSION = "DEBUG_0.9.2_20230618";
 
 console.log("spectoda-js wasm version " + WASM_VERSION);
 
@@ -49,7 +49,7 @@ function onWasmLoad() {
 
 if (typeof window !== "undefined") {
   // First try to load local version
-  injectScript(`http://localhost:5555/webassembly/builds/${WASM_VERSION}.js`)
+  injectScript(`http://localhost:5555/builds/${WASM_VERSION}.js`)
     .then(onWasmLoad)
     .catch(error => {
       console.error(error);

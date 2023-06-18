@@ -538,8 +538,8 @@ export class TnglCompiler {
     const PERCENTAGE_MAX = 268435455; // 2^28-1
     const PERCENTAGE_MIN = -268435455; // -(2^28)+1  (plus 1 is there for the percentage to be simetric)
 
-    // percentage has 28 bits of resolution dividing range from -100.0 to 100.0
-    const UNIT_ERROR = (100.0 - -100.0) / 2 ** 28;
+    // percentage has 29 bits of resolution dividing range from -100.0 to 100.0
+    const UNIT_ERROR = (100.0 - -100.0) / 2 ** 29;
 
     if (val > -UNIT_ERROR && val < UNIT_ERROR) {
       this.#tnglWriter.writeFlag(TNGL_FLAGS.CONST_PERCENTAGE_ZERO);
