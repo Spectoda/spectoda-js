@@ -79,6 +79,10 @@ export const general = {
     title: "Internal Processing Error",
     message: "Something went wrong while processing your request. Please try again later or contact support for assistance.",
   },
+  WriteOutOfRange: {
+    title: "Internal Processing Error",
+    message: "Something went wrong while processing your request. Please try again later or contact support for assistance.",
+  },
   UserNotLoggedInSwitchToIntegratedNetwork: {
     title: "You are not logged in",
     message: "Please log in to your account to switch networks.",

@@ -8,13 +8,13 @@ export class TnglReader {
   peekValue(byteCount, unsigned = true) {
 
     if (byteCount > 8) {
-      console.error("Byte count is too big");
+      console.error("ByteCountOutOfRange");
       throw new RangeError("ByteCountOutOfRange");
     }
 
     if (this._index + byteCount > this._dataView.byteLength) {
-      console.error("End of the data");
-      throw new RangeError("PeekOutOfRange");
+      console.error("ReadOutOfRange");
+      throw new RangeError("ReadOutOfRange");
     }
 
     let value = 0n;
@@ -62,8 +62,8 @@ export class TnglReader {
 
       return bytes;
     } else {
-      console.error("End of the data");
-      throw "Bytes read out of range";
+      console.error("ReadOutOfRange");
+      throw "ReadOutOfRange";
     }
   }
 
@@ -84,8 +84,8 @@ export class TnglReader {
 
       return string;
     } else {
-      console.warn("End of the data");
-      throw "Bytes read out of range";
+      console.error("ReadOutOfRange");
+      throw "ReadOutOfRange";
     }
   }
 
