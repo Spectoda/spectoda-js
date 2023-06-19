@@ -1,4 +1,4 @@
-const WASM_VERSION = "DEBUG_0.9.2_20230618";
+const WASM_VERSION = "DEBUG_0.9.2_20230619";
 
 console.log("spectoda-js wasm version " + WASM_VERSION);
 

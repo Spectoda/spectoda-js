@@ -246,6 +246,10 @@ export class SpectodaInterface {
       throw "NotConstructed";
     }
 
+    if (connection_handle === undefined) {
+      connection_handle = 0;
+    }
+
     const evaluate_result = this.#instance.execute(Emval.toHandle(execute_bytecode), connection_handle);
 
     if (evaluate_result != SpectodaWasm.evaluate_result_t.COMMAND_SUCCESS) {
@@ -256,11 +260,16 @@ export class SpectodaInterface {
   /**
    * If request_evaluate_result is not SUCCESS the promise is rejected with an exception
    * @param {Uint8Array} request_bytecode
+   * @param {undefined | number} connection_handle
    * @return {Uint8Array}
    */
   request(request_bytecode, connection_handle) {
     if (!this.#instance) {
       throw "NotConstructed";
+    }
+
+    if (connection_handle === undefined) {
+      connection_handle = 0;
     }
 
     let response_bytecode_vector = new SpectodaWasm.Uint8Vector();

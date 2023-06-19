@@ -262,7 +262,6 @@ export class SpectodaRuntime {
    * @alias this.addEventListener
    */
   on(event, callback) {
-    console.log(`runtime.on("${event}")`);
     return this.#eventEmitter.on(event, callback);
   }
 
