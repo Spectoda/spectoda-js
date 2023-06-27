@@ -1,3 +1,5 @@
+import { logging } from "../logging";
+
 const WASM_VERSION = "DEBUG_0.9.2_20230619";
 
 console.log("spectoda-js wasm version " + WASM_VERSION);
@@ -38,6 +40,16 @@ function onWasmLoad() {
     SpectodaWasm.Uint8Vector = Module.Uint8Vector;
     SpectodaWasm.evaluate_result_t = Module.evaluate_result_t;
     SpectodaWasm.send_result_t = Module.send_result_t;
+
+    // Make a directory other than '/'
+    FS.mkdir('/littlefs');
+    // Then mount with IDBFS type
+    FS.mount(IDBFS, {}, '/littlefs');
+
+    // Then sync
+    FS.syncfs(true, function (err) {
+      logging.error(err);
+    });
 
     waitingQueue.forEach(wait => {
       wait.resolve();

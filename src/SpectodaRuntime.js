@@ -229,7 +229,7 @@ export class SpectodaRuntime {
         await this.interface.construct("spectoda", "01:23:45:67:89:ab", 0, 255);
 
         const f = (async () => {
-          await this.interface.render();
+          await this.interface.compute(); // for non visual mode compute is sufficient
           setTimeout(f, 1000 / UPS);
         });
 

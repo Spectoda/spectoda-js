@@ -1,6 +1,5 @@
 import { logging } from "../logging";
 import { SpectodaWasm } from "./SpectodaWasm.js";
-import { createNanoEvents } from "../functions";
 
 export const COMMAND_FLAGS = Object.freeze({
   FLAG_UNSUPPORTED_COMMND_RESPONSE: 255, // TODO change FLAG_OTA_BEGIN to not be 255.
@@ -258,6 +257,27 @@ export class SpectodaInterface {
   }
 
   /**
+   * @param {Uint8Array} execute_bytecode
+   * @param {undefined | number} connection_handle
+   * @return {}
+   */
+  processExecute(execute_bytecode, connection_handle) {
+    if (!this.#instance) {
+      throw "NotConstructed";
+    }
+
+    if (connection_handle === undefined) {
+      connection_handle = 0;
+    }
+
+    const evaluate_result = this.#instance.execute(Emval.toHandle(execute_bytecode), connection_handle);
+
+    if (evaluate_result != SpectodaWasm.evaluate_result_t.COMMAND_SUCCESS) {
+      throw "EvaluateError";
+    }
+  }
+
+  /**
    * If request_evaluate_result is not SUCCESS the promise is rejected with an exception
    * @param {Uint8Array} request_bytecode
    * @param {undefined | number} connection_handle
@@ -285,6 +305,57 @@ export class SpectodaInterface {
     } finally {
       response_bytecode_vector.delete();
     }
+  }
+
+  /**
+   * If request_evaluate_result is not SUCCESS the promise is rejected with an exception
+   * @param {Uint8Array} request_bytecode
+   * @param {undefined | number} connection_handle
+   * @return {Uint8Array}
+   */
+  processRequest(request_bytecode, connection_handle) {
+    if (!this.#instance) {
+      throw "NotConstructed";
+    }
+
+    if (connection_handle === undefined) {
+      connection_handle = 0;
+    }
+
+    try {
+      const evaluate_result = this.#instance.request(Emval.toHandle(request_bytecode), response_bytecode_vector, connection_handle);
+
+      if (evaluate_result != SpectodaWasm.evaluate_result_t.COMMAND_SUCCESS) {
+        throw "EvaluateError";
+      }
+
+      return SpectodaWasm.convertNumberVectorToJSArray(response_bytecode_vector);
+    } finally {
+      response_bytecode_vector.delete();
+    }
+  }
+
+  synchronize() {
+    if (!this.#instance) {
+      throw "NotConstructed";
+    }
+
+    // TODO
+    // this.#instance.synchronize();
+  }
+
+  /**
+  * @param {Uint8Array} synchronize_bytes 
+  * @param {number} source_rssi
+  * @param {undefined | number} connection_handle
+  * @return {}
+  * */
+  processSynchronize(synchronize_bytes, source_rssi, connection_handle) {
+    if (!this.#instance) {
+      throw "NotConstructed";
+    }
+
+    this.#instance.synchronize();
   }
 
   compute() {

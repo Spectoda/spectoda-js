@@ -20,7 +20,7 @@ import { TnglReader } from "./TnglReader.js";
     is renamed Transmitter. Helper class for WebBluetoothConnector.js
 */
 export class WebBLEConnection {
-  #interfaceReference;
+  #runtimeReference;
   // private fields
   #service;
   #networkChar;
@@ -29,8 +29,8 @@ export class WebBLEConnection {
   #writing;
   #uuidCounter;
 
-  constructor(interfaceReference) {
-    this.#interfaceReference = interfaceReference;
+  constructor(runtimeReference) {
+    this.#runtimeReference = runtimeReference;
 
     /*
       BLE Spectoda Service
@@ -152,14 +152,7 @@ export class WebBLEConnection {
   #onNetworkNotification(event) {
     logging.verbose("#onNetworkNotification", event);
 
-    // let value = event.target.value;
-    // let a = [];
-    // for (let i = 0; i < value.byteLength; i++) {
-    //   a.push("0x" + ("00" + value.getUint8(i).toString(16)).slice(-2));
-    // }
-    // logging.debug("> " + a.join(" "));
-
-    this.#interfaceReference.process(event.target.value);
+    this.#runtimeReference.interface.processExecute(new Uint8Array(event.target.value.buffer), 0x01);
   }
 
   // WIP
@@ -172,9 +165,10 @@ export class WebBLEConnection {
     //   a.push("0x" + ("00" + value.getUint8(i).toString(16)).slice(-2));
     // }
     // logging.debug("> " + a.join(" "));
-    // this.#interfaceReference.process(event.target.value);
+    // this.#runtimeReference.process(event.target.value);
 
     // TODO process request
+    this.#runtimeReference.interface.processRequest(new Uint8Array(event.target.value.buffer), 0x01);
   }
 
   // WIP
@@ -187,9 +181,10 @@ export class WebBLEConnection {
     //   a.push("0x" + ("00" + value.getUint8(i).toString(16)).slice(-2));
     // }
     // logging.debug("> " + a.join(" "));
-    // this.#interfaceReference.process(event.target.value);
+    // this.#runtimeReference.process(event.target.value);
 
     // TODO process synchronize
+    this.#runtimeReference.interface.processSynchronize(new Uint8Array(event.target.value.buffer), 0x01);
   }
 
   attach(service, networkUUID, clockUUID, deviceUUID) {
@@ -439,7 +434,7 @@ export class WebBLEConnection {
       const start_timestamp = new Date().getTime();
 
       try {
-        this.#interfaceReference.emit("ota_status", "begin");
+        this.#runtimeReference.emit("ota_status", "begin");
 
         {
           //===========// RESET //===========//
@@ -478,7 +473,7 @@ export class WebBLEConnection {
             const percentage = Math.floor((written * 10000) / firmware.length) / 100;
             logging.debug(percentage + "%");
 
-            this.#interfaceReference.emit("ota_progress", percentage);
+            this.#runtimeReference.emit("ota_progress", percentage);
 
             index_from += chunk_size;
             index_to = index_from + chunk_size;
@@ -499,11 +494,11 @@ export class WebBLEConnection {
 
         logging.info("Firmware written in " + (new Date().getTime() - start_timestamp) / 1000 + " seconds");
 
-        this.#interfaceReference.emit("ota_status", "success");
+        this.#runtimeReference.emit("ota_status", "success");
         resolve();
       } catch (e) {
         logging.error(e);
-        this.#interfaceReference.emit("ota_status", "fail");
+        this.#runtimeReference.emit("ota_status", "fail");
         reject("UpdateFailed");
       }
     }).finally(() => {
@@ -522,7 +517,7 @@ export class WebBLEConnection {
 
   destroy() {
     this.reset();
-    this.#interfaceReference = null;
+    this.#runtimeReference = null;
   }
 }
 
@@ -531,7 +526,7 @@ export class WebBLEConnection {
 // Connector connects the application with one Spectoda Device, that is then in a
 // position of a controller for other Spectoda Devices
 export class SpectodaWebBluetoothConnector {
-  #interfaceReference;
+  #runtimeReference;
 
   #webBTDevice;
   #connection;
@@ -539,10 +534,10 @@ export class SpectodaWebBluetoothConnector {
   #criteria;
   #connectedGuard;
 
-  constructor(interfaceReference) {
+  constructor(runtimeReference) {
     this.type = "webbluetooth";
 
-    this.#interfaceReference = interfaceReference;
+    this.#runtimeReference = runtimeReference;
 
     this.FW_PRE_0_7_SERVICE_UUID = "0000ffe0-0000-1000-8000-00805f9b34fb";
     this.FW_0_7_0_SERVICE_UUID = "60cb125a-0000-0007-0000-5ad20c574c10";
@@ -558,17 +553,17 @@ export class SpectodaWebBluetoothConnector {
     this.DEVICE_CHAR_UUID = "9ebe2e4b-10c7-4a81-ac83-49540d1135a5";
 
     this.#webBTDevice = null;
-    this.#connection = new WebBLEConnection(interfaceReference);
+    this.#connection = new WebBLEConnection(runtimeReference);
     this.#reconection = false;
     this.#criteria = {};
 
     this.#connectedGuard = false;
 
-    this.#interfaceReference.on("#connected", () => {
+    this.#runtimeReference.on("#connected", () => {
       this.#connectedGuard = true;
     });
 
-    this.#interfaceReference.on("#disconnected", () => {
+    this.#runtimeReference.on("#disconnected", () => {
       this.#connectedGuard = false;
     });
   }
@@ -921,7 +916,7 @@ criteria example:
       .then(() => {
         logging.debug("> Bluetooth Device Connected");
         if (!this.#connectedGuard) {
-          this.#interfaceReference.emit("#connected");
+          this.#runtimeReference.emit("#connected");
         }
         return { connector: "webbluetooth" };
       })
@@ -987,7 +982,7 @@ criteria example:
     this.#connection.reset();
     if (this.#connectedGuard) {
       logging.verbose("emitting #disconnected");
-      this.#interfaceReference.emit("#disconnected");
+      this.#runtimeReference.emit("#disconnected");
     }
   };
 
@@ -1088,7 +1083,7 @@ criteria example:
   }
 
   destroy() {
-    //this.#interfaceReference = null; // dont know if I need to destroy this reference.. But I guess I dont need to?
+    //this.#runtimeReference = null; // dont know if I need to destroy this reference.. But I guess I dont need to?
     return this.disconnect()
       .catch(() => {})
       .then(() => {
