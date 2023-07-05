@@ -1,10 +1,10 @@
+import { COMMAND_FLAGS, SpectodaInterfaceLegacy } from "./SpectodaInterfaceLegacy.js";
+import { TnglCodeParser } from "./SpectodaParser.js";
+import { WEBSOCKET_URL } from "./SpectodaWebSocketsConnector.js";
 import { colorToBytes, computeTnglFingerprint, detectSpectodaConnect, hexStringToUint8Array, labelToBytes, numberToBytes, percentageToBytes, sleep, strMacToBytes, stringToBytes } from "./functions";
 import { changeLanguage, t } from "./i18n.js";
 import { io } from "./lib/socketio.js";
 import { logging, setLoggingLevel } from "./logging";
-import { COMMAND_FLAGS, SpectodaInterfaceLegacy } from "./SpectodaInterfaceLegacy.js";
-import { TnglCodeParser } from "./SpectodaParser.js";
-import { WEBSOCKET_URL } from "./SpectodaWebSocketsConnector.js";
 // import { Interface } from "./src/SpectodaInterface.js";
 import { TimeTrack } from "./TimeTrack.js";
 import "./TnglReader.js";
@@ -491,7 +491,8 @@ export class Spectoda {
             if (error_code === 0) {
               logging.info(`Adopted ${device_mac} successfully`);
 
-              return this.rebootAndDisconnectDevice()
+              // return this.rebootAndDisconnectDevice()
+              return Promise.resolve()
                 .catch(e => {
                   logging.error(e);
                 })
