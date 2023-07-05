@@ -111,6 +111,10 @@ export const general = {
     title: "Device already disconnected",
     message: "The device you are trying to disconnect is already disconnected.",
   },
+  PrismaClientKnownRequestError: {
+    title: "Network Error",
+    message: "We could not connect to the server. Please check your internet connection and try again.",
+  },
 } as const;
 
 // Appears when error is not defined above
