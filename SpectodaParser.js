@@ -570,10 +570,16 @@ export class TnglCompiler {
 
   // takes pixels string "12px" and encodes it into 16 bits
   compilePixels(pixels) {
-    let reg = pixels.match(/(-?[\d]+)px/);
+    let reg = pixels.match(/(-?[\d]+|undefined)px/);
     if (!reg) {
       logging.error("Failed to compile pixels");
       return;
+    }
+
+    if (reg[1] === "undefined") {
+      this.#tnglWriter.writeFlag(TNGL_FLAGS.PIXELS);
+      this.#tnglWriter.writeUint16(TNGL_FLAGS.NONE);
+    return;
     }
 
     let count = parseInt(reg[1]);
@@ -1278,7 +1284,7 @@ export class TnglCodeParser {
 
   static #parses = {
     connection: /[\w]+->\[\w*\][\w]+\s*;/,
-    undefined: /undefined/,
+    undefined: /\bundefined\b/,
     var_declaration: /var +[A-Za-z_][\w]* *=/,
     const_declaration: /const +[A-Za-z_][\w]* *=/,
     comment: /\/\/[^\n]*/,
@@ -1290,7 +1296,7 @@ export class TnglCodeParser {
     label: /\$[\w]*/,
     char: /-?'[\W\w]'/,
     byte: /0x[0-9a-f][0-9a-f](?![0-9a-f])/i,
-    pixels: /-?[\d]+px/,
+    pixels: /(-?[\d]+|undefined)px/,
     percentage: /[+-]?[\d.]+%/,
     float: /([+-]?[0-9]*[.][0-9]+)/,
     number: /([+-]?[0-9]+)/,
