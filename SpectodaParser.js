@@ -1285,6 +1285,7 @@ export class TnglCodeParser {
     htmlrgb: /#[0-9a-f]{6}/i,
     infinity: /[+-]?Infinity/,
     string: /"[\w ]*"/,
+    super_string: /`([^`]*)`/s,
     value_address: /&[a-z_][\w]*/i,
     timestamp: /(_?[+-]?[0-9]*[.]?[0-9]+(d|h|m(?!s)|s|t|ms))+/,
     label: /\$[\w]*/,
