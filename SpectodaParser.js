@@ -17,6 +17,7 @@ const CONSTANTS = Object.freeze({
 const TNGL_FLAGS = Object.freeze({
   /* no code or command used by decoder as a validation */
   NONE: 0,
+  UNDEFINED: 0,
 
   // ======================
 
@@ -578,7 +579,7 @@ export class TnglCompiler {
 
     if (reg[1] === "undefined") {
       this.#tnglWriter.writeFlag(TNGL_FLAGS.PIXELS);
-      this.#tnglWriter.writeUint16(TNGL_FLAGS.NONE);
+      this.#tnglWriter.writeUint16(TNGL_FLAGS.UNDEFINED);
     return;
     }
 
