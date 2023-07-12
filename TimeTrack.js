@@ -34,11 +34,14 @@ export class TimeTrack {
 
     this.memory_ = this.paused_ ? current_timestamp : Date.now() - current_timestamp;
     this.eventEmitter_.emit("change", { target: this });
+    // TODO implement event handlers
   }
 
   setMillis(current_timestamp) {
     this.memory_ = this.paused_ ? current_timestamp : Date.now() - current_timestamp;
     this.eventEmitter_.emit("change", { target: this });
+
+    this.eventEmitter_.emit("millis", current_timestamp);
   }
 
   pause() {
@@ -47,6 +50,7 @@ export class TimeTrack {
       this.memory_ = Date.now() - this.memory_;
       this.eventEmitter_.emit("change", { target: this });
     }
+    this.eventEmitter_.emit("pause");
   }
 
   unpause() {
@@ -55,9 +59,14 @@ export class TimeTrack {
       this.memory_ = Date.now() - this.memory_;
       this.eventEmitter_.emit("change", { target: this });
     }
+    this.eventEmitter_.emit("play");
   }
 
   paused() {
     return this.paused_;
+  }
+
+  on() {
+    return this.eventEmitter_.on.apply(this.eventEmitter_, arguments);
   }
 }
