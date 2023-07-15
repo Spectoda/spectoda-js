@@ -1378,7 +1378,7 @@ export class Spectoda {
 
       const removed_device_mac_bytes = reader.readBytes(6);
 
-      return this.rebootAndDisconnectDevice()
+      return this.rebootDevice()
         .catch(() => {})
         .then(() => {
           let removed_device_mac = "00:00:00:00:00:00";
@@ -1765,7 +1765,7 @@ export class Spectoda {
   }
 
   writeOwner(ownerSignature = "00000000000000000000000000000000", ownerKey = "00000000000000000000000000000000") {
-    logging.debug("> Writing owner to device...");
+    logging.debug("> Writing owner to device...", ownerSignature, ownerKey);
 
     const owner_signature_bytes = hexStringToUint8Array(ownerSignature, 16);
     const owner_key_bytes = hexStringToUint8Array(ownerKey, 16);
