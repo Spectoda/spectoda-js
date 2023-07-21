@@ -1176,70 +1176,12 @@ export class TnglCodeParser {
 
     this.#compiler.reset();
 
-    // 1st stage: preprocess the code
+    // 1nd stage: tokenize the code
 
-
-    let processed_tngl_code = tngl_code;
-
-    // ! LET this code be commented out for now
-    // ! maybe it will be useful in the future
-
-    // const regexSEND_TNGL_TO_API = /SEND_TNGL_TO_API\s*\(\s*"([^"]*)"\s*,\s*`([^`]*)`\s*\);/gms;
-    //const regexFETCH_TNGL_FROM_API = /FETCH_TNGL_FROM_API\s*\(\s*"([^"]*)"\s*\);/gms;
-
-
-    // for (let requests = 0; requests < 16; requests++) {
-
-    //   // ! SEND_TNGL_TO_API doesnt make sense to be possible from spectoda-js
-    //   // ! This should be done from studio
-    //   // {
-    //   //   const match = regexSEND_TNGL_TO_API.exec(processed_tngl_code);
-    //   //   if (match) {
-    //   //     logging.debug(match);
-
-    //   //     const name = match[1];
-    //   //     const id = encodeURIComponent(name);
-    //   //     const tngl = match[2];
-
-    //   //     try {
-    //   //       await sendTnglToApi({id, name, tngl});
-    //   //       processed_tngl_code = processed_tngl_code.replace(match[0], "");
-    //   //     } catch (e) {
-    //   //       logging.error(`Failed to send ${name} to TNGL API`);
-    //   //       throw "SendTnglToApiFailed";
-    //   //     }
-
-    //   //   }
-    //   // }
-
-    //   // ! FETCH_TNGL_FROM_API is dangerous and possible full of unexpected behaviour when offline
-    //   {
-    //     const match = regexFETCH_TNGL_FROM_API.exec(processed_tngl_code);
-    //     if (match) {
-    //       logging.debug(match);
-
-    //       const name = match[1];
-    //       const id = encodeURIComponent(name);
-
-    //       try {
-    //         const response = await fetchTnglFromApiById(id);
-    //         processed_tngl_code = processed_tngl_code.replace(match[0], response.tngl);
-    //       } catch (e) {
-    //         logging.error(`Failed to fetch ${name} from TNGL API`);
-    //         throw "FetchTnglFromApiFailed";
-    //       }
-          
-    //     }
-    //   }
-
-    // }
-   
-    // 2nd stage: tokenize the code
-
-    const tokens = this.#tokenize(processed_tngl_code, TnglCodeParser.#parses);
+    const tokens = this.#tokenize(tngl_code, TnglCodeParser.#parses);
     logging.verbose(tokens);
 
-     // 3rd stage: compile the code
+     // 2rd stage: compile the code
 
     for (let index = 0; index < tokens.length; index++) {
       const element = tokens[index];

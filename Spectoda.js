@@ -669,6 +669,76 @@ export class Spectoda {
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+  async preprocessTngl(tngl_code) {
+
+    // 1st stage: preprocess the code
+
+    logging.debug(tngl_code);
+
+    let processed_tngl_code = tngl_code;
+
+    const regexPUBLISH_TNGL_TO_API = /PUBLISH_TNGL_TO_API\s*\(\s*"([^"]*)"\s*,\s*`([^`]*)`\s*\);/gms;
+    const regexINJECT_TNGL_FROM_API = /INJECT_TNGL_FROM_API\s*\(\s*"([^"]*)"\s*\);/gms;
+
+    for (let requests = 0; requests < 16; requests++) {
+
+      {
+        const match = regexPUBLISH_TNGL_TO_API.exec(processed_tngl_code);
+        if (match) {
+          logging.verbose(match);
+
+          const name = match[1];
+          const id = encodeURIComponent(name);
+          const tngl = match[2];
+
+          logging.debug("name", name);
+          logging.debug("id", id);
+          logging.debug("tngl", tngl);
+
+          try {
+            await sendTnglToApi({ id, name, tngl });
+            processed_tngl_code = processed_tngl_code.replace(match[0], "");
+          } catch (e) {
+            logging.error(`Failed to send "${name}" to TNGL API`);
+            throw "SendTnglToApiFailed";
+          }
+
+        }
+      }
+
+      {
+        const match = regexINJECT_TNGL_FROM_API.exec(processed_tngl_code);
+        if (match) {
+          logging.verbose(match);
+
+          const name = match[1];
+          const id = encodeURIComponent(name);
+
+          logging.debug("name", name);
+          logging.debug("id", id);
+
+          try {
+            const response = await fetchTnglFromApiById(id);
+            processed_tngl_code = processed_tngl_code.replace(match[0], response.tngl);
+          } catch (e) {
+            logging.error(`Failed to fetch "${name}" from TNGL API`);
+            throw "FetchTnglFromApiFailed";
+          }
+
+        }
+      }
+
+    }
+
+    // var code = `// Publishing TNGL as "${text_tngl_api_name}":\n/*\n${statements_body}*/\n`;
+    // var code = `// Loaded TNGL "${text_tngl_api_name}": \n ${tnglCodeToInject}\n`;
+
+    logging.debug(processed_tngl_code);
+
+    return processed_tngl_code;
+
+  }
+
   // writes Tngl only if fingerprints does not match
   syncTngl(tngl_code, tngl_bytes = null, tngl_bank = 0) {
     logging.verbose("syncTngl()");
