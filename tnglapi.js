@@ -1,3 +1,14 @@
+const LocalStorageManager = {
+  set: function (key, value) {
+    localStorage.setItem(key, JSON.stringify(value));
+  },
+
+  get: function (key) {
+    const value = localStorage.getItem(key);
+    return value ? JSON.parse(value) : null;
+  },
+};
+
 /**
  * Represents the API response.
  * @typedef {Object} ApiResponse
@@ -20,16 +31,20 @@ async function fetchTnglFromApiById(id) {
 
   try {
     const response = await fetch(url);
-    if (!response.ok) {
-      throw new Error("API request failed");
-    }
-
     const data = await response.json();
+
+    LocalStorageManager.set(`tnglapidata_${id}`, data);
     return data;
   } catch (error) {
     // Handle error case (e.g., network error, API error)
+    const data = LocalStorageManager.get(`tnglapidata_${id}`);
+
+    if (data) {
+      console.warn("Warning:", "You are offline. Using offline emulation.");
+      return data;
+    }
+
     console.error("Error:", error);
-    throw error;
   }
 }
 
@@ -42,6 +57,7 @@ async function fetchTnglFromApiById(id) {
  * @returns {Promise<ApiResponse>} A promise that resolves to the response data.
  * @throws {Error} If the API request fails.
  */
+
 async function sendTnglToApi({ tngl, name, id }) {
   const url = "http://localhost:3000/api/tnglcode";
   const options = {
@@ -52,16 +68,17 @@ async function sendTnglToApi({ tngl, name, id }) {
 
   try {
     const response = await fetch(url, options);
-    if (!response.ok) {
-      throw new Error("API request failed");
-    }
-
     const responseData = await response.json();
+
+    LocalStorageManager.set(`tnglapidata_${id}`, responseData); // save successful response to local storage
     return responseData;
   } catch (error) {
-    // Handle error case (e.g., network error, API error)
+    const data = LocalStorageManager.set(`tnglapidata_${id}`, { tngl, name, id });
+    if (data) {
+      console.warn("Warning:", "You are offline. Using offline emulation.");
+      return data;
+    }
     console.error("Error:", error);
-    throw error;
   }
 }
 

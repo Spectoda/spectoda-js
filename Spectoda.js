@@ -670,7 +670,6 @@ export class Spectoda {
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
   async preprocessTngl(tngl_code) {
-
     // 1st stage: preprocess the code
 
     logging.debug(tngl_code);
@@ -681,7 +680,6 @@ export class Spectoda {
     const regexINJECT_TNGL_FROM_API = /INJECT_TNGL_FROM_API\s*\(\s*"([^"]*)"\s*\);/gms;
 
     for (let requests = 0; requests < 16; requests++) {
-
       {
         const match = regexPUBLISH_TNGL_TO_API.exec(processed_tngl_code);
         if (match) {
@@ -702,7 +700,6 @@ export class Spectoda {
             logging.error(`Failed to send "${name}" to TNGL API`);
             throw "SendTnglToApiFailed";
           }
-
         }
       }
 
@@ -719,15 +716,14 @@ export class Spectoda {
 
           try {
             const response = await fetchTnglFromApiById(id);
+
             processed_tngl_code = processed_tngl_code.replace(match[0], response.tngl);
           } catch (e) {
             logging.error(`Failed to fetch "${name}" from TNGL API`);
             throw "FetchTnglFromApiFailed";
           }
-
         }
       }
-
     }
 
     // var code = `// Publishing TNGL as "${text_tngl_api_name}":\n/*\n${statements_body}*/\n`;
@@ -736,7 +732,6 @@ export class Spectoda {
     logging.debug(processed_tngl_code);
 
     return processed_tngl_code;
-
   }
 
   // writes Tngl only if fingerprints does not match
