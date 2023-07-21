@@ -15,7 +15,7 @@
  * @returns {Promise<ApiResponse>} A promise that resolves to the tngl data.
  * @throws {Error} If the API request fails.
  */
-async function getTnglFromApiById(id) {
+async function fetchTnglFromApiById(id) {
   const url = `http://localhost:3000/api/tnglcode?id=${id}`;
 
   try {
@@ -66,8 +66,8 @@ async function sendTnglToApi({ tngl, name, id }) {
 }
 
 if (typeof window !== "undefined") {
-  window.getTnglFromApiById = getTnglFromApiById;
+  window.fetchTnglFromApiById = fetchTnglFromApiById;
   window.sendTnglToApi = sendTnglToApi;
 }
 
-export { getTnglFromApiById, sendTnglToApi };
+export { fetchTnglFromApiById, sendTnglToApi };
