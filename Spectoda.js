@@ -670,7 +670,6 @@ export class Spectoda {
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
   async preprocessTngl(tngl_code) {
-
     // 1st stage: preprocess the code
 
     // logging.debug(tngl_code);
@@ -731,7 +730,6 @@ export class Spectoda {
     logging.debug(processed_tngl_code);
 
     return processed_tngl_code;
-
   }
 
   // writes Tngl only if fingerprints does not match
