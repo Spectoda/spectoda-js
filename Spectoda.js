@@ -673,61 +673,56 @@ export class Spectoda {
 
     // 1st stage: preprocess the code
 
-    logging.debug(tngl_code);
+    // logging.debug(tngl_code);
 
     let processed_tngl_code = tngl_code;
 
-    const regexPUBLISH_TNGL_TO_API = /PUBLISH_TNGL_TO_API\s*\(\s*"([^"]*)"\s*,\s*`([^`]*)`\s*\);/gms;
-    const regexINJECT_TNGL_FROM_API = /INJECT_TNGL_FROM_API\s*\(\s*"([^"]*)"\s*\);/gms;
+    const regexPUBLISH_TNGL_TO_API = /PUBLISH_TNGL_TO_API\s*\(\s*"([^"]*)"\s*,\s*`([^`]*)`\s*\);?/ms;
+    const regexINJECT_TNGL_FROM_API = /INJECT_TNGL_FROM_API\s*\(\s*"([^"]*)"\s*\);?/ms;
 
-    for (let requests = 0; requests < 16; requests++) {
+    for (let requests = 0; requests < 64; requests++) {
 
-      {
-        const match = regexPUBLISH_TNGL_TO_API.exec(processed_tngl_code);
-        if (match) {
-          logging.verbose(match);
+      const match = regexPUBLISH_TNGL_TO_API.exec(processed_tngl_code);
+      logging.verbose(match);
 
-          const name = match[1];
-          const id = encodeURIComponent(name);
-          const tngl = match[2];
-
-          logging.debug("name", name);
-          logging.debug("id", id);
-          logging.debug("tngl", tngl);
-
-          try {
-            await sendTnglToApi({ id, name, tngl });
-            processed_tngl_code = processed_tngl_code.replace(match[0], "");
-          } catch (e) {
-            logging.error(`Failed to send "${name}" to TNGL API`);
-            throw "SendTnglToApiFailed";
-          }
-
-        }
+      if (!match) {
+        break;
       }
 
-      {
-        const match = regexINJECT_TNGL_FROM_API.exec(processed_tngl_code);
-        if (match) {
-          logging.verbose(match);
+      const name = match[1];
+      const id = encodeURIComponent(name);
+      const tngl = match[2];
 
-          const name = match[1];
-          const id = encodeURIComponent(name);
+      try {
+        logging.debug(`sendTnglToApi({ id=${id}, name=${name}, tngl=${tngl} })`);
+        await sendTnglToApi({ id, name, tngl });
+        processed_tngl_code = processed_tngl_code.replace(match[0], "");
+      } catch (e) {
+        logging.error(`Failed to send "${name}" to TNGL API`);
+        throw "SendTnglToApiFailed";
+      }
+    }
 
-          logging.debug("name", name);
-          logging.debug("id", id);
+    for (let requests = 0; requests < 64; requests++) {
 
-          try {
-            const response = await fetchTnglFromApiById(id);
-            processed_tngl_code = processed_tngl_code.replace(match[0], response.tngl);
-          } catch (e) {
-            logging.error(`Failed to fetch "${name}" from TNGL API`);
-            throw "FetchTnglFromApiFailed";
-          }
+      const match = regexINJECT_TNGL_FROM_API.exec(processed_tngl_code);
+      logging.verbose(match);
 
-        }
+      if (!match) {
+        break;
       }
 
+      const name = match[1];
+      const id = encodeURIComponent(name);
+
+      try {
+        logging.debug(`fetchTnglFromApiById({ id=${id} })`);
+        const response = await fetchTnglFromApiById(id);
+        processed_tngl_code = processed_tngl_code.replace(match[0], response.tngl);
+      } catch (e) {
+        logging.error(`Failed to fetch "${name}" from TNGL API`);
+        throw "FetchTnglFromApiFailed";
+      }
     }
 
     // var code = `// Publishing TNGL as "${text_tngl_api_name}":\n/*\n${statements_body}*/\n`;
@@ -1449,7 +1444,7 @@ export class Spectoda {
       const removed_device_mac_bytes = reader.readBytes(6);
 
       return this.rebootDevice()
-        .catch(() => {})
+        .catch(() => { })
         .then(() => {
           let removed_device_mac = "00:00:00:00:00:00";
           if (removed_device_mac_bytes.length >= 6) {
