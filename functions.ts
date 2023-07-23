@@ -1,7 +1,12 @@
 import { logging, setLoggingLevel } from "./logging";
 import * as n from "nanoevents";
 
-export function toBytes(value, byteCount) {
+export function toBytes(value : number, byteCount : number) {
+
+  if (typeof(value) !== "number" || isNaN(value) || !Number.isFinite(Number(value))) {
+    throw "InvalidValue";
+  }
+
   let number = BigInt(Math.round(value));
   var byteArray: number[] = [];
   for (let index = 0; index < byteCount; index++) {
