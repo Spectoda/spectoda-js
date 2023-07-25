@@ -1546,6 +1546,7 @@ export class Spectoda {
       }
 
       logging.verbose(`fingerprint=${fingerprint}`);
+      logging.verbose(`fingerprint=${Array.from(fingerprint).map(byte => ('0' + (byte & 0xFF).toString(16)).slice(-2)).join(',')}`);
 
       return new Uint8Array(fingerprint);
     });
