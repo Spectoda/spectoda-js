@@ -317,6 +317,7 @@ criteria example:
         this.#run();
 
         return new Promise((resolve, reject) => {
+
           const timeout_handle = setTimeout(() => {
             logging.warn("Connection timeouted");
             this.#beginCallback = null;
@@ -337,11 +338,11 @@ criteria example:
                 const passed = new Date().getTime() - start;
                 resolve(this.connect(timeout - passed));
               }
-            }, 4000);
+            }, 3000);
           };
 
           this.#transmitStreamWriter = this.#transmitStream.getWriter();
-          this.#transmitStreamWriter.write(new Uint8Array(stringToBytes(">>>START<<<\n", 12)));
+          this.#transmitStreamWriter.write(new Uint8Array(stringToBytes(">>>ENABLE_SERIAL<<<\n", 20)));
           this.#transmitStreamWriter.releaseLock();
         });
       })
@@ -494,7 +495,7 @@ criteria example:
         .catch(error => {
           logging.error(error);
           // this.#transmitStreamWriter.releaseLock();
-          // reject(error);
+          reject(error);
         });
     });
   }
@@ -525,14 +526,6 @@ criteria example:
       }
     });
   }
-
-  // #readClock() {
-  //   return this.#read(this.CLOCK);
-  // }
-
-  // #requestDevice(request) {
-  //   return this.#request(this.DEVICE_REQUEST, request);
-  // }
 
   // deliver handles the communication with the Spectoda network in a way
   // that the command is guaranteed to arrive
