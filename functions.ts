@@ -1,9 +1,20 @@
 import { logging, setLoggingLevel } from "./logging";
 import * as n from "nanoevents";
 
-export function toBytes(value : number, byteCount : number) {
+export function toBytes(value: number, byteCount: number) {
 
-  if (typeof(value) !== "number" || isNaN(value) || !Number.isFinite(Number(value))) {
+  if (typeof (value) !== "number") {
+    console.error("Invalid value type: " + value + " (" + typeof (value) + ")");
+    throw "InvalidValue";
+  }
+
+  if (isNaN(value)) {
+    console.error("Invalid NaN value: " + value);
+    throw "InvalidValue";
+  }
+
+  if (!Number.isFinite(Number(value))) {
+    console.error("Invalid not finite type: " + value);
     throw "InvalidValue";
   }
 
@@ -17,7 +28,7 @@ export function toBytes(value : number, byteCount : number) {
   return byteArray;
 }
 
-export function numberToBytes(number_value, byteCount) {
+export function numberToBytes(number_value: number, byteCount: number) {
   return toBytes(number_value, byteCount);
 }
 
