@@ -437,11 +437,13 @@ criteria example:
     const header_writer = new TnglWriter(32);
     const timeout_min = (25 + payload.length / this.#divisor) * 4;
 
-    if (timeout < timeout_min) {
+    if (!timeout || timeout < timeout_min) {
       timeout = timeout_min;
     }
 
-    logging.debug(`timeout=${timeout}`);
+    logging.verbose(`initiate_code=${initiate_code}`);
+    logging.verbose(`payload.length=${payload.length}`);
+    logging.verbose(`timeout=${timeout}`);
 
     header_writer.writeUint32(initiate_code);
     header_writer.writeUint32(payload.length);
