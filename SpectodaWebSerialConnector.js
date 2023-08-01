@@ -436,7 +436,7 @@ criteria example:
     }
 
     const header_writer = new TnglWriter(32);
-    const timeout_min = (25 + payload.length / this.#divisor) * 4;
+    const timeout_min = (25 + payload.length / this.#divisor) * 1;
 
     if (!timeout || timeout < timeout_min) {
       timeout = timeout_min;
@@ -463,7 +463,7 @@ criteria example:
         }
         this.disconnect();
         reject("ResponseTimeout");
-      }, timeout);
+      }, timeout + 100); // +100 for the controller to respond timeout if reveive timeoutes
 
       this.#feedbackCallback = success => {
         this.#feedbackCallback = null;
@@ -477,7 +477,7 @@ criteria example:
           }, 100);
         } else {
           //try to write it once more
-          logging.debug("Trying to recover...");
+          logging.info("Trying to recover...");
           setTimeout(() => {
             if (this.#transmitStreamWriter) {
               this.#transmitStreamWriter.releaseLock();
@@ -620,7 +620,7 @@ criteria example:
           const bytes = await this.#read(this.CHANNEL_CLOCK);
 
           const reader = new TnglReader(bytes);
-          const timestamp = reader.readUint64();
+          const timestamp = reader.readUint64() - 1000;
 
           // const timestamp = await this.#promise;
           logging.debug("Clock read success:", timestamp);
