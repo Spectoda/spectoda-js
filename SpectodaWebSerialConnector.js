@@ -505,7 +505,7 @@ criteria example:
   }
 
   #read(channel_type, timeout) {
-    let response = null;
+    let response = [];
 
     this.#dataCallback = data => {
       response = new DataView(data.buffer);
@@ -522,7 +522,7 @@ criteria example:
       if (read_response) {
         return this.#read(channel_type, timeout);
       } else {
-        return Promise.resolve(null);
+        return Promise.resolve([]);
       }
     });
   }
@@ -569,8 +569,9 @@ criteria example:
       return;
     }
 
+    // TODO make this check on Interface level if its not already
     if (!payload) {
-      return Promise.resolve();
+      return Promise.reject("InvalidPayload");
     }
 
     return this.#request(this.CHANNEL_DEVICE, payload, read_response, timeout);
