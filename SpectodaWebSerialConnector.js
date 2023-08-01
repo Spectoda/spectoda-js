@@ -7,6 +7,8 @@ import { TnglReader } from "./TnglReader.js";
 
 ///////////////////////////////////////////////////////////////////////////////////
 
+const SERIAL_CLOCK_DRIFT = 228;
+
 /**
  * @name LineBreakTransformer
  * TransformStream to parse the stream into lines.
@@ -615,12 +617,12 @@ criteria example:
 
     return new Promise(async (resolve, reject) => {
       for (let index = 0; index < 3; index++) {
-        await sleep(1000);
+
         try {
           const bytes = await this.#read(this.CHANNEL_CLOCK);
 
           const reader = new TnglReader(bytes);
-          const timestamp = reader.readUint64() - 1000;
+          const timestamp = reader.readUint64() + SERIAL_CLOCK_DRIFT;
 
           // const timestamp = await this.#promise;
           logging.debug("Clock read success:", timestamp);
@@ -629,6 +631,8 @@ criteria example:
         } catch (e) {
           logging.warn("Clock read failed:", e);
         }
+
+        await sleep(1000);
       }
 
       reject("ClockReadFailed");
