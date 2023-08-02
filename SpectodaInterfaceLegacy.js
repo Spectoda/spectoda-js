@@ -984,7 +984,7 @@ export class SpectodaInterfaceLegacy {
                   .deliver(data, timeout)
                   .then(() => {
                     try {
-                      this.process(new DataView(data.buffer));
+                      this.process(new DataView(data.buffer), true);
                     } catch (e) {
                       logging.error(e);
                     }
@@ -1098,7 +1098,7 @@ export class SpectodaInterfaceLegacy {
     }
   }
 
-  process(bytecode) {
+  process(bytecode, came_from_this = false) {
     this.emit("wasm_execute", new Uint8Array(bytecode.buffer));
 
     let reader = new TnglReader(bytecode);
@@ -1236,6 +1236,11 @@ export class SpectodaInterfaceLegacy {
 
             const timeline_paused = timeline_flags & PAUSED_FLAG ? true : false;
             logging.verbose(`timeline_paused = ${timeline_paused ? "true" : "false"}`);
+
+            if (came_from_this) {
+              logging.verbose("skipping bytecode timeline update that came from this device");
+              break;
+            }
 
             if (timeline_paused) {
               this.#deviceReference.timeline.pause();

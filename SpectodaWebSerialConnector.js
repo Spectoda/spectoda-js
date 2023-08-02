@@ -7,7 +7,8 @@ import { TnglReader } from "./TnglReader.js";
 
 ///////////////////////////////////////////////////////////////////////////////////
 
-const SERIAL_CLOCK_DRIFT = 228;
+// const SERIAL_CLOCK_DRIFT = 228;
+const SERIAL_CLOCK_DRIFT = 0;
 
 /**
  * @name LineBreakTransformer
