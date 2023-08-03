@@ -86,7 +86,7 @@ export class SpectodaWebSerialConnector {
     this.#receiveStreamReader = null;
     this.#receiveTextDecoderDone = null;
 
-    this.#divisor = 8;
+    this.#divisor = 4;
 
     // this.#beginCallback = null;
     // this.#endCallback = null;
@@ -439,7 +439,7 @@ criteria example:
     }
 
     const header_writer = new TnglWriter(32);
-    const timeout_min = (25 + payload.length / this.#divisor) * 1;
+    const timeout_min = (25 + payload.length / this.#divisor);
 
     if (!timeout || timeout < timeout_min) {
       timeout = timeout_min;
@@ -661,7 +661,7 @@ criteria example:
     return new Promise(async (resolve, reject) => {
       const chunk_size = 3984; // must be modulo 16
 
-      this.#divisor = 32;
+      this.#divisor = 24;
 
       let index_from = 0;
       let index_to = chunk_size;
@@ -742,7 +742,7 @@ criteria example:
         reject("UpdateFailed");
       }
     }).finally(() => {
-      this.#divisor = 8;
+      this.#divisor = 4;
       this.#writing = false;
     });
   }
