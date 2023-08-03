@@ -123,7 +123,9 @@ export class Spectoda {
       if (!this.#updating && this.interface.connector) {
         this.connected().then(connected => {
           if (connected) {
-            this.syncClock().catch(error => {
+            this.syncClock().then(() => {
+              return this.syncTimeline();
+            }).catch(error => {
               logging.warn(error);
             });
           }
