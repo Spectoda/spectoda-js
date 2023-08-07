@@ -493,23 +493,13 @@ export class Spectoda {
             if (error_code === 0) {
               logging.info(`Adopted ${device_mac} successfully`);
 
-              // return this.rebootAndDisconnectDevice()
-              return Promise.resolve()
-                .catch(e => {
-                  logging.error(e);
-                })
-                .then(() => {
-                  // lastnumber = newDeviceName.match(/\d+/)[0];
-                  // lastprefix = newDeviceName.replace(/\d+/g, "");
-
-                  return {
-                    mac: device_mac,
-                    ownerSignature: this.#ownerSignature,
-                    ownerKey: this.#ownerKey,
-                    // name: newDeviceName,
-                    // id: newDeviceId,
-                  };
-                });
+              return {
+                mac: device_mac,
+                ownerSignature: this.#ownerSignature,
+                ownerKey: this.#ownerKey,
+                // name: newDeviceName,
+                // id: newDeviceId,
+              };
             }
 
             if (error_code !== 0) {
