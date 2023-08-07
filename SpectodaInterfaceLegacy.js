@@ -239,8 +239,8 @@ export class SpectodaInterfaceLegacy {
 
     this.#connectedPeers = [];
 
-    this.onConnected = e => {};
-    this.onDisconnected = e => {};
+    this.onConnected = e => { };
+    this.onDisconnected = e => { };
 
     this.#eventEmitter.on("ota_progress", value => {
       const now = new Date().getTime();
@@ -276,42 +276,42 @@ export class SpectodaInterfaceLegacy {
       // @ts-ignore
 
       /** @type {HTMLBodyElement} */ document.querySelector("body").addEventListener("click", function (e) {
-        e.preventDefault();
+      e.preventDefault();
 
-        (function (e, d, w) {
-          if (!e.composedPath) {
-            e.composedPath = function () {
-              if (this.path) {
-                return this.path;
-              }
-              var target = this.target;
-
-              this.path = [];
-              while (target.parentNode !== null) {
-                this.path.push(target);
-                target = target.parentNode;
-              }
-              this.path.push(d, w);
+      (function (e, d, w) {
+        if (!e.composedPath) {
+          e.composedPath = function () {
+            if (this.path) {
               return this.path;
-            };
-          }
-        })(Event.prototype, document, window);
-        // @ts-ignore
-        const path = e.path || (e.composedPath && e.composedPath());
+            }
+            var target = this.target;
 
-        // @ts-ignore
-        for (let el of path) {
-          if (el.tagName === "A" && el.getAttribute("target") === "_blank") {
-            e.preventDefault();
-            const url = el.getAttribute("href");
-            logging.verbose(url);
-            // @ts-ignore
-            logging.debug("Openning external url", url);
-            window.flutter_inappwebview.callHandler("openExternalUrl", url);
-            break;
-          }
+            this.path = [];
+            while (target.parentNode !== null) {
+              this.path.push(target);
+              target = target.parentNode;
+            }
+            this.path.push(d, w);
+            return this.path;
+          };
         }
-      });
+      })(Event.prototype, document, window);
+      // @ts-ignore
+      const path = e.path || (e.composedPath && e.composedPath());
+
+      // @ts-ignore
+      for (let el of path) {
+        if (el.tagName === "A" && el.getAttribute("target") === "_blank") {
+          e.preventDefault();
+          const url = el.getAttribute("href");
+          logging.verbose(url);
+          // @ts-ignore
+          logging.debug("Openning external url", url);
+          window.flutter_inappwebview.callHandler("openExternalUrl", url);
+          break;
+        }
+      }
+    });
     }
 
     window.addEventListener("beforeunload", e => {
@@ -357,7 +357,9 @@ export class SpectodaInterfaceLegacy {
   }
 
   requestWakeLock() {
-    logging.debug("> Activating wakeLock...");
+    logging.verbose("requestWakeLock()");
+    
+    logging.info("> Activating wakeLock...");
     if (detectSpectodaConnect()) {
       return window.flutter_inappwebview.callHandler("setWakeLock", true);
     } else {
@@ -366,7 +368,9 @@ export class SpectodaInterfaceLegacy {
   }
 
   releaseWakeLock() {
-    logging.debug("> Deactivating wakeLock...");
+    logging.verbose("releaseWakeLock()");
+    
+    logging.info("> Deactivating wakeLock...");
     if (detectSpectodaConnect()) {
       return window.flutter_inappwebview.callHandler("setWakeLock", false);
     } else {
@@ -376,6 +380,8 @@ export class SpectodaInterfaceLegacy {
   }
 
   assignConnector(connector_type = "default") {
+    logging.verbose(`assignConnector(connector_type=${connector_type})`);
+
     if (connector_type === null) {
       connector_type = "none";
     }
@@ -402,8 +408,7 @@ export class SpectodaInterfaceLegacy {
       }
     }
 
-    return (this.connector ? this.destroyConnector() : Promise.resolve())
-      .catch(() => {})
+    return this.destroyConnector().catch(() => { })
       .then(() => {
         switch (connector_type) {
           case "none":
@@ -523,7 +528,7 @@ export class SpectodaInterfaceLegacy {
   // }
 
   userSelect(criteria, timeout = 600000) {
-    // this.#reconection = false;
+    logging.verbose(`userSelect(criteria=${JSON.stringify(criteria)}, timeout=${timeout}`);
 
     if (timeout < 1000) {
       logging.error("Timeout is too short.");
@@ -541,8 +546,6 @@ export class SpectodaInterfaceLegacy {
     } else if (!Array.isArray(criteria)) {
       criteria = [criteria];
     }
-
-    logging.debug(`userSelect(criteria=${JSON.stringify(criteria)}, timeout=${timeout}`);
 
     const item = new Query(Query.TYPE_USERSELECT, criteria, timeout);
     this.#process(item);
@@ -553,7 +556,7 @@ export class SpectodaInterfaceLegacy {
   }
 
   autoSelect(criteria, scan_period = 4000, timeout = 10000) {
-    // this.#reconection = false;
+    logging.verbose(`autoSelect(criteria=${JSON.stringify(criteria)}, scan_period=${scan_period}, timeout=${timeout}`);
 
     if (timeout < 1000) {
       logging.error("Timeout is too short.");
@@ -572,8 +575,6 @@ export class SpectodaInterfaceLegacy {
       criteria = [criteria];
     }
 
-    logging.debug(`autoSelect(criteria=${JSON.stringify(criteria)}, scan_period=${scan_period}, timeout=${timeout}`);
-
     const item = new Query(Query.TYPE_AUTOSELECT, criteria, scan_period, timeout);
     this.#process(item);
 
@@ -583,19 +584,23 @@ export class SpectodaInterfaceLegacy {
   }
 
   unselect() {
+    logging.verbose("unselect()");
+
     const item = new Query(Query.TYPE_UNSELECT);
     this.#process(item);
     return item.promise;
   }
 
   selected() {
+    logging.verbose("selected()");
+
     const item = new Query(Query.TYPE_SELECTED);
     this.#process(item);
     return item.promise;
   }
 
   scan(criteria, scan_period = 5000) {
-    // this.#reconection = false;
+    logging.verbose(`scan(criteria=${JSON.stringify(criteria)}, scan_period=${scan_period}`);
 
     if (scan_period < 1000) {
       logging.error("Scan period is too short.");
@@ -622,6 +627,8 @@ export class SpectodaInterfaceLegacy {
   }
 
   connect(timeout = 10000, supportLegacy = false) {
+    logging.verbose(`connect(timeout=${timeout}, supportLegacy=${supportLegacy}`);
+
     if (timeout < 1000) {
       logging.error("Timeout is too short.");
       return Promise.reject("InvalidTimeout");
@@ -806,147 +813,146 @@ export class SpectodaInterfaceLegacy {
       (async () => {
         await sleep(0.001); // short delay to let fill up the queue to merge the execute items if possible
 
+        let item = undefined;
+
         try {
           while (this.#queue.length > 0) {
-            const item = this.#queue.shift();
+            item = this.#queue.shift();
 
             if (this.connector === null || this.connector === undefined) {
-              logging.warn("Trying to do something while connector is not assigned");
               item.reject("ConnectorNotAssigned");
               continue;
             }
 
             switch (item.type) {
-              case Query.TYPE_USERSELECT:
-                // this.#reconection = false;
-                await this.connector
-                  .userSelect(item.a, item.b) // criteria, timeout
-                  .then(device => {
-                    item.resolve(device);
-                  })
-                  .catch(error => {
-                    //logging.warn(error);
-                    item.reject(error);
-                  });
-                break;
+              case Query.TYPE_USERSELECT: {
+                try {
+                  await this.connector
+                    .userSelect(item.a, item.b) // criteria, timeout
+                    .then(device => {
+                      item.resolve(device);
+                    });
+                }
+                catch (error) {
+                  item.reject(error);
+                }
+              } break;
 
-              case Query.TYPE_AUTOSELECT:
-                // this.#reconection = false;
-                await this.connector
-                  .autoSelect(item.a, item.b, item.c) // criteria, scan_period, timeout
-                  .then(device => {
-                    item.resolve(device);
-                  })
-                  .catch(error => {
-                    //logging.warn(error);
-                    item.reject(error);
-                  });
-                break;
+              case Query.TYPE_AUTOSELECT: {
+                try {
+                  await this.connector
+                    .autoSelect(item.a, item.b, item.c) // criteria, scan_period, timeout
+                    .then(device => {
+                      item.resolve(device);
+                    });
+                } catch (error) {
+                  item.reject(error);
+                }
+              } break;
 
-              case Query.TYPE_SELECTED:
-                await this.connector
-                  .selected()
-                  .then(device => {
-                    item.resolve(device);
-                  })
-                  .catch(error => {
-                    //logging.warn(error);
-                    item.reject(error);
-                  });
-                break;
+              case Query.TYPE_SELECTED: {
+                try {
+                  await this.connector
+                    .selected()
+                    .then(device => {
+                      item.resolve(device);
+                    });
+                }
+                catch (error) {
+                  item.reject(error);
+                }
+              } break;
 
-              case Query.TYPE_UNSELECT:
-                // this.#reconection = false;
-                await this.connector
-                  .unselect()
-                  .then(() => {
-                    item.resolve();
-                  })
-                  .catch(error => {
-                    //logging.warn(error);
-                    item.reject(error);
-                  });
-                break;
+              case Query.TYPE_UNSELECT: {
+                try {
+                  await this.connector
+                    .unselect()
+                    .then(() => {
+                      item.resolve();
+                    });
+                }
+                catch (error) {
+                  item.reject(error);
+                }
+              } break;
 
-              case Query.TYPE_SCAN:
-                await this.connector
-                  .scan(item.a, item.b) // criteria, scan_period
-                  .then(device => {
-                    item.resolve(device);
-                  })
-                  .catch(error => {
-                    //logging.warn(error);
-                    item.reject(error);
-                  });
-                break;
+              case Query.TYPE_SCAN: {
+                try {
+                  await this.connector
+                    .scan(item.a, item.b) // criteria, scan_period
+                    .then(device => {
+                      item.resolve(device);
+                    });
+                } catch (error) {
+                  //logging.warn(error);
+                  item.reject(error);
+                }
+              } break;
 
-              case Query.TYPE_CONNECT:
-                // this.#reconection = true;
-                logging.verbose("TYPE_CONNECT begin");
-                await this.connector
-                  .connect(item.a, item.b) // a = timeout, b = supportLegacy
-                  .then(device => {
-                    if (!this.#connectGuard) {
-                      logging.error("Connection logic error. #connected not called during successful connect()?");
-                      logging.warn("Emitting #connected");
-                      this.#eventEmitter.emit("#connected");
-                    }
+              case Query.TYPE_CONNECT: {
+                try {
+                  await this.connector
+                    .connect(item.a, item.b) // a = timeout, b = supportLegacy
+                    .then(device => {
 
-                    return (
-                      this.connector
-                        .getClock()
-                        .then(clock => {
-                          this.clock = clock;
-                          item.resolve(device);
-                        })
-                        // .catch(error => {
-                        //   this.disconnect();
-                        //   logging.warn(error);
-                        //   item.reject(error);
-                        // });
-                        .catch(error => {
-                          logging.error(error);
-                          this.clock = null;
-                          item.resolve(device);
-                        })
-                    );
-                  })
-                  .catch(error => {
-                    this.disconnect();
-                    //logging.warn(error);
-                    item.reject(error);
-                  });
-                break;
+                      if (!this.#connectGuard) {
+                        logging.error("Connection logic error. #connected not called during successful connect()?");
+                        logging.warn("Emitting #connected");
+                        this.#eventEmitter.emit("#connected");
+                      }
 
-              case Query.TYPE_CONNECTED:
-                await this.connector
-                  .connected()
-                  .then(device => {
-                    item.resolve(device);
-                  })
-                  .catch(error => {
-                    //logging.warn(error);
-                    item.reject(error);
-                  });
-                break;
+                      try {
+                        return this.connector
+                          .getClock()
+                          .then(clock => {
+                            this.clock = clock;
+                            item.resolve(device);
+                          });
+                      }
+                      catch (error) {
+                        logging.error(error);
+                        this.clock = null;
+                        item.resolve(device);
+                      }
+                    });
+                }
+                catch (error) {
+                  await this.connector.disconnect();
+                  item.reject(error);
+                }
+              } break;
 
-              case Query.TYPE_DISCONNECT:
-                // this.#reconection = false;
+              case Query.TYPE_CONNECTED: {
+                try {
+                  await this.connector
+                    .connected()
+                    .then(device => {
+                      item.resolve(device);
+                    });
+                } catch (error) {
+                  item.reject(error);
+                }
+              } break;
+
+              case Query.TYPE_DISCONNECT: {
                 this.#disconnectQuery = new Query();
-                await this.connector
-                  .disconnect()
-                  .then(this.#disconnectQuery.promise)
-                  .then(() => {
-                    this.#disconnectQuery = null;
-                    item.resolve();
-                  })
-                  .catch(error => {
-                    //logging.warn(error);
-                    item.reject(error);
-                  });
-                break;
 
-              case Query.TYPE_EXECUTE:
+                try {
+                  await this.connector
+                    .disconnect()
+                    .then(this.#disconnectQuery.promise)
+                    .then(() => {
+                      this.#disconnectQuery = null;
+                      item.resolve();
+                    });
+                }
+                catch (error) {
+                  item.reject(error);
+                }
+
+              } break;
+
+              case Query.TYPE_EXECUTE: {
                 let payload = new Uint8Array(0xffff);
                 let index = 0;
                 const timeout = item.c;
@@ -977,120 +983,129 @@ export class SpectodaInterfaceLegacy {
                 const data = payload.slice(0, index);
 
                 logging.debug("EXECUTE", uint8ArrayToHexString(data));
-
                 this.emit("wasm_execute", data);
 
-                await this.connector
-                  .deliver(data, timeout)
-                  .then(() => {
-                    try {
+                try {
+                  await this.connector
+                    .deliver(data, timeout)
+                    .then(() => {
                       this.process(new DataView(data.buffer), true);
-                    } catch (e) {
-                      logging.error(e);
-                    }
-                    // item.resolve();
-                    executesInPayload.forEach(element => element.resolve());
-                  })
-                  .catch(error => {
-                    //logging.warn(error);
-                    // item.reject(error);
-                    executesInPayload.forEach(element => element.reject(error));
-                  });
-                break;
+                      executesInPayload.forEach(element => element.resolve());
+                    })
+                } catch (error) {
+                  //logging.warn(error);
+                  executesInPayload.forEach(element => element.reject(error));
+                }
 
-              case Query.TYPE_REQUEST:
+              } break;
+
+              case Query.TYPE_REQUEST: {
                 // TODO process in internal Interface
-                // this.process(new DataView(data.buffer)).catch((e)=>{console.error(e)});
 
                 logging.debug("REQUEST", uint8ArrayToHexString(item.a));
-
                 this.emit("wasm_request", item.a);
 
-                await this.connector
-                  .request(item.a, item.b, item.c)
-                  .then(response => {
-                    item.resolve(response);
-                  })
-                  .catch(error => {
-                    logging.warn(error);
-                    item.reject(error);
-                  });
-                break;
+                try {
+                  await this.connector
+                    .request(item.a, item.b, item.c)
+                    .then(response => {
+                      item.resolve(response);
+                    });
+                }
+                catch (error) {
+                  item.reject(error);
+                }
+              } break;
 
-              case Query.TYPE_SET_CLOCK:
+              case Query.TYPE_SET_CLOCK: {
                 this.emit("wasm_clock", item.a.millis());
 
-                await this.connector
-                  .setClock(item.a)
-                  .then(response => {
-                    item.resolve(response);
-                  })
-                  .catch(error => {
-                    //logging.warn(error);
-                    item.reject(error);
-                  });
-                break;
+                try {
+                  await this.connector
+                    .setClock(item.a)
+                    .then(response => {
+                      item.resolve(response);
+                    });
+                } catch (error) {
+                  item.reject(error);
+                }
+              } break;
 
-              case Query.TYPE_GET_CLOCK:
-                await this.connector
-                  .getClock()
-                  .then(clock => {
-                    this.emit("wasm_clock", clock.millis());
+              case Query.TYPE_GET_CLOCK: {
 
-                    item.resolve(clock);
-                  })
-                  .catch(error => {
-                    //logging.warn(error);
-                    item.reject(error);
-                  });
-                break;
+                try {
+                  await this.connector
+                    .getClock()
+                    .then(clock => {
+                      this.emit("wasm_clock", clock.millis());
 
-              case Query.TYPE_FIRMWARE_UPDATE:
+                      item.resolve(clock);
+                    })
+                }
+                catch {
+                  item.reject(error);
+                }
+
+              } break;
+
+              case Query.TYPE_FIRMWARE_UPDATE: {
                 try {
                   await this.requestWakeLock();
-                } catch {}
-                await this.connector
-                  .updateFW(item.a)
-                  .then(response => {
-                    item.resolve(response);
-                  })
-                  .catch(error => {
-                    //logging.warn(error);
-                    item.reject(error);
-                  })
-                  .finally(() => {
-                    this.releaseWakeLock();
-                  });
-                break;
+                } catch { }
 
-              case Query.TYPE_DESTROY:
+                try {
+                  await this.connector
+                    .updateFW(item.a)
+                    .then(response => {
+                      item.resolve(response);
+                    });
+                } catch {
+                  //logging.warn(error);
+                  item.reject(error);
+                }
+
+                try {
+                  this.releaseWakeLock();
+                } catch { }
+
+              } break;
+
+              case Query.TYPE_DESTROY: {
                 // this.#reconection = false;
-                await this.connector
-                  .request([COMMAND_FLAGS.FLAG_DEVICE_DISCONNECT_REQUEST], false)
-                  .catch(() => {})
-                  .then(() => {
-                    return this.connector.disconnect();
-                  })
-                  .then(() => {
-                    return this.connector.destroy();
-                  })
-                  .then(() => {
-                    this.connector = null;
-                    item.resolve();
-                  })
-                  .catch(error => {
-                    //logging.warn(error);
-                    this.connector = null;
-                    item.reject(error);
-                  });
-                break;
+                try {
+                  // await this.connector
+                  //   .request([COMMAND_FLAGS.FLAG_DEVICE_DISCONNECT_REQUEST], false)
+                  //   .catch(() => { })
+                  //   .then(() => {
+                      await this.connector.disconnect();
+                    // })
+                    // .then(() => {
+                      await this.connector.destroy();
+                    // })
 
-              default:
-                break;
+                  // .catch(error => {
+                  //   //logging.warn(error);
+                  //   this.connector = null;
+                  //   item.reject(error);
+                  // });
+
+                } catch(e) {
+                  console.warn("Error while destroying connector:", e);
+
+                } finally {
+                  this.connector = null;
+                  item.resolve();
+                }
+
+              } break;
+
+              default: {
+                logging.error("ERROR");
+              } break;
             }
           }
         } catch (e) {
-          logging.error(e);
+          logging.error("Error while #process", item, ":", e);
         } finally {
           this.#processing = false;
         }
@@ -1099,262 +1114,269 @@ export class SpectodaInterfaceLegacy {
   }
 
   process(bytecode, came_from_this = false) {
-    this.emit("wasm_execute", new Uint8Array(bytecode.buffer));
 
-    let reader = new TnglReader(bytecode);
+    try {
 
-    let utc_timestamp = new Date().getTime();
+      this.emit("wasm_execute", new Uint8Array(bytecode.buffer));
 
-    logging.verbose(reader);
+      let reader = new TnglReader(bytecode);
 
-    let emitted_events = [];
+      let utc_timestamp = new Date().getTime();
 
-    while (reader.available > 0) {
-      switch (reader.peekFlag()) {
-        case COMMAND_FLAGS.FLAG_REINTERPRET_TNGL:
-          {
-            logging.verbose("FLAG_REINTERPRET_TNGL");
-            reader.readFlag(); // COMMAND_FLAGS.FLAG_REINTERPRET_TNGL
+      logging.verbose(reader);
 
-            const clock_ms = reader.readUint48();
-            const uint8_t = reader.readUint8();
-            const tngl_size = reader.readUint32();
-            //const bytecode_offset = reader.position() + offset;
-            reader.forward(tngl_size);
+      let emitted_events = [];
 
-            logging.verbose(`tngl_size=${tngl_size}`);
-            //logging.debug("bytecode_offset=%u", bytecode_offset);
+      while (reader.available > 0) {
+        switch (reader.peekFlag()) {
+          case COMMAND_FLAGS.FLAG_REINTERPRET_TNGL:
+            {
+              logging.verbose("FLAG_REINTERPRET_TNGL");
+              reader.readFlag(); // COMMAND_FLAGS.FLAG_REINTERPRET_TNGL
 
-            // Runtime::feed(reader, bytecode_offset, tngl_size);
-          }
-          break;
+              const clock_ms = reader.readUint48();
+              const uint8_t = reader.readUint8();
+              const tngl_size = reader.readUint32();
+              //const bytecode_offset = reader.position() + offset;
+              reader.forward(tngl_size);
 
-        case COMMAND_FLAGS.FLAG_EMIT_EVENT:
-        case COMMAND_FLAGS.FLAG_EMIT_TIMESTAMP_EVENT:
-        case COMMAND_FLAGS.FLAG_EMIT_COLOR_EVENT:
-        case COMMAND_FLAGS.FLAG_EMIT_PERCENTAGE_EVENT:
-        case COMMAND_FLAGS.FLAG_EMIT_LABEL_EVENT:
-          {
-            // let is_lazy = false;
-            let event_value = null;
-            let event_type = "unknown";
+              logging.verbose(`tngl_size=${tngl_size}`);
+              //logging.debug("bytecode_offset=%u", bytecode_offset);
 
-            let log_value_prefix = "";
-            let log_value_postfix = "";
-
-            switch (reader.readFlag()) {
-              // case COMMAND_FLAGS.FLAG_EMIT_LAZY_EVENT:
-              //   is_lazy = true;
-              case COMMAND_FLAGS.FLAG_EMIT_EVENT:
-                logging.verbose("FLAG_EVENT");
-                event_value = null;
-                event_type = "none";
-                break;
-
-              // case COMMAND_FLAGS.FLAG_EMIT_LAZY_TIMESTAMP_EVENT:
-              //   is_lazy = true;
-              case COMMAND_FLAGS.FLAG_EMIT_TIMESTAMP_EVENT:
-                logging.verbose("FLAG_TIMESTAMP_EVENT");
-                event_value = reader.readInt32();
-                event_type = "timestamp";
-                log_value_postfix = "ms";
-                break;
-
-              // case COMMAND_FLAGS.FLAG_EMIT_LAZY_COLOR_EVENT:
-              //   is_lazy = true;
-              case COMMAND_FLAGS.FLAG_EMIT_COLOR_EVENT:
-                logging.verbose("FLAG_COLOR_EVENT");
-                const bytes = reader.readBytes(3);
-                event_value = rgbToHex(bytes[0], bytes[1], bytes[2]);
-                event_type = "color";
-                break;
-
-              // case COMMAND_FLAGS.FLAG_EMIT_LAZY_PERCENTAGE_EVENT:
-              //   is_lazy = true;
-              case COMMAND_FLAGS.FLAG_EMIT_PERCENTAGE_EVENT:
-                logging.verbose("FLAG_PERCENTAGE_EVENT");
-                event_value = Math.round(mapValue(reader.readInt32(), -268435455, 268435455, -100, 100) * 1000000.0) / 1000000.0;
-                event_type = "percentage";
-                log_value_postfix = "%";
-                break;
-
-              // case COMMAND_FLAGS.FLAG_EMIT_LAZY_LABEL_EVENT:
-              //   is_lazy = true;
-              case COMMAND_FLAGS.FLAG_EMIT_LABEL_EVENT:
-                logging.verbose("FLAG_LABEL_EVENT");
-                event_value = String.fromCharCode(...reader.readBytes(5)).match(/[\w\d_]*/g)[0];
-                event_type = "label";
-                log_value_prefix = "$";
-                break;
-
-              default:
-                // logging.error("ERROR");
-                break;
+              // Runtime::feed(reader, bytecode_offset, tngl_size);
             }
+            break;
 
-            // logging.verbose(`is_lazy = ${is_lazy ? "true" : "false"}`);
-            logging.verbose(`event_value = ${event_value}`);
+          case COMMAND_FLAGS.FLAG_EMIT_EVENT:
+          case COMMAND_FLAGS.FLAG_EMIT_TIMESTAMP_EVENT:
+          case COMMAND_FLAGS.FLAG_EMIT_COLOR_EVENT:
+          case COMMAND_FLAGS.FLAG_EMIT_PERCENTAGE_EVENT:
+          case COMMAND_FLAGS.FLAG_EMIT_LABEL_EVENT:
+            {
+              // let is_lazy = false;
+              let event_value = null;
+              let event_type = "unknown";
 
-            const event_label = String.fromCharCode(...reader.readBytes(5)).match(/[\w\d_]*/g)[0]; // 5 bytes
-            logging.verbose(`event_label = ${event_label}`);
+              let log_value_prefix = "";
+              let log_value_postfix = "";
 
-            const event_timestamp = reader.readUint48(); // 6 bytes in 0.9
-            logging.verbose(`event_timestamp = ${event_timestamp} ms`);
+              switch (reader.readFlag()) {
+                // case COMMAND_FLAGS.FLAG_EMIT_LAZY_EVENT:
+                //   is_lazy = true;
+                case COMMAND_FLAGS.FLAG_EMIT_EVENT:
+                  logging.verbose("FLAG_EVENT");
+                  event_value = null;
+                  event_type = "none";
+                  break;
 
-            const event_device_id = reader.readUint8(); // 1 byte
-            logging.verbose(`event_device_id = ${event_device_id}`);
+                // case COMMAND_FLAGS.FLAG_EMIT_LAZY_TIMESTAMP_EVENT:
+                //   is_lazy = true;
+                case COMMAND_FLAGS.FLAG_EMIT_TIMESTAMP_EVENT:
+                  logging.verbose("FLAG_TIMESTAMP_EVENT");
+                  event_value = reader.readInt32();
+                  event_type = "timestamp";
+                  log_value_postfix = "ms";
+                  break;
 
-            emitted_events.unshift({
-              type: event_type, // The type of the event as string "none", "timestamp", "color", "percentage", "label"
-              value: event_value, // null (type="none"), number (type="timestamp"), string e.g. "#ff00ff" (type="color"), number (type="percentage"), string (type="label")
-              label: event_label, // Label label as a string e.g. "event"
-              timestamp: event_timestamp, // TNGL Network Clock Timestamp as number
-              id: event_device_id, // Event destination ID as number
-              timestamp_utc: utc_timestamp--,
-              info: `${event_device_id.toString().padStart(3)} -> $${event_label}: ${log_value_prefix + event_value + log_value_postfix} [${event_timestamp}ms]`, // debug information
-            });
-          }
-          break;
+                // case COMMAND_FLAGS.FLAG_EMIT_LAZY_COLOR_EVENT:
+                //   is_lazy = true;
+                case COMMAND_FLAGS.FLAG_EMIT_COLOR_EVENT:
+                  logging.verbose("FLAG_COLOR_EVENT");
+                  const bytes = reader.readBytes(3);
+                  event_value = rgbToHex(bytes[0], bytes[1], bytes[2]);
+                  event_type = "color";
+                  break;
 
-        case COMMAND_FLAGS.FLAG_SET_TIMELINE:
-          {
-            logging.verbose("FLAG_SET_TIMELINE");
-            reader.readFlag(); // COMMAND_FLAGS.FLAG_SET_TIMELINE
+                // case COMMAND_FLAGS.FLAG_EMIT_LAZY_PERCENTAGE_EVENT:
+                //   is_lazy = true;
+                case COMMAND_FLAGS.FLAG_EMIT_PERCENTAGE_EVENT:
+                  logging.verbose("FLAG_PERCENTAGE_EVENT");
+                  event_value = Math.round(mapValue(reader.readInt32(), -268435455, 268435455, -100, 100) * 1000000.0) / 1000000.0;
+                  event_type = "percentage";
+                  log_value_postfix = "%";
+                  break;
 
-            const PAUSED_FLAG = 1 << 4;
+                // case COMMAND_FLAGS.FLAG_EMIT_LAZY_LABEL_EVENT:
+                //   is_lazy = true;
+                case COMMAND_FLAGS.FLAG_EMIT_LABEL_EVENT:
+                  logging.verbose("FLAG_LABEL_EVENT");
+                  event_value = String.fromCharCode(...reader.readBytes(5)).match(/[\w\d_]*/g)[0];
+                  event_type = "label";
+                  log_value_prefix = "$";
+                  break;
 
-            // (int32_t) = clock_timestamp
-            // (int32_t) = timeline_timestamp
-            // (uint8_t) = timeline_flags bits: [ Reserved,Reserved,Reserved,PausedFLag,IndexBit3,IndexBit2,IndexBit1,IndexBit0]
+                default:
+                  // logging.error("ERROR");
+                  break;
+              }
 
-            const clock_timestamp = reader.readUint48(); // 6 bytes in 0.9
-            const timeline_timestamp = reader.readInt32();
-            const timeline_flags = reader.readUint8();
-            logging.verbose(`clock_timestamp = ${clock_timestamp} ms`);
-            logging.verbose(`timeline_timestamp = ${timeline_timestamp} ms`);
-            logging.verbose(`timeline_flags = ${timeline_flags}`);
+              // logging.verbose(`is_lazy = ${is_lazy ? "true" : "false"}`);
+              logging.verbose(`event_value = ${event_value}`);
 
-            const timeline_paused = timeline_flags & PAUSED_FLAG ? true : false;
-            logging.verbose(`timeline_paused = ${timeline_paused ? "true" : "false"}`);
+              const event_label = String.fromCharCode(...reader.readBytes(5)).match(/[\w\d_]*/g)[0]; // 5 bytes
+              logging.verbose(`event_label = ${event_label}`);
 
-            if (came_from_this) {
-              logging.verbose("skipping bytecode timeline update that came from this device");
-              break;
+              const event_timestamp = reader.readUint48(); // 6 bytes in 0.9
+              logging.verbose(`event_timestamp = ${event_timestamp} ms`);
+
+              const event_device_id = reader.readUint8(); // 1 byte
+              logging.verbose(`event_device_id = ${event_device_id}`);
+
+              emitted_events.unshift({
+                type: event_type, // The type of the event as string "none", "timestamp", "color", "percentage", "label"
+                value: event_value, // null (type="none"), number (type="timestamp"), string e.g. "#ff00ff" (type="color"), number (type="percentage"), string (type="label")
+                label: event_label, // Label label as a string e.g. "event"
+                timestamp: event_timestamp, // TNGL Network Clock Timestamp as number
+                id: event_device_id, // Event destination ID as number
+                timestamp_utc: utc_timestamp--,
+                info: `${event_device_id.toString().padStart(3)} -> $${event_label}: ${log_value_prefix + event_value + log_value_postfix} [${event_timestamp}ms]`, // debug information
+              });
             }
+            break;
 
-            if (timeline_paused) {
-              this.#deviceReference.timeline.pause();
-              this.#deviceReference.timeline.setMillis(timeline_timestamp);
-            } else {
-              const time_delta = this.clock.millis() - clock_timestamp;
-              const current_timeline_timestamp = timeline_timestamp + time_delta;
+          case COMMAND_FLAGS.FLAG_SET_TIMELINE:
+            {
+              logging.verbose("FLAG_SET_TIMELINE");
+              reader.readFlag(); // COMMAND_FLAGS.FLAG_SET_TIMELINE
 
-              this.#deviceReference.timeline.unpause();
-              this.#deviceReference.timeline.setMillis(current_timeline_timestamp);
+              const PAUSED_FLAG = 1 << 4;
+
+              // (int32_t) = clock_timestamp
+              // (int32_t) = timeline_timestamp
+              // (uint8_t) = timeline_flags bits: [ Reserved,Reserved,Reserved,PausedFLag,IndexBit3,IndexBit2,IndexBit1,IndexBit0]
+
+              const clock_timestamp = reader.readUint48(); // 6 bytes in 0.9
+              const timeline_timestamp = reader.readInt32();
+              const timeline_flags = reader.readUint8();
+              logging.verbose(`clock_timestamp = ${clock_timestamp} ms`);
+              logging.verbose(`timeline_timestamp = ${timeline_timestamp} ms`);
+              logging.verbose(`timeline_flags = ${timeline_flags}`);
+
+              const timeline_paused = timeline_flags & PAUSED_FLAG ? true : false;
+              logging.verbose(`timeline_paused = ${timeline_paused ? "true" : "false"}`);
+
+              if (came_from_this) {
+                logging.verbose("skipping bytecode timeline update that came from this device");
+                break;
+              }
+
+              if (timeline_paused) {
+                this.#deviceReference.timeline.pause();
+                this.#deviceReference.timeline.setMillis(timeline_timestamp);
+              } else {
+                const time_delta = this.clock.millis() - clock_timestamp;
+                const current_timeline_timestamp = timeline_timestamp + time_delta;
+
+                this.#deviceReference.timeline.unpause();
+                this.#deviceReference.timeline.setMillis(current_timeline_timestamp);
+              }
             }
-          }
-          break;
+            break;
 
-        case COMMAND_FLAGS.FLAG_PEER_CONNECTED:
-          {
-            logging.verbose("FLAG_PEER_CONNECTED");
-            reader.readFlag(); // CommandFlag::FLAG_PEER_CONNECTED
+          case COMMAND_FLAGS.FLAG_PEER_CONNECTED:
+            {
+              logging.verbose("FLAG_PEER_CONNECTED");
+              reader.readFlag(); // CommandFlag::FLAG_PEER_CONNECTED
 
-            const device_mac = reader
-              .readBytes(6)
-              .map(v => v.toString(16).padStart(2, "0"))
-              .join(":");
+              const device_mac = reader
+                .readBytes(6)
+                .map(v => v.toString(16).padStart(2, "0"))
+                .join(":");
 
-            if (this.#connectedPeers.includes(device_mac) === false) {
-              this.#connectedPeers.push(device_mac);
-              this.#eventEmitter.emit("peer_connected", device_mac);
+              if (this.#connectedPeers.includes(device_mac) === false) {
+                this.#connectedPeers.push(device_mac);
+                this.#eventEmitter.emit("peer_connected", device_mac);
+              }
             }
-          }
-          break;
+            break;
 
-        case COMMAND_FLAGS.FLAG_PEER_DISCONNECTED:
-          {
-            logging.verbose("FLAG_PEER_DISCONNECTED");
-            reader.readFlag(); // CommandFlag::FLAG_PEER_DISCONNECTED
+          case COMMAND_FLAGS.FLAG_PEER_DISCONNECTED:
+            {
+              logging.verbose("FLAG_PEER_DISCONNECTED");
+              reader.readFlag(); // CommandFlag::FLAG_PEER_DISCONNECTED
 
-            const device_mac = reader
-              .readBytes(6)
-              .map(v => v.toString(16).padStart(2, "0"))
-              .join(":");
+              const device_mac = reader
+                .readBytes(6)
+                .map(v => v.toString(16).padStart(2, "0"))
+                .join(":");
 
-            this.#eventEmitter.emit("peer_disconnected", device_mac);
-          }
-          break;
+              this.#eventEmitter.emit("peer_disconnected", device_mac);
+            }
+            break;
 
-        // // request land
+          // // request land
 
-        case COMMAND_FLAGS.FLAG_OTA_BEGIN:
-          {
-            logging.verbose("FLAG_OTA_BEGIN");
-            reader.readFlag(); // FLAG_OTA_BEGIN
+          case COMMAND_FLAGS.FLAG_OTA_BEGIN:
+            {
+              logging.verbose("FLAG_OTA_BEGIN");
+              reader.readFlag(); // FLAG_OTA_BEGIN
 
-            const header_checksum = reader.readUint8();
-            const header_size = reader.readUint32();
+              const header_checksum = reader.readUint8();
+              const header_size = reader.readUint32();
 
-            // logging.verbose("header_checksum=%u", header_checksum);
-            // logging.verbose("header_size=%u", header_size);
-          }
-          break;
+              // logging.verbose("header_checksum=%u", header_checksum);
+              // logging.verbose("header_size=%u", header_size);
+            }
+            break;
 
-        case COMMAND_FLAGS.FLAG_OTA_WRITE:
-          {
-            logging.verbose("FLAG_OTA_WRITE");
-            reader.readFlag(); // FLAG_OTA_WRITE
+          case COMMAND_FLAGS.FLAG_OTA_WRITE:
+            {
+              logging.verbose("FLAG_OTA_WRITE");
+              reader.readFlag(); // FLAG_OTA_WRITE
 
-            const header_checksum = reader.readUint8();
-            const header_size = reader.readUint32();
+              const header_checksum = reader.readUint8();
+              const header_size = reader.readUint32();
 
+              reader.forward(reader.available);
+
+              // logging.verbose("header_checksum=%u", header_checksum);
+              // logging.verbose("header_size=%u", header_size);
+              // logging.verbose("bytes_size=%u", bytes_size);
+            }
+            break;
+
+          case COMMAND_FLAGS.FLAG_OTA_END:
+            {
+              logging.verbose("FLAG_OTA_END");
+              reader.readFlag(); // FLAG_OTA_END
+
+              const header_checksum = reader.readUint8();
+              const header_size = reader.readUint32();
+
+              // logging.verbose("header_checksum=%u", header_checksum);
+              // logging.verbose("header_size=%u", header_size);
+            }
+            break;
+
+          case COMMAND_FLAGS.FLAG_OTA_RESET:
+            {
+              logging.verbose("FLAG_OTA_RESET");
+              reader.readFlag(); // FLAG_OTA_RESET
+
+              const header_checksum = reader.readUint8();
+              const header_size = reader.readUint32();
+
+              // logging.verbose("header_checksum=%u", header_checksum);
+              // logging.verbose("header_size=%u", header_size);
+            }
+            break;
+
+          default:
+            logging.error(`ERROR flag=${reader.readFlag()}, available=${reader.available}`);
             reader.forward(reader.available);
-
-            // logging.verbose("header_checksum=%u", header_checksum);
-            // logging.verbose("header_size=%u", header_size);
-            // logging.verbose("bytes_size=%u", bytes_size);
-          }
-          break;
-
-        case COMMAND_FLAGS.FLAG_OTA_END:
-          {
-            logging.verbose("FLAG_OTA_END");
-            reader.readFlag(); // FLAG_OTA_END
-
-            const header_checksum = reader.readUint8();
-            const header_size = reader.readUint32();
-
-            // logging.verbose("header_checksum=%u", header_checksum);
-            // logging.verbose("header_size=%u", header_size);
-          }
-          break;
-
-        case COMMAND_FLAGS.FLAG_OTA_RESET:
-          {
-            logging.verbose("FLAG_OTA_RESET");
-            reader.readFlag(); // FLAG_OTA_RESET
-
-            const header_checksum = reader.readUint8();
-            const header_size = reader.readUint32();
-
-            // logging.verbose("header_checksum=%u", header_checksum);
-            // logging.verbose("header_size=%u", header_size);
-          }
-          break;
-
-        default:
-          logging.error(`ERROR flag=${reader.readFlag()}, available=${reader.available}`);
-          reader.forward(reader.available);
-          break;
+            break;
+        }
       }
-    }
 
-    if (emitted_events.length) {
-      this.emit("emitted_events", emitted_events);
+      if (emitted_events.length) {
+        this.emit("emitted_events", emitted_events);
 
-      const informations = emitted_events.map(x => x.info);
-      logging.info(informations.join("\n"));
+        const informations = emitted_events.map(x => x.info);
+        logging.info(informations.join("\n"));
+      }
+
+    } catch (e) {
+      logging.error("Error during process:", e)
     }
   }
 }
