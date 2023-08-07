@@ -615,35 +615,37 @@ export class Spectoda {
         return this.interface.connect();
       })
       .then(connectedDeviceInfo => {
+        logging.info("> Synchronizing Network State...");
         return this.requestTimeline()
           .catch(e => {
             logging.error("Timeline request after reconnection failed.", e);
           })
           .then(() => {
-            return this.readEventHistory().catch(e => {
-              logging.error("History request after reconnection failed.", e);
-            });
+            return this.readEventHistory();
+          })
+          .catch(e => {
+            logging.error("History request after reconnection failed.", e);
           })
           .then(() => {
+            if (this.#getConnectionState() != "connecting") {
+              throw "ConnectionFailed";
+            }
+
             this.#setConnectionState("connected");
             return connectedDeviceInfo;
           });
       })
       .catch(error => {
-        // TODO: tady tento catch by mel dal thrownout error jako ze nepodarilo pripojit.
+
         this.#setConnectionState("disconnected");
 
-        logging.error(error);
+        logging.error("Error during connect():", error);
 
-        if (error === "UserCanceledSelection") {
-          throw "UserCanceledSelection";
+        if (typeof error != "string") {
+          throw "ConnectionFailed";
+        } else {
+          throw error;
         }
-        if (error === "SecurityError") {
-          logging.error(error);
-          return;
-        }
-        //@ts-ignore
-        throw error.toString();
       })
       .finally(() => {
         this.#connecting = false;
