@@ -12,3 +12,5 @@ export const VALUE_TYPE = {
   NULL: 1,
   UNDEFINED: 0,
 } as const;
+
+export const BROADCAST_ID = 255;
