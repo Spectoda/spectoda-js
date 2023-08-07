@@ -345,7 +345,7 @@ export class TnglCompiler {
     }
 
     if (value_address === undefined) {
-      console.error(`Variable ${variable_name} is not declated`);
+      logging.error(`Variable ${variable_name} is not declated`);
       throw "CompilationError";
     }
 

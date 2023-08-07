@@ -4,17 +4,17 @@ import * as n from "nanoevents";
 export function toBytes(value: number, byteCount: number) {
 
   if (typeof (value) !== "number") {
-    console.error("Invalid value type: " + value + " (" + typeof (value) + ")");
+    logging.error("Invalid value type: " + value + " (" + typeof (value) + ")");
     throw "InvalidValue";
   }
 
   if (isNaN(value)) {
-    console.error("Invalid NaN value: " + value);
+    logging.error("Invalid NaN value: " + value);
     throw "InvalidValue";
   }
 
   if (!Number.isFinite(Number(value))) {
-    console.error("Invalid not finite type: " + value);
+    logging.error("Invalid not finite type: " + value);
     throw "InvalidValue";
   }
 
@@ -174,7 +174,7 @@ export function colorToBytes(color_hex_code) {
 
   let reg = color_hex_code.match(/#([0-9a-f][0-9a-f])([0-9a-f][0-9a-f])([0-9a-f][0-9a-f])/i);
   if (!reg) {
-    console.error('Wrong color code: "' + color_hex_code + '"');
+    logging.error('Wrong color code: "' + color_hex_code + '"');
     return [0, 0, 0];
   }
 
@@ -416,7 +416,7 @@ class NoSleep {
         })
         .catch(err => {
           this.enabled = false;
-          console.error(`${err.name}, ${err.message}`);
+          logging.error(`${err.name}, ${err.message}`);
           throw err;
         });
     } else if (oldIOS()) {

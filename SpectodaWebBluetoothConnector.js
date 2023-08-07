@@ -99,7 +99,7 @@ export class WebBLEConnection {
           try {
             await characteristic.writeValueWithResponse(new Uint8Array(payload));
           } catch (e) {
-            logging.warn(e);
+            logging.warn("characteristic.writeValueWithResponse() exception:", e);
             reject(e);
             return;
           }
@@ -210,7 +210,7 @@ export class WebBLEConnection {
             };
           })
           .catch(e => {
-            logging.warn(e);
+            logging.warn("this.#networkChar.startNotifications() exception:", e);
           });
       })
       .catch(e => {
@@ -233,7 +233,7 @@ export class WebBLEConnection {
             };
           })
           .catch(e => {
-            logging.warn(e);
+            logging.warn("this.#clockChar.startNotifications() exception:", e);
           });
       })
       .catch(e => {
@@ -256,7 +256,7 @@ export class WebBLEConnection {
             };
           })
           .catch(e => {
-            logging.warn(e);
+            logging.warn("this.#deviceChar.startNotifications() exception:", e);
           });
       })
       .catch(e => {

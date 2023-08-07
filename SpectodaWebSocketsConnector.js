@@ -53,7 +53,7 @@ export class SpectodaWebSocketsConnector {
     if (this.#selected) {
       if (!this.#connected) {
         const timetou_handle = setTimeout(() => {
-          console.error("WebSockets timeout");
+          logging.error("WebSockets timeout");
           reject("ConnectionFailed");
         }, timeout * 1.5);
 
