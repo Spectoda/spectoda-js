@@ -494,7 +494,7 @@ criteria example:
         this.disconnect().finally(() => {
           reject("ResponseTimeout");
         });
-      }, timeout + 100); // +100 for the controller to respond timeout if reveive timeoutes
+      }, timeout + 250); // +100 for the controller to respond timeout if reveive timeoutes
 
       this.#feedbackCallback = success => {
         this.#feedbackCallback = null;
@@ -507,7 +507,7 @@ criteria example:
               this.#transmitStreamWriter.releaseLock();
             }
             resolve();
-          }, 20); // 20ms equals 2 RTOS ticks to pass to not cause problems
+          }, 100); // 50ms equals 5 RTOS ticks to pass to not cause problems
         }
 
         else {
@@ -522,7 +522,7 @@ criteria example:
             } catch (e) {
               reject(e);
             }
-          }, 50); // 50ms to be safe
+          }, 100); // 100ms to be safe
         }
 
       };
@@ -541,7 +541,7 @@ criteria example:
   }
 
   #write(channel_type, payload, timeout) {
-    return this.#initiate(this.CODE_WRITE + channel_type, payload, 3, timeout);
+    return this.#initiate(this.CODE_WRITE + channel_type, payload, 5, timeout);
   }
 
   #read(channel_type, timeout) {
@@ -552,7 +552,7 @@ criteria example:
       this.#dataCallback = null;
     };
 
-    return this.#initiate(this.CODE_READ + channel_type, null, 3, timeout).then(() => {
+    return this.#initiate(this.CODE_READ + channel_type, null, 5, timeout).then(() => {
       return response;
     });
   }

@@ -1058,7 +1058,7 @@ export class Spectoda {
     return new Promise(async (resolve, reject) => {
       // const chunk_size = detectAndroid() ? 480 : 3984; // must be modulo 16
       // const chunk_size = 992; // must be modulo 16
-      const chunk_size = 480;
+      const chunk_size = detectSpectodaConnect() ? 480 : 3984;
 
       let index_from = 0;
       let index_to = chunk_size;
