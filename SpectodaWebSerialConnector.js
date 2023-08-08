@@ -507,7 +507,7 @@ criteria example:
               this.#transmitStreamWriter.releaseLock();
             }
             resolve();
-          }, 100);
+          }, 20); // 20ms equals 2 RTOS ticks to pass to not cause problems
         }
 
         else {
@@ -522,7 +522,7 @@ criteria example:
             } catch (e) {
               reject(e);
             }
-          }, 100);
+          }, 50); // 50ms to be safe
         }
 
       };
