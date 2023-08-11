@@ -832,8 +832,7 @@ export class SpectodaInterfaceLegacy {
                     .then(device => {
                       item.resolve(device);
                     });
-                }
-                catch (error) {
+                } catch (error) {
                   item.reject(error);
                 }
               } break;
@@ -857,8 +856,7 @@ export class SpectodaInterfaceLegacy {
                     .then(device => {
                       item.resolve(device);
                     });
-                }
-                catch (error) {
+                } catch (error) {
                   item.reject(error);
                 }
               } break;
@@ -870,8 +868,7 @@ export class SpectodaInterfaceLegacy {
                     .then(() => {
                       item.resolve();
                     });
-                }
-                catch (error) {
+                } catch (error) {
                   item.reject(error);
                 }
               } break;
@@ -915,8 +912,7 @@ export class SpectodaInterfaceLegacy {
                         item.resolve(device);
                       }
                     });
-                }
-                catch (error) {
+                } catch (error) {
                   await this.connector.disconnect();
                   item.reject(error);
                 }
@@ -945,8 +941,7 @@ export class SpectodaInterfaceLegacy {
                       this.#disconnectQuery = null;
                       item.resolve();
                     });
-                }
-                catch (error) {
+                } catch (error) {
                   item.reject(error);
                 }
 
@@ -993,7 +988,6 @@ export class SpectodaInterfaceLegacy {
                       executesInPayload.forEach(element => element.resolve());
                     })
                 } catch (error) {
-                  //logging.warn(error);
                   executesInPayload.forEach(element => element.reject(error));
                 }
 
@@ -1011,8 +1005,7 @@ export class SpectodaInterfaceLegacy {
                     .then(response => {
                       item.resolve(response);
                     });
-                }
-                catch (error) {
+                } catch (error) {
                   item.reject(error);
                 }
               } break;
@@ -1038,11 +1031,9 @@ export class SpectodaInterfaceLegacy {
                     .getClock()
                     .then(clock => {
                       this.emit("wasm_clock", clock.millis());
-
                       item.resolve(clock);
                     })
-                }
-                catch {
+                } catch (error) {
                   item.reject(error);
                 }
 
@@ -1059,8 +1050,7 @@ export class SpectodaInterfaceLegacy {
                     .then(response => {
                       item.resolve(response);
                     });
-                } catch {
-                  //logging.warn(error);
+                } catch (error) {
                   item.reject(error);
                 }
 
@@ -1089,9 +1079,8 @@ export class SpectodaInterfaceLegacy {
                   //   item.reject(error);
                   // });
 
-                } catch(e) {
-                  console.warn("Error while destroying connector:", e);
-
+                } catch(error) {
+                  console.warn("Error while destroying connector:", error);
                 } finally {
                   this.connector = null;
                   item.resolve();
