@@ -494,7 +494,7 @@ criteria example:
         this.disconnect().finally(() => {
           reject("ResponseTimeout");
         });
-      }, timeout + 250); // +100 for the controller to respond timeout if reveive timeoutes
+      }, timeout + 250); // +100 for the controller to response timeout if reveive timeoutes
 
       this.#feedbackCallback = success => {
         this.#feedbackCallback = null;
@@ -522,7 +522,7 @@ criteria example:
             } catch (e) {
               reject(e);
             }
-          }, 100); // 100ms to be safe
+          }, 250); // 100ms to be safe
         }
 
       };
@@ -541,7 +541,7 @@ criteria example:
   }
 
   #write(channel_type, payload, timeout) {
-    return this.#initiate(this.CODE_WRITE + channel_type, payload, 5, timeout);
+    return this.#initiate(this.CODE_WRITE + channel_type, payload, 10, timeout);
   }
 
   #read(channel_type, timeout) {
@@ -552,7 +552,7 @@ criteria example:
       this.#dataCallback = null;
     };
 
-    return this.#initiate(this.CODE_READ + channel_type, null, 5, timeout).then(() => {
+    return this.#initiate(this.CODE_READ + channel_type, null, 10, timeout).then(() => {
       return response;
     });
   }
