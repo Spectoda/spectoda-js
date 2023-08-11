@@ -605,15 +605,15 @@ export class Spectoda {
       })
       .then(connectedDeviceInfo => {
         logging.info("> Synchronizing Network State...");
-        return this.requestTimeline()
+        return (this.timeline.paused() ? this.requestTimeline() : this.syncTimeline())
           .catch(e => {
-            logging.error("Timeline request after reconnection failed:", e);
+            logging.error("Timeline sync after reconnection failed:", e);
           })
           .then(() => {
             return this.readEventHistory();
           })
           .catch(e => {
-            logging.error("History request after reconnection failed:", e);
+            logging.error("History sync after reconnection failed:", e);
           })
           .then(() => {
             return this.interface.connected();
