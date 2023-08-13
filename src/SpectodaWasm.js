@@ -1,6 +1,6 @@
 import { logging } from "../logging";
 
-const WASM_VERSION = "DEBUG_0.9.2_20230619";
+const WASM_VERSION = "DEBUG_0.9.2_20230813";
 
 console.log("spectoda-js wasm version " + WASM_VERSION);
 
@@ -48,7 +48,9 @@ function onWasmLoad() {
 
     // Then sync
     FS.syncfs(true, function (err) {
-      logging.error(err);
+      if (err) {
+        logging.error("FS.syncfs error:", err);
+      }
     });
 
     waitingQueue.forEach(wait => {

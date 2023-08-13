@@ -7,6 +7,9 @@ import { TnglReader } from "./TnglReader.js";
 
 ///////////////////////////////////////////////////////////////////////////////////
 
+// const SERIAL_CLOCK_DRIFT = 228;
+const SERIAL_CLOCK_DRIFT = 0;
+
 /**
  * @name LineBreakTransformer
  * TransformStream to parse the stream into lines.
@@ -83,7 +86,7 @@ export class SpectodaWebSerialConnector {
     this.#receiveStreamReader = null;
     this.#receiveTextDecoderDone = null;
 
-    this.#divisor = 8;
+    this.#divisor = 4;
 
     // this.#beginCallback = null;
     // this.#endCallback = null;
@@ -119,65 +122,66 @@ export class SpectodaWebSerialConnector {
     while (true) {
       // try {
       let { value, done } = await this.#receiveStreamReader.read().catch(e => {
-        if (e.toString().includes("break condition")) {
-          logging.warn(e);
 
+        if (e.toString().includes("break condition")) {
+          logging.warn("Error includes break condition", e);
           return { value: null, done: true };
         }
 
-        logging.error(e);
+        logging.error("Error", e);
         return { value: null, done: true };
       });
 
       // logging.debug(value);
 
-      if (value) {
-        value = value.replace(/>>>[\w\d=]*<<</g, (match, $1) => {
-          // logging.warn(match);
+      try {
 
-          if (match === ">>>BEGIN<<<") {
-            this.#beginCallback && this.#beginCallback(true);
-          } else if (match === ">>>END<<<") {
-            this.disconnect();
-          } else if (match === ">>>READY<<<") {
-            this.disconnect();
-            this.#beginCallback && this.#beginCallback(false);
-            this.#feedbackCallback && this.#feedbackCallback(false);
-          } else if (match === ">>>SUCCESS<<<") {
-            this.#feedbackCallback && this.#feedbackCallback(true);
-          } else if (match === ">>>FAIL<<<") {
-            logging.warn(match);
-            this.#feedbackCallback && this.#feedbackCallback(false);
-          } else if (match.match(/>>>DATA=/)) {
-            logging.verbose("match", match);
-            let reg = match.match(/>>>DATA=([0123456789abcdef]*)<<</i); // >>>DATA=ab2351ab90cfe72209999009f08e987a9bcd8dcbbd<<<
-            reg && this.#dataCallback && this.#dataCallback(hexStringToArray(reg[1]));
-          } else if (match.match(/>>>NOTIFY=/)) {
-            logging.verbose("match", match);
-            let reg = match.match(/>>>NOTIFY=([0123456789abcdef]*)<<</i); // >>>NOTIFY=ab2351ab90cfe72209999009f08e987a9bcd8dcbbd<<<
-            reg && this.#interfaceReference.process(new DataView(new Uint8Array(hexStringToArray(reg[1])).buffer));
+        if (value) {
+          value = value.replace(/>>>[\w\d=]*<<</g, async (match) => {
+            // logging.warn(match);
+
+            if (match === ">>>BEGIN<<<") {
+              this.#beginCallback && this.#beginCallback(true);
+            } else if (match === ">>>END<<<") {
+              await this.disconnect();
+            } else if (match === ">>>READY<<<") {
+              await this.disconnect();
+              this.#beginCallback && this.#beginCallback(false);
+              this.#feedbackCallback && this.#feedbackCallback(false);
+            } else if (match === ">>>SUCCESS<<<") {
+              this.#feedbackCallback && this.#feedbackCallback(true);
+            } else if (match === ">>>FAIL<<<") {
+              logging.warn(match);
+              this.#feedbackCallback && this.#feedbackCallback(false);
+            } else if (match.match(/>>>DATA=/)) {
+              logging.verbose("match", match);
+              let reg = match.match(/>>>DATA=([0123456789abcdef]*)<<</i); // >>>DATA=ab2351ab90cfe72209999009f08e987a9bcd8dcbbd<<<
+              reg && this.#dataCallback && this.#dataCallback(hexStringToArray(reg[1]));
+            } else if (match.match(/>>>NOTIFY=/)) {
+              logging.verbose("match", match);
+              let reg = match.match(/>>>NOTIFY=([0123456789abcdef]*)<<</i); // >>>NOTIFY=ab2351ab90cfe72209999009f08e987a9bcd8dcbbd<<<
+              reg && this.#interfaceReference.process(new DataView(new Uint8Array(hexStringToArray(reg[1])).buffer));
+            }
+
+            // Return the replacement leveraging the parameters.
+            return "";
+          });
+
+          if (value.length !== 0) {
+            // logging.verbose(value);
+            this.#interfaceReference.emit("receive", { target: this, payload: value });
           }
-
-          // Return the replacement leveraging the parameters.
-          return "";
-        });
-
-        if (value.length !== 0) {
-          // logging.verbose(value);
-          this.#interfaceReference.emit("receive", { target: this, payload: value });
         }
+
+      } catch (error) {
+        logging.error("Error during #run:", error);
       }
 
       if (done) {
         this.#receiveStreamReader.releaseLock();
-        logging.debug("Reader done");
+        logging.info("Reader DONE");
         break;
       }
-
-      // } catch (e) {
-      //   logging.error(e);
-      //   error = e;
-      // }
     }
 
     if (!this.#disconnecting) {
@@ -225,9 +229,11 @@ criteria example:
   // first bonds the BLE device with the PC/Phone/Tablet if it is needed.
   // Then selects the device
   userSelect(criteria) {
+    logging.verbose("userSelect()");
+
     if (this.#connected) {
       return this.disconnect().then(() => {
-        return this.userSelect(criteria);
+        return this.userSelect();
       });
     }
 
@@ -251,6 +257,8 @@ criteria example:
   // are eligible.
 
   autoSelect(criteria, scan_period, timeout) {
+    logging.verbose("autoSelect()");
+
     // step 1. for the scan_period scan the surroundings for BLE devices.
     // step 2. if some devices matching the criteria are found, then select the one with
     //         the greatest signal strength. If no device is found until the timeout,
@@ -281,15 +289,17 @@ criteria example:
   }
 
   connect(timeout = 15000) {
+    logging.verbose("connect(timeout=" + timeout + ")");
+
     if (timeout <= 0) {
-      logging.debug("> Connect timeout have expired");
-      return Promise.reject("ConnectionFailed");
+      logging.info("> Connect timeout have expired");
+      throw "ConnectionFailed";
     }
 
     const start = new Date().getTime();
 
     if (!this.#serialPort) {
-      return Promise.reject("NotSelected");
+      throw "NotSelected";
     }
 
     if (this.#connected) {
@@ -299,6 +309,10 @@ criteria example:
 
     return this.#serialPort
       .open(this.PORT_OPTIONS)
+      .catch(error => {
+        logging.error(error);
+        throw "OpenSerialError";
+      })
       .then(() => {
         this.#opened = true;
 
@@ -317,39 +331,45 @@ criteria example:
         this.#run();
 
         return new Promise((resolve, reject) => {
+
           const timeout_handle = setTimeout(() => {
-            logging.warn("Connection timeouted");
+            logging.warn("Connection begin timeouted");
             this.#beginCallback = null;
-            reject("ConnectTimeout");
+
+            this.disconnect().finally(() => {
+              reject("ConnectTimeout");
+            });
+
           }, timeout);
 
           this.#beginCallback = result => {
+            logging.info("Connection begin", result ? "sucess" : "error");
+
             clearTimeout(timeout_handle);
             this.#beginCallback = null;
 
-            setTimeout(() => {
-              if (result) {
-                this.#connected = true;
-                logging.debug("> Serial Connector Connected");
-                this.#interfaceReference.emit("#connected");
-                resolve({ connector: this.type });
-              } else {
-                const passed = new Date().getTime() - start;
-                resolve(this.connect(timeout - passed));
-              }
-            }, 4000);
+            if (result) {
+              logging.debug("> Serial Connector Connected");
+              this.#connected = true;
+
+              this.#interfaceReference.emit("#connected");
+              resolve({ connector: this.type });
+            } else {
+              logging.warn("Trying to connect again")
+              const passed = new Date().getTime() - start;
+              resolve(this.connect(timeout - passed));
+            }
+
           };
 
           this.#transmitStreamWriter = this.#transmitStream.getWriter();
-          this.#transmitStreamWriter.write(new Uint8Array(stringToBytes(">>>START<<<\n", 12)));
+          this.#transmitStreamWriter.write(new Uint8Array(stringToBytes(">>>ENABLE_SERIAL<<<\n", 20)));
           this.#transmitStreamWriter.releaseLock();
         });
       })
       .catch(error => {
-        logging.error(error);
-        return this.disconnect().then(() => {
-          throw error;
-        });
+        logging.error("SerialConnector connect() failed with error:", error);
+        throw error;
       });
   }
 
@@ -359,7 +379,7 @@ criteria example:
 
   // disconnect Connector from the connected Spectoda Device. But keep it selected
   async disconnect() {
-    logging.debug("> Closing serial port...");
+    logging.info("> Closing serial port...");
 
     if (!this.#serialPort) {
       logging.debug("No Serial Port selected");
@@ -380,8 +400,8 @@ criteria example:
 
     if (this.#receiveStream) {
       if (this.#receiveStreamReader) {
-        await this.#receiveStreamReader.cancel().catch(() => {});
-        await this.#receiveTextDecoderDone.catch(() => {});
+        await this.#receiveStreamReader.cancel().catch(() => { });
+        await this.#receiveTextDecoderDone.catch(() => { });
         this.#receiveStreamReader = null;
       }
       this.#receiveStream = null;
@@ -389,7 +409,7 @@ criteria example:
 
     if (this.#transmitStream) {
       if (this.#transmitStreamWriter) {
-        await this.#transmitStreamWriter.close().catch(() => {});
+        await this.#transmitStreamWriter.close().catch(() => { });
         this.#transmitStreamWriter = null;
       }
       this.#transmitStream = null;
@@ -426,8 +446,11 @@ criteria example:
   // };
 
   #initiate(initiate_code, payload, tries, timeout) {
+    logging.verbose(`initiate(initiate_code=${initiate_code}, payload=${payload}, tries=${tries}, timeout=${timeout})`);
+
     if (!tries) {
-      return Promise.reject("WriteFailed");
+      logging.warn("No #initiate tryes left");
+      throw "WriteFailed";
     }
 
     if (!payload) {
@@ -435,13 +458,15 @@ criteria example:
     }
 
     const header_writer = new TnglWriter(32);
-    const timeout_min = (25 + payload.length / this.#divisor) * 4;
+    const timeout_min = (25 + payload.length / this.#divisor);
 
-    if (timeout < timeout_min) {
+    if (!timeout || timeout < timeout_min) {
       timeout = timeout_min;
     }
 
-    logging.debug(`timeout=${timeout}`);
+    logging.verbose(`initiate_code=${initiate_code}`);
+    logging.verbose(`payload.length=${payload.length}`);
+    logging.verbose(`timeout=${timeout}`);
 
     header_writer.writeUint32(initiate_code);
     header_writer.writeUint32(payload.length);
@@ -449,39 +474,57 @@ criteria example:
     header_writer.writeUint32(crc32(payload));
     header_writer.writeUint32(crc32(new Uint8Array(header_writer.bytes.buffer)));
 
+    if (!this.#transmitStream) {
+      logging.warn("this.#transmitStream is nullptr");
+      throw "WriteFailed";
+    }
+
     this.#transmitStreamWriter = this.#transmitStream.getWriter();
 
     return new Promise((resolve, reject) => {
+
       const timeout_handle = setTimeout(() => {
-        logging.error("ResponseTimeout");
+        logging.warn("Response timeouted");
         this.#feedbackCallback = null;
+
         if (this.#transmitStreamWriter) {
           this.#transmitStreamWriter.releaseLock();
         }
-        this.disconnect();
-        reject("ResponseTimeout");
-      }, timeout);
+
+        this.disconnect().finally(() => {
+          reject("ResponseTimeout");
+        });
+      }, timeout + 250); // +100 for the controller to response timeout if reveive timeoutes
 
       this.#feedbackCallback = success => {
         this.#feedbackCallback = null;
         clearInterval(timeout_handle);
+
         if (success) {
+          logging.verbose("this.#feedbackCallback SUCESS");
           setTimeout(() => {
             if (this.#transmitStreamWriter) {
               this.#transmitStreamWriter.releaseLock();
             }
             resolve();
-          }, 100);
-        } else {
+          }, 100); // 50ms equals 5 RTOS ticks to pass to not cause problems
+        }
+
+        else {
           //try to write it once more
-          logging.debug("Trying to recover...");
+          logging.verbose("this.#feedbackCallback FAIL");
           setTimeout(() => {
             if (this.#transmitStreamWriter) {
               this.#transmitStreamWriter.releaseLock();
             }
-            resolve(this.#initiate(initiate_code, payload, tries - 1, 0));
-          }, 100);
+            try {
+              resolve(this.#initiate(initiate_code, payload, tries - 1, 0));
+            } catch (e) {
+              reject(e);
+            }
+          }, 250); // 100ms to be safe
         }
+
       };
 
       return this.#transmitStreamWriter
@@ -492,24 +535,24 @@ criteria example:
         .catch(error => {
           logging.error(error);
           // this.#transmitStreamWriter.releaseLock();
-          // reject(error);
+          reject(error);
         });
     });
   }
 
   #write(channel_type, payload, timeout) {
-    return this.#initiate(this.CODE_WRITE + channel_type, payload, 3, timeout);
+    return this.#initiate(this.CODE_WRITE + channel_type, payload, 10, timeout);
   }
 
   #read(channel_type, timeout) {
-    let response = null;
+    let response = [];
 
     this.#dataCallback = data => {
       response = new DataView(data.buffer);
       this.#dataCallback = null;
     };
 
-    return this.#initiate(this.CODE_READ + channel_type, null, 3, timeout).then(() => {
+    return this.#initiate(this.CODE_READ + channel_type, null, 10, timeout).then(() => {
       return response;
     });
   }
@@ -519,18 +562,10 @@ criteria example:
       if (read_response) {
         return this.#read(channel_type, timeout);
       } else {
-        return Promise.resolve(null);
+        return Promise.resolve([]);
       }
     });
   }
-
-  // #readClock() {
-  //   return this.#read(this.CLOCK);
-  // }
-
-  // #requestDevice(request) {
-  //   return this.#request(this.DEVICE_REQUEST, request);
-  // }
 
   // deliver handles the communication with the Spectoda network in a way
   // that the command is guaranteed to arrive
@@ -538,8 +573,7 @@ criteria example:
     // logging.debug(`deliver(payload=${payload})`);
 
     if (!this.#connected) {
-      return Promise.reject("DeviceDisconnected");
-      return;
+      throw "DeviceDisconnected";
     }
 
     if (!payload) {
@@ -555,8 +589,7 @@ criteria example:
     // logging.debug(`transmit(payload=${payload})`);
 
     if (!this.#connected) {
-      return Promise.reject("DeviceDisconnected");
-      return;
+      throw "DeviceDisconnected";
     }
 
     if (!payload) {
@@ -570,12 +603,12 @@ criteria example:
   // is guaranteed to get a response
   request(payload, read_response, timeout) {
     if (!this.#connected) {
-      return Promise.reject("DeviceDisconnected");
-      return;
+      throw "DeviceDisconnected";
     }
 
+    // TODO make this check on Interface level if its not already
     if (!payload) {
-      return Promise.resolve();
+      throw "InvalidPayload";
     }
 
     return this.#request(this.CHANNEL_DEVICE, payload, read_response, timeout);
@@ -587,7 +620,7 @@ criteria example:
     // logging.debug(`setClock(clock.millis()=${clock.millis()})`);
 
     if (!this.#connected) {
-      return Promise.reject("DeviceDisconnected");
+      throw "DeviceDisconnected";
     }
 
     return new Promise(async (resolve, reject) => {
@@ -614,17 +647,17 @@ criteria example:
     // logging.debug(`getClock()`);
 
     if (!this.#connected) {
-      return Promise.reject("DeviceDisconnected");
+      throw "DeviceDisconnected";
     }
 
     return new Promise(async (resolve, reject) => {
       for (let index = 0; index < 3; index++) {
-        await sleep(1000);
+
         try {
           const bytes = await this.#read(this.CHANNEL_CLOCK);
 
           const reader = new TnglReader(bytes);
-          const timestamp = reader.readUint64();
+          const timestamp = reader.readUint64() + SERIAL_CLOCK_DRIFT;
 
           // const timestamp = await this.#promise;
           logging.debug("Clock read success:", timestamp);
@@ -632,7 +665,14 @@ criteria example:
           return;
         } catch (e) {
           logging.warn("Clock read failed:", e);
+
+          if (e == "WriteFailed") {
+            reject("ClockReadFailed");
+            return;
+          }
         }
+
+        await sleep(1000);
       }
 
       reject("ClockReadFailed");
@@ -647,12 +687,12 @@ criteria example:
 
     if (!this.#serialPort) {
       logging.warn("Serial Port is null");
-      return Promise.reject("UpdateFailed");
+      throw "UpdateFailed";
     }
 
     if (this.#writing) {
       logging.warn("Communication in proccess");
-      return Promise.reject("UpdateFailed");
+      throw "UpdateFailed";
     }
 
     this.#writing = true;
@@ -660,7 +700,7 @@ criteria example:
     return new Promise(async (resolve, reject) => {
       const chunk_size = 3984; // must be modulo 16
 
-      this.#divisor = 32;
+      this.#divisor = 24;
 
       let index_from = 0;
       let index_to = chunk_size;
@@ -736,12 +776,12 @@ criteria example:
         this.#interfaceReference.emit("ota_status", "success");
         resolve();
       } catch (e) {
-        logging.error(e);
+        logging.error("Error during OTA:", e);
         this.#interfaceReference.emit("ota_status", "fail");
         reject("UpdateFailed");
       }
     }).finally(() => {
-      this.#divisor = 8;
+      this.#divisor = 4;
       this.#writing = false;
     });
   }
@@ -749,10 +789,10 @@ criteria example:
   destroy() {
     //this.#interfaceReference = null; // dont know if I need to destroy this reference.. But I guess I dont need to?
     return this.disconnect()
-      .catch(() => {})
+      .catch(() => { })
       .then(() => {
         return this.unselect();
       })
-      .catch(() => {});
+      .catch(() => { });
   }
 }

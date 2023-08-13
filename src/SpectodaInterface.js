@@ -160,6 +160,28 @@ export class SpectodaInterface {
           return Module.send_result_t.SEND_OK;
         },
 
+        // _onRequest: () => {
+        //   logging.debug("_onRequest", );
+
+        //   try {
+        //     // dont know how to make Uint8Array in C++ yet. So I am forced to give data out in C++ std::vector
+        //     const commands_bytecode = SpectodaWasm.convertNumberVectorToJSArray(commands_bytecode_vector);
+
+        //     console.log("commands_bytecode", commands_bytecode);
+
+        //     // TODO IMPLEMENT SENDING TO OTHER INTERFACES
+        //   } catch {
+        //     return Module.send_result_t.SEND_ERROR;
+        //   }
+
+        //   return Module.send_result_t.SEND_OK;
+        // },
+
+        _onSynchronize: synchronization_object => {
+
+          console.log("synchronization_object", synchronization_object);
+        },
+
         _handlePeerConnected: peer_mac => {
           logging.debug("_handlePeerConnected", peer_mac);
 

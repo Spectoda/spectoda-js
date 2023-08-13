@@ -4,7 +4,6 @@ import { TimeTrack } from "./TimeTrack.js";
 import { io } from "./lib/socketio.js";
 import { nanoid } from "nanoid";
 
-// const WEBSOCKET_URL = "https://tangle-remote-control.glitch.me/"
 export const WEBSOCKET_URL = "https://ws.host.spectoda.com/";
 /////////////////////////////////////////////////////////////////////////////////////
 
@@ -53,7 +52,7 @@ export class SpectodaWebSocketsConnector {
     if (this.#selected) {
       if (!this.#connected) {
         const timetou_handle = setTimeout(() => {
-          console.error("WebSockets timeout");
+          logging.error("WebSockets timeout");
           reject("ConnectionFailed");
         }, timeout * 1.5);
 
@@ -324,10 +323,10 @@ export class SpectodaWebSocketsConnector {
 
   destroy() {
     return this.disconnect()
-      .catch(() => {})
+      .catch(() => { })
       .then(() => {
         return this.unselect();
       })
-      .catch(() => {});
+      .catch(() => { });
   }
 }

@@ -2,6 +2,10 @@ import { logging } from "./logging";
 import { mapValue, uint8ArrayToHexString, percentageToBytes } from "./functions";
 import { TnglWriter } from "./TnglWriter.js";
 
+import { sendTnglToApi } from "./tnglapi.js";
+import { fetchTnglFromApiById } from "./tnglapi.js";
+
+
 // ! must stay this order VAR_VALUE_ADDRESS_OFFSET < CONST_VALUE_ADDRESS_OFFSET < LET_VALUE_ADDRESS_OFFSET
 const VAR_VALUE_ADDRESS_OFFSET = 0x0000;
 const CONST_VALUE_ADDRESS_OFFSET = 0x4000;
@@ -277,6 +281,11 @@ export class TnglCompiler {
     this.#tnglWriter.writeFlag(TNGL_FLAGS.NONE);
   }
 
+  // // takes template literal string as '`this is a template literal`'
+  // compileTemplateLiteral(template_literal) {
+  //   throw "Not implemented";
+  // }
+
   compileInfinity(infinity) {
     let reg = infinity.match(/([+-]?Infinity)/);
     if (!reg) {
@@ -336,7 +345,7 @@ export class TnglCompiler {
     }
 
     if (value_address === undefined) {
-      console.error(`Variable ${variable_name} is not declated`);
+      logging.error(`Variable ${variable_name} is not declated`);
       throw "CompilationError";
     }
 
@@ -598,7 +607,7 @@ export class TnglCompiler {
 
     this.#const_declarations_stack.push({ name: const_name, address: const_address });
 
-    logging.debug(`DECLARE_VALUE_ADDRESS name=${const_name} address=${const_address}`);
+    logging.verbose(`DECLARE_VALUE_ADDRESS name=${const_name} address=${const_address}`);
     // retrieve the const_address and write the TNGL_FLAGS with uint16_t variable address value.
     this.#tnglWriter.writeFlag(TNGL_FLAGS.DECLARE_VALUE_ADDRESS);
     this.#tnglWriter.writeUint16(const_address);
@@ -618,7 +627,7 @@ export class TnglCompiler {
 
     this.#let_declarations_stack.push({ name: let_name, address: let_address });
 
-    logging.debug(`DECLARE_VALUE_ADDRESS name=${let_name} address=${let_address}`);
+    logging.verbose(`DECLARE_VALUE_ADDRESS name=${let_name} address=${let_address}`);
     // retrieve the let_address and write the TNGL_FLAGS with uint16_t variable address value.
     this.#tnglWriter.writeFlag(TNGL_FLAGS.DECLARE_VALUE_ADDRESS);
     this.#tnglWriter.writeUint16(let_address);
@@ -639,7 +648,7 @@ export class TnglCompiler {
     // insert the var_name into var_name->var_address map
     this.#var_declarations.push({ name: var_name, address: var_address });
 
-    logging.debug(`DECLARE_VALUE_ADDRESS name=${var_name} address=${var_address}`);
+    logging.verbose(`DECLARE_VALUE_ADDRESS name=${var_name} address=${var_address}`);
     // retrieve the var_address and write the TNGL_FLAGS with uint16_t variable address value.
     this.#tnglWriter.writeFlag(TNGL_FLAGS.DECLARE_VALUE_ADDRESS);
     this.#tnglWriter.writeUint16(var_address);
@@ -1042,7 +1051,7 @@ export class TnglCompiler {
         this.#tnglWriter.writeFlag(OBJECT_TYPE.PROVIDER_VEML7700);
         break;
 
-      case "Provider": 
+      case "Provider":
         this.#tnglWriter.writeFlag(OBJECT_TYPE.PROVIDER);
         break;
 
@@ -1062,7 +1071,7 @@ export class TnglCompiler {
         }
 
         if (var_address !== undefined) {
-          logging.debug(`VALUE_READ_ADDRESS name=${word}, address=${var_address}`);
+          logging.verbose(`VALUE_READ_ADDRESS name=${word}, address=${var_address}`);
           this.#tnglWriter.writeFlag(TNGL_FLAGS.VALUE_READ_ADDRESS);
           this.#tnglWriter.writeUint16(var_address);
           break;
@@ -1167,8 +1176,12 @@ export class TnglCodeParser {
 
     this.#compiler.reset();
 
+    // 1nd stage: tokenize the code
+
     const tokens = this.#tokenize(tngl_code, TnglCodeParser.#parses);
     logging.verbose(tokens);
+
+     // 2rd stage: compile the code
 
     for (let index = 0; index < tokens.length; index++) {
       const element = tokens[index];
@@ -1176,6 +1189,11 @@ export class TnglCodeParser {
       // logging.debug(element);
 
       switch (element.type) {
+
+        case "connection":
+          this.#compiler.compileConnection(element.token);
+          break;
+
         case "undefined":
           this.#compiler.compileUndefined();
           break;
@@ -1203,6 +1221,10 @@ export class TnglCodeParser {
         case "string":
           this.#compiler.compileString(element.token);
           break;
+
+        // case "template_literal":
+        //   this.#compiler.compileTemplateLiteral(element.token);
+        //   break;
 
         case "value_address":
           this.#compiler.compileValueAddress(element.token);
@@ -1240,10 +1262,6 @@ export class TnglCodeParser {
           logging.error('"Naked" numbers are not permitted.');
           break;
 
-        // case "arrow":
-        //   // skip
-        //   break;
-
         case "word":
           this.#compiler.compileWord(element.token);
           break;
@@ -1254,10 +1272,6 @@ export class TnglCodeParser {
 
         case "punctuation":
           this.#compiler.compilePunctuation(element.token);
-          break;
-
-        case "connection":
-          this.#compiler.compileConnection(element.token);
           break;
 
         default:
@@ -1285,6 +1299,7 @@ export class TnglCodeParser {
     htmlrgb: /#[0-9a-f]{6}/i,
     infinity: /[+-]?Infinity/,
     string: /"[\w ]*"/,
+    // template_literal: /`([^`]*)`/s,
     value_address: /&[a-z_][\w]*/i,
     timestamp: /(_?[+-]?[0-9]*[.]?[0-9]+(d|h|m(?!s)|s|t|ms))+/,
     label: /\$[\w]*/,
@@ -1294,7 +1309,6 @@ export class TnglCodeParser {
     percentage: /[+-]?[\d.]+%/,
     float: /([+-]?[0-9]*[.][0-9]+)/,
     number: /([+-]?[0-9]+)/,
-    //arrow: /->/,
     word: /[a-z_][\w]*/i,
     whitespace: /\s+/,
     punctuation: /[^\w\s]/,

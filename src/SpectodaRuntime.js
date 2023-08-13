@@ -270,6 +270,8 @@ export class SpectodaRuntime {
   }
 
   assignConnector(connector_type = "default") {
+    logging.verbose(`assignConnector(connector_type=${connector_type})`);
+
     if (connector_type === null) {
       connector_type = "none";
     }
@@ -296,8 +298,7 @@ export class SpectodaRuntime {
       }
     }
 
-    return (this.connector ? this.destroyConnector() : Promise.resolve())
-      .catch(() => { })
+    return this.destroyConnector().catch(() => { })
       .then(() => {
         switch (connector_type) {
           case "none":
@@ -417,6 +418,8 @@ export class SpectodaRuntime {
   }
 
   userSelect(criteria, timeout = 600000) {
+    logging.verbose(`userSelect(criteria=${JSON.stringify(criteria)}, timeout=${timeout}`);
+
     if (timeout < 1000) {
       logging.error("Timeout is too short.");
       return Promise.reject("InvalidTimeout");
@@ -433,8 +436,6 @@ export class SpectodaRuntime {
     } else if (!Array.isArray(criteria)) {
       criteria = [criteria];
     }
-
-    logging.debug(`userSelect(criteria=${JSON.stringify(criteria)}, timeout=${timeout}`);
 
     const item = new Query(Query.TYPE_USERSELECT, criteria, timeout);
     this.#process(item);
@@ -445,6 +446,8 @@ export class SpectodaRuntime {
   }
 
   autoSelect(criteria, scan_period = 4000, timeout = 10000) {
+    logging.verbose(`autoSelect(criteria=${JSON.stringify(criteria)}, scan_period=${scan_period}, timeout=${timeout}`);
+
     if (timeout < 1000) {
       logging.error("Timeout is too short.");
       return Promise.reject("InvalidTimeout");
@@ -462,8 +465,6 @@ export class SpectodaRuntime {
       criteria = [criteria];
     }
 
-    logging.debug(`autoSelect(criteria=${JSON.stringify(criteria)}, scan_period=${scan_period}, timeout=${timeout}`);
-
     const item = new Query(Query.TYPE_AUTOSELECT, criteria, scan_period, timeout);
     this.#process(item);
 
@@ -473,18 +474,24 @@ export class SpectodaRuntime {
   }
 
   unselect() {
+    logging.verbose("unselect()");
+
     const item = new Query(Query.TYPE_UNSELECT);
     this.#process(item);
     return item.promise;
   }
 
   selected() {
+    logging.verbose("selected()");
+
     const item = new Query(Query.TYPE_SELECTED);
     this.#process(item);
     return item.promise;
   }
 
   scan(criteria, scan_period = 5000) {
+    logging.verbose(`scan(criteria=${JSON.stringify(criteria)}, scan_period=${scan_period}`);
+
     if (scan_period < 1000) {
       logging.error("Scan period is too short.");
       return Promise.reject("InvalidScanPeriod");
@@ -510,6 +517,8 @@ export class SpectodaRuntime {
   }
 
   connect(timeout = 10000, supportLegacy = false) {
+    logging.verbose(`connect(timeout=${timeout}, supportLegacy=${supportLegacy}`);
+
     if (timeout < 1000) {
       logging.error("Timeout is too short.");
       return Promise.reject("InvalidTimeout");
@@ -674,145 +683,141 @@ export class SpectodaRuntime {
       (async () => {
         await sleep(0.001); // short delay to let fill up the queue to merge the execute items if possible
 
+        let item = undefined;
+
         try {
           while (this.#queue.length > 0) {
-            const item = this.#queue.shift();
+            item = this.#queue.shift();
 
             if (this.connector === null || this.connector === undefined) {
-              logging.warn("Trying to do something while connector is not assigned");
               item.reject("ConnectorNotAssigned");
               continue;
             }
 
             switch (item.type) {
               case Query.TYPE_USERSELECT: {
-                await this.connector
-                  .userSelect(item.a, item.b) // criteria, timeout
-                  .then(device => {
-                    item.resolve(device);
-                  })
-                  .catch(error => {
-                    //logging.warn(error);
-                    item.reject(error);
-                  });
+                try {
+                  await this.connector
+                    .userSelect(item.a, item.b) // criteria, timeout
+                    .then(device => {
+                      item.resolve(device);
+                    });
+                } catch (error) {
+                  item.reject(error);
+                }
               } break;
 
               case Query.TYPE_AUTOSELECT: {
-                await this.connector
-                  .autoSelect(item.a, item.b, item.c) // criteria, scan_period, timeout
-                  .then(device => {
-                    item.resolve(device);
-                  })
-                  .catch(error => {
-                    //logging.warn(error);
-                    item.reject(error);
-                  });
+                try {
+                  await this.connector
+                    .autoSelect(item.a, item.b, item.c) // criteria, scan_period, timeout
+                    .then(device => {
+                      item.resolve(device);
+                    });
+                } catch (error) {
+                  item.reject(error);
+                }
               } break;
 
               case Query.TYPE_SELECTED: {
-                await this.connector
-                  .selected()
-                  .then(device => {
-                    item.resolve(device);
-                  })
-                  .catch(error => {
-                    //logging.warn(error);
-                    item.reject(error);
-                  });
+                try {
+                  await this.connector
+                    .selected()
+                    .then(device => {
+                      item.resolve(device);
+                    });
+                } catch (error) {
+                  item.reject(error);
+                }
               } break;
 
               case Query.TYPE_UNSELECT: {
-                await this.connector
-                  .unselect()
-                  .then(() => {
-                    item.resolve();
-                  })
-                  .catch(error => {
-                    //logging.warn(error);
-                    item.reject(error);
-                  });
+                try {
+                  await this.connector
+                    .unselect()
+                    .then(() => {
+                      item.resolve();
+                    });
+                } catch (error) {
+                  item.reject(error);
+                }
               } break;
 
               case Query.TYPE_SCAN: {
-                await this.connector
-                  .scan(item.a, item.b) // criteria, scan_period
-                  .then(device => {
-                    item.resolve(device);
-                  })
-                  .catch(error => {
-                    //logging.warn(error);
-                    item.reject(error);
-                  });
+                try {
+                  await this.connector
+                    .scan(item.a, item.b) // criteria, scan_period
+                    .then(device => {
+                      item.resolve(device);
+                    });
+                } catch (error) {
+                  //logging.warn(error);
+                  item.reject(error);
+                }
               } break;
 
               case Query.TYPE_CONNECT: {
-                await this.connector
-                  .connect(item.a, item.b) // a = timeout, b = supportLegacy
-                  .then(device => {
-                    if (!this.#connectGuard) {
-                      logging.error("Connection logic error. #connected not called during successful connect()?");
-                      logging.warn("Emitting #connected");
-                      this.#eventEmitter.emit("#connected");
-                    }
+                try {
+                  await this.connector
+                    .connect(item.a, item.b) // a = timeout, b = supportLegacy
+                    .then(device => {
 
-                    return (
-                      this.connector
-                        .getClock()
-                        .then(clock => {
-                          this.clock = clock;
-                          item.resolve(device);
-                        })
-                        // .catch(error => {
-                        //   this.disconnect();
-                        //   logging.warn(error);
-                        //   item.reject(error);
-                        // });
-                        .catch(error => {
-                          logging.error(error);
-                          this.clock = null;
-                          item.resolve(device);
-                        })
-                    );
-                  })
-                  .catch(error => {
-                    this.disconnect();
-                    //logging.warn(error);
-                    item.reject(error);
-                  });
+                      if (!this.#connectGuard) {
+                        logging.error("Connection logic error. #connected not called during successful connect()?");
+                        logging.warn("Emitting #connected");
+                        this.#eventEmitter.emit("#connected");
+                      }
+
+                      try {
+                        return this.connector
+                          .getClock()
+                          .then(clock => {
+                            this.clock = clock;
+                            item.resolve(device);
+                          });
+                      }
+                      catch (error) {
+                        logging.error(error);
+                        this.clock = null;
+                        item.resolve(device);
+                      }
+                    });
+                } catch (error) {
+                  await this.connector.disconnect();
+                  item.reject(error);
+                }
               } break;
 
               case Query.TYPE_CONNECTED: {
-                await this.connector
-                  .connected()
-                  .then(device => {
-                    item.resolve(device);
-                  })
-                  .catch(error => {
-                    //logging.warn(error);
-                    item.reject(error);
-                  });
+                try {
+                  await this.connector
+                    .connected()
+                    .then(device => {
+                      item.resolve(device);
+                    });
+                } catch (error) {
+                  item.reject(error);
+                }
               } break;
 
               case Query.TYPE_DISCONNECT: {
-                logging.verbose("TYPE_DISCONNECT");
-
                 this.#disconnectQuery = new Query();
-                await this.connector
-                  .disconnect()
-                  .then(this.#disconnectQuery.promise)
-                  .then(() => {
-                    this.#disconnectQuery = null;
-                    item.resolve();
-                  })
-                  .catch(error => {
-                    //logging.warn(error);
-                    item.reject(error);
-                  });
+
+                try {
+                  await this.connector
+                    .disconnect()
+                    .then(this.#disconnectQuery.promise)
+                    .then(() => {
+                      this.#disconnectQuery = null;
+                      item.resolve();
+                    });
+                } catch (error) {
+                  item.reject(error);
+                }
+
               } break;
 
               case Query.TYPE_EXECUTE: {
-                logging.verbose("EXECUTE", item);
-
                 let payload = new Uint8Array(0xffff);
                 let index = 0;
 
@@ -842,128 +847,125 @@ export class SpectodaRuntime {
                 const data = payload.slice(0, index);
                 const timeout = item.c;
 
+                logging.debug("EXECUTE", uint8ArrayToHexString(data));
                 this.emit("wasm_execute", data);
                 this.interface.execute(data, undefined);
 
-                await this.connector
-                  .deliver(data, timeout)
-                  .then(() => {
-                    // try {
-                    //   this.process(new DataView(data.buffer));
-                    // } catch (e) {
-                    //   logging.error(e);
-                    // }
-                    executesInPayload.forEach(element => element.resolve());
-                  })
-                  .catch(error => {
-                    //logging.warn(error);
-                    executesInPayload.forEach(element => element.reject(error));
-                  });
+                try {
+                  await this.connector
+                    .deliver(data, timeout)
+                    .then(() => {
+                      this.process(new DataView(data.buffer), true);
+                      executesInPayload.forEach(element => element.resolve());
+                    })
+                } catch (error) {
+                  executesInPayload.forEach(element => element.reject(error));
+                }
+
               } break;
 
               case Query.TYPE_REQUEST: {
-                logging.verbose("REQUEST", item);
+                // TODO process in internal Interface
 
-                const bytes = item.a;
-                const read_response = item.b;
-                const timeout = item.c;
+                logging.debug("REQUEST", uint8ArrayToHexString(item.a));
+                this.emit("wasm_request", item.a);
 
-                this.emit("wasm_request", bytes);
-
-                await this.connector
-                  .request(bytes, read_response, timeout)
-                  .then(response => {
-                    item.resolve(response);
-                  })
-                  .catch(error => {
-                    logging.warn(error);
-                    item.reject(error);
-                  });
+                try {
+                  await this.connector
+                    .request(item.a, item.b, item.c)
+                    .then(response => {
+                      item.resolve(response);
+                    });
+                } catch (error) {
+                  item.reject(error);
+                }
               } break;
 
               case Query.TYPE_SET_CLOCK: {
-                logging.verbose("SET_CLOCK", item);
+                this.emit("wasm_clock", item.a.millis());
 
-                const clock = item.a;
-                const timestamp = clock.millis();
-
-                this.emit("wasm_clock", timestamp);
-                this.interface.setClock(timestamp);
-                this.clock = clock;
-
-                await this.connector
-                  .setClock(clock)
-                  .then(response => {
-                    item.resolve(response);
-                  })
-                  .catch(error => {
-                    //logging.warn(error);
-                    item.reject(error);
-                  });
+                try {
+                  await this.connector
+                    .setClock(item.a)
+                    .then(response => {
+                      item.resolve(response);
+                    });
+                } catch (error) {
+                  item.reject(error);
+                }
               } break;
 
               case Query.TYPE_GET_CLOCK: {
-                logging.verbose("GET_CLOCK", item);
 
-                await this.connector
-                  .getClock()
-                  .then(clock => {
-                    const timestamp = clock.millis();
-                    this.emit("wasm_clock", timestamp);
-                    this.interface.setClock(timestamp);
-                    this.clock = clock;
+                try {
+                  await this.connector
+                    .getClock()
+                    .then(clock => {
+                      this.emit("wasm_clock", clock.millis());
+                      item.resolve(clock);
+                    })
+                } catch (error) {
+                  item.reject(error);
+                }
 
-                    item.resolve(clock);
-                  })
-                  .catch(error => {
-                    //logging.warn(error);
-                    item.reject(error);
-                  });
               } break;
 
               case Query.TYPE_FIRMWARE_UPDATE: {
-                logging.verbose("FIRMWARE_UPDATE", item);
+                try {
+                  await this.requestWakeLock();
+                } catch { }
 
-                await this.connector
-                  .updateFW(item.a)
-                  .then(response => {
-                    item.resolve(response);
-                  })
-                  .catch(error => {
-                    //logging.warn(error);
-                    item.reject(error);
-                  });
+                try {
+                  await this.connector
+                    .updateFW(item.a)
+                    .then(response => {
+                      item.resolve(response);
+                    });
+                } catch (error) {
+                  item.reject(error);
+                }
+
+                try {
+                  this.releaseWakeLock();
+                } catch { }
+
               } break;
 
               case Query.TYPE_DESTROY: {
-                await this.connector
-                  // .request([COMMAND_FLAGS.FLAG_DEVICE_DISCONNECT_REQUEST], false)
-                  // .catch(() => {})
-                  // .then(() => {
-                  //   return this.connector.disconnect();
+                // this.#reconection = false;
+                try {
+                  // await this.connector
+                  //   .request([COMMAND_FLAGS.FLAG_DEVICE_DISCONNECT_REQUEST], false)
+                  //   .catch(() => { })
+                  //   .then(() => {
+                  await this.connector.disconnect();
                   // })
-                  .disconnect() // TODO make this forced disconnect
-                  .then(() => {
-                    return this.connector.destroy();
-                  })
-                  .then(() => {
-                    this.connector = null;
-                    item.resolve();
-                  })
-                  .catch(error => {
-                    //logging.warn(error);
-                    this.connector = null;
-                    item.reject(error);
-                  });
+                  // .then(() => {
+                  await this.connector.destroy();
+                  // })
+
+                  // .catch(error => {
+                  //   //logging.warn(error);
+                  //   this.connector = null;
+                  //   item.reject(error);
+                  // });
+
+                } catch (error) {
+                  console.warn("Error while destroying connector:", error);
+                } finally {
+                  this.connector = null;
+                  item.resolve();
+                }
+
               } break;
 
               default: {
-                throw new Error("UnknownQueryType");
+                logging.error("ERROR");
               } break;
             }
           }
         } catch (e) {
-          logging.error(e);
+          logging.error("Error while #process", item, ":", e);
         } finally {
           this.#processing = false;
         }

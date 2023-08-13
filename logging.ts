@@ -10,18 +10,20 @@ export var logging = {
   warn: console.warn,
   info: console.log,
   debug: console.log,
-  verbose: function (...msg : any) {},
+  // verbose: function (...msg: any) { },
+  verbose: console.log,
 };
 
-export function setLoggingLevel(level : number) {
-  logging.error = level >= 1 ? console.error : function (...msg) {};
-  logging.warn = level >= 2 ? console.warn : function (...msg) {};
-  logging.info = level >= 3 ? console.log : function (...msg) {};
-  logging.debug = level >= 4 ? console.log : function (...msg) {};
-  logging.verbose = level >= 5 ? console.log : function (...msg) {};
+export function setLoggingLevel(level: number) {
+  console.warn("SETTING DEBUG LEVEL TO:", level);
+  logging.error = level >= 1 ? console.error : function (...msg) { };
+  logging.warn = level >= 2 ? console.warn : function (...msg) { };
+  logging.info = level >= 3 ? console.log : function (...msg) { };
+  logging.debug = level >= 4 ? console.log : function (...msg) { };
+  logging.verbose = level >= 5 ? console.log : function (...msg) { };
 }
 
-export function routeLoggingElswhere(funcn : any) {
+export function routeLoggingElswhere(funcn: any) {
   logging.error = funcn;
   logging.warn = funcn;
   logging.info = funcn;
