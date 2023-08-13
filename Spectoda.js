@@ -23,6 +23,8 @@ let lastEvents = {};
 // TODO - "watchdog timer" pro resolve/reject z TC
 
 export class Spectoda {
+  #parser;
+
   #uuidCounter;
   #ownerSignature;
   #ownerKey;
@@ -43,6 +45,8 @@ export class Spectoda {
     if (typeof window === "undefined") {
       return;
     }
+
+    this.#parser = new TnglCodeParser();
 
     this.timeline = new TimeTrack(0, true);
 
@@ -696,11 +700,11 @@ export class Spectoda {
     for (let requests = 0; requests < 64; requests++) {
 
       const match = regexPUBLISH_TNGL_TO_API.exec(processed_tngl_code);
-      logging.verbose(match);
-
       if (!match) {
         break;
       }
+
+      logging.verbose(match);
 
       const name = match[1];
       const id = encodeURIComponent(name);
@@ -719,11 +723,11 @@ export class Spectoda {
     for (let requests = 0; requests < 64; requests++) {
 
       const match = regexINJECT_TNGL_FROM_API.exec(processed_tngl_code);
-      logging.verbose(match);
-
       if (!match) {
         break;
       }
+
+      logging.verbose(match);
 
       const name = match[1];
       const id = encodeURIComponent(name);
@@ -755,7 +759,7 @@ export class Spectoda {
     }
 
     if (tngl_bytes === null) {
-      tngl_bytes = new TnglCodeParser().parseTnglCode(tngl_code);
+      tngl_bytes = this.#parser.parseTnglCode(tngl_code);
     }
 
     return this.getTnglFingerprint(tngl_bank).then(device_fingerprint => {
@@ -784,8 +788,7 @@ export class Spectoda {
     }
 
     if (tngl_bytes === null) {
-      const parser = new TnglCodeParser();
-      tngl_bytes = parser.parseTnglCode(tngl_code);
+      tngl_bytes = this.#parser.parseTnglCode(tngl_code);
     }
 
     const timeline_flags = this.timeline.paused() ? 0b00010000 : 0b00000000; // flags: [reserved,reserved,reserved,timeline_paused,reserved,reserved,reserved,reserved]
@@ -1760,6 +1763,8 @@ export class Spectoda {
         throw "InvalidResponseUuid";
       }
 
+      const error_code = reader.readUint8();
+
       logging.verbose(`error_code=${error_code}`);
 
       if (error_code === 0) {
@@ -1769,7 +1774,7 @@ export class Spectoda {
         const historic_events_bytecode = reader.readBytes(historic_events_bytecode_size);
         logging.verbose(`historic_events_bytecode=[${historic_events_bytecode}]`);
 
-        this.runtime.process(new DataView(new Uint8Array(historic_events_bytecode).buffer));
+        this.runtime.evaluate(new Uint8Array(historic_events_bytecode), 0x01);
       } else {
         throw "Fail";
       }
@@ -1985,4 +1990,36 @@ export class Spectoda {
       return name;
     });
   }
+
+  readVariable(variable_name, device_id) {
+    logging.debug("> Reading variable...");
+
+    const variable_declarations = this.#parser.getVariableDeclarations();
+    logging.debug(`variable_declarations=`, variable_declarations);
+
+    let variable_address = undefined;
+
+    // check if the variable is already declared
+    // look for the latest variable address on the stack
+    for (let i = 0; i < variable_declarations.length; i++) {
+      const declaration = variable_declarations[i];
+      if (declaration.name === variable_name) {
+        variable_address = declaration.address;
+        break;
+      }
+    }
+
+    if (variable_address === undefined) {
+      throw "VariableNotFound";
+    }
+
+    return this.runtime.readVariableAddress(variable_address, device_id);
+  }
+
+  readVariableAddress(variable_address, device_id) {
+    logging.debug("> Reading variable address...");
+
+    return this.runtime.readVariableAddress(variable_address, device_id);
+  }
+
 }

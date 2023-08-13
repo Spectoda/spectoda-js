@@ -152,7 +152,7 @@ export class WebBLEConnection {
   #onNetworkNotification(event) {
     logging.verbose("#onNetworkNotification", event);
 
-    this.#runtimeReference.interface.processExecute(new Uint8Array(event.target.value.buffer), 0x01);
+    this.#runtimeReference.interface.execute(new Uint8Array(event.target.value.buffer), 0x01);
   }
 
   // WIP
@@ -168,7 +168,7 @@ export class WebBLEConnection {
     // this.#runtimeReference.process(event.target.value);
 
     // TODO process request
-    this.#runtimeReference.interface.processRequest(new Uint8Array(event.target.value.buffer), 0x01);
+    // this.#runtimeReference.interface.request(new Uint8Array(event.target.value.buffer), 0x01);
   }
 
   // WIP
@@ -183,8 +183,11 @@ export class WebBLEConnection {
     // logging.debug("> " + a.join(" "));
     // this.#runtimeReference.process(event.target.value);
 
+    let reader = new TnglReader(new DataView(new Uint8Array(event.target.value.buffer).buffer));
+    const timestamp = reader.readUint64();
+
     // TODO process synchronize
-    this.#runtimeReference.interface.processSynchronize(new Uint8Array(event.target.value.buffer), 0x01);
+    this.#runtimeReference.interface.synchronize(timestamp, 0x01);
   }
 
   attach(service, networkUUID, clockUUID, deviceUUID) {
@@ -1085,10 +1088,10 @@ criteria example:
   destroy() {
     //this.#runtimeReference = null; // dont know if I need to destroy this reference.. But I guess I dont need to?
     return this.disconnect()
-      .catch(() => {})
+      .catch(() => { })
       .then(() => {
         return this.unselect();
       })
-      .catch(() => {});
+      .catch(() => { });
   }
 }

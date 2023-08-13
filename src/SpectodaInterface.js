@@ -124,6 +124,7 @@ export class SpectodaInterface {
     }
 
     return SpectodaWasm.waitForInitilize().then(() => {
+
       const WasmInterfaceImplementation = {
         /* Constructor function is optional */
         // __construct: function () {
@@ -138,9 +139,12 @@ export class SpectodaInterface {
         _handle: event_array => {
           logging.debug("_handle", event_array);
 
-          this.#runtimeReference.emit("emitted_events", event_array);
+          for (let i = 0; i < event_array.length; i++) {
+            event_array[i].timestamp_utc = Date.now();
+          }
 
-          return undefined;
+
+          this.#runtimeReference.emit("emitted_events", event_array);
         },
 
         _onExecute: (commands_bytecode_vector, source_connection) => {
@@ -150,9 +154,9 @@ export class SpectodaInterface {
             // dont know how to make Uint8Array in C++ yet. So I am forced to give data out in C++ std::vector
             const commands_bytecode = SpectodaWasm.convertNumberVectorToJSArray(commands_bytecode_vector);
 
-            console.log("commands_bytecode", commands_bytecode);
-
             // TODO IMPLEMENT SENDING TO OTHER INTERFACES
+
+
           } catch {
             return Module.send_result_t.SEND_ERROR;
           }
@@ -178,8 +182,8 @@ export class SpectodaInterface {
         // },
 
         _onSynchronize: synchronization_object => {
+          logging.debug("_onSynchronize", synchronization_object);
 
-          console.log("synchronization_object", synchronization_object);
         },
 
         _handlePeerConnected: peer_mac => {
@@ -216,9 +220,9 @@ export class SpectodaInterface {
       throw "AlreadyDestructed";
     }
 
-    this.#instance.end(); // end the spectoda stuff
+    this.#instance.end();    // end the spectoda stuff
     this.#instance.delete(); // delete (free) C++ object
-    this.#instance = null; // remove javascript reference
+    this.#instance = null;   // remove javascript reference
   }
 
   /**
@@ -259,40 +263,15 @@ export class SpectodaInterface {
 
   /**
    * @param {Uint8Array} execute_bytecode
-   * @param {undefined | number} connection_handle
+   * @param {number} source_connection
    * @return {}
    */
-  execute(execute_bytecode, connection_handle) {
+  execute(execute_bytecode, source_connection) {
     if (!this.#instance) {
       throw "NotConstructed";
     }
 
-    if (connection_handle === undefined) {
-      connection_handle = 0;
-    }
-
-    const evaluate_result = this.#instance.execute(Emval.toHandle(execute_bytecode), connection_handle);
-
-    if (evaluate_result != SpectodaWasm.evaluate_result_t.COMMAND_SUCCESS) {
-      throw "EvaluateError";
-    }
-  }
-
-  /**
-   * @param {Uint8Array} execute_bytecode
-   * @param {undefined | number} connection_handle
-   * @return {}
-   */
-  processExecute(execute_bytecode, connection_handle) {
-    if (!this.#instance) {
-      throw "NotConstructed";
-    }
-
-    if (connection_handle === undefined) {
-      connection_handle = 0;
-    }
-
-    const evaluate_result = this.#instance.execute(Emval.toHandle(execute_bytecode), connection_handle);
+    const evaluate_result = this.#instance.execute(Emval.toHandle(execute_bytecode), source_connection);
 
     if (evaluate_result != SpectodaWasm.evaluate_result_t.COMMAND_SUCCESS) {
       throw "EvaluateError";
@@ -302,82 +281,46 @@ export class SpectodaInterface {
   /**
    * If request_evaluate_result is not SUCCESS the promise is rejected with an exception
    * @param {Uint8Array} request_bytecode
-   * @param {undefined | number} connection_handle
+   * @param {number} source_connection
    * @return {Uint8Array}
    */
-  request(request_bytecode, connection_handle) {
+  request(request_bytecode, source_connection) {
     if (!this.#instance) {
       throw "NotConstructed";
-    }
-
-    if (connection_handle === undefined) {
-      connection_handle = 0;
     }
 
     let response_bytecode_vector = new SpectodaWasm.Uint8Vector();
+    let response_bytecode = undefined;
 
     try {
-      const evaluate_result = this.#instance.request(Emval.toHandle(request_bytecode), response_bytecode_vector, connection_handle);
+      const evaluate_result = this.#instance.request(Emval.toHandle(request_bytecode), response_bytecode_vector, source_connection);
 
       if (evaluate_result != SpectodaWasm.evaluate_result_t.COMMAND_SUCCESS) {
         throw "EvaluateError";
       }
 
-      return SpectodaWasm.convertNumberVectorToJSArray(response_bytecode_vector);
+      response_bytecode = SpectodaWasm.convertNumberVectorToJSArray(response_bytecode_vector);
+
     } finally {
       response_bytecode_vector.delete();
     }
+
+    return response_bytecode;
   }
 
   /**
-   * If request_evaluate_result is not SUCCESS the promise is rejected with an exception
-   * @param {Uint8Array} request_bytecode
-   * @param {undefined | number} connection_handle
-   * @return {Uint8Array}
-   */
-  processRequest(request_bytecode, connection_handle) {
-    if (!this.#instance) {
-      throw "NotConstructed";
-    }
-
-    if (connection_handle === undefined) {
-      connection_handle = 0;
-    }
-
-    try {
-      const evaluate_result = this.#instance.request(Emval.toHandle(request_bytecode), response_bytecode_vector, connection_handle);
-
-      if (evaluate_result != SpectodaWasm.evaluate_result_t.COMMAND_SUCCESS) {
-        throw "EvaluateError";
-      }
-
-      return SpectodaWasm.convertNumberVectorToJSArray(response_bytecode_vector);
-    } finally {
-      response_bytecode_vector.delete();
-    }
-  }
-
-  synchronize() {
-    if (!this.#instance) {
-      throw "NotConstructed";
-    }
-
-    // TODO
-    // this.#instance.synchronize();
-  }
-
-  /**
-  * @param {Uint8Array} synchronize_bytes 
-  * @param {number} source_rssi
-  * @param {undefined | number} connection_handle
+  * @param {number} clock_timestamp
+  * @param {number} source_connection
   * @return {}
   * */
-  processSynchronize(synchronize_bytes, source_rssi, connection_handle) {
+  synchronize(clock_timestamp, source_connection) {
+    logging.debug("synchronize()");
+
     if (!this.#instance) {
       throw "NotConstructed";
     }
 
-    this.#instance.synchronize();
+    this.#instance.synchronize(clock_timestamp, source_connection);
   }
 
   compute() {
@@ -394,6 +337,15 @@ export class SpectodaInterface {
     }
 
     this.#instance.render();
+  }
+
+  readVariableAddress(variable_address, device_id) {
+
+    if (!this.#instance) {
+      throw "NotConstructed";
+    }
+
+    return this.#instance.readVariableAddress(variable_address, device_id);
   }
 }
 

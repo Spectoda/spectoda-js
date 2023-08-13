@@ -567,6 +567,12 @@ export class SpectodaRuntime {
     return item.promise;
   }
 
+  evaluate(bytecode_uint8array, source_connection) {
+    logging.debug("evaluate", { bytecode_uint8array, source_connection });
+
+    this.interface.execute(bytecode_uint8array, source_connection);
+  }
+
   execute(bytes, bytes_label, timeout = 5000) {
     if (timeout < 100) {
       logging.error("Timeout is too short.");
@@ -849,13 +855,13 @@ export class SpectodaRuntime {
 
                 logging.debug("EXECUTE", uint8ArrayToHexString(data));
                 this.emit("wasm_execute", data);
-                this.interface.execute(data, undefined);
+
+                this.interface.execute(data, 0x00);
 
                 try {
                   await this.connector
                     .deliver(data, timeout)
                     .then(() => {
-                      this.process(new DataView(data.buffer), true);
                       executesInPayload.forEach(element => element.resolve());
                     })
                 } catch (error) {
@@ -971,6 +977,12 @@ export class SpectodaRuntime {
         }
       })();
     }
+  }
+
+  readVariableAddress(variable_address, device_id) {
+    logging.debug("readVariableAddress", { variable_address, device_id });
+
+    return this.interface.readVariableAddress(variable_address, device_id);
   }
 }
 

@@ -1,3 +1,4 @@
+import { TimeTrack } from "../TimeTrack";
 import { logging } from "../logging";
 
 const WASM_VERSION = "DEBUG_0.9.2_20230813";
@@ -143,4 +144,16 @@ export const SpectodaWasm = {
 
 if (typeof window !== "undefined") {
   window.SpectodaWasm = SpectodaWasm;
+}
+
+
+export class synchronization_t {
+
+  constructor() {
+    this.clock = new TimeTrack();
+    this.timeline = new TimeTrack();
+    this.tnglFingerprint = null;
+    this.historyFingerprint = null;
+  }
+
 }
