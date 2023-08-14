@@ -419,7 +419,7 @@ criteria example:
       .close()
       .then(() => {
         this.#opened = false;
-        logging.debug("> Serial port closed");
+        logging.info("> Serial port closed");
       })
       .catch(error => {
         logging.error("Failed to close serial port. Error: " + error);

@@ -46,6 +46,7 @@ export class TnglReader {
       this.forward(byteCount);
       return val;
     } catch {
+      console.error("End of the data");
       throw "ReadOutOfRange";
     }
   }
