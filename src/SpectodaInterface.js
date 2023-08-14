@@ -1,6 +1,8 @@
 import { logging } from "../logging";
 import { SpectodaWasm } from "./SpectodaWasm.js";
 
+const WASM_VERSION = "DEBUG_0.9.2_20230814";
+
 export const COMMAND_FLAGS = Object.freeze({
   FLAG_UNSUPPORTED_COMMND_RESPONSE: 255, // TODO change FLAG_OTA_BEGIN to not be 255.
 
@@ -111,6 +113,10 @@ export class SpectodaInterface {
     this.#instance = null;
   }
 
+  waitForInitilize() {
+    return SpectodaWasm.waitForInitilize();
+  }
+
   // controller_identifier, controller_mac, controller_id_offset, controller_brightness
   /**
    * @param {string} label
@@ -123,9 +129,13 @@ export class SpectodaInterface {
       throw "AlreadyContructed";
     }
 
+    // TODO pass WASM version to load
+    SpectodaWasm.initilize(WASM_VERSION);
+
     return SpectodaWasm.waitForInitilize().then(() => {
 
       const WasmInterfaceImplementation = {
+
         /* Constructor function is optional */
         // __construct: function () {
         //   this.__parent.__construct.call(this);
@@ -183,7 +193,6 @@ export class SpectodaInterface {
 
         _onSynchronize: synchronization_object => {
           logging.debug("_onSynchronize", synchronization_object);
-
         },
 
         _handlePeerConnected: peer_mac => {
@@ -349,16 +358,16 @@ export class SpectodaInterface {
   }
 }
 
-if (typeof window !== "undefined") {
-  window.SpectodaInterface = SpectodaInterface;
+// if (typeof window !== "undefined") {
+//   window.SpectodaInterface = SpectodaInterface;
 
-  window.test_wasm = function () {
-    window.instance = new SpectodaInterface();
-    window.instance.construct("con1", "ff:ff:ff:ff:ff:ff", 0).then(() => {
-      console.log(window.instance.makePort("A", 144, 255, 255, true, false));
-      window.instance.execute([0x69, 0xaf, 0x06, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x10, 0x68, 0xaf, 0x06, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0xff], 0xffff);
-      window.instance.execute([0x72, 0xff, 0xff, 0xff, 0x0f, 0x65, 0x76, 0x74, 0x00, 0x00, 0x6e, 0x40, 0x00, 0x00, 0x00, 0x00, 0xff], 0xffff);
-      window.instance.compute();
-    });
-  };
-}
+//   window.test_wasm = function () {
+//     window.instance = new SpectodaInterface();
+//     window.instance.construct("con1", "ff:ff:ff:ff:ff:ff", 0).then(() => {
+//       console.log(window.instance.makePort("A", 144, 255, 255, true, false));
+//       window.instance.execute([0x69, 0xaf, 0x06, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x10, 0x68, 0xaf, 0x06, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0xff], 0xffff);
+//       window.instance.execute([0x72, 0xff, 0xff, 0xff, 0x0f, 0x65, 0x76, 0x74, 0x00, 0x00, 0x6e, 0x40, 0x00, 0x00, 0x00, 0x00, 0xff], 0xffff);
+//       window.instance.compute();
+//     });
+//   };
+// }
