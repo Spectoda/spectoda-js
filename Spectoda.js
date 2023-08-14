@@ -179,20 +179,29 @@ export class Spectoda {
 
   requestWakeLock() {
     logging.debug("> Activating wakeLock...");
-    if (detectSpectodaConnect()) {
-      return window.flutter_inappwebview.callHandler("setWakeLock", true);
-    } else {
-      return noSleep.enable();
+
+    try {
+      if (detectSpectodaConnect()) {
+        window.flutter_inappwebview.callHandler("setWakeLock", true);
+      }
+      return Promise.resolve();
+    }
+    catch (e) {
+      return Promise.reject(e);
     }
   }
 
   releaseWakeLock() {
     logging.debug("> Deactivating wakeLock...");
-    if (detectSpectodaConnect()) {
-      return window.flutter_inappwebview.callHandler("setWakeLock", false);
-    } else {
-      noSleep.disable();
+
+    try {
+      if (detectSpectodaConnect()) {
+        window.flutter_inappwebview.callHandler("setWakeLock", false);
+      }
       return Promise.resolve();
+    }
+    catch (e) {
+      return Promise.reject(e);
     }
   }
 

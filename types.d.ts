@@ -1,19 +1,7 @@
-import { noSleep, validateTimestamp } from "./functions";
-
-declare namespace nosleep {
-  class NoSleep {
-    constructor();
-
-    get isEnabled(): boolean;
-    enable(): Promise<any>;
-    disable(): void;
-    _addSourceToVideo(element: HTMLElement, type: string, dataURI: string): void;
-  }
-}
+import { validateTimestamp } from "./functions";
 
 declare global {
   interface Window {
-    NoSleep: typeof nosleep.NoSleep;
     DEBUG_LEVEL_NONE: number;
     DEBUG_LEVEL_ERROR: number;
     DEBUG_LEVEL_WARN: number;
@@ -29,4 +17,3 @@ declare global {
   }
 }
 
-export default nosleep.NoSleep;

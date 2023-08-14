@@ -34,27 +34,41 @@ function onWasmLoad() {
 
     console.log("Webassembly runtime initilized");
 
-    SpectodaWasm.WasmInterface = Module.WasmInterface;
-    SpectodaWasm.Uint8Vector = Module.Uint8Vector;
-    SpectodaWasm.evaluate_result_t = Module.evaluate_result_t;
-    SpectodaWasm.send_result_t = Module.send_result_t;
+      SpectodaWasm.WasmInterface = Module.WasmInterface;
+      SpectodaWasm.Uint8Vector = Module.Uint8Vector;
+      SpectodaWasm.evaluate_result_t = Module.evaluate_result_t;
+      SpectodaWasm.send_result_t = Module.send_result_t;
 
-    if (typeof window !== "undefined") {
-      // Make a directory other than '/'
-      FS.mkdir('/littlefs');
-      // Then mount with IDBFS type
-      FS.mount(IDBFS, {}, '/littlefs');
+      if (typeof window !== "undefined") {
+          // Make a directory other than '/'
+          FS.mkdir('/littlefs');
+          // Then mount with IDBFS type
+          FS.mount(IDBFS, {}, '/littlefs');
 
-      // Then sync
-      FS.syncfs(true, function (err) {
-        if (err) {
-          logging.error("FS.syncfs error:", err);
-        }
-      });
+          // Then sync
+          FS.syncfs(true, function (err) {
+              if (err) {
+                  logging.error("FS.syncfs error:", err);
+              }
+          });
+
+      } else {
+          // TODO! implement FS pro NODE
+          
+        //   // Make a directory other than '/'
+        //   Module.FS.mkdir('/littlefs');
+        //   // Then mount with IDBFS type
+        //   Module.FS.mount(Module.FS.filesystems.NODEFS, {}, '/littlefs');
+
+        //   // Then sync
+        //   Module.FS.syncfs(true, function (err) {
+        //       if (err) {
+        //           logging.error("FS.syncfs error:", err);
+        //       }
+        //   });
 
     }
 
-    // TODO! implement FS pro NODE
 
     waitingQueue.forEach(wait => {
       wait.resolve();
@@ -94,7 +108,6 @@ function loadWasm(wasmVersion) {
     // NODE enviroment
 
     globalThis.Module = require(`./webassembly/${wasmVersion}.js`);
-
     onWasmLoad();
 
   }
@@ -170,6 +183,14 @@ export const SpectodaWasm = {
     waitingQueue.push(wait);
     return wait.promise;
   },
+
+  toHandle(value) {
+    return Module.Emval.toHandle(value);
+  },
+
+  toValue(value) {
+    return Module.Emval.toValue(value);
+  }
 };
 
 if (typeof window !== "undefined") {

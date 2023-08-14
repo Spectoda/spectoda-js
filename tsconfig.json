@@ -1,5 +1,8 @@
 {
   "extends": "../../tsconfig.json",
   "include": ["**/*"],
-  "strict": false
+  "compilerOptions": {
+    "strict": true,
+    "target": "ES2020"
+  },
 }

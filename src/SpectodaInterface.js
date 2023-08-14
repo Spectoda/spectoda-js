@@ -280,7 +280,7 @@ export class SpectodaInterface {
       throw "NotConstructed";
     }
 
-    const evaluate_result = this.#instance.execute(Emval.toHandle(execute_bytecode), source_connection);
+    const evaluate_result = this.#instance.execute(SpectodaWasm.toHandle(execute_bytecode), source_connection);
 
     if (evaluate_result != SpectodaWasm.evaluate_result_t.COMMAND_SUCCESS) {
       throw "EvaluateError";
@@ -302,7 +302,7 @@ export class SpectodaInterface {
     let response_bytecode = undefined;
 
     try {
-      const evaluate_result = this.#instance.request(Emval.toHandle(request_bytecode), response_bytecode_vector, source_connection);
+      const evaluate_result = this.#instance.request(SpectodaWasm.toHandle(request_bytecode), response_bytecode_vector, source_connection);
 
       if (evaluate_result != SpectodaWasm.evaluate_result_t.COMMAND_SUCCESS) {
         throw "EvaluateError";
