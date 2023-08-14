@@ -107,6 +107,8 @@ export class SpectodaRuntime {
   #lastUpdateTime;
   #lastUpdatePercentage;
 
+  #inicilized;
+
   constructor(spectodaReference) {
     this.#spectodaReference = spectodaReference;
 
@@ -220,26 +222,39 @@ export class SpectodaRuntime {
       this.destroyConnector();
       this.interface.destruct();
     });
+  }
 
-    setTimeout(async () => {
+  #runtimeTask = async () => {
 
-      const UPS = 30; // updates per second
+    const UPS = 10; // updates per second
 
-      try {
-        await this.interface.construct("spectoda", "01:23:45:67:89:ab", 0, 255);
+    try {
+      await this.interface.construct("spectoda", "01:23:45:67:89:ab", 0, 255);
 
-        const f = (async () => {
-          await this.interface.compute(); // for non visual mode compute is sufficient
-          setTimeout(f, 1000 / UPS);
-        });
+      await sleep(0.1); // short delay to let fill up the queue to merge the execute items if possible
 
-        f();
+      const f = (async () => {
+        await this.interface.compute(); // for non visual mode compute is sufficient
+        setTimeout(f, 1000 / UPS);
+      });
 
-      } catch (e) {
-        logging.error(e);
-      };
+      f();
 
-    }, 0);
+    } catch (e) {
+      logging.error(e);
+    };
+
+  }
+
+  #inicilize() {
+
+    if (!this.#inicilized) {
+      this.#runtimeTask();
+      this.#inicilized = true;
+    }
+
+    return this.interface.waitForInitilize();
+
   }
 
   /**
@@ -298,7 +313,7 @@ export class SpectodaRuntime {
       }
     }
 
-    return this.destroyConnector().catch(() => { })
+    return (this.connector ? this.destroyConnector() : Promise.resolve()).catch(() => { })
       .then(() => {
         switch (connector_type) {
           case "none":
@@ -678,6 +693,7 @@ export class SpectodaRuntime {
 
   // starts a "thread" that is processing the commands from queue
   #process(item) {
+
     if (item) {
       this.#queue.push(item);
     }
@@ -687,6 +703,9 @@ export class SpectodaRuntime {
 
       // spawn async function to handle the transmittion one item at the time
       (async () => {
+
+        await this.#inicilize();
+
         await sleep(0.001); // short delay to let fill up the queue to merge the execute items if possible
 
         let item = undefined;
