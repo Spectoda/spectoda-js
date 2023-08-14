@@ -1,5 +1,7 @@
 import { logging, setLoggingLevel } from "./logging";
-import * as n from "nanoevents";
+import { createNanoEvents } from "nanoevents";
+
+export { createNanoEvents };
 
 export function toBytes(value: number, byteCount: number) {
 
@@ -89,8 +91,6 @@ export function sleep(ms) {
 // COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
 // IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 // CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-
-export const createNanoEvents = n.createNanoEvents;
 
 /////////////////////////////////////////////// == 0.7 == ///////////////////////////////////////////////////
 
