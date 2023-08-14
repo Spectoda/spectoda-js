@@ -75,7 +75,7 @@ async function postCommitToSlack() {
     if (tagName) {
       // Tag specific message
       message = `
->>> *New tag by ${commitAuthor}*
+>>> *[spectoda-js] New tag by ${commitAuthor}*
 branch \`${branchName}\` ${githubUrl} ${clickupUrl} ${studioLink}
 
 Tag: \`${tagName}\`
@@ -84,7 +84,7 @@ ${commitMessage}`;
     } else {
       // Commit message
       message = `
->>> *New commit by ${commitAuthor}*
+>>> *[spectoda-js] New commit by ${commitAuthor}*
 branch \`${branchName}\` ${githubUrl} ${clickupUrl} ${studioLink}
 
 ${commitMessage}`;
