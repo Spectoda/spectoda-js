@@ -41,10 +41,10 @@ export class Spectoda {
   #connectionState;
 
   constructor(connectorType = "default", reconnectionInterval = 1000) {
-    // nextjs
-    if (typeof window === "undefined") {
-      return;
-    }
+    // // nextjs
+    // if (typeof window === "undefined") {
+    //   return;
+    // }
 
     this.#parser = new TnglCodeParser();
 

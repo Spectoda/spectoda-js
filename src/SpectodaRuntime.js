@@ -22,7 +22,6 @@ import "../TnglWriter.js";
 import { FlutterConnector } from "../FlutterConnector.js";
 import { t } from "../i18n.js";
 import { SpectodaInterface } from "./SpectodaInterface.js";
-import { set } from "firebase/database";
 import { SimulationConnector } from "./connector/SimulationConnector.js";
 
 
@@ -208,20 +207,22 @@ export class SpectodaRuntime {
     });
     }
 
-    window.addEventListener("beforeunload", e => {
-      // If I cant disconnect right now for some readon
-      // return this.disconnect(false).catch(reason => {
-      //   if (reason == "CurrentlyWriting") {
-      //     e.preventDefault();
-      //     e.cancelBubble = true;
-      //     e.returnValue = "Právě probíhá update připojeného zařízení, neopouštějte tuto stránku.";
-      //     window.confirm("Právě probíhá update připojeného zařízení, neopouštějte tuto stránku.");
-      //   }
-      // });
+    if (typeof window !== "undefined") {
+      window.addEventListener("beforeunload", e => {
+        // If I cant disconnect right now for some readon
+        // return this.disconnect(false).catch(reason => {
+        //   if (reason == "CurrentlyWriting") {
+        //     e.preventDefault();
+        //     e.cancelBubble = true;
+        //     e.returnValue = "Právě probíhá update připojeného zařízení, neopouštějte tuto stránku.";
+        //     window.confirm("Právě probíhá update připojeného zařízení, neopouštějte tuto stránku.");
+        //   }
+        // });
 
-      this.destroyConnector();
-      this.interface.destruct();
-    });
+        this.destroyConnector();
+        this.interface.destruct();
+      });
+    }
   }
 
   #runtimeTask = async () => {
