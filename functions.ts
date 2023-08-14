@@ -681,14 +681,14 @@ export function hexStringToNumberArray(hexString) {
 if (typeof window !== "undefined") {
   window.validateTimestamp = validateTimestamp;
 
-  window.noSleep = noSleep;
+  // window.noSleep = noSleep;
 
   var script = document.createElement("script");
   script.src = "//cdn.jsdelivr.net/npm/eruda";
   script.setAttribute("defer", true);
   document.body.appendChild(script);
 
-  window.mapValue = mapValue;
+  // window.mapValue = mapValue;
 }
 
 
@@ -736,7 +736,7 @@ if (typeof window !== "undefined") {
 
 const Color = require('color');
 
-const barvy = {
+const barvy: { [key: string]: string } = {
   "vypnuto": "#000000",
   "černá": "#000000",
   "bílá": "#ffffff",
@@ -763,7 +763,7 @@ const barvy = {
   "měď": "#b87333",
 };
 
-const barvy_bez_hacku = {
+const barvy_bez_hacku: { [key: string]: string } = {
   "vypnuto": "#000000",
   "cerna": "#000000",
   "bila": "#ffffff",
@@ -790,7 +790,7 @@ const barvy_bez_hacku = {
   "med": "#b87333"
 };
 
-export function cssColorToHex(color) {
+export function cssColorToHex(color: typeof barvy | typeof barvy_bez_hacku | string) {
   if (typeof color !== 'string' || color.trim() === '') {
     return null;
   }
