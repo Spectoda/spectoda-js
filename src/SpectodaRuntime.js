@@ -291,7 +291,7 @@ export class SpectodaRuntime {
     if (connector_type == "default" || connector_type == "automatic") {
       if (detectSpectodaConnect()) {
         connector_type = "flutter";
-      } else if (navigator.bluetooth) {
+      } else if (typeof navigator !== "undefined" && navigator.bluetooth) {
         connector_type = "webbluetooth";
       } else {
         connector_type = "none";
@@ -894,7 +894,7 @@ export class SpectodaRuntime {
                   // TODO process in internal Interface
 
                   logging.debug("REQUEST", uint8ArrayToHexString(item.a));
-                  
+
                   this.emit("wasm_request", item.a);
                   this.interface.request(item.a, 0x00);
 
