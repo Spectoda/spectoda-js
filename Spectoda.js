@@ -1937,7 +1937,10 @@ export class Spectoda {
       throw "VariableNotFound";
     }
 
-    return this.runtime.readVariableAddress(variable_address, device_id);
+    const variable_value = this.runtime.readVariableAddress(variable_address, device_id);
+    logging.debug(`variable_name=${variable_name}, device_id=${device_id}, variable_value=${variable_value.debug}`);
+
+    return variable_value;
   }
 
   readVariableAddress(variable_address, device_id) {
