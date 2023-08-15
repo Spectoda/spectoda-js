@@ -30,10 +30,8 @@ export class Spectoda {
   #ownerKey;
   #adopting;
   #updating;
-  #selected;
-  #saveStateTimeoutHandle;
 
-  #reconnectRC;
+  #saveStateTimeoutHandle;
 
   #connectionState;
 
@@ -64,8 +62,6 @@ export class Spectoda {
 
     this.#adopting = false;
     this.#updating = false;
-
-    this.#reconnectRC = false;
 
     this.#reconnecting = reconnecting ? true : false;
     this.#connectionState = "disconnected";
@@ -184,7 +180,7 @@ export class Spectoda {
     }
   }
 
-  getConnectionState() {
+  #getConnectionState() {
     return this.#connectionState;
   }
 
@@ -507,9 +503,6 @@ export class Spectoda {
         } else {
           throw error;
         }
-      })
-      .finally(() => {
-        this.#connecting = false;
       });
   }
 
