@@ -73,8 +73,6 @@ export class Spectoda {
     this.runtime.onDisconnected = event => {
       logging.info("> Runtime disconnected");
 
-      console.debug("this.#getConnectionState():", this.#getConnectionState())
-
       const TIME = 2000;
 
       if (this.#getConnectionState() === "connected" && this.#reconnecting) {
@@ -481,7 +479,8 @@ export class Spectoda {
             logging.error("Timeline sync after reconnection failed:", e);
           })
           .then(() => {
-            return this.readEventHistory();
+            logging.warn("Fix bug where reading history before TNGL sync causes variable to be in invalid state")
+            return detectNode() ? Promise.resolve() : this.readEventHistory();
           })
           .catch(e => {
             logging.error("History sync after reconnection failed:", e);
