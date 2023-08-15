@@ -8,8 +8,6 @@ import { TimeTrack } from "../../TimeTrack.js";
 import { TnglReader } from "../../TnglReader.js";
 import { COMMAND_FLAGS } from "../SpectodaInterface.js";
 
-const fs = require("fs");
-
 // od 0.8.0 maji vsechny spectoda enabled BLE zarizeni jednotne SPECTODA_DEVICE_UUID.
 // kazdy typ (produkt) Spectoda Zarizeni ma svuj kod v manufacturer data
 // verze FW lze získat také z manufacturer data
