@@ -73,11 +73,11 @@ export class Spectoda {
     this.runtime.onDisconnected = event => {
       logging.info("> Runtime disconnected");
 
-      console.debug("this.getConnectionState():", this.getConnectionState())
+      console.debug("this.#getConnectionState():", this.#getConnectionState())
 
       const TIME = 2000;
 
-      if (this.getConnectionState() === "connected" && this.#reconnecting) {
+      if (this.#getConnectionState() === "connected" && this.#reconnecting) {
         logging.info(`> Reconnecting in ${TIME}ms`);
         this.#setConnectionState("connecting");
 
@@ -582,7 +582,7 @@ export class Spectoda {
   disconnect() {
     this.#autonomousConnection = false;
 
-    if (this.getConnectionState() === "disconnected") {
+    if (this.#getConnectionState() === "disconnected") {
       Promise.reject("DeviceAlreadyDisconnected");
     }
 
