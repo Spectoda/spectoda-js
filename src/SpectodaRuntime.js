@@ -1,16 +1,5 @@
 import { logging } from "../logging.ts";
-import {
-  createNanoEvents,
-  sleep,
-  detectSpectodaConnect,
-  detectAndroid,
-  detectChrome,
-  detectWindows,
-  detectLinux,
-  detectIPhone,
-  detectMacintosh,
-  uint8ArrayToHexString,
-} from "../functions";
+import { createNanoEvents, sleep, detectSpectodaConnect, detectAndroid, detectChrome, detectWindows, detectLinux, detectIPhone, detectMacintosh, uint8ArrayToHexString, detectNodejs } from "../functions";
 import { SpectodaDummyConnector } from "../SpectodaDummyConnector.js";
 import { SpectodaWebBluetoothConnector } from "../SpectodaWebBluetoothConnector.js";
 import { SpectodaWebSerialConnector } from "../SpectodaWebSerialConnector.js";
@@ -23,7 +12,7 @@ import { FlutterConnector } from "../FlutterConnector.js";
 import { t } from "../i18n.js";
 import { SpectodaInterface } from "./SpectodaInterface.js";
 import { SimulationConnector } from "./connector/SimulationConnector.js";
-
+import { SpectodaNodeBluetoothConnector } from "./connector/SpectodaNodeBleConnector";
 
 // Spectoda.js -> SpectodaRuntime.js -> | SpectodaXXXConnector.js ->
 
@@ -132,8 +121,8 @@ export class SpectodaRuntime {
     this.#lastUpdateTime = new Date().getTime();
     this.#lastUpdatePercentage = 0;
 
-    this.onConnected = e => { };
-    this.onDisconnected = e => { };
+    this.onConnected = e => {};
+    this.onDisconnected = e => {};
 
     this.#eventEmitter.on("ota_progress", value => {
       const now = new Date().getTime();
@@ -169,42 +158,42 @@ export class SpectodaRuntime {
       // @ts-ignore
 
       /** @type {HTMLBodyElement} */ document.querySelector("body").addEventListener("click", function (e) {
-      e.preventDefault();
+        e.preventDefault();
 
-      (function (e, d, w) {
-        if (!e.composedPath) {
-          e.composedPath = function () {
-            if (this.path) {
+        (function (e, d, w) {
+          if (!e.composedPath) {
+            e.composedPath = function () {
+              if (this.path) {
+                return this.path;
+              }
+              var target = this.target;
+
+              this.path = [];
+              while (target.parentNode !== null) {
+                this.path.push(target);
+                target = target.parentNode;
+              }
+              this.path.push(d, w);
               return this.path;
-            }
-            var target = this.target;
+            };
+          }
+        })(Event.prototype, document, window);
+        // @ts-ignore
+        const path = e.path || (e.composedPath && e.composedPath());
 
-            this.path = [];
-            while (target.parentNode !== null) {
-              this.path.push(target);
-              target = target.parentNode;
-            }
-            this.path.push(d, w);
-            return this.path;
-          };
+        // @ts-ignore
+        for (let el of path) {
+          if (el.tagName === "A" && el.getAttribute("target") === "_blank") {
+            e.preventDefault();
+            const url = el.getAttribute("href");
+            logging.verbose(url);
+            // @ts-ignore
+            logging.debug("Openning external url", url);
+            window.flutter_inappwebview.callHandler("openExternalUrl", url);
+            break;
+          }
         }
-      })(Event.prototype, document, window);
-      // @ts-ignore
-      const path = e.path || (e.composedPath && e.composedPath());
-
-      // @ts-ignore
-      for (let el of path) {
-        if (el.tagName === "A" && el.getAttribute("target") === "_blank") {
-          e.preventDefault();
-          const url = el.getAttribute("href");
-          logging.verbose(url);
-          // @ts-ignore
-          logging.debug("Openning external url", url);
-          window.flutter_inappwebview.callHandler("openExternalUrl", url);
-          break;
-        }
-      }
-    });
+      });
     }
 
     if (typeof window !== "undefined") {
@@ -226,7 +215,6 @@ export class SpectodaRuntime {
   }
 
   #runtimeTask = async () => {
-
     const UPS = 10; // updates per second
 
     try {
@@ -234,28 +222,24 @@ export class SpectodaRuntime {
 
       await sleep(0.1); // short delay to let fill up the queue to merge the execute items if possible
 
-      const f = (async () => {
+      const f = async () => {
         await this.interface.compute(); // for non visual mode compute is sufficient
         setTimeout(f, 1000 / UPS);
-      });
+      };
 
       f();
-
     } catch (e) {
       logging.error(e);
-    };
-
-  }
+    }
+  };
 
   #inicilize() {
-
     if (!this.#inicilized) {
       this.#runtimeTask();
       this.#inicilized = true;
     }
 
     return this.interface.waitForInitilize();
-
   }
 
   /**
@@ -314,7 +298,8 @@ export class SpectodaRuntime {
       }
     }
 
-    return (this.connector ? this.destroyConnector() : Promise.resolve()).catch(() => { })
+    return (this.connector ? this.destroyConnector() : Promise.resolve())
+      .catch(() => {})
       .then(() => {
         switch (connector_type) {
           case "none":
@@ -403,6 +388,15 @@ export class SpectodaRuntime {
           case "webserial":
             if (detectChrome()) {
               this.connector = new SpectodaWebSerialConnector(this);
+            } else {
+              logging.error("Error: Assigning unsupported connector");
+              this.connector = null;
+            }
+            break;
+
+          case "nodebluetooth":
+            if (detectNodejs()) {
+              this.connector = new SpectodaNodeBluetoothConnector(this);
             } else {
               logging.error("Error: Assigning unsupported connector");
               this.connector = null;
@@ -694,7 +688,6 @@ export class SpectodaRuntime {
 
   // starts a "thread" that is processing the commands from queue
   #process(item) {
-
     if (item) {
       this.#queue.push(item);
     }
@@ -704,7 +697,6 @@ export class SpectodaRuntime {
 
       // spawn async function to handle the transmittion one item at the time
       (async () => {
-
         await this.#inicilize();
 
         await sleep(0.001); // short delay to let fill up the queue to merge the execute items if possible
@@ -721,273 +713,276 @@ export class SpectodaRuntime {
             }
 
             switch (item.type) {
-              case Query.TYPE_USERSELECT: {
-                try {
-                  await this.connector
-                    .userSelect(item.a, item.b) // criteria, timeout
-                    .then(device => {
+              case Query.TYPE_USERSELECT:
+                {
+                  try {
+                    await this.connector
+                      .userSelect(item.a, item.b) // criteria, timeout
+                      .then(device => {
+                        item.resolve(device);
+                      });
+                  } catch (error) {
+                    item.reject(error);
+                  }
+                }
+                break;
+
+              case Query.TYPE_AUTOSELECT:
+                {
+                  try {
+                    await this.connector
+                      .autoSelect(item.a, item.b, item.c) // criteria, scan_period, timeout
+                      .then(device => {
+                        item.resolve(device);
+                      });
+                  } catch (error) {
+                    item.reject(error);
+                  }
+                }
+                break;
+
+              case Query.TYPE_SELECTED:
+                {
+                  try {
+                    await this.connector.selected().then(device => {
                       item.resolve(device);
                     });
-                } catch (error) {
-                  item.reject(error);
+                  } catch (error) {
+                    item.reject(error);
+                  }
                 }
-              } break;
+                break;
 
-              case Query.TYPE_AUTOSELECT: {
-                try {
-                  await this.connector
-                    .autoSelect(item.a, item.b, item.c) // criteria, scan_period, timeout
-                    .then(device => {
-                      item.resolve(device);
-                    });
-                } catch (error) {
-                  item.reject(error);
-                }
-              } break;
-
-              case Query.TYPE_SELECTED: {
-                try {
-                  await this.connector
-                    .selected()
-                    .then(device => {
-                      item.resolve(device);
-                    });
-                } catch (error) {
-                  item.reject(error);
-                }
-              } break;
-
-              case Query.TYPE_UNSELECT: {
-                try {
-                  await this.connector
-                    .unselect()
-                    .then(() => {
+              case Query.TYPE_UNSELECT:
+                {
+                  try {
+                    await this.connector.unselect().then(() => {
                       item.resolve();
                     });
-                } catch (error) {
-                  item.reject(error);
+                  } catch (error) {
+                    item.reject(error);
+                  }
                 }
-              } break;
+                break;
 
-              case Query.TYPE_SCAN: {
-                try {
-                  await this.connector
-                    .scan(item.a, item.b) // criteria, scan_period
-                    .then(device => {
-                      item.resolve(device);
-                    });
-                } catch (error) {
-                  //logging.warn(error);
-                  item.reject(error);
+              case Query.TYPE_SCAN:
+                {
+                  try {
+                    await this.connector
+                      .scan(item.a, item.b) // criteria, scan_period
+                      .then(device => {
+                        item.resolve(device);
+                      });
+                  } catch (error) {
+                    //logging.warn(error);
+                    item.reject(error);
+                  }
                 }
-              } break;
+                break;
 
-              case Query.TYPE_CONNECT: {
-                try {
-                  await this.connector
-                    .connect(item.a, item.b) // a = timeout, b = supportLegacy
-                    .then(device => {
+              case Query.TYPE_CONNECT:
+                {
+                  try {
+                    await this.connector
+                      .connect(item.a, item.b) // a = timeout, b = supportLegacy
+                      .then(device => {
+                        if (!this.#connectGuard) {
+                          logging.error("Connection logic error. #connected not called during successful connect()?");
+                          logging.warn("Emitting #connected");
+                          this.#eventEmitter.emit("#connected");
+                        }
 
-                      if (!this.#connectGuard) {
-                        logging.error("Connection logic error. #connected not called during successful connect()?");
-                        logging.warn("Emitting #connected");
-                        this.#eventEmitter.emit("#connected");
-                      }
-
-                      try {
-                        return this.connector
-                          .getClock()
-                          .then(clock => {
+                        try {
+                          return this.connector.getClock().then(clock => {
                             this.clock = clock;
                             item.resolve(device);
                           });
-                      }
-                      catch (error) {
-                        logging.error(error);
-                        this.clock = null;
-                        item.resolve(device);
-                      }
-                    });
-                } catch (error) {
-                  await this.connector.disconnect();
-                  item.reject(error);
+                        } catch (error) {
+                          logging.error(error);
+                          this.clock = null;
+                          item.resolve(device);
+                        }
+                      });
+                  } catch (error) {
+                    await this.connector.disconnect();
+                    item.reject(error);
+                  }
                 }
-              } break;
+                break;
 
-              case Query.TYPE_CONNECTED: {
-                try {
-                  await this.connector
-                    .connected()
-                    .then(device => {
+              case Query.TYPE_CONNECTED:
+                {
+                  try {
+                    await this.connector.connected().then(device => {
                       item.resolve(device);
                     });
-                } catch (error) {
-                  item.reject(error);
-                }
-              } break;
-
-              case Query.TYPE_DISCONNECT: {
-                this.#disconnectQuery = new Query();
-
-                try {
-                  await this.connector
-                    .disconnect()
-                    .then(this.#disconnectQuery.promise)
-                    .then(() => {
-                      this.#disconnectQuery = null;
-                      item.resolve();
-                    });
-                } catch (error) {
-                  item.reject(error);
-                }
-
-              } break;
-
-              case Query.TYPE_EXECUTE: {
-                let payload = new Uint8Array(0xffff);
-                let index = 0;
-
-                payload.set(item.a, index);
-                index += item.a.length;
-
-                let executesInPayload = [item];
-
-                // while there are items in the queue, and the next item is also TYPE_EXECUTE
-                while (this.#queue.length && this.#queue[0].type == Query.TYPE_EXECUTE) {
-                  const next_item = this.#queue.shift();
-
-                  // then check if I have room to merge other payload bytes
-                  if (index + next_item.a.length <= this.#chunkSize) {
-                    payload.set(next_item.a, index);
-                    index += next_item.a.length;
-                    executesInPayload.push(next_item);
-                  }
-
-                  // if not, then return the item back into the queue
-                  else {
-                    this.#queue.unshift(next_item);
-                    break;
+                  } catch (error) {
+                    item.reject(error);
                   }
                 }
+                break;
 
-                const data = payload.slice(0, index);
-                const timeout = item.c;
+              case Query.TYPE_DISCONNECT:
+                {
+                  this.#disconnectQuery = new Query();
 
-                logging.debug("EXECUTE", uint8ArrayToHexString(data));
-                this.emit("wasm_execute", data);
+                  try {
+                    await this.connector
+                      .disconnect()
+                      .then(this.#disconnectQuery.promise)
+                      .then(() => {
+                        this.#disconnectQuery = null;
+                        item.resolve();
+                      });
+                  } catch (error) {
+                    item.reject(error);
+                  }
+                }
+                break;
 
-                this.interface.execute(data, 0x00);
+              case Query.TYPE_EXECUTE:
+                {
+                  let payload = new Uint8Array(0xffff);
+                  let index = 0;
 
-                try {
-                  await this.connector
-                    .deliver(data, timeout)
-                    .then(() => {
+                  payload.set(item.a, index);
+                  index += item.a.length;
+
+                  let executesInPayload = [item];
+
+                  // while there are items in the queue, and the next item is also TYPE_EXECUTE
+                  while (this.#queue.length && this.#queue[0].type == Query.TYPE_EXECUTE) {
+                    const next_item = this.#queue.shift();
+
+                    // then check if I have room to merge other payload bytes
+                    if (index + next_item.a.length <= this.#chunkSize) {
+                      payload.set(next_item.a, index);
+                      index += next_item.a.length;
+                      executesInPayload.push(next_item);
+                    }
+
+                    // if not, then return the item back into the queue
+                    else {
+                      this.#queue.unshift(next_item);
+                      break;
+                    }
+                  }
+
+                  const data = payload.slice(0, index);
+                  const timeout = item.c;
+
+                  logging.debug("EXECUTE", uint8ArrayToHexString(data));
+                  this.emit("wasm_execute", data);
+
+                  this.interface.execute(data, 0x00);
+
+                  try {
+                    await this.connector.deliver(data, timeout).then(() => {
                       executesInPayload.forEach(element => element.resolve());
-                    })
-                } catch (error) {
-                  executesInPayload.forEach(element => element.reject(error));
+                    });
+                  } catch (error) {
+                    executesInPayload.forEach(element => element.reject(error));
+                  }
                 }
+                break;
 
-              } break;
+              case Query.TYPE_REQUEST:
+                {
+                  // TODO process in internal Interface
 
-              case Query.TYPE_REQUEST: {
-                // TODO process in internal Interface
+                  logging.debug("REQUEST", uint8ArrayToHexString(item.a));
+                  this.emit("wasm_request", item.a);
 
-                logging.debug("REQUEST", uint8ArrayToHexString(item.a));
-                this.emit("wasm_request", item.a);
-
-                try {
-                  await this.connector
-                    .request(item.a, item.b, item.c)
-                    .then(response => {
+                  try {
+                    await this.connector.request(item.a, item.b, item.c).then(response => {
                       item.resolve(response);
                     });
-                } catch (error) {
-                  item.reject(error);
+                  } catch (error) {
+                    item.reject(error);
+                  }
                 }
-              } break;
+                break;
 
-              case Query.TYPE_SET_CLOCK: {
-                this.emit("wasm_clock", item.a.millis());
+              case Query.TYPE_SET_CLOCK:
+                {
+                  this.emit("wasm_clock", item.a.millis());
 
-                try {
-                  await this.connector
-                    .setClock(item.a)
-                    .then(response => {
+                  try {
+                    await this.connector.setClock(item.a).then(response => {
                       item.resolve(response);
                     });
-                } catch (error) {
-                  item.reject(error);
+                  } catch (error) {
+                    item.reject(error);
+                  }
                 }
-              } break;
+                break;
 
-              case Query.TYPE_GET_CLOCK: {
-
-                try {
-                  await this.connector
-                    .getClock()
-                    .then(clock => {
+              case Query.TYPE_GET_CLOCK:
+                {
+                  try {
+                    await this.connector.getClock().then(clock => {
                       this.emit("wasm_clock", clock.millis());
                       item.resolve(clock);
-                    })
-                } catch (error) {
-                  item.reject(error);
+                    });
+                  } catch (error) {
+                    item.reject(error);
+                  }
                 }
+                break;
 
-              } break;
+              case Query.TYPE_FIRMWARE_UPDATE:
+                {
+                  try {
+                    await this.requestWakeLock();
+                  } catch {}
 
-              case Query.TYPE_FIRMWARE_UPDATE: {
-                try {
-                  await this.requestWakeLock();
-                } catch { }
-
-                try {
-                  await this.connector
-                    .updateFW(item.a)
-                    .then(response => {
+                  try {
+                    await this.connector.updateFW(item.a).then(response => {
                       item.resolve(response);
                     });
-                } catch (error) {
-                  item.reject(error);
+                  } catch (error) {
+                    item.reject(error);
+                  }
+
+                  try {
+                    this.releaseWakeLock();
+                  } catch {}
                 }
+                break;
 
-                try {
-                  this.releaseWakeLock();
-                } catch { }
+              case Query.TYPE_DESTROY:
+                {
+                  // this.#reconection = false;
+                  try {
+                    // await this.connector
+                    //   .request([COMMAND_FLAGS.FLAG_DEVICE_DISCONNECT_REQUEST], false)
+                    //   .catch(() => { })
+                    //   .then(() => {
+                    await this.connector.disconnect();
+                    // })
+                    // .then(() => {
+                    await this.connector.destroy();
+                    // })
 
-              } break;
-
-              case Query.TYPE_DESTROY: {
-                // this.#reconection = false;
-                try {
-                  // await this.connector
-                  //   .request([COMMAND_FLAGS.FLAG_DEVICE_DISCONNECT_REQUEST], false)
-                  //   .catch(() => { })
-                  //   .then(() => {
-                  await this.connector.disconnect();
-                  // })
-                  // .then(() => {
-                  await this.connector.destroy();
-                  // })
-
-                  // .catch(error => {
-                  //   //logging.warn(error);
-                  //   this.connector = null;
-                  //   item.reject(error);
-                  // });
-
-                } catch (error) {
-                  console.warn("Error while destroying connector:", error);
-                } finally {
-                  this.connector = null;
-                  item.resolve();
+                    // .catch(error => {
+                    //   //logging.warn(error);
+                    //   this.connector = null;
+                    //   item.reject(error);
+                    // });
+                  } catch (error) {
+                    console.warn("Error while destroying connector:", error);
+                  } finally {
+                    this.connector = null;
+                    item.resolve();
+                  }
                 }
+                break;
 
-              } break;
-
-              default: {
-                logging.error("ERROR");
-              } break;
+              default:
+                {
+                  logging.error("ERROR");
+                }
+                break;
             }
           }
         } catch (e) {
@@ -1005,4 +1000,3 @@ export class SpectodaRuntime {
     return this.interface.readVariableAddress(variable_address, device_id);
   }
 }
-

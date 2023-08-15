@@ -275,6 +275,11 @@ export function detectSafari() {
   return safariDetected && !spectodaConnectDetected;
 }
 
+export function detectNodejs() {
+  return typeof process !== 'undefined' && process.versions && process.versions.node;
+}
+
+
 //////////////////////////////////////////////////////
 
 export function computeTnglFingerprint(tngl_bytes, tngl_label) {
