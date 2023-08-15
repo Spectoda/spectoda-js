@@ -991,7 +991,7 @@ criteria example:
       }
 
       // eligibleControllersFound.sort((a, b) => a.rssi - b.rssi);
-      logging.info("Controlles Found:", eligibleControllersFound);
+      logging.info("> Controlles Found:", eligibleControllersFound);
       return eligibleControllersFound;
     } catch (e) {
       logging.error(e);
@@ -1262,11 +1262,11 @@ criteria example:
 
     //this.#interfaceReference = null; // dont know if I need to destroy this reference.. But I guess I dont need to?
     return this.disconnect()
-      .catch(() => {})
+      .catch(() => { })
       .then(() => {
         return this.unselect();
       })
-      .catch(() => {})
+      .catch(() => { })
       .finally(() => {
         this.#bluetoothDestroy();
       });

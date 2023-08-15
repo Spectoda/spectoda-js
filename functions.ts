@@ -275,11 +275,6 @@ export function detectSafari() {
   return safariDetected && !spectodaConnectDetected;
 }
 
-export function detectNodejs() {
-  return typeof process !== 'undefined' && process.versions && process.versions.node;
-}
-
-
 //////////////////////////////////////////////////////
 
 export function computeTnglFingerprint(tngl_bytes, tngl_label) {
@@ -633,7 +628,7 @@ if (typeof window !== "undefined") {
 
 //! ==== NODEJS version =====
 
-const Color = require('color');
+const Color = detectNode() ? require('color') : (color: string) => { return "#000000"; };
 
 const barvy: { [key: string]: string } = {
   "vypnuto": "#000000",

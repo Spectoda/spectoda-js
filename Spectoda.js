@@ -28,8 +28,6 @@ export class Spectoda {
   #uuidCounter;
   #ownerSignature;
   #ownerKey;
-  #connecting;
-  // #adoptingFlag;
   #adopting;
   #updating;
   #selected;
@@ -37,10 +35,13 @@ export class Spectoda {
 
   #reconnectRC;
 
-  #reconnectionInterval;
   #connectionState;
 
-  constructor(connectorType = "default", reconnectionInterval = 1000) {
+  #criteria;
+  #reconnecting;
+  #autonomousConnection;
+
+  constructor(connectorType = "default", reconnecting = true) {
     // // nextjs
     // if (typeof window === "undefined") {
     //   return;
@@ -61,13 +62,12 @@ export class Spectoda {
       this.runtime.assignConnector(connectorType);
     }
 
-    this.#connecting = false;
     this.#adopting = false;
     this.#updating = false;
 
     this.#reconnectRC = false;
 
-    this.#reconnectionInterval = reconnectionInterval;
+    this.#reconnecting = reconnecting ? true : false;
     this.#connectionState = "disconnected";
 
     this.runtime.onConnected = event => {
@@ -79,23 +79,20 @@ export class Spectoda {
 
       const TIME = 2000;
 
-      if (this.getConnectionState() === "connected" && this.#reconnectionInterval) {
+      if (this.getConnectionState() === "connected" && this.#reconnecting) {
         logging.info(`Reconnecting in ${TIME}ms`);
         this.#setConnectionState("connecting");
 
-        setTimeout(() => {
-          logging.debug("Reconnecting device");
-          return this.runtime
-            .connect(this.#reconnectionInterval)
-            .then(() => {
-              logging.info("Reconnection successful.");
-              this.#setConnectionState("connected");
-            })
-            .catch(() => {
-              logging.warn("Reconnection failed.");
-              this.#setConnectionState("disconnected");
-            });
-        }, TIME);
+        return sleep(TIME).then(() => {
+          return this.#connect(true);
+        }).then(() => {
+          logging.info("Reconnection successful.");
+          this.#setConnectionState("connected");
+        }).catch((error) => {
+          logging.warn("Reconnection failed:", error);
+          this.#setConnectionState("disconnected");
+        });
+
       } else {
         this.#setConnectionState("disconnected");
       }
@@ -105,17 +102,31 @@ export class Spectoda {
     setInterval(() => {
       // TODO move this to runtime
       if (!this.#updating && this.runtime.connector) {
-        this.connected().then(connected => {
-          if (connected) {
-            this.syncClock().then(() => {
-              return this.syncTimeline();
-            }).catch(error => {
-              logging.warn("Catched error:", error);
-            });
-          }
-        });
+
+        // this.connected().then(connected => {
+        //   if (connected) {
+        //     this.syncClock().then(() => {
+        //       return this.syncTimeline();
+        //     }).catch(error => {
+        //       logging.warn("Catched error:", error);
+        //     });
+        //   }
+        // });
+
+        if (this.#getConnectionState() === "connected") {
+          return this.syncClock().catch((error) => {
+            logging.warn(error);
+          });
+        }
+
+        else if (this.#getConnectionState() === "disconnected" && this.#autonomousConnection) {
+          return this.#connect(true).catch((error) => {
+            logging.warn(error);
+          });
+        }
       }
-    }, 30000);
+
+    }, 60000);
   }
 
   #setConnectionState(connectionState) {
@@ -264,119 +275,6 @@ export class Spectoda {
   //   return this.runtime.begin("con1", "00:00:00:00:00:00", 0, 255);
   // }
 
-  connectRemoteControl() {
-    logging.debug("> Connecting to Remote Control");
-
-    throw "NotImplemented";
-
-    // this.#reconnectRC = true;
-
-    // if (!this.socket) {
-    //   // TODO - scopovani dle apky
-    //   // TODO - authentifikace
-    //   this.socket = io(WEBSOCKET_URL, {
-    //     transports: ["websocket"],
-    //   });
-
-    //   this.socket.on("connect", () => {
-    //     logging.debug("> Connected to remote control");
-    //     window.alert(t("Connected to remote control"));
-    //   });
-
-    //   this.socket.on("disconnect", () => {
-    //     logging.debug("> Disconnected from remote control");
-    //     window.alert(t("Disconnected from remote control"));
-
-    //     // if (this.#reconnectRC) {
-    //     //   logging.debug("Disconnected by its own... Reloading");
-    //     //   window.location.reload();
-    //     // }
-
-    //     // if (this.#reconnectRC) {
-    //     //   logging.debug("> Reconnecting Remote Control...");
-
-    //     //   this.socket.connect();
-    //     // }
-    //   });
-
-    //   // this.socket.on("deliver", async (reqId, payload) => {
-    //   //   logging.debug("deliver", reqId, payload);
-    //   //   this.runtime
-    //   //     .deliver(new Uint8Array(payload))
-    //   //     .then(payload => {
-    //   //       // ! missing returned payload
-
-    //   //       payload = new Uint8Array(payload);
-    //   //       this.socket.emit("response_success", reqId, payload);
-    //   //     })
-    //   //     .catch(error => this.socket.emit("response_error", reqId, error));
-    //   // });
-
-    //   // this.socket.on("transmit", async (reqId, payload) => {
-    //   //   logging.debug("transmit", reqId, payload);
-    //   //   this.runtime
-    //   //     .transmit(new Uint8Array(payload))
-    //   //     .then(payload => {
-    //   //       // ! missing returned payload
-    //   //       payload = new Uint8Array(payload);
-    //   //       this.socket.emit("response_success", reqId, payload);
-    //   //     })
-    //   //     .catch(error => this.socket.emit("response_error", reqId, error));
-    //   // });
-
-    //   this.socket.on("request", async (reqId, payload, read_response) => {
-    //     logging.warn("request", reqId, payload);
-
-    //     this.runtime
-    //       .request(payload, read_response)
-    //       .then(payload => {
-    //         // ! missing returned payload
-    //         payload = payload;
-    //         logging.info({ reqId, payload });
-    //         this.socket.emit("response_success", reqId, payload);
-    //       })
-    //       .catch(error => this.socket.emit("response_error", reqId, error));
-    //   });
-
-    //   this.socket.on("connect_error", error => {
-    //     logging.debug("connect_error", error);
-    //     setTimeout(() => {
-    //       this.socket.connect();
-    //     }, 1000);
-    //   });
-
-    //   // this.socket.on("setClock", payload => {
-    //   //   logging.warn("setClock", payload);
-    //   // });
-
-    //   // // ============= CLOCK HACK ==============
-
-    //   // const hackClock = () => {
-    //   //   logging.warn("overriding clock with UTC clock");
-    //   //   this.runtime.clock.setMillis(getClockTimestamp());
-    //   //   this.syncClock();
-    //   // };
-
-    //   // hackClock();
-
-    //   // this.runtime.on("connected", () => {
-    //   //   hackClock();
-    //   // });
-    // } else {
-    //   this.socket.connect();
-    // }
-  }
-
-  disconnectRemoteControl() {
-    logging.debug("> Disonnecting from the Remote Control");
-
-    throw "NotImplemented";
-
-    // this.#reconnectRC = false;
-
-    // this.socket?.disconnect();
-  }
-
   // valid UUIDs are in range [1..4294967295] (32-bit unsigned number)
   #getUUID() {
     if (this.#uuidCounter >= 4294967295) {
@@ -439,10 +337,11 @@ export class Spectoda {
   //   });
   // }
 
-  scan(scan_period = 5000) {
-    logging.info(`scan(scan_period=${scan_period})`);
+  scan(scan_criteria = [{}], scan_period = 5000) {
+    logging.debug(`scan(scan_criteria=${scan_criteria}, scan_period=${scan_period})`);
 
-    return this.runtime.scan([{}], scan_period);
+    logging.info("> Scanning Spectoda Controllers...");
+    return this.runtime.scan(scan_criteria, scan_period);
   }
 
   adopt(newDeviceName = null, newDeviceId = null, tnglCode = null, ownerSignature = null, ownerKey = null, autoSelect = false) {
@@ -565,73 +464,13 @@ export class Spectoda {
 
   // devices: [ {name:"Lampa 1", mac:"12:34:56:78:9a:bc"}, {name:"Lampa 2", mac:"12:34:56:78:9a:bc"} ]
 
-  connect(devices = null, autoConnect = true, ownerSignature = null, ownerKey = null, connectAny = false, fwVersion = "") {
-    logging.info(`connect(devices=${devices}, autoConnect=${autoConnect}, ownerSignature=${ownerSignature}, ownerKey=${ownerKey}, connectAny=${connectAny}, fwVersion=${fwVersion})`);
-
-
-    if (this.#connecting) {
-      return Promise.reject("ConnectingInProgress");
-    }
+  #connect(autoConnect) {
+    logging.info("> Connecting Spectoda Controller");
 
     this.#setConnectionState("connecting");
 
-    if (ownerSignature) {
-      this.setOwnerSignature(ownerSignature);
-    }
-
-    if (ownerKey) {
-      this.setOwnerKey(ownerKey);
-    }
-
-    if (!this.#ownerSignature) {
-      throw "OwnerSignatureNotAssigned";
-    }
-
-    if (!this.#ownerKey) {
-      throw "OwnerKeyNotAssigned";
-    }
-
-    this.#connecting = true;
-
-    let criteria = /** @type {any} */ ([{ ownerSignature: this.#ownerSignature }]);
-
-    if (devices && devices.length > 0) {
-      let devices_criteria = /** @type {any} */ ([]);
-
-      for (let i = 0; i < devices.length; i++) {
-        let criterium = {};
-
-        if (devices[i].name) {
-          criterium.ownerSignature = this.#ownerSignature;
-          criterium.name = devices[i].name.slice(0, 11);
-          devices_criteria.push(criterium);
-        } else if (devices[i].mac) {
-          criterium.ownerSignature = this.#ownerSignature;
-          criterium.mac = devices[i].mac;
-          devices_criteria.push(criterium);
-        }
-      }
-
-      if (devices_criteria.length != 0) {
-        criteria = devices_criteria;
-      }
-    }
-
-    if (connectAny) {
-      if (detectSpectodaConnect()) {
-        criteria = [{}];
-      } else {
-        criteria = [{}, { adoptionFlag: true }, { legacy: true }];
-      }
-    }
-
-    if (typeof fwVersion == "string" && fwVersion.match(/(!?)([\d]+).([\d]+).([\d]+)/)) {
-      for (let i = 0; i < criteria.length; i++) {
-        criteria[i].fwVersion = fwVersion;
-      }
-    }
-
-    return (autoConnect ? this.runtime.autoSelect(criteria, 1000, 10000) : this.runtime.userSelect(criteria))
+    logging.info("> Selecting device...");
+    return (autoConnect ? this.runtime.autoSelect(this.#criteria, 1000, 10000) : this.runtime.userSelect(this.#criteria))
       .then(() => {
         return this.runtime.connect();
       })
@@ -674,12 +513,85 @@ export class Spectoda {
       });
   }
 
+  connect(devices = null, autoConnect = true, ownerSignature = null, ownerKey = null, connectAny = false, fwVersion = "", autonomousConnection = false, overrideConnection = false) {
+    logging.debug(`connect(devices=${devices}, autoConnect=${autoConnect}, ownerSignature=${ownerSignature}, ownerKey=${ownerKey}, connectAny=${connectAny}, fwVersion=${fwVersion}, autonomousConnection=${autonomousConnection}, overrideConnection=${overrideConnection})`);
+
+    this.#autonomousConnection = autonomousConnection;
+
+    if (!overrideConnection && this.#getConnectionState() === "connecting") {
+      return Promise.reject("ConnectingInProgress");
+    }
+
+    if (ownerSignature) {
+      this.setOwnerSignature(ownerSignature);
+    }
+
+    if (ownerKey) {
+      this.setOwnerKey(ownerKey);
+    }
+
+    if (!this.#ownerSignature) {
+      throw "OwnerSignatureNotAssigned";
+    }
+
+    if (!this.#ownerKey) {
+      throw "OwnerKeyNotAssigned";
+    }
+
+    let criteria = /** @type {any} */ ([{ ownerSignature: this.#ownerSignature }]);
+
+    if (devices && devices.length > 0) {
+      let devices_criteria = /** @type {any} */ ([]);
+
+      for (let i = 0; i < devices.length; i++) {
+        let criterium = { ownerSignature: this.#ownerSignature };
+
+        if (devices[i].name) {
+          criterium.name = devices[i].name.slice(0, 11);
+        }
+        if (devices[i].mac) {
+          criterium.mac = devices[i].mac;
+        }
+
+        if (devices[i].name || devices[i].mac) {
+          devices_criteria.push(criterium);
+        }
+      }
+
+      if (devices_criteria.length != 0) {
+        criteria = devices_criteria;
+      }
+    }
+
+    if (connectAny) {
+      if (detectSpectodaConnect()) {
+        criteria = [{}];
+      } else {
+        criteria = [{}, { adoptionFlag: true }, { legacy: true }];
+      }
+    }
+
+    if (typeof fwVersion == "string" && fwVersion.match(/(!?)([\d]+).([\d]+).([\d]+)/)) {
+      for (let i = 0; i < criteria.length; i++) {
+        criteria[i].fwVersion = fwVersion;
+      }
+    }
+
+    this.#criteria = criteria;
+
+    return this.#connect(autoConnect);
+  }
+
   disconnect() {
+    this.#autonomousConnection = false;
+
     if (this.getConnectionState() === "disconnected") {
       Promise.reject("DeviceAlreadyDisconnected");
     }
 
+    logging.info(`> Disconnecting controller...`);
     this.#setConnectionState("disconnecting");
+
     return this.runtime.disconnect()
       .finally(() => {
         this.#setConnectionState("disconnected");
@@ -687,16 +599,14 @@ export class Spectoda {
   }
 
   connected() {
-    if (this.#connecting || this.#adopting) {
-      return Promise.resolve(null); // resolve nothing === not connected
-    }
-
-    return this.runtime.connected();
+    return this.#getConnectionState() === "connected" ? this.runtime.connected() : Promise.resolve(null);
   }
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
   async preprocessTngl(tngl_code) {
+    logging.verbose(`preprocessTngl(tngl_code=${tngl_code})`);
+
     // 1st stage: preprocess the code
 
     // logging.debug(tngl_code);
@@ -761,7 +671,9 @@ export class Spectoda {
 
   // writes Tngl only if fingerprints does not match
   syncTngl(tngl_code, tngl_bytes = null, tngl_bank = 0) {
-    logging.verbose("syncTngl()");
+    logging.verbose(`syncTngl(tngl_code=${tngl_code}, tngl_bytes=${tngl_bytes}, tngl_bank=${tngl_bank})`);
+
+    logging.info(`> Syncing Tngl code...`);
 
     if (tngl_code === null && tngl_bytes === null) {
       return Promise.reject("InvalidParameters");
@@ -786,7 +698,9 @@ export class Spectoda {
   }
 
   writeTngl(tngl_code, tngl_bytes = null, memory_bank = 0) {
-    logging.verbose("writeTngl()");
+    logging.verbose(`writeTngl(tngl_code=${tngl_code}, tngl_bytes=${tngl_bytes}, memory_bank=${memory_bank})`);
+
+    logging.info(`> Writing Tngl code...`);
 
     if (memory_bank === null || memory_bank === undefined) {
       memory_bank = 0;
@@ -1041,13 +955,17 @@ export class Spectoda {
 
   syncTimeline() {
     logging.verbose("syncTimeline()");
+
+    logging.info(`> Synchronizing timeline from device`);
+
     const flags = this.timeline.paused() ? 0b00010000 : 0b00000000; // flags: [reserved,reserved,reserved,timeline_paused,reserved,reserved,reserved,reserved]
     const payload = [COMMAND_FLAGS.FLAG_SET_TIMELINE, ...numberToBytes(this.runtime.clock.millis(), 6), ...numberToBytes(this.timeline.millis(), 4), flags];
     return this.runtime.execute(payload, "TMLN");
   }
 
   syncClock() {
-    logging.debug("> Syncing clock from device");
+    logging.info("> Syncing clock from device");
+
     return this.runtime.syncClock().then(() => {
       logging.debug("> App clock synchronized");
     });
@@ -1064,6 +982,8 @@ export class Spectoda {
 
   updateDeviceFirmware(firmware) {
     logging.verbose(`updateDeviceFirmware(firmware.length=${firmware?.length})`);
+
+    logging.info(`> Updating Controller FW...`);
 
     if (!firmware || firmware.length < 10000) {
       logging.error("Invalid firmware");
@@ -1087,6 +1007,8 @@ export class Spectoda {
 
   updateNetworkFirmware(firmware) {
     logging.verbose(`updateNetworkFirmware(firmware.length=${firmware?.length})`);
+
+    logging.info(`> Updating Network FW...`);
 
     if (!firmware || firmware.length < 10000) {
       logging.error("Invalid firmware");
@@ -1179,8 +1101,7 @@ export class Spectoda {
 
         logging.debug("Rebooting whole network...");
 
-        const command_bytes = [COMMAND_FLAGS.FLAG_DEVICE_REBOOT_REQUEST];
-        await this.runtime.execute(command_bytes, null);
+        await this.rebootNetwork();
 
         logging.debug("Firmware written in " + (new Date().getTime() - start_timestamp) / 1000 + " seconds");
 
@@ -1559,7 +1480,7 @@ export class Spectoda {
     return this.runtime.request(bytes, true).then(response => {
       let reader = new TnglReader(response);
 
-      logging.debug("> Got response:", response);
+      logging.debug("response:", response);
 
       if (reader.readFlag() !== COMMAND_FLAGS.FLAG_TNGL_FINGERPRINT_RESPONSE) {
         throw "InvalidResponseFlag";
@@ -1809,7 +1730,7 @@ export class Spectoda {
   }
 
   networkSleep() {
-    logging.debug("> Sleep device...");
+    logging.debug("> Sleep network...");
 
     const request_uuid = this.#getUUID();
     const payload = [COMMAND_FLAGS.FLAG_SLEEP_REQUEST, ...numberToBytes(request_uuid, 4)];
@@ -1817,8 +1738,6 @@ export class Spectoda {
   }
 
   saveState() {
-    throw "WorkInProgress";
-
     logging.debug("> Saving state...");
 
     const request_uuid = this.#getUUID();
