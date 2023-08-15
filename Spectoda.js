@@ -73,10 +73,12 @@ export class Spectoda {
     this.runtime.onDisconnected = event => {
       logging.info("> Runtime disconnected");
 
+      console.debug("this.getConnectionState():", this.getConnectionState())
+
       const TIME = 2000;
 
       if (this.getConnectionState() === "connected" && this.#reconnecting) {
-        logging.info(`Reconnecting in ${TIME}ms`);
+        logging.info(`> Reconnecting in ${TIME}ms`);
         this.#setConnectionState("connecting");
 
         return sleep(TIME).then(() => {
@@ -90,6 +92,7 @@ export class Spectoda {
         });
 
       } else {
+        logging.info(`> Spectoda disconnected`);
         this.#setConnectionState("disconnected");
       }
     };
@@ -175,7 +178,8 @@ export class Spectoda {
           this.runtime.emit("disconnected", { target: this });
         }
         break;
-      default:
+      default: 
+        logging.error("#setConnectionState(): InvalidState");
         throw "InvalidState";
     }
   }
@@ -964,9 +968,8 @@ export class Spectoda {
     });
   }
 
-  // TODO add
   syncState(deviceId) {
-    logging.debug("> Synchronizing state...");
+    logging.info("> Synchronizing state...");
 
     const request_uuid = this.#getUUID();
     const device_request = [COMMAND_FLAGS.FLAG_SYNC_STATE_REQUEST, ...numberToBytes(request_uuid, 4), deviceId];
@@ -1913,10 +1916,10 @@ export class Spectoda {
   }
 
   readVariable(variable_name, device_id) {
-    logging.debug("> Reading variable...");
+    logging.debug(`> Reading variable...`);
 
     const variable_declarations = this.#parser.getVariableDeclarations();
-    logging.debug(`variable_declarations=`, variable_declarations);
+    logging.verbose(`variable_declarations=`, variable_declarations);
 
     let variable_address = undefined;
 
@@ -1938,7 +1941,7 @@ export class Spectoda {
   }
 
   readVariableAddress(variable_address, device_id) {
-    logging.debug("> Reading variable address...");
+    logging.debug(`> Reading variable address...`);
 
     return this.runtime.readVariableAddress(variable_address, device_id);
   }

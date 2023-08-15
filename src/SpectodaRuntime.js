@@ -1003,8 +1003,11 @@ export class SpectodaRuntime {
   }
 
   readVariableAddress(variable_address, device_id) {
-    logging.debug("readVariableAddress", { variable_address, device_id });
+    logging.verbose("readVariableAddress", { variable_address, device_id });
 
-    return this.interface.readVariableAddress(variable_address, device_id);
+    const variable_value = this.interface.readVariableAddress(variable_address, device_id);
+    logging.debug(`variable_address=${variable_address}, device_id=${device_id}, variable_value=}`, variable_value);
+    
+    return variable_value;
   }
 }
