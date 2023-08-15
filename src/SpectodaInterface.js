@@ -1,7 +1,7 @@
 import { logging } from "../logging";
 import { SpectodaWasm } from "./SpectodaWasm.js";
 
-const WASM_VERSION = "DEBUG_0.9.2_20230814";
+const WASM_VERSION = "DEBUG_0.9.2_20230815";
 
 export const COMMAND_FLAGS = Object.freeze({
   FLAG_UNSUPPORTED_COMMND_RESPONSE: 255, // TODO change FLAG_OTA_BEGIN to not be 255.
@@ -146,8 +146,8 @@ export class SpectodaInterface {
         //   this.__parent.__destruct.call(this);
         // },
 
-        _handle: event_array => {
-          logging.verbose("_handle", event_array);
+        _onEvents: event_array => {
+          logging.verbose("_onEvents", event_array);
 
           for (let i = 0; i < event_array.length; i++) {
             event_array[i].timestamp_utc = Date.now();
@@ -173,6 +173,35 @@ export class SpectodaInterface {
 
 
           this.#runtimeReference.emit("emitted_events", event_array);
+        },
+
+        _onLocalEvents: event_array => {
+          logging.verbose("_onLocalEvents", event_array);
+
+          for (let i = 0; i < event_array.length; i++) {
+            event_array[i].timestamp_utc = Date.now();
+          }
+
+          if (event_array.length) {
+
+            let debug_log = "";
+
+            {
+              const e = event_array[0];
+              debug_log += `${e.id} -> $${e.label}: ${e.value} [${e.timestamp}ms]`;
+            }
+
+            for (let i = 1; i < event_array.length; i++) {
+              const e = event_array[i];
+              debug_log += `\n${e.id} -> $${e.label}: ${e.value} [${e.timestamp}ms]`;
+            }
+
+            logging.info(debug_log);
+
+          }
+
+
+          this.#runtimeReference.emit("emitted_local_events", event_array);
         },
 
         _onExecute: (commands_bytecode_vector, source_connection) => {
