@@ -794,6 +794,9 @@ export class SpectodaRuntime {
 
                         try {
                           return this.connector.getClock().then(clock => {
+                            this.emit("wasm_clock", clock.millis());
+                            this.interface.setClock(clock.millis());
+
                             this.clock = clock;
                             item.resolve(device);
                           });
@@ -872,8 +875,8 @@ export class SpectodaRuntime {
                   const timeout = item.c;
 
                   logging.debug("EXECUTE", uint8ArrayToHexString(data));
-                  this.emit("wasm_execute", data);
 
+                  this.emit("wasm_execute", data);
                   this.interface.execute(data, 0x00);
 
                   try {
@@ -891,7 +894,9 @@ export class SpectodaRuntime {
                   // TODO process in internal Interface
 
                   logging.debug("REQUEST", uint8ArrayToHexString(item.a));
+                  
                   this.emit("wasm_request", item.a);
+                  this.interface.request(item.a, 0x00);
 
                   try {
                     await this.connector.request(item.a, item.b, item.c).then(response => {
@@ -906,6 +911,7 @@ export class SpectodaRuntime {
               case Query.TYPE_SET_CLOCK:
                 {
                   this.emit("wasm_clock", item.a.millis());
+                  this.interface.setClock(item.a.millis());
 
                   try {
                     await this.connector.setClock(item.a).then(response => {
@@ -922,6 +928,8 @@ export class SpectodaRuntime {
                   try {
                     await this.connector.getClock().then(clock => {
                       this.emit("wasm_clock", clock.millis());
+                      this.interface.setClock(clock.millis());
+
                       item.resolve(clock);
                     });
                   } catch (error) {

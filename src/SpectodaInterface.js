@@ -147,10 +147,28 @@ export class SpectodaInterface {
         // },
 
         _handle: event_array => {
-          logging.debug("_handle", event_array);
+          logging.verbose("_handle", event_array);
 
           for (let i = 0; i < event_array.length; i++) {
             event_array[i].timestamp_utc = Date.now();
+          }
+
+          if (event_array.length) {
+
+            let debug_log = "";
+
+            {
+              const e = event_array[0];
+              debug_log += `${e.id} -> $${e.label}: ${e.value} [${e.timestamp}ms]`;
+            }
+
+            for (let i = 1; i < event_array.length; i++) {
+              const e = event_array[i];
+              debug_log += `\n${e.id} -> $${e.label}: ${e.value} [${e.timestamp}ms]`;
+            }
+
+            logging.info(debug_log);
+
           }
 
 
@@ -158,7 +176,7 @@ export class SpectodaInterface {
         },
 
         _onExecute: (commands_bytecode_vector, source_connection) => {
-          logging.debug("_onExecute", commands_bytecode_vector, source_connection);
+          logging.verbose("_onExecute", commands_bytecode_vector, source_connection);
 
           try {
             // dont know how to make Uint8Array in C++ yet. So I am forced to give data out in C++ std::vector

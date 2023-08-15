@@ -3,7 +3,7 @@ import NodeBle, { createBluetooth } from "../../../node-ble/src/index";
 
 import { logging } from "../../logging";
 import { numberToBytes, sleep, toBytes } from "../../functions";
-// import { COMMAND_FLAGS, SpectodaInterfaceLegacy } from "./src";
+// import { COMMAND_FLAGS, SpectodaRuntime } from "./src";
 import { TimeTrack } from "../../TimeTrack.js";
 import { TnglReader } from "../../TnglReader.js";
 import { COMMAND_FLAGS } from "../SpectodaInterface.js";
@@ -169,7 +169,7 @@ const ESP_MAC_PREFIXES = [
     is renamed Transmitter. Helper class for WebBluetoothConnector.js
 */
 export class NodeBLEConnection {
-  #interfaceReference: SpectodaInterfaceLegacy;
+  #runtimeReference: SpectodaRuntime;
   // private fields
   #service: NodeBle.GattService | undefined;
   #networkChar: NodeBle.GattCharacteristic | undefined;
@@ -178,8 +178,8 @@ export class NodeBLEConnection {
   #writing;
   #uuidCounter;
 
-  constructor(interfaceReference: SpectodaInterfaceLegacy) {
-    this.#interfaceReference = interfaceReference;
+  constructor(runtimeReference: SpectodaRuntime) {
+    this.#runtimeReference = runtimeReference;
 
     /*
       BLE Spectoda Service
@@ -299,10 +299,10 @@ export class NodeBLEConnection {
         }
 
         bytes = new Uint8Array(value.buffer, value.byteOffset, value.byteLength);
-        logging.debug("bytes", bytes);
+        logging.verbose("bytes", bytes);
 
         total_bytes = [...total_bytes, ...bytes];
-        logging.debug("total_bytes", total_bytes);
+        logging.verbose("total_bytes", total_bytes);
       } while (bytes.length == 512);
 
       resolve(new DataView(new Uint8Array(total_bytes).buffer));
@@ -318,12 +318,14 @@ export class NodeBLEConnection {
     // logging.warn(event);
 
     // const bytes = new Uint8Array(data.buffer, data.byteOffset, data.byteLength);
-    const view = new DataView(data.buffer, data.byteOffset, data.byteLength);
+    const dataView = new DataView(data.buffer, data.byteOffset, data.byteLength);
+    const uint8Array = new Uint8Array(dataView.buffer, dataView.byteOffset, dataView.byteLength);
 
-    // logging.verbose("bytes", bytes);
-    // logging.verbose("view", view);
+    // logging.verbose("dataView", dataView);
+    // logging.verbose("uint8Array", uint8Array);
 
-    this.#interfaceReference.process(view);
+    this.#runtimeReference.interface.execute(uint8Array, 0x01);
+
   }
 
   // WIP
@@ -547,7 +549,7 @@ export class NodeBLEConnection {
   // reads the current clock characteristics timestamp from the device
   // as fast as possible
   readClock(): Promise<number | undefined> {
-    logging.verbose("readClock()");
+    logging.debug("readClock()");
 
     if (!this.#clockChar) {
       logging.warn("Sync characteristics is null");
@@ -604,7 +606,7 @@ export class NodeBLEConnection {
     const start_timestamp = new Date().getTime();
 
     try {
-      this.#interfaceReference.emit("ota_status", "begin");
+      this.#runtimeReference.emit("ota_status", "begin");
 
       {
         //===========// RESET //===========//
@@ -643,7 +645,7 @@ export class NodeBLEConnection {
           const percentage = Math.floor((written * 10000) / firmware.length) / 100;
           logging.debug(percentage + "%");
 
-          this.#interfaceReference.emit("ota_progress", percentage);
+          this.#runtimeReference.emit("ota_progress", percentage);
 
           index_from += chunk_size;
           index_to = index_from + chunk_size;
@@ -664,11 +666,11 @@ export class NodeBLEConnection {
 
       logging.info("Firmware written in " + (new Date().getTime() - start_timestamp) / 1000 + " seconds");
 
-      this.#interfaceReference.emit("ota_status", "success");
+      this.#runtimeReference.emit("ota_status", "success");
       return;
     } catch (e) {
       logging.error(e);
-      this.#interfaceReference.emit("ota_status", "fail");
+      this.#runtimeReference.emit("ota_status", "fail");
       throw "UpdateFailed";
     } finally {
       this.#writing = false;
@@ -723,7 +725,7 @@ export class SpectodaNodeBluetoothConnector {
   readonly CLOCK_CHAR_UUID = "7a1e0e3a-6b9b-49ef-b9b7-65c81b714a19";
   readonly DEVICE_CHAR_UUID = "9ebe2e4b-10c7-4a81-ac83-49540d1135a5";
 
-  #interfaceReference;
+  #runtimeReference;
 
   #bluetooth: NodeBle.Bluetooth;
   #bluetoothDestroy: () => void;
@@ -735,8 +737,8 @@ export class SpectodaNodeBluetoothConnector {
   #criteria;
   #connectedGuard;
 
-  constructor(interfaceReference: SpectodaInterfaceLegacy) {
-    this.#interfaceReference = interfaceReference;
+  constructor(runtimeReference: SpectodaRuntime) {
+    this.#runtimeReference = runtimeReference;
 
     const { bluetooth: bluetoothDevice, destroy: bluetoothDestroy } = createBluetooth();
 
@@ -745,17 +747,17 @@ export class SpectodaNodeBluetoothConnector {
     this.#bluetoothAdapter = undefined;
     this.#bluetoothDevice = undefined;
 
-    this.#connection = new NodeBLEConnection(interfaceReference);
+    this.#connection = new NodeBLEConnection(runtimeReference);
     this.#reconection = false;
     this.#criteria = {};
 
     this.#connectedGuard = false;
 
-    this.#interfaceReference.on("#connected", () => {
+    this.#runtimeReference.on("#connected", () => {
       this.#connectedGuard = true;
     });
 
-    this.#interfaceReference.on("#disconnected", () => {
+    this.#runtimeReference.on("#disconnected", () => {
       this.#connectedGuard = false;
     });
   }
@@ -804,7 +806,7 @@ criteria example:
   // first bonds the BLE device with the PC/Phone/Tablet if it is needed.
   // Then selects the device
   userSelect(criteria: object, timeout: number): Promise<object> {
-    logging.debug("userSelect()", criteria, timeout);
+    logging.verbose("userSelect()", criteria, timeout);
 
     throw "NotImplemented";
   }
@@ -819,7 +821,7 @@ criteria example:
   // are eligible.
 
   async autoSelect(criteria: Criteria[], scanPeriod: number, timeout: number): Promise<object> {
-    logging.debug("autoSelect()", criteria, scanPeriod, timeout);
+    logging.verbose("autoSelect()", criteria, scanPeriod, timeout);
 
     try {
       // step 1. for the scanPeriod scan the surroundings for BLE devices.
@@ -1076,7 +1078,7 @@ criteria example:
       .then(() => {
         logging.info("> Bluetooth Device Connected");
         if (!this.#connectedGuard) {
-          this.#interfaceReference.emit("#connected");
+          this.#runtimeReference.emit("#connected");
         }
         return { connector: this.type };
       })
@@ -1138,7 +1140,7 @@ criteria example:
     this.#connection.reset();
     if (this.#connectedGuard) {
       logging.verbose("emitting #disconnected");
-      this.#interfaceReference.emit("#disconnected");
+      this.#runtimeReference.emit("#disconnected");
     }
   };
 
@@ -1151,14 +1153,14 @@ criteria example:
     logging.info("> NodeBLE Device Connected");
     if (!this.#connectedGuard) {
       logging.verbose("emitting #connected");
-      this.#interfaceReference.emit("#connected");
+      this.#runtimeReference.emit("#connected");
     }
   };
 
   // deliver handles the communication with the Spectoda network in a way
   // that the command is guaranteed to arrive
   deliver(payload: Uint8Array, timeout: number) {
-    logging.debug("deliver()", payload, timeout);
+    logging.verbose("deliver()", payload, timeout);
 
     if (!this.#connected()) {
       return Promise.reject("DeviceDisconnected");
@@ -1170,7 +1172,7 @@ criteria example:
   // transmit handles the communication with the Spectoda network in a way
   // that the command is NOT guaranteed to arrive
   transmit(payload: Uint8Array, timeout: number) {
-    logging.debug("transmit()", payload, timeout);
+    logging.verbose("transmit()", payload, timeout);
 
     if (!this.#connected()) {
       return Promise.reject("DeviceDisconnected");
@@ -1182,7 +1184,7 @@ criteria example:
   // request handles the requests on the Spectoda network. The command request
   // is guaranteed to get a response
   request(payload: Uint8Array, read_response: boolean, timeout: number) {
-    logging.debug("request()", payload, read_response, timeout);
+    logging.verbose("request()", payload, read_response, timeout);
 
     if (!this.#connected()) {
       return Promise.reject("DeviceDisconnected");
@@ -1260,7 +1262,7 @@ criteria example:
   destroy() {
     logging.debug("destroy()");
 
-    //this.#interfaceReference = null; // dont know if I need to destroy this reference.. But I guess I dont need to?
+    //this.#runtimeReference = null; // dont know if I need to destroy this reference.. But I guess I dont need to?
     return this.disconnect()
       .catch(() => { })
       .then(() => {
