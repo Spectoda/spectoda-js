@@ -27,7 +27,7 @@ const LocalStorageManager = {
  * @throws {Error} If the API request fails.
  */
 async function fetchTnglFromApiById(id) {
-  const url = `http://localhost:3000/api/tnglcode?id=${id}`;
+  const url = location.href.match(/studio|localhost/) ? `/api/tnglcode?id=${id}` : `https://studio.spectoda.com/api/tnglcode?id=${id}`;
 
   try {
     const response = await fetch(url);
@@ -59,7 +59,7 @@ async function fetchTnglFromApiById(id) {
  */
 
 async function sendTnglToApi({ tngl, name, id }) {
-  const url = "http://localhost:3000/api/tnglcode";
+  const url = location.href.match(/studio|localhost/) ? `/api/tnglcode?id=${id}` : `https://studio.spectoda.com/api/tnglcode?id=${id}`;
   const options = {
     method: "POST",
     headers: { "content-type": "application/json" },
