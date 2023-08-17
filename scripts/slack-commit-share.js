@@ -2,11 +2,12 @@ const axios = require("axios");
 const { execSync } = require("child_process");
 
 const TARGET_CHANNEL_ID = "C05GTKQ5JHW"; // #monorepo-commits
+const ACCESS_TOKEN = process.env.SCREAM_COMMITS_SLACK_ID;
 
 const slackApi = axios.create({
   baseURL: "https://slack.com/api",
   headers: {
-    Authorization: `Bearer xoxb-1228490764037-5541178943398-x7t5S3Y0DUPYclCH99FSsIYi`,
+    Authorization: `Bearer ${ACCESS_TOKEN}`,
     "Content-Type": "application/json",
   },
 });
@@ -62,15 +63,11 @@ async function postCommitToSlack() {
 
     // Extract dev-XXXX from branch name
     const devId = branchName.match(/dev-\d+/i);
-    const clickupUrl = devId
-      ? `(<https://app.clickup.com/t/4663973/${devId[0]}|ClickUp>)`
-      : "";
+    const clickupUrl = devId ? `(<https://app.clickup.com/t/4663973/${devId[0]}|ClickUp>)` : "";
 
     const githubUrl = `(<https://github.com/Spectoda/spectoda-monorepo/commit/${commitHash}|GitHub>)`;
 
-    const studioLink = getStudioLinkForBranch(branchName)
-      ? `(<${getStudioLinkForBranch(branchName)}|Link>)`
-      : "";
+    const studioLink = getStudioLinkForBranch(branchName) ? `(<${getStudioLinkForBranch(branchName)}|Link>)` : "";
 
     if (tagName) {
       // Tag specific message

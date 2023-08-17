@@ -1,8 +1,7 @@
 const axios = require("axios");
 const { execSync } = require("child_process");
 
-const ACCESS_TOKEN =
-  "4564556_9c301bd419da775b2c347f93ffbeda94fec1494c918fb25d805115209a10bad3";
+const ACCESS_TOKEN = process.env.SCREAM_COMMITS_CLICKUP_ID;
 
 const clickupApi = axios.create({
   baseURL: "https://api.clickup.com/api/v2",
@@ -26,9 +25,7 @@ const TEAM_ID = "4663973";
 
 async function postCommitToClickup() {
   try {
-    const branchName = execSync("git rev-parse --abbrev-ref HEAD")
-      .toString()
-      .trim();
+    const branchName = execSync("git rev-parse --abbrev-ref HEAD").toString().trim();
     const match = branchName.match(/DEV-(\d+)/);
     const taskIdNumeric = match ? match[1] : null;
 
@@ -76,9 +73,7 @@ async function postCommitToClickup() {
       return;
     }
 
-    const commitAuthor = execSync("git log -1 --pretty=format:%an")
-      .toString()
-      .trim();
+    const commitAuthor = execSync("git log -1 --pretty=format:%an").toString().trim();
 
     const response = await clickupApi.post(
       `/task/DEV-${taskIdNumeric}/comment`,
