@@ -176,7 +176,7 @@ export class Spectoda {
           this.runtime.emit("disconnected", { target: this });
         }
         break;
-      default: 
+      default:
         logging.error("#setConnectionState(): InvalidState");
         throw "InvalidState";
     }
@@ -991,7 +991,7 @@ export class Spectoda {
       });
     }).then(() => {
       return this.runtime.updateFW(firmware).finally(() => {
-        return this.disconnect();
+        return this.runtime.disconnect();
       })
     }).finally(() => {
       return this.releaseWakeLock().catch((e) => {
@@ -1057,7 +1057,7 @@ export class Spectoda {
         // TODO optimalize this begin by detecting when all controllers have erased its flash
         // TODO also, right now the gateway controller sends to other controlles to erase flash after it is done.
         // TODO that slows things down
-        await sleep(20000);
+        await sleep(10000);
 
         {
           //===========// WRITE //===========//
@@ -1111,7 +1111,7 @@ export class Spectoda {
       }
     })
       .then(() => {
-        return this.disconnect();
+        return this.runtime.disconnect();
       })
 
       .finally(() => {
@@ -1417,7 +1417,10 @@ export class Spectoda {
     const request_uuid = this.#getUUID();
     const bytes = [COMMAND_FLAGS.FLAG_ERASE_OWNER_REQUEST, ...numberToBytes(request_uuid, 4)];
 
-    return this.runtime.execute(bytes, true);
+    return this.runtime.execute(bytes, true)
+      .then(() => {
+        return this.rebootNetwork();
+      });
   }
 
   getFwVersion() {
