@@ -3,7 +3,7 @@ import { WEBSOCKET_URL } from "./SpectodaWebSocketsConnector.js";
 import { colorToBytes, computeTnglFingerprint, detectSpectodaConnect, hexStringToUint8Array, labelToBytes, numberToBytes, percentageToBytes, sleep, strMacToBytes, stringToBytes } from "./functions";
 import { changeLanguage, t } from "./i18n.js";
 import { io } from "./lib/socketio.js";
-import { logging, setLoggingLevel } from "./logging.ts";
+import { logging, setLoggingLevel } from "./logging";
 import { COMMAND_FLAGS } from "./src/SpectodaInterface.js";
 import { TimeTrack } from "./TimeTrack.js";
 import "./TnglReader.js";
@@ -79,16 +79,18 @@ export class Spectoda {
         logging.info(`> Reconnecting in ${TIME}ms`);
         this.#setConnectionState("connecting");
 
-        return sleep(TIME).then(() => {
-          return this.#connect(true);
-        }).then(() => {
-          logging.info("Reconnection successful.");
-          this.#setConnectionState("connected");
-        }).catch((error) => {
-          logging.warn("Reconnection failed:", error);
-          this.#setConnectionState("disconnected");
-        });
-
+        return sleep(TIME)
+          .then(() => {
+            return this.#connect(true);
+          })
+          .then(() => {
+            logging.info("Reconnection successful.");
+            this.#setConnectionState("connected");
+          })
+          .catch(error => {
+            logging.warn("Reconnection failed:", error);
+            this.#setConnectionState("disconnected");
+          });
       } else {
         logging.info(`> Spectoda disconnected`);
         this.#setConnectionState("disconnected");
@@ -99,7 +101,6 @@ export class Spectoda {
     setInterval(() => {
       // TODO move this to runtime
       if (!this.#updating && this.runtime.connector) {
-
         // this.connected().then(connected => {
         //   if (connected) {
         //     this.syncClock().then(() => {
@@ -111,18 +112,15 @@ export class Spectoda {
         // });
 
         if (this.#getConnectionState() === "connected") {
-          return this.syncClock().catch((error) => {
+          return this.syncClock().catch(error => {
             logging.warn(error);
           });
-        }
-
-        else if (this.#getConnectionState() === "disconnected" && this.#autonomousConnection) {
-          return this.#connect(true).catch((error) => {
+        } else if (this.#getConnectionState() === "disconnected" && this.#autonomousConnection) {
+          return this.#connect(true).catch(error => {
             logging.warn(error);
           });
         }
       }
-
     }, 60000);
   }
 
@@ -130,7 +128,6 @@ export class Spectoda {
     switch (connectionState) {
       case "connecting":
         if (connectionState !== this.#connectionState) {
-
           // if (connectionState == "disconnecting") {
           //   throw "DisconnectingInProgress";
           // }
@@ -142,7 +139,6 @@ export class Spectoda {
         break;
       case "connected":
         if (connectionState !== this.#connectionState) {
-
           // if (connectionState != "connecting") {
           //   throw "ConnectionFailed";
           // }
@@ -154,7 +150,6 @@ export class Spectoda {
         break;
       case "disconnecting":
         if (connectionState !== this.#connectionState) {
-
           // if (connectionState == "connecting") {
           //   throw "ConnectingInProgress";
           // }
@@ -166,7 +161,6 @@ export class Spectoda {
         break;
       case "disconnected":
         if (connectionState !== this.#connectionState) {
-
           // if (connectionState != "disconnecting") {
           //   throw "DisconnectFailed";
           // }
@@ -194,8 +188,7 @@ export class Spectoda {
         window.flutter_inappwebview.callHandler("setWakeLock", true);
       }
       return Promise.resolve();
-    }
-    catch (e) {
+    } catch (e) {
       return Promise.reject(e);
     }
   }
@@ -208,8 +201,7 @@ export class Spectoda {
         window.flutter_inappwebview.callHandler("setWakeLock", false);
       }
       return Promise.resolve();
-    }
-    catch (e) {
+    } catch (e) {
       return Promise.reject(e);
     }
   }
@@ -479,7 +471,7 @@ export class Spectoda {
             logging.error("Timeline sync after reconnection failed:", e);
           })
           .then(() => {
-            logging.warn("Fix bug where reading history before TNGL sync causes variable to be in invalid state")
+            logging.warn("Fix bug where reading history before TNGL sync causes variable to be in invalid state");
             return detectNode() ? Promise.resolve() : this.readEventHistory();
           })
           .catch(e => {
@@ -488,13 +480,13 @@ export class Spectoda {
           .then(() => {
             return this.runtime.connected();
           })
-          .then((connected) => {
+          .then(connected => {
             if (!connected) {
               throw "ConnectionFailed";
             }
             this.#setConnectionState("connected");
             return connectedDeviceInfo;
-          })
+          });
       })
       .catch(error => {
         logging.error("Error during connect():", error);
@@ -510,7 +502,9 @@ export class Spectoda {
   }
 
   connect(devices = null, autoConnect = true, ownerSignature = null, ownerKey = null, connectAny = false, fwVersion = "", autonomousConnection = false, overrideConnection = false) {
-    logging.debug(`connect(devices=${devices}, autoConnect=${autoConnect}, ownerSignature=${ownerSignature}, ownerKey=${ownerKey}, connectAny=${connectAny}, fwVersion=${fwVersion}, autonomousConnection=${autonomousConnection}, overrideConnection=${overrideConnection})`);
+    logging.debug(
+      `connect(devices=${devices}, autoConnect=${autoConnect}, ownerSignature=${ownerSignature}, ownerKey=${ownerKey}, connectAny=${connectAny}, fwVersion=${fwVersion}, autonomousConnection=${autonomousConnection}, overrideConnection=${overrideConnection})`,
+    );
 
     this.#autonomousConnection = autonomousConnection;
 
@@ -588,10 +582,9 @@ export class Spectoda {
     logging.info(`> Disconnecting controller...`);
     this.#setConnectionState("disconnecting");
 
-    return this.runtime.disconnect()
-      .finally(() => {
-        this.#setConnectionState("disconnected");
-      })
+    return this.runtime.disconnect().finally(() => {
+      this.#setConnectionState("disconnected");
+    });
   }
 
   connected() {
@@ -613,7 +606,6 @@ export class Spectoda {
     const regexINJECT_TNGL_FROM_API = /INJECT_TNGL_FROM_API\s*\(\s*"([^"]*)"\s*\);?/ms;
 
     for (let requests = 0; requests < 64; requests++) {
-
       const match = regexPUBLISH_TNGL_TO_API.exec(processed_tngl_code);
       if (!match) {
         break;
@@ -636,7 +628,6 @@ export class Spectoda {
     }
 
     for (let requests = 0; requests < 64; requests++) {
-
       const match = regexINJECT_TNGL_FROM_API.exec(processed_tngl_code);
       if (!match) {
         break;
@@ -985,19 +976,22 @@ export class Spectoda {
       return Promise.reject("InvalidFirmware");
     }
 
-    return Promise.resolve().then(() => {
-      return this.requestWakeLock().catch((e) => {
-        logging.error("Failed to acquire wake lock", e);
-      });
-    }).then(() => {
-      return this.runtime.updateFW(firmware).finally(() => {
-        return this.runtime.disconnect();
+    return Promise.resolve()
+      .then(() => {
+        return this.requestWakeLock().catch(e => {
+          logging.error("Failed to acquire wake lock", e);
+        });
       })
-    }).finally(() => {
-      return this.releaseWakeLock().catch((e) => {
-        logging.error("Failed to release wake lock", e);
+      .then(() => {
+        return this.runtime.updateFW(firmware).finally(() => {
+          return this.runtime.disconnect();
+        });
+      })
+      .finally(() => {
+        return this.releaseWakeLock().catch(e => {
+          logging.error("Failed to release wake lock", e);
+        });
       });
-    });
   }
 
   updateNetworkFirmware(firmware) {
@@ -1012,7 +1006,7 @@ export class Spectoda {
 
     this.#updating = true;
 
-    this.requestWakeLock().catch((e) => {
+    this.requestWakeLock().catch(e => {
       logging.error("Failed to acquire wake lock", e);
     });
 
@@ -1115,7 +1109,7 @@ export class Spectoda {
       })
 
       .finally(() => {
-        this.releaseWakeLock().catch((e) => {
+        this.releaseWakeLock().catch(e => {
           logging.error("Failed to release wake lock", e);
         });
         this.#updating = false;
@@ -1396,7 +1390,7 @@ export class Spectoda {
       const removed_device_mac_bytes = reader.readBytes(6);
 
       return this.rebootDevice()
-        .catch(() => { })
+        .catch(() => {})
         .then(() => {
           let removed_device_mac = "00:00:00:00:00:00";
           if (removed_device_mac_bytes.length >= 6) {
@@ -1417,10 +1411,9 @@ export class Spectoda {
     const request_uuid = this.#getUUID();
     const bytes = [COMMAND_FLAGS.FLAG_ERASE_OWNER_REQUEST, ...numberToBytes(request_uuid, 4)];
 
-    return this.runtime.execute(bytes, true)
-      .then(() => {
-        return this.rebootNetwork();
-      });
+    return this.runtime.execute(bytes, true).then(() => {
+      return this.rebootNetwork();
+    });
   }
 
   getFwVersion() {
@@ -1503,7 +1496,11 @@ export class Spectoda {
       }
 
       logging.verbose(`fingerprint=${fingerprint}`);
-      logging.verbose(`fingerprint=${Array.from(fingerprint).map(byte => ('0' + (byte & 0xFF).toString(16)).slice(-2)).join(',')}`);
+      logging.verbose(
+        `fingerprint=${Array.from(fingerprint)
+          .map(byte => ("0" + (byte & 0xff).toString(16)).slice(-2))
+          .join(",")}`,
+      );
 
       return new Uint8Array(fingerprint);
     });
@@ -1667,7 +1664,6 @@ export class Spectoda {
     });
   }
 
-
   readEventHistory() {
     logging.debug("> Requesting event history bytecode...");
 
@@ -1716,7 +1712,6 @@ export class Spectoda {
     const bytes = [COMMAND_FLAGS.FLAG_ERASE_EVENT_HISTORY_REQUEST, ...numberToBytes(request_uuid, 4)];
 
     return this.runtime.execute(bytes, true);
-
   }
 
   deviceSleep() {
@@ -1950,5 +1945,4 @@ export class Spectoda {
 
     return this.runtime.readVariableAddress(variable_address, device_id);
   }
-
 }

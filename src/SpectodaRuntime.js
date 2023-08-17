@@ -1,4 +1,4 @@
-import { logging } from "../logging.ts";
+import { logging } from "../logging";
 import { createNanoEvents, sleep, detectSpectodaConnect, detectAndroid, detectChrome, detectWindows, detectLinux, detectIPhone, detectMacintosh, uint8ArrayToHexString, detectNode } from "../functions";
 import { SpectodaDummyConnector } from "../SpectodaDummyConnector.js";
 import { SpectodaWebBluetoothConnector } from "../SpectodaWebBluetoothConnector.js";
@@ -121,8 +121,8 @@ export class SpectodaRuntime {
     this.#lastUpdateTime = new Date().getTime();
     this.#lastUpdatePercentage = 0;
 
-    this.onConnected = e => { };
-    this.onDisconnected = e => { };
+    this.onConnected = e => {};
+    this.onDisconnected = e => {};
 
     this.#eventEmitter.on("ota_progress", value => {
       const now = new Date().getTime();
@@ -158,42 +158,42 @@ export class SpectodaRuntime {
       // @ts-ignore
 
       /** @type {HTMLBodyElement} */ document.querySelector("body").addEventListener("click", function (e) {
-      e.preventDefault();
+        e.preventDefault();
 
-      (function (e, d, w) {
-        if (!e.composedPath) {
-          e.composedPath = function () {
-            if (this.path) {
+        (function (e, d, w) {
+          if (!e.composedPath) {
+            e.composedPath = function () {
+              if (this.path) {
+                return this.path;
+              }
+              var target = this.target;
+
+              this.path = [];
+              while (target.parentNode !== null) {
+                this.path.push(target);
+                target = target.parentNode;
+              }
+              this.path.push(d, w);
               return this.path;
-            }
-            var target = this.target;
+            };
+          }
+        })(Event.prototype, document, window);
+        // @ts-ignore
+        const path = e.path || (e.composedPath && e.composedPath());
 
-            this.path = [];
-            while (target.parentNode !== null) {
-              this.path.push(target);
-              target = target.parentNode;
-            }
-            this.path.push(d, w);
-            return this.path;
-          };
+        // @ts-ignore
+        for (let el of path) {
+          if (el.tagName === "A" && el.getAttribute("target") === "_blank") {
+            e.preventDefault();
+            const url = el.getAttribute("href");
+            logging.verbose(url);
+            // @ts-ignore
+            logging.debug("Openning external url", url);
+            window.flutter_inappwebview.callHandler("openExternalUrl", url);
+            break;
+          }
         }
-      })(Event.prototype, document, window);
-      // @ts-ignore
-      const path = e.path || (e.composedPath && e.composedPath());
-
-      // @ts-ignore
-      for (let el of path) {
-        if (el.tagName === "A" && el.getAttribute("target") === "_blank") {
-          e.preventDefault();
-          const url = el.getAttribute("href");
-          logging.verbose(url);
-          // @ts-ignore
-          logging.debug("Openning external url", url);
-          window.flutter_inappwebview.callHandler("openExternalUrl", url);
-          break;
-        }
-      }
-    });
+      });
     }
 
     if (typeof window !== "undefined") {
@@ -299,7 +299,7 @@ export class SpectodaRuntime {
     }
 
     return (this.connector ? this.destroyConnector() : Promise.resolve())
-      .catch(() => { })
+      .catch(() => {})
       .then(() => {
         switch (connector_type) {
           case "none":
@@ -942,7 +942,7 @@ export class SpectodaRuntime {
                 {
                   try {
                     await this.requestWakeLock();
-                  } catch { }
+                  } catch {}
 
                   try {
                     await this.connector.updateFW(item.a).then(response => {
@@ -954,7 +954,7 @@ export class SpectodaRuntime {
 
                   try {
                     this.releaseWakeLock();
-                  } catch { }
+                  } catch {}
                 }
                 break;
 
