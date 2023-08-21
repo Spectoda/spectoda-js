@@ -1,7 +1,7 @@
 
 // TODO! make this conenctor work in both webbrowser and node enviroment
 // @ts-nocheck
-//import NodeBle, { createBluetooth } from "../../../node-ble/src/index";
+import NodeBle, { createBluetooth } from "../../../node-ble/src/index";
 
 
 import { logging } from "../../logging";
