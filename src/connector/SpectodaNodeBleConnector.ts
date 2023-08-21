@@ -892,12 +892,12 @@ criteria example:
   // if device is conneced, then disconnect it
   async unselect(): Promise<void> {
     logging.debug("unselect()");
-    ƒ;
 
     if (await this.connected()) {
       await this.disconnect();
     }
 
+    this.#bluetoothDevice?.removeAllListeners("connect");
     this.#bluetoothDevice?.removeAllListeners("disconnect");
     this.#bluetoothDevice = undefined;
     this.#connection.reset();
