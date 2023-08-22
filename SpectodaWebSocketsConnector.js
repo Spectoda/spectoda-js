@@ -1,11 +1,9 @@
-import { logging } from "./logging";
-import { sleep, stringToBytes, toBytes, getClockTimestamp } from "./functions";
+import { io } from "socket.io-client";
 import { TimeTrack } from "./TimeTrack.js";
-import { io } from "./lib/socketio.js";
-import { nanoid } from "nanoid";
+import { logging } from "./logging";
 
 // const WEBSOCKET_URL = "https://tangle-remote-control.glitch.me/"
-export const WEBSOCKET_URL = "https://ws.host.spectoda.com/";
+export const WEBSOCKET_URL = "http://localhost:4000";
 /////////////////////////////////////////////////////////////////////////////////////
 
 export class SpectodaWebSocketsConnector {
@@ -67,7 +65,8 @@ export class SpectodaWebSocketsConnector {
             this.socket.on("connect", socket => {
               logging.debug("> Connected to remote control");
 
-              // socket.join("sans-souci");
+              // TODO this shouuld use the currently assigned signature and key
+              this.socket.emit("join", { signature: "8d5b6fb47a20c217c7a02e36a7e67069", key: "2217bbf9b9ff85f1308e5719094a7464" });
 
               this.#connected = true;
 
@@ -100,6 +99,11 @@ export class SpectodaWebSocketsConnector {
               //   this.socket.connect();
               // }, 1000);
             });
+
+            this.socket.on("execute", payload => {
+              // this is what is received back from the server
+              this.#interfaceReference.emit("execute", payload);
+            });
           } else {
             this.socket.connect();
           }
@@ -128,121 +132,106 @@ export class SpectodaWebSocketsConnector {
     }
   }
 
+  execute(payload, timeout) {
+    this.socket.emit("execute", payload);
+    return Promise.resolve();
+  }
+
   deliver(payload, timeout) {
-    if (this.#connected) {
-      const reqId = nanoid();
-      // console.log("Emit deliver", reqId, payload);
-
-      this.socket.emit("deliver", reqId, payload);
-      const socket = this.socket;
-      this.#promise = new Promise((resolve, reject) => {
-        const timeout_handle = setTimeout(() => rejectFunc(reqId, "timeout"), timeout);
-
-        function resolveFunc(reqId, response) {
-          if (reqId === reqId) {
-            resolve(response);
-            socket.off("response_error", rejectFunc);
-            clearTimeout(timeout_handle);
-          }
-        }
-
-        function rejectFunc(reqId, error) {
-          if (reqId === reqId) {
-            reject(error);
-            socket.off("response_success", resolveFunc);
-            clearTimeout(timeout_handle);
-          }
-        }
-
-        this.socket.once("response_success", resolveFunc);
-        this.socket.once("response_error", rejectFunc);
-      });
-
-      return this.#promise;
-    } else {
-      return Promise.reject("Disconnected");
-    }
+    // if (this.#connected) {
+    //   const reqId = nanoid();
+    //   // console.log("Emit deliver", reqId, payload);
+    //   this.socket.emit("deliver", reqId, payload);
+    //   const socket = this.socket;
+    //   this.#promise = new Promise((resolve, reject) => {
+    //     const timeout_handle = setTimeout(() => rejectFunc(reqId, "timeout"), timeout);
+    //     function resolveFunc(reqId, response) {
+    //       if (reqId === reqId) {
+    //         resolve(response);
+    //         socket.off("response_error", rejectFunc);
+    //         clearTimeout(timeout_handle);
+    //       }
+    //     }
+    //     function rejectFunc(reqId, error) {
+    //       if (reqId === reqId) {
+    //         reject(error);
+    //         socket.off("response_success", resolveFunc);
+    //         clearTimeout(timeout_handle);
+    //       }
+    //     }
+    //     this.socket.once("response_success", resolveFunc);
+    //     this.socket.once("response_error", rejectFunc);
+    //   });
+    //   return this.#promise;
+    // } else {
+    //   return Promise.reject("Disconnected");
+    // }
   }
 
   transmit(payload, timeout) {
-    if (this.#connected) {
-      const reqId = nanoid();
-
-      // console.log("Emit transmit", reqId, payload);
-
-      this.socket.emit("transmit", reqId, payload);
-      const socket = this.socket;
-
-      this.#promise = new Promise((resolve, reject) => {
-        const timeout_handle = setTimeout(() => rejectFunc(reqId, "timeout"), timeout);
-
-        function resolveFunc(reqId, response) {
-          if (reqId === reqId) {
-            resolve(response);
-            socket.off("response_error", rejectFunc);
-            clearTimeout(timeout_handle);
-          }
-        }
-
-        function rejectFunc(reqId, error) {
-          if (reqId === reqId) {
-            reject(error);
-            socket.off("response_success", resolveFunc);
-            clearTimeout(timeout_handle);
-          }
-        }
-
-        this.socket.once("response_success", resolveFunc);
-        this.socket.once("response_error", rejectFunc);
-      });
-
-      return this.#promise;
-    } else {
-      return Promise.reject("Disconnected");
-    }
+    // if (this.#connected) {
+    //   const reqId = nanoid();
+    //   // console.log("Emit transmit", reqId, payload);
+    //   this.socket.emit("transmit", reqId, payload);
+    //   const socket = this.socket;
+    //   this.#promise = new Promise((resolve, reject) => {
+    //     const timeout_handle = setTimeout(() => rejectFunc(reqId, "timeout"), timeout);
+    //     function resolveFunc(reqId, response) {
+    //       if (reqId === reqId) {
+    //         resolve(response);
+    //         socket.off("response_error", rejectFunc);
+    //         clearTimeout(timeout_handle);
+    //       }
+    //     }
+    //     function rejectFunc(reqId, error) {
+    //       if (reqId === reqId) {
+    //         reject(error);
+    //         socket.off("response_success", resolveFunc);
+    //         clearTimeout(timeout_handle);
+    //       }
+    //     }
+    //     this.socket.once("response_success", resolveFunc);
+    //     this.socket.once("response_error", rejectFunc);
+    //   });
+    //   return this.#promise;
+    // } else {
+    //   return Promise.reject("Disconnected");
+    // }
   }
 
   request(payload, read_response, timeout) {
-    if (this.#connected) {
-      const reqId = nanoid();
-      // console.log("Emit request", reqId, payload, read_response);
-
-      this.socket.emit("request", reqId, payload, read_response);
-      const socket = this.socket;
-
-      this.#promise = new Promise((resolve, reject) => {
-        const timeout_handle = setTimeout(() => rejectFunc(reqId, "timeout"), timeout);
-
-        function resolveFunc(reqId, response) {
-          // console.log(reqId, new DataView(new Uint8Array(response).buffer));
-
-          if (reqId === reqId) {
-            resolve(new DataView(new Uint8Array(response).buffer));
-            socket.off("response_error", rejectFunc);
-            clearTimeout(timeout_handle);
-          }
-        }
-
-        function rejectFunc(reqId, error) {
-          // console.log(reqId, "Failed", error);
-
-          if (reqId === reqId) {
-            reject(error);
-            socket.off("response_success", resolveFunc);
-            clearTimeout(timeout_handle);
-          }
-        }
-
-        // TODO optimize this to kill the socket if the request is not received and destroy also the second socket
-        this.socket.once("response_success", resolveFunc);
-        this.socket.once("response_error", rejectFunc);
-        // todo kill sockets on receive
-      });
-
-      return this.#promise;
-    } else {
-      return Promise.reject("Disconnected");
-    }
+    // if (this.#connected) {
+    //   const reqId = nanoid();
+    //   // console.log("Emit request", reqId, payload, read_response);
+    //   this.socket.emit("request", reqId, payload, read_response);
+    //   const socket = this.socket;
+    //   this.#promise = new Promise((resolve, reject) => {
+    //     const timeout_handle = setTimeout(() => rejectFunc(reqId, "timeout"), timeout);
+    //     function resolveFunc(reqId, response) {
+    //       // console.log(reqId, new DataView(new Uint8Array(response).buffer));
+    //       if (reqId === reqId) {
+    //         resolve(new DataView(new Uint8Array(response).buffer));
+    //         socket.off("response_error", rejectFunc);
+    //         clearTimeout(timeout_handle);
+    //       }
+    //     }
+    //     function rejectFunc(reqId, error) {
+    //       // console.log(reqId, "Failed", error);
+    //       if (reqId === reqId) {
+    //         reject(error);
+    //         socket.off("response_success", resolveFunc);
+    //         clearTimeout(timeout_handle);
+    //       }
+    //     }
+    //     // TODO optimize this to kill the socket if the request is not received and destroy also the second socket
+    //     this.socket.once("response_success", resolveFunc);
+    //     this.socket.once("response_error", rejectFunc);
+    //     // todo kill sockets on receive
+    //   });
+    //   return this.#promise;
+    // } else {
+    //   return Promise.reject("Disconnected");
+    // }
   }
 
   setClock(clock) {

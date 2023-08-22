@@ -1,9 +1,9 @@
+import { io } from "socket.io-client";
 import { COMMAND_FLAGS, SpectodaInterfaceLegacy } from "./SpectodaInterfaceLegacy.js";
 import { TnglCodeParser } from "./SpectodaParser.js";
 import { WEBSOCKET_URL } from "./SpectodaWebSocketsConnector.js";
 import { colorToBytes, computeTnglFingerprint, detectSpectodaConnect, hexStringToUint8Array, labelToBytes, numberToBytes, percentageToBytes, sleep, strMacToBytes, stringToBytes } from "./functions";
 import { changeLanguage, t } from "./i18n.js";
-import { io } from "./lib/socketio.js";
 import { logging, setLoggingLevel } from "./logging";
 // import { Interface } from "./src/SpectodaInterface.js";
 import { TimeTrack } from "./TimeTrack.js";
@@ -102,11 +102,13 @@ export class Spectoda {
       if (!this.#updating && this.interface.connector) {
         this.connected().then(connected => {
           if (connected) {
-            this.syncClock().then(() => {
-              return this.syncTimeline();
-            }).catch(error => {
-              logging.warn("Catched error:", error);
-            });
+            this.syncClock()
+              .then(() => {
+                return this.syncTimeline();
+              })
+              .catch(error => {
+                logging.warn("Catched error:", error);
+              });
           }
         });
       }
@@ -117,7 +119,6 @@ export class Spectoda {
     switch (connectionState) {
       case "connecting":
         if (connectionState !== this.#connectionState) {
-
           // if (connectionState == "disconnecting") {
           //   throw "DisconnectingInProgress";
           // }
@@ -129,7 +130,6 @@ export class Spectoda {
         break;
       case "connected":
         if (connectionState !== this.#connectionState) {
-
           // if (connectionState != "connecting") {
           //   throw "ConnectionFailed";
           // }
@@ -141,7 +141,6 @@ export class Spectoda {
         break;
       case "disconnecting":
         if (connectionState !== this.#connectionState) {
-
           // if (connectionState == "connecting") {
           //   throw "ConnectingInProgress";
           // }
@@ -153,7 +152,6 @@ export class Spectoda {
         break;
       case "disconnected":
         if (connectionState !== this.#connectionState) {
-
           // if (connectionState != "disconnecting") {
           //   throw "DisconnectFailed";
           // }
@@ -618,13 +616,13 @@ export class Spectoda {
           .then(() => {
             return this.interface.connected();
           })
-          .then((connected) => {
+          .then(connected => {
             if (!connected) {
               throw "ConnectionFailed";
             }
             this.#setConnectionState("connected");
             return connectedDeviceInfo;
-          })
+          });
       })
       .catch(error => {
         logging.error("Error during connect():", error);
@@ -674,7 +672,6 @@ export class Spectoda {
     const regexINJECT_TNGL_FROM_API = /INJECT_TNGL_FROM_API\s*\(\s*"([^"]*)"\s*\);?/ms;
 
     for (let requests = 0; requests < 64; requests++) {
-
       const match = regexPUBLISH_TNGL_TO_API.exec(processed_tngl_code);
       logging.verbose(match);
 
@@ -697,7 +694,6 @@ export class Spectoda {
     }
 
     for (let requests = 0; requests < 64; requests++) {
-
       const match = regexINJECT_TNGL_FROM_API.exec(processed_tngl_code);
       logging.verbose(match);
 
@@ -1436,7 +1432,7 @@ export class Spectoda {
       const removed_device_mac_bytes = reader.readBytes(6);
 
       return this.rebootDevice()
-        .catch(() => { })
+        .catch(() => {})
         .then(() => {
           let removed_device_mac = "00:00:00:00:00:00";
           if (removed_device_mac_bytes.length >= 6) {
@@ -1540,7 +1536,11 @@ export class Spectoda {
       }
 
       logging.verbose(`fingerprint=${fingerprint}`);
-      logging.verbose(`fingerprint=${Array.from(fingerprint).map(byte => ('0' + (byte & 0xFF).toString(16)).slice(-2)).join(',')}`);
+      logging.verbose(
+        `fingerprint=${Array.from(fingerprint)
+          .map(byte => ("0" + (byte & 0xff).toString(16)).slice(-2))
+          .join(",")}`,
+      );
 
       return new Uint8Array(fingerprint);
     });
