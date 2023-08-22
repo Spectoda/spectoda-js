@@ -4,6 +4,8 @@ const { execSync } = require("child_process");
 const TARGET_CHANNEL_ID = "C05GTKQ5JHW"; // #monorepo-commits
 const ACCESS_TOKEN = process.env.SCREAM_COMMITS_SLACK_ID;
 
+const githubProject = "https://github.com/Spectoda/spectoda-monorepo";
+
 const slackApi = axios.create({
   baseURL: "https://slack.com/api",
   headers: {
@@ -65,7 +67,7 @@ async function postCommitToSlack() {
     const devId = branchName.match(/dev-\d+/i);
     const clickupUrl = devId ? `(<https://app.clickup.com/t/4663973/${devId[0]}|ClickUp>)` : "";
 
-    const githubUrl = `(<https://github.com/Spectoda/spectoda-monorepo/commit/${commitHash}|GitHub>)`;
+    const githubUrl = `(<${githubProject}/commit/${commitHash}|GitHub>)`;
 
     const studioLink = getStudioLinkForBranch(branchName) ? `(<${getStudioLinkForBranch(branchName)}|Link>)` : "";
 
