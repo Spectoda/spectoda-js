@@ -1,5 +1,8 @@
+
+// TODO! make this conenctor work in both webbrowser and node enviroment
 // @ts-nocheck
-import NodeBle, { createBluetooth } from "../../../node-ble/src/index";
+//import NodeBle, { createBluetooth } from "../../../node-ble/src/index";
+
 
 import { logging } from "../../logging";
 import { numberToBytes, sleep, toBytes } from "../../functions";
@@ -889,12 +892,12 @@ criteria example:
   // if device is conneced, then disconnect it
   async unselect(): Promise<void> {
     logging.debug("unselect()");
-    ƒ;
 
     if (await this.connected()) {
       await this.disconnect();
     }
 
+    this.#bluetoothDevice?.removeAllListeners("connect");
     this.#bluetoothDevice?.removeAllListeners("disconnect");
     this.#bluetoothDevice = undefined;
     this.#connection.reset();
