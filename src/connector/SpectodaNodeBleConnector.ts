@@ -1,8 +1,6 @@
-
 // TODO! make this conenctor work in both webbrowser and node enviroment
 // @ts-nocheck
-//import NodeBle, { createBluetooth } from "../../../node-ble/src/index";
-
+import NodeBle, { createBluetooth } from "../../../node-ble/src/index";
 
 import { logging } from "../../logging";
 import { numberToBytes, sleep, toBytes } from "../../functions";
@@ -326,7 +324,6 @@ export class NodeBLEConnection {
     // logging.verbose("uint8Array", uint8Array);
 
     this.#runtimeReference.interface.execute(uint8Array, 0x01);
-
   }
 
   // WIP
@@ -1265,11 +1262,11 @@ criteria example:
 
     //this.#runtimeReference = null; // dont know if I need to destroy this reference.. But I guess I dont need to?
     return this.disconnect()
-      .catch(() => { })
+      .catch(() => {})
       .then(() => {
         return this.unselect();
       })
-      .catch(() => { })
+      .catch(() => {})
       .finally(() => {
         this.#bluetoothDestroy();
       });
