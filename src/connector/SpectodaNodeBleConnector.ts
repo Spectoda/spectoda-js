@@ -1,15 +1,9 @@
 import { logging } from "../../logging";
 import { numberToBytes, sleep, toBytes, detectGW } from "../../functions";
-// import { COMMAND_FLAGS, SpectodaRuntime } from "./src";
 import { TimeTrack } from "../../TimeTrack.js";
 import { TnglReader } from "../../TnglReader.js";
 import { COMMAND_FLAGS } from "../SpectodaInterface.js";
 
-// ? WIP
-
-// TODO! make this conenctor work in both webbrowser and node enviroment
-// @ts-nocheck
-//import NodeBle, { createBluetooth } from "../../../node-ble/src/index";
 const requireBundlerWorkeround = (moduleName: string) => detectGW() ? require(moduleName) : () => { };
 // TODO node-ble on the same level as spectoda-js or node-ble in the spectoda-js repo ? nevíme
 const NodeBle = detectGW() ? requireBundlerWorkeround("../../../node-ble/src/index") : {};
