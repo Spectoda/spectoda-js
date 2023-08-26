@@ -1,13 +1,19 @@
-// TODO! make this conenctor work in both webbrowser and node enviroment
-// @ts-nocheck
-import NodeBle, { createBluetooth } from "../../../node-ble/src/index";
-
 import { logging } from "../../logging";
-import { numberToBytes, sleep, toBytes } from "../../functions";
+import { numberToBytes, sleep, toBytes, detectGW } from "../../functions";
 // import { COMMAND_FLAGS, SpectodaRuntime } from "./src";
 import { TimeTrack } from "../../TimeTrack.js";
 import { TnglReader } from "../../TnglReader.js";
 import { COMMAND_FLAGS } from "../SpectodaInterface.js";
+
+// ? WIP
+
+// TODO! make this conenctor work in both webbrowser and node enviroment
+// @ts-nocheck
+//import NodeBle, { createBluetooth } from "../../../node-ble/src/index";
+const requireBundlerWorkeround = (moduleName: string) => detectGW() ? require(moduleName) : () => { };
+// TODO node-ble on the same level as spectoda-js or node-ble in the spectoda-js repo ? nevíme
+const NodeBle = detectGW() ? requireBundlerWorkeround("../../../node-ble/src/index") : {};
+const { createBluetooth } = NodeBle;
 
 // od 0.8.0 maji vsechny spectoda enabled BLE zarizeni jednotne SPECTODA_DEVICE_UUID.
 // kazdy typ (produkt) Spectoda Zarizeni ma svuj kod v manufacturer data
@@ -1262,11 +1268,11 @@ criteria example:
 
     //this.#runtimeReference = null; // dont know if I need to destroy this reference.. But I guess I dont need to?
     return this.disconnect()
-      .catch(() => {})
+      .catch(() => { })
       .then(() => {
         return this.unselect();
       })
-      .catch(() => {})
+      .catch(() => { })
       .finally(() => {
         this.#bluetoothDestroy();
       });
