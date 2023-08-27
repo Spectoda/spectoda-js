@@ -475,8 +475,7 @@ export class Spectoda {
             logging.error("Timeline sync after reconnection failed:", e);
           })
           .then(() => {
-            logging.warn("Fix bug where reading history before TNGL sync causes variable to be in invalid state");
-            return detectNode() ? Promise.resolve() : this.syncEventHistory();
+            return this.syncEventHistory();
           })
           .catch(e => {
             logging.error("History sync after reconnection failed:", e);
