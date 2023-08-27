@@ -39,7 +39,7 @@ class LineBreakTransformer {
 // Connector connects the application with one Spectoda Device, that is then in a
 // position of a controller for other Spectoda Devices
 export class SpectodaWebSerialConnector {
-  #interfaceReference;
+  #runtimeReference;
 
   #serialPort;
   #writing;
@@ -65,10 +65,10 @@ export class SpectodaWebSerialConnector {
   #feedbackCallback;
   #dataCallback;
 
-  constructor(interfaceReference) {
+  constructor(runtimeReference) {
     this.type = "webserial";
 
-    this.#interfaceReference = interfaceReference;
+    this.#runtimeReference = runtimeReference;
 
     this.PORT_OPTIONS = { baudRate: 1000000, dataBits: 8, stopBits: 1, parity: "none", bufferSize: 65535, flowControl: "none" };
 
@@ -160,7 +160,7 @@ export class SpectodaWebSerialConnector {
             } else if (match.match(/>>>NOTIFY=/)) {
               logging.verbose("match", match);
               let reg = match.match(/>>>NOTIFY=([0123456789abcdef]*)<<</i); // >>>NOTIFY=ab2351ab90cfe72209999009f08e987a9bcd8dcbbd<<<
-              reg && this.#interfaceReference.process(new DataView(new Uint8Array(hexStringToArray(reg[1])).buffer));
+              reg && this.#runtimeReference.interface.execute(new Uint8Array(hexStringToArray(reg[1])).buffer);
             }
 
             // Return the replacement leveraging the parameters.
@@ -169,7 +169,7 @@ export class SpectodaWebSerialConnector {
 
           if (value.length !== 0) {
             // logging.verbose(value);
-            this.#interfaceReference.emit("receive", { target: this, payload: value });
+            this.#runtimeReference.emit("receive", { target: this, payload: value });
           }
         }
 
@@ -352,7 +352,7 @@ criteria example:
               logging.debug("> Serial Connector Connected");
               this.#connected = true;
 
-              this.#interfaceReference.emit("#connected");
+              this.#runtimeReference.emit("#connected");
               resolve({ connector: this.type });
             } else {
               logging.warn("Trying to connect again")
@@ -428,7 +428,7 @@ criteria example:
         this.#disconnecting = false;
         if (this.#connected) {
           this.#connected = false;
-          this.#interfaceReference.emit("#disconnected");
+          this.#runtimeReference.emit("#disconnected");
         }
       });
   }
@@ -713,7 +713,7 @@ criteria example:
       const start_timestamp = new Date().getTime();
 
       try {
-        this.#interfaceReference.emit("ota_status", "begin");
+        this.#runtimeReference.emit("ota_status", "begin");
 
         {
           //===========// RESET //===========//
@@ -752,7 +752,7 @@ criteria example:
             const percentage = Math.floor((written * 10000) / firmware.length) / 100;
             logging.debug(percentage + "%");
 
-            this.#interfaceReference.emit("ota_progress", percentage);
+            this.#runtimeReference.emit("ota_progress", percentage);
 
             index_from += chunk_size;
             index_to = index_from + chunk_size;
@@ -773,11 +773,11 @@ criteria example:
 
         logging.info("Firmware written in " + (new Date().getTime() - start_timestamp) / 1000 + " seconds");
 
-        this.#interfaceReference.emit("ota_status", "success");
+        this.#runtimeReference.emit("ota_status", "success");
         resolve();
       } catch (e) {
         logging.error("Error during OTA:", e);
-        this.#interfaceReference.emit("ota_status", "fail");
+        this.#runtimeReference.emit("ota_status", "fail");
         reject("UpdateFailed");
       }
     }).finally(() => {
@@ -787,7 +787,7 @@ criteria example:
   }
 
   destroy() {
-    //this.#interfaceReference = null; // dont know if I need to destroy this reference.. But I guess I dont need to?
+    //this.#runtimeReference = null; // dont know if I need to destroy this reference.. But I guess I dont need to?
     return this.disconnect()
       .catch(() => { })
       .then(() => {
