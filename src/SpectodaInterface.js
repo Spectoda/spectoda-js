@@ -1,7 +1,7 @@
 import { logging } from "../logging";
 import { SpectodaWasm } from "./SpectodaWasm.js";
 
-const WASM_VERSION = "DEBUG_0.9.2_20230826";
+const WASM_VERSION = "DEBUG_0.9.2_20230827";
 
 export const COMMAND_FLAGS = Object.freeze({
   FLAG_UNSUPPORTED_COMMND_RESPONSE: 255, // TODO change FLAG_OTA_BEGIN to not be 255.
@@ -188,12 +188,12 @@ export class SpectodaInterface {
 
             {
               const e = event_array[0];
-              debug_log += `${e.id} -> $${e.label}: ${e.value} [${e.timestamp}ms]`;
+              debug_log += `${e.id} -> $${e.label}: ${e.value} [${e.timestamp}ms] (local)`;
             }
 
             for (let i = 1; i < event_array.length; i++) {
               const e = event_array[i];
-              debug_log += `\n${e.id} -> $${e.label}: ${e.value} [${e.timestamp}ms]`;
+              debug_log += `\n${e.id} -> $${e.label}: ${e.value} [${e.timestamp}ms] (local)`;
             }
 
             logging.info(debug_log);
@@ -268,6 +268,15 @@ export class SpectodaInterface {
 
       this.#instance = SpectodaWasm.WasmInterface.implement(WasmInterfaceImplementation);
       this.#instance.begin(label, mac_address, id_offset);
+
+      // this.#instance.makePort("A", 1, brightness, 255, true, false);
+      // this.#instance.makePort("B", 1, brightness, 255, true, false);
+      // this.#instance.makePort("C", 1, brightness, 255, true, false);
+      // this.#instance.makePort("D", 1, brightness, 255, true, false);
+      // this.#instance.makePort("E", 1, brightness, 255, true, false);
+      // this.#instance.makePort("F", 1, brightness, 255, true, false);
+      // this.#instance.makePort("G", 1, brightness, 255, true, false);
+      // this.#instance.makePort("H", 1, brightness, 255, true, false);
     });
   }
 
