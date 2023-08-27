@@ -112,9 +112,13 @@ export class Spectoda {
         // });
 
         if (this.#getConnectionState() === "connected") {
-          return this.syncClock().catch(error => {
-            logging.warn(error);
-          });
+          return this.syncClock()
+            .then(() => {
+              return this.syncEventHistory();
+            })
+            .catch(error => {
+              logging.warn(error);
+            });
         } else if (this.#getConnectionState() === "disconnected" && this.#autonomousConnection) {
           return this.#connect(true).catch(error => {
             logging.warn(error);
@@ -472,7 +476,7 @@ export class Spectoda {
           })
           .then(() => {
             logging.warn("Fix bug where reading history before TNGL sync causes variable to be in invalid state");
-            return detectNode() ? Promise.resolve() : this.readEventHistory();
+            return detectNode() ? Promise.resolve() : this.syncEventHistory();
           })
           .catch(e => {
             logging.error("History sync after reconnection failed:", e);
@@ -1390,7 +1394,7 @@ export class Spectoda {
       const removed_device_mac_bytes = reader.readBytes(6);
 
       return this.rebootDevice()
-        .catch(() => {})
+        .catch(() => { })
         .then(() => {
           let removed_device_mac = "00:00:00:00:00:00";
           if (removed_device_mac_bytes.length >= 6) {
@@ -1664,7 +1668,7 @@ export class Spectoda {
     });
   }
 
-  readEventHistory() {
+  syncEventHistory() {
     logging.debug("> Requesting event history bytecode...");
 
     const request_uuid = this.#getUUID();
