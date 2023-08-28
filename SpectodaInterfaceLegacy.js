@@ -654,6 +654,10 @@ export class SpectodaInterfaceLegacy {
     this.#connectedPeers = [];
   }
 
+  eraseConnectedPeer(mac) {
+    this.#connectedPeers = this.#connectedPeers.filter(peer => peer !== mac);
+  }
+
   setConnectedPeers(peers) {
     this.#connectedPeers = peers;
   }
@@ -1290,6 +1294,7 @@ export class SpectodaInterfaceLegacy {
                 .join(":");
 
               this.#eventEmitter.emit("peer_disconnected", device_mac);
+              this.eraseConnectedPeer(device_mac);
             }
             break;
 
