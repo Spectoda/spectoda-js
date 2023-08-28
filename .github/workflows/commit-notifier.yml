@@ -21,7 +21,13 @@ jobs:
       - name: Run Slack notifier
         run: node slack-commit-share.js
         working-directory: ./scripts
+        env:
+          SCREAM_COMMITS_SLACK_ID: ${{ secrets.SCREAM_COMMITS_SLACK_ID }}
+        continue-on-error: true
 
       - name: Run ClickUp notifier
         run: node clickup-commit-share.js
         working-directory: ./scripts
+        env:
+          SCREAM_COMMITS_CLICKUP_ID: ${{ secrets.SCREAM_COMMITS_CLICKUP_ID }}
+        continue-on-error: true
