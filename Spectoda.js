@@ -189,6 +189,12 @@ export class Spectoda {
     return this.setConnector(connector_type);
   }
 
+  // todo remove, deprecated
+  assignOwnerSignature() {}
+
+  // todo remove, deprecated
+  assignOwnerKey() {}
+
   connectRemoteControl() {
     this.#reconnectRC = true;
 
