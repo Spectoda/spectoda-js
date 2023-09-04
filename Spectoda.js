@@ -377,14 +377,6 @@ export class Spectoda {
 
     this.#setConnectionState("connecting");
 
-    if (ownerSignature) {
-      this.setOwnerSignature(ownerSignature);
-    }
-
-    if (ownerKey) {
-      this.setOwnerKey(ownerKey);
-    }
-
     const criteria = /** @type {any} */ ([{ adoptionFlag: true }]);
 
     return (autoSelect ? this.interface.autoSelect(criteria, 4000) : this.interface.userSelect(criteria, 60000))
@@ -484,14 +476,6 @@ export class Spectoda {
     }
 
     this.#setConnectionState("connecting");
-
-    if (ownerSignature) {
-      this.setOwnerSignature(ownerSignature);
-    }
-
-    if (ownerKey) {
-      this.setOwnerKey(ownerKey);
-    }
 
     this.#connecting = true;
 
