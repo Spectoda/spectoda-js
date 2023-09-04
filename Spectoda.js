@@ -180,53 +180,6 @@ export class Spectoda {
     return this.interface.releaseWakeLock();
   }
 
-  setOwnerSignature(ownerSignature) {
-    const reg = ownerSignature.match(/([\dabcdefABCDEF]{32})/g);
-
-    if (!reg[0]) {
-      throw "InvalidSignature";
-    }
-
-    this.#ownerSignature = reg[0];
-    return true;
-  }
-
-  /**
-   * @alias this.setOwnerSignature
-   */
-  assignOwnerSignature(ownerSignature) {
-    return this.setOwnerSignature(ownerSignature);
-  }
-
-  getOwnerSignature() {
-    return this.#ownerSignature;
-  }
-
-  setOwnerKey(ownerKey) {
-    const reg = ownerKey.match(/([\dabcdefABCDEF]{32})/g);
-
-    if (!reg[0]) {
-      throw "InvalidKey";
-    }
-
-    this.#ownerKey = reg[0];
-    return true;
-  }
-
-  /**
-   * @alias this.setOwnerKey
-   */
-  assignOwnerKey(ownerKey) {
-    return this.setOwnerKey(ownerKey);
-  }
-
-  getOwnerKey() {
-    return this.#ownerKey;
-  }
-
-  setConnector(connector_type) {
-    return this.interface.assignConnector(connector_type);
-  }
 
   /**
    * @alias this.setConnector
