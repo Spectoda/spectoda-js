@@ -178,6 +178,10 @@ export class Spectoda {
     return this.interface.releaseWakeLock();
   }
 
+  setConnector(connector_type) {
+    return this.interface.assignConnector(connector_type);
+  }
+
   /**
    * @alias this.setConnector
    */
