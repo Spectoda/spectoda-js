@@ -1,11 +1,10 @@
-import { io } from "socket.io-client";
 import { COMMAND_FLAGS, SpectodaInterfaceLegacy } from "./SpectodaInterfaceLegacy.js";
-import { TnglCodeParser } from "./SpectodaParser.js";
 import { WEBSOCKET_URL } from "./SpectodaWebSocketsConnector.js";
-import { colorToBytes, computeTnglFingerprint, detectSpectodaConnect, hexStringToUint8Array, labelToBytes, numberToBytes, percentageToBytes, sleep, strMacToBytes, stringToBytes } from "./functions";
+import { hexStringToUint8Array, labelToBytes, numberToBytes, strMacToBytes, stringToBytes } from "./functions";
 import { changeLanguage, t } from "./i18n.js";
 import { logging, setLoggingLevel } from "./logging";
 // import { Interface } from "./src/SpectodaInterface.js";
+import { io } from "socket.io-client";
 import { TimeTrack } from "./TimeTrack.js";
 import "./TnglReader.js";
 import { TnglReader } from "./TnglReader.js";
@@ -20,7 +19,7 @@ let lastEvents = {};
 // TODO - kdyz zavolam funkci connect a uz jsem pripojeny, tak vyslu event connected, pokud si myslim ze nejsem pripojeny.
 // TODO - "watchdog timer" pro resolve/reject z TC
 
-export class Spectoda {
+export class WebsocketSpectoda {
   #uuidCounter;
   #ownerSignature;
   #ownerKey;
@@ -41,6 +40,8 @@ export class Spectoda {
     if (typeof window === "undefined") {
       return;
     }
+
+    this.socket = io(WEBSOCKET_URL);
 
     this.timeline = new TimeTrack(0, true);
 
@@ -178,50 +179,6 @@ export class Spectoda {
     return this.interface.releaseWakeLock();
   }
 
-  setOwnerSignature(ownerSignature) {
-    const reg = ownerSignature.match(/([\dabcdefABCDEF]{32})/g);
-
-    if (!reg[0]) {
-      throw "InvalidSignature";
-    }
-
-    this.#ownerSignature = reg[0];
-    return true;
-  }
-
-  /**
-   * @alias this.setOwnerSignature
-   */
-  assignOwnerSignature(ownerSignature) {
-    return this.setOwnerSignature(ownerSignature);
-  }
-
-  getOwnerSignature() {
-    return this.#ownerSignature;
-  }
-
-  setOwnerKey(ownerKey) {
-    const reg = ownerKey.match(/([\dabcdefABCDEF]{32})/g);
-
-    if (!reg[0]) {
-      throw "InvalidKey";
-    }
-
-    this.#ownerKey = reg[0];
-    return true;
-  }
-
-  /**
-   * @alias this.setOwnerKey
-   */
-  assignOwnerKey(ownerKey) {
-    return this.setOwnerKey(ownerKey);
-  }
-
-  getOwnerKey() {
-    return this.#ownerKey;
-  }
-
   setConnector(connector_type) {
     return this.interface.assignConnector(connector_type);
   }
@@ -233,88 +190,62 @@ export class Spectoda {
     return this.setConnector(connector_type);
   }
 
-  connectRemoteControl({ ownerSignature, ownerKey }) {
+  // todo remove, deprecated
+  assignOwnerSignature() {}
+
+  // todo remove, deprecated
+  assignOwnerKey() {}
+
+  connect(devices = null, autoConnect = true, ownerSignature = null, ownerKey = null, connectAny = false, fwVersion = "") {
     this.#reconnectRC = true;
 
     logging.debug("> Connecting to Remote Control");
 
-    if (!this.socket) {
-      // TODO - scopovani dle apky
-      // TODO - authentifikace
-      this.socket = io(WEBSOCKET_URL);
+    // TODO - scopovani dle apky
+    // TODO - authentifikace
+    this.socket = io(WEBSOCKET_URL);
 
-      this.socket.on("connect", async () => {
-        logging.debug("> Connected to remote control");
-        // window.alert(t("Connected to remote control"));
+    this.socket.on("connect", async () => {
+      logging.debug("> Connected to remote control");
+      // window.alert(t("Connected to remote control"));
 
-        const result = await this.socket.emitWithAck("join", { signature: ownerSignature || this.#ownerSignature, key: ownerKey || this.#ownerKey });
+      console.log("ownerSignature", ownerSignature, ownerKey);
+      const result = await this.socket.emitWithAck("join", { signature: ownerSignature || this.#ownerSignature, key: ownerKey || this.#ownerKey });
 
-        // todo mark myself as a Client
+      // todo mark myself as a Client
 
-        console.log(result);
-      });
+      console.log("TADAAA", result);
+    });
 
-      this.socket.on("syncTngl", async (data, callback) => {
-        logging.debug("> syncTngl", data);
+    this.socket.on("disconnect", () => {
+      logging.debug("> Disconnected from remote control");
+      window.alert(t("Disconnected from remote control"));
+    });
 
-        try {
-          const result = await this.syncTngl.bind(this)(data.tngl_code, null, data.tngl_bank);
-          callback(result);
-        } catch (err) {
-          callback(err);
-        }
-      });
+    this.socket.on("connect_error", error => {
+      logging.debug("connect_error", error);
+      setTimeout(() => {
+        this.socket.connect();
+      }, 1000);
+    });
 
-      this.socket.on("emitEvent", async (data, callback) => {
-        logging.debug("> emitEvent", data);
+    // this.socket.on("setClock", payload => {
+    //   logging.warn("setClock", payload);
+    // });
 
-        try {
-          const result = await this.emitEvent.bind(this)(data.event_label, data.device_ids, data.force_delivery);
-          callback(result);
-        } catch (err) {
-          callback(err);
-        }
-      });
+    // // ============= CLOCK HACK ==============
 
-      this.socket.on("emitPercentageEvent", async (data, callback) => {
-        logging.debug("> emitPercentageEvent", data);
+    // const hackClock = () => {
+    //   logging.warn("overriding clock with UTC clock");
+    //   this.interface.clock.setMillis(getClockTimestamp());
+    //   this.syncClock();
+    // };
 
-        try {
-          const result = await this.emitPercentageEvent.bind(this)(data.event_label, data.event_value, data.device_ids, data.force_delivery);
-          callback(result);
-        } catch (err) {
-          callback(err);
-        }
-      });
+    // hackClock();
 
-      // this.socket.on("setClock", payload => {
-      //   logging.warn("setClock", payload);
-      // });
-
-      // // ============= CLOCK HACK ==============
-
-      // const hackClock = () => {
-      //   logging.warn("overriding clock with UTC clock");
-      //   this.interface.clock.setMillis(getClockTimestamp());
-      //   this.syncClock();
-      // };
-
-      // hackClock();
-
-      // this.interface.on("connected", () => {
-      //   hackClock();
-      // });
-    } else {
-      this.socket.connect();
-    }
-  }
-
-  disconnectRemoteControl() {
-    logging.debug("> Disonnecting from the Remote Control");
-
-    this.#reconnectRC = false;
-
-    this.socket?.disconnect();
+    // this.interface.on("connected", () => {
+    //   hackClock();
+    // });
   }
 
   // valid UUIDs are in range [1..4294967295] (32-bit unsigned number)
@@ -340,13 +271,17 @@ export class Spectoda {
    */
 
   addEventListener(event, callback) {
-    return this.interface.addEventListener(event, callback);
+    return this.socket.on(`event`, ({ type, data }) => {
+      if (type === event) callback(data);
+    });
   }
   /**
    * @alias this.addEventListener
    */
   on(event, callback) {
-    return this.interface.on(event, callback);
+    return this.socket.on(`event`, ({ type, data }) => {
+      if (type === event) callback(data);
+    }); //this.interface.on(event, callback);
   }
 
   // každé spectoda zařízení může být spárováno pouze s jedním účtem. (jednim user_key)
@@ -387,243 +322,6 @@ export class Spectoda {
 
   adopt(newDeviceName = null, newDeviceId = null, tnglCode = null, ownerSignature = null, ownerKey = null, autoSelect = false) {
     logging.info(`adopt(newDeviceName=${newDeviceName}, newDeviceId=${newDeviceId}, tnglCode=${tnglCode}, ownerSignature=${ownerSignature}, ownerKey=${ownerKey}, autoSelect=${autoSelect})`);
-
-    if (this.#adopting) {
-      return Promise.reject("AdoptingInProgress");
-    }
-
-    this.#adopting = true;
-
-    this.#setConnectionState("connecting");
-
-    if (ownerSignature) {
-      this.setOwnerSignature(ownerSignature);
-    }
-
-    if (ownerKey) {
-      this.setOwnerKey(ownerKey);
-    }
-
-    if (!this.#ownerSignature) {
-      throw "OwnerSignatureNotAssigned";
-    }
-
-    if (!this.#ownerKey) {
-      throw "OwnerKeyNotAssigned";
-    }
-
-    const criteria = /** @type {any} */ ([{ adoptionFlag: true }]);
-
-    return (autoSelect ? this.interface.autoSelect(criteria, 4000) : this.interface.userSelect(criteria, 60000))
-      .then(() => {
-        // this.#adoptingFlag = true;
-        return this.interface.connect(10000, true);
-      })
-      .then(() => {
-        const owner_signature_bytes = hexStringToUint8Array(this.#ownerSignature, 16);
-        const owner_key_bytes = hexStringToUint8Array(this.#ownerKey, 16);
-
-        logging.info("owner_signature_bytes", owner_signature_bytes);
-        logging.info("owner_key_bytes", owner_key_bytes);
-
-        const request_uuid = this.#getUUID();
-        const bytes = [COMMAND_FLAGS.FLAG_ADOPT_REQUEST, ...numberToBytes(request_uuid, 4), ...owner_signature_bytes, ...owner_key_bytes /*, ...device_name_bytes, ...numberToBytes(device_id, 1)*/];
-
-        logging.debug("> Adopting device...");
-        logging.verbose(bytes);
-
-        return this.interface
-          .request(bytes, true)
-          .then(response => {
-            let reader = new TnglReader(response);
-
-            logging.debug("> Got response:", response);
-
-            if (reader.readFlag() !== COMMAND_FLAGS.FLAG_ADOPT_RESPONSE) {
-              throw "InvalidResponse";
-            }
-
-            const response_uuid = reader.readUint32();
-            if (response_uuid != request_uuid) {
-              throw "InvalidResponse";
-            }
-
-            const error_code = reader.readUint8();
-
-            let device_mac = "00:00:00:00:00:00";
-            if (error_code === 0) {
-              // error_code 0 is success
-              const device_mac_bytes = reader.readBytes(6);
-
-              device_mac = Array.from(device_mac_bytes, function (byte) {
-                return ("0" + (byte & 0xff).toString(16)).slice(-2);
-              }).join(":");
-            }
-
-            logging.verbose(`error_code=${error_code}, device_mac=${device_mac}`);
-
-            if (error_code === 0) {
-              logging.info(`Adopted ${device_mac} successfully`);
-
-              return {
-                mac: device_mac,
-                ownerSignature: this.#ownerSignature,
-                ownerKey: this.#ownerKey,
-                // name: newDeviceName,
-                // id: newDeviceId,
-              };
-            }
-
-            if (error_code !== 0) {
-              logging.warn("Adoption refused.");
-              window.alert(t("Zkuste to, prosím, znovu."), t("Přidání se nezdařilo"), { confirm: t("OK") });
-
-              throw "AdoptionRefused";
-            }
-          })
-          .catch(e => {
-            logging.error("Error during adopt():", e);
-            this.disconnect().finally(() => {
-              // @ts-ignore
-              throw "AdoptionFailed";
-            });
-          });
-      })
-      .catch(error => {
-        logging.warn("Error during adopt:", error);
-        if (error === "UserCanceledSelection") {
-          return this.connected().then(result => {
-            if (!result) throw "UserCanceledSelection";
-          });
-        }
-      })
-      .finally(() => {
-        this.#adopting = false;
-        // this.#adoptingFlag = false;
-
-        this.#setConnectionState("disconnected");
-      });
-  }
-
-  // devices: [ {name:"Lampa 1", mac:"12:34:56:78:9a:bc"}, {name:"Lampa 2", mac:"12:34:56:78:9a:bc"} ]
-
-  connect(devices = null, autoConnect = true, ownerSignature = null, ownerKey = null, connectAny = false, fwVersion = "") {
-    logging.info(`connect(devices=${devices}, autoConnect=${autoConnect}, ownerSignature=${ownerSignature}, ownerKey=${ownerKey}, connectAny=${connectAny}, fwVersion=${fwVersion})`);
-
-    if (this.#connecting) {
-      return Promise.reject("ConnectingInProgress");
-    }
-
-    this.#setConnectionState("connecting");
-
-    if (ownerSignature) {
-      this.setOwnerSignature(ownerSignature);
-    }
-
-    if (ownerKey) {
-      this.setOwnerKey(ownerKey);
-    }
-
-    if (!this.#ownerSignature) {
-      throw "OwnerSignatureNotAssigned";
-    }
-
-    if (!this.#ownerKey) {
-      throw "OwnerKeyNotAssigned";
-    }
-
-    this.#connecting = true;
-
-    let criteria = /** @type {any} */ ([{ ownerSignature: this.#ownerSignature }]);
-
-    if (devices && devices.length > 0) {
-      let devices_criteria = /** @type {any} */ ([]);
-
-      for (let i = 0; i < devices.length; i++) {
-        let criterium = {};
-
-        if (devices[i].name) {
-          criterium.ownerSignature = this.#ownerSignature;
-          criterium.name = devices[i].name.slice(0, 11);
-          devices_criteria.push(criterium);
-        } else if (devices[i].mac) {
-          criterium.ownerSignature = this.#ownerSignature;
-          criterium.mac = devices[i].mac;
-          devices_criteria.push(criterium);
-        }
-      }
-
-      if (devices_criteria.length != 0) {
-        criteria = devices_criteria;
-      }
-    }
-
-    if (connectAny) {
-      if (detectSpectodaConnect()) {
-        criteria = [{}];
-      } else {
-        criteria = [{}, { adoptionFlag: true }, { legacy: true }];
-      }
-    }
-
-    if (typeof fwVersion == "string" && fwVersion.match(/(!?)([\d]+).([\d]+).([\d]+)/)) {
-      for (let i = 0; i < criteria.length; i++) {
-        criteria[i].fwVersion = fwVersion;
-      }
-    }
-
-    return (autoConnect ? this.interface.autoSelect(criteria, 1000, 10000) : this.interface.userSelect(criteria))
-      .then(() => {
-        return this.interface.connect();
-      })
-      .then(connectedDeviceInfo => {
-        logging.info("> Synchronizing Network State...");
-        return (this.timeline.paused() ? this.requestTimeline() : this.syncTimeline())
-          .catch(e => {
-            logging.error("Timeline sync after reconnection failed:", e);
-          })
-          .then(() => {
-            return this.readEventHistory();
-          })
-          .catch(e => {
-            logging.error("History sync after reconnection failed:", e);
-          })
-          .then(() => {
-            return this.interface.connected();
-          })
-          .then(connected => {
-            if (!connected) {
-              throw "ConnectionFailed";
-            }
-            this.#setConnectionState("connected");
-            return connectedDeviceInfo;
-          });
-      })
-      .catch(error => {
-        logging.error("Error during connect():", error);
-
-        this.#setConnectionState("disconnected");
-
-        if (typeof error != "string") {
-          throw "ConnectionFailed";
-        } else {
-          throw error;
-        }
-      })
-      .finally(() => {
-        this.#connecting = false;
-      });
-  }
-
-  disconnect() {
-    if (this.#connectionState === "disconnected") {
-      Promise.reject("DeviceAlreadyDisconnected");
-    }
-
-    this.#setConnectionState("disconnecting");
-    return this.interface.disconnect().finally(() => {
-      this.#setConnectionState("disconnected");
-    });
   }
 
   connected() {
@@ -636,120 +334,17 @@ export class Spectoda {
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-  async preprocessTngl(tngl_code) {
-    // 1st stage: preprocess the code
-
-    // logging.debug(tngl_code);
-
-    let processed_tngl_code = tngl_code;
-
-    const regexPUBLISH_TNGL_TO_API = /PUBLISH_TNGL_TO_API\s*\(\s*"([^"]*)"\s*,\s*`([^`]*)`\s*\);?/ms;
-    const regexINJECT_TNGL_FROM_API = /INJECT_TNGL_FROM_API\s*\(\s*"([^"]*)"\s*\);?/ms;
-
-    for (let requests = 0; requests < 64; requests++) {
-      const match = regexPUBLISH_TNGL_TO_API.exec(processed_tngl_code);
-      logging.verbose(match);
-
-      if (!match) {
-        break;
-      }
-
-      const name = match[1];
-      const id = encodeURIComponent(name);
-      const tngl = match[2];
-
-      try {
-        logging.debug(`sendTnglToApi({ id=${id}, name=${name}, tngl=${tngl} })`);
-        await sendTnglToApi({ id, name, tngl });
-        processed_tngl_code = processed_tngl_code.replace(match[0], "");
-      } catch (e) {
-        logging.error(`Failed to send "${name}" to TNGL API`);
-        throw "SendTnglToApiFailed";
-      }
-    }
-
-    for (let requests = 0; requests < 64; requests++) {
-      const match = regexINJECT_TNGL_FROM_API.exec(processed_tngl_code);
-      logging.verbose(match);
-
-      if (!match) {
-        break;
-      }
-
-      const name = match[1];
-      const id = encodeURIComponent(name);
-
-      try {
-        logging.debug(`fetchTnglFromApiById({ id=${id} })`);
-        const response = await fetchTnglFromApiById(id);
-        processed_tngl_code = processed_tngl_code.replace(match[0], response.tngl);
-      } catch (e) {
-        logging.error(`Failed to fetch "${name}" from TNGL API`);
-        throw "FetchTnglFromApiFailed";
-      }
-    }
-
-    // var code = `// Publishing TNGL as "${text_tngl_api_name}":\n/*\n${statements_body}*/\n`;
-    // var code = `// Loaded TNGL "${text_tngl_api_name}": \n ${tnglCodeToInject}\n`;
-
-    logging.debug(processed_tngl_code);
-
-    return processed_tngl_code;
-  }
-
   // writes Tngl only if fingerprints does not match
   syncTngl(tngl_code, tngl_bytes = null, tngl_bank = 0) {
     logging.verbose("syncTngl()");
 
-    if (tngl_code === null && tngl_bytes === null) {
-      return Promise.reject("InvalidParameters");
-    }
-
-    if (tngl_bytes === null) {
-      tngl_bytes = new TnglCodeParser().parseTnglCode(tngl_code);
-    }
-
-    return this.getTnglFingerprint(tngl_bank).then(device_fingerprint => {
-      return computeTnglFingerprint(tngl_bytes, "fingerprint").then(new_fingerprint => {
-        // logging.debug(device_fingerprint);
-        // logging.debug(new_fingerprint);
-
-        for (let i = 0; i < device_fingerprint.length; i++) {
-          if (device_fingerprint[i] !== new_fingerprint[i]) {
-            return this.writeTngl(null, tngl_bytes, tngl_bank);
-          }
-        }
-      });
-    });
+    return this.socket.emitWithAck("syncTngl", { tngl_code, tngl_bytes, tngl_bank });
   }
 
   writeTngl(tngl_code, tngl_bytes = null, memory_bank = 0) {
     logging.verbose("writeTngl()");
 
-    if (memory_bank === null || memory_bank === undefined) {
-      memory_bank = 0;
-    }
-
-    if (tngl_code === null && tngl_bytes === null) {
-      return Promise.reject("InvalidParameters");
-    }
-
-    if (tngl_bytes === null) {
-      const parser = new TnglCodeParser();
-      tngl_bytes = parser.parseTnglCode(tngl_code);
-    }
-
-    const timeline_flags = this.timeline.paused() ? 0b00010000 : 0b00000000; // flags: [reserved,reserved,reserved,timeline_paused,reserved,reserved,reserved,reserved]
-    const timeline_bytecode = [COMMAND_FLAGS.FLAG_SET_TIMELINE, ...numberToBytes(this.interface.clock.millis(), 6), ...numberToBytes(this.timeline.millis(), 4), timeline_flags];
-
-    const reinterpret_bytecode = [COMMAND_FLAGS.FLAG_REINTERPRET_TNGL, ...numberToBytes(this.interface.clock.millis(), 6), memory_bank, ...numberToBytes(tngl_bytes.length, 4), ...tngl_bytes];
-
-    // logging.info(reinterpret_bytecode);
-
-    const payload = [...timeline_bytecode, ...reinterpret_bytecode];
-    return this.interface.execute(payload, "TNGL").then(() => {
-      // logging.debug("Written");
-    });
+    return this.socket.emitWithAck("writeTngl", { tngl_code, tngl_bytes, memory_bank });
   }
 
   // event_label example: "evt1"
@@ -779,17 +374,7 @@ export class Spectoda {
     //   this.saveState();
     // }, 5000);
 
-    const func = device_id => {
-      const payload = [COMMAND_FLAGS.FLAG_EMIT_EVENT, ...labelToBytes(event_label), ...numberToBytes(this.interface.clock.millis() + 10, 6), numberToBytes(device_id, 1)];
-      return this.interface.execute(payload, force_delivery ? null : "E" + event_label + device_id);
-    };
-
-    if (typeof device_ids === "object") {
-      let promises = device_ids.map(func);
-      return Promise.all(promises);
-    } else {
-      return func(device_ids);
-    }
+    return this.socket.emitWithAck("emitEvent", { label: event_label, id: device_ids, force: force_delivery });
   }
 
   resendAll() {
@@ -828,32 +413,7 @@ export class Spectoda {
     logging.verbose(`emitTimestampEvent(label=${event_label},value=${event_value},id=${device_ids},force=${force_delivery})`);
     lastEvents[event_label] = { value: event_value, type: "timestamp" };
 
-    // clearTimeout(this.#saveStateTimeoutHandle);
-    // this.#saveStateTimeoutHandle = setTimeout(() => {
-    //   this.saveState();
-    // }, 5000);
-
-    if (event_value > 2147483647) {
-      logging.error("Invalid event value");
-      event_value = 2147483647;
-    }
-
-    if (event_value < -2147483648) {
-      logging.error("Invalid event value");
-      event_value = -2147483648;
-    }
-
-    const func = device_id => {
-      const payload = [COMMAND_FLAGS.FLAG_EMIT_TIMESTAMP_EVENT, ...numberToBytes(event_value, 4), ...labelToBytes(event_label), ...numberToBytes(this.interface.clock.millis() + 10, 6), numberToBytes(device_id, 1)];
-      return this.interface.execute(payload, force_delivery ? null : "E" + event_label + device_id);
-    };
-
-    if (typeof device_ids === "object") {
-      let promises = device_ids.map(func);
-      return Promise.all(promises);
-    } else {
-      return func(device_ids);
-    }
+    return this.socket.emitWithAck("emitTimestampEvent", { label: event_label, value: event_value, id: device_ids, force: force_delivery });
   }
 
   // event_label example: "evt1"
@@ -870,27 +430,7 @@ export class Spectoda {
     logging.verbose(`emitColorEvent(label=${event_label},value=${event_value},id=${device_ids},force=${force_delivery})`);
     lastEvents[event_label] = { value: event_value, type: "color" };
 
-    // clearTimeout(this.#saveStateTimeoutHandle);
-    // this.#saveStateTimeoutHandle = setTimeout(() => {
-    //   this.saveState();
-    // }, 5000);
-
-    if (!event_value || !event_value.match(/#[\dabcdefABCDEF]{6}/g)) {
-      logging.error("Invalid event value. event_value=", event_value);
-      event_value = "#000000";
-    }
-
-    const func = device_id => {
-      const payload = [COMMAND_FLAGS.FLAG_EMIT_COLOR_EVENT, ...colorToBytes(event_value), ...labelToBytes(event_label), ...numberToBytes(this.interface.clock.millis() + 10, 6), numberToBytes(device_id, 1)];
-      return this.interface.execute(payload, force_delivery ? null : "E" + event_label + device_id);
-    };
-
-    if (typeof device_ids === "object") {
-      let promises = device_ids.map(func);
-      return Promise.all(promises);
-    } else {
-      return func(device_ids);
-    }
+    return this.socket.emitWithAck("emitColorEvent", { label: event_label, value: event_value, id: device_ids, force: force_delivery });
   }
 
   // event_label example: "evt1"
@@ -907,32 +447,34 @@ export class Spectoda {
     logging.info(`emitPercentageEvent(label=${event_label},value=${event_value},id=${device_ids},force=${force_delivery})`);
     lastEvents[event_label] = { value: event_value, type: "percentage" };
 
+    return this.socket.emitWithAck("emitPercentageEvent", { label: event_label, value: event_value, id: device_ids, force: force_delivery });
+
     // clearTimeout(this.#saveStateTimeoutHandle);
     // this.#saveStateTimeoutHandle = setTimeout(() => {
     //   this.saveState();
     // }, 5000);
 
-    if (event_value > 100.0) {
-      logging.error("Invalid event value");
-      event_value = 100.0;
-    }
+    // if (event_value > 100.0) {
+    //   logging.error("Invalid event value");
+    //   event_value = 100.0;
+    // }
 
-    if (event_value < -100.0) {
-      logging.error("Invalid event value");
-      event_value = -100.0;
-    }
+    // if (event_value < -100.0) {
+    //   logging.error("Invalid event value");
+    //   event_value = -100.0;
+    // }
 
-    const func = device_id => {
-      const payload = [COMMAND_FLAGS.FLAG_EMIT_PERCENTAGE_EVENT, ...percentageToBytes(event_value), ...labelToBytes(event_label), ...numberToBytes(this.interface.clock.millis() + 10, 6), numberToBytes(device_id, 1)];
-      return this.interface.execute(payload, force_delivery ? null : "E" + event_label + device_id);
-    };
+    // const func = device_id => {
+    //   const payload = [COMMAND_FLAGS.FLAG_EMIT_PERCENTAGE_EVENT, ...percentageToBytes(event_value), ...labelToBytes(event_label), ...numberToBytes(this.interface.clock.millis() + 10, 6), numberToBytes(device_id, 1)];
+    //   return this.interface.execute(payload, force_delivery ? null : "E" + event_label + device_id);
+    // };
 
-    if (typeof device_ids === "object") {
-      let promises = device_ids.map(func);
-      return Promise.all(promises);
-    } else {
-      return func(device_ids);
-    }
+    // if (typeof device_ids === "object") {
+    //   let promises = device_ids.map(func);
+    //   return Promise.all(promises);
+    // } else {
+    //   return func(device_ids);
+    // }
   }
 
   // event_label example: "evt1"
@@ -1004,131 +546,13 @@ export class Spectoda {
   updateDeviceFirmware(firmware) {
     logging.verbose(`updateDeviceFirmware(firmware.length=${firmware?.length})`);
 
-    if (!firmware || firmware.length < 10000) {
-      logging.error("Invalid firmware");
-      return Promise.reject("InvalidFirmware");
-    }
-
-    return this.interface.updateFW(firmware).then(() => {
-      this.disconnect();
-    });
+    return this.interface.updateDeviceFirmware(firmware);
   }
 
   updateNetworkFirmware(firmware) {
     logging.verbose(`updateNetworkFirmware(firmware.length=${firmware?.length})`);
 
-    if (!firmware || firmware.length < 10000) {
-      logging.error("Invalid firmware");
-      return Promise.reject("InvalidFirmware");
-    }
-
-    this.#updating = true;
-
-    this.interface.requestWakeLock();
-
-    return new Promise(async (resolve, reject) => {
-      // const chunk_size = detectAndroid() ? 480 : 3984; // must be modulo 16
-      // const chunk_size = 992; // must be modulo 16
-      const chunk_size = detectSpectodaConnect() ? 480 : 3984;
-
-      let index_from = 0;
-      let index_to = chunk_size;
-
-      let written = 0;
-
-      logging.info("OTA UPDATE");
-      logging.verbose(firmware);
-
-      const start_timestamp = new Date().getTime();
-
-      await sleep(100);
-
-      try {
-        this.interface.emit("ota_status", "begin");
-
-        {
-          //===========// RESET //===========//
-          logging.info("OTA RESET");
-
-          const command_bytes = [COMMAND_FLAGS.FLAG_OTA_RESET, 0x00, ...numberToBytes(0x00000000, 4)];
-          await this.interface.execute(command_bytes, null);
-        }
-
-        await sleep(100);
-
-        {
-          //===========// BEGIN //===========//
-          logging.info("OTA BEGIN");
-
-          const command_bytes = [COMMAND_FLAGS.FLAG_OTA_BEGIN, 0x00, ...numberToBytes(firmware.length, 4)];
-          await this.interface.execute(command_bytes, null, 20000);
-        }
-
-        // TODO optimalize this begin by detecting when all controllers have erased its flash
-        // TODO also, right now the gateway controller sends to other controlles to erase flash after it is done.
-        // TODO that slows things down
-        await sleep(20000);
-
-        {
-          //===========// WRITE //===========//
-          logging.info("OTA WRITE");
-
-          while (written < firmware.length) {
-            if (index_to > firmware.length) {
-              index_to = firmware.length;
-            }
-
-            const command_bytes = [COMMAND_FLAGS.FLAG_OTA_WRITE, 0x00, ...numberToBytes(written, 4), ...firmware.slice(index_from, index_to)];
-            await this.interface.execute(command_bytes, null);
-
-            written += index_to - index_from;
-
-            const percentage = Math.floor((written * 10000) / firmware.length) / 100;
-            logging.info(percentage + "%");
-            this.interface.emit("ota_progress", percentage);
-
-            index_from += chunk_size;
-            index_to = index_from + chunk_size;
-          }
-        }
-
-        await sleep(100);
-
-        {
-          //===========// END //===========//
-          logging.info("OTA END");
-
-          const command_bytes = [COMMAND_FLAGS.FLAG_OTA_END, 0x00, ...numberToBytes(written, 4)];
-          await this.interface.execute(command_bytes, null);
-        }
-
-        await sleep(3000);
-
-        logging.debug("Rebooting whole network...");
-
-        const command_bytes = [COMMAND_FLAGS.FLAG_DEVICE_REBOOT_REQUEST];
-        await this.interface.execute(command_bytes, null);
-
-        logging.debug("Firmware written in " + (new Date().getTime() - start_timestamp) / 1000 + " seconds");
-
-        this.interface.emit("ota_status", "success");
-
-        resolve(null);
-        return;
-      } catch (e) {
-        this.interface.emit("ota_status", "fail");
-        reject(e);
-        return;
-      }
-    })
-      .then(() => {
-        return this.disconnect();
-      })
-
-      .finally(() => {
-        this.interface.releaseWakeLock();
-        this.#updating = false;
-      });
+    return this.interface.updateNetworkFirmware(firmware);
   }
 
   async updatePeerFirmware(peer) {
@@ -1186,49 +610,7 @@ export class Spectoda {
   readDeviceConfig(mac = "ee:33:fa:89:08:08") {
     logging.debug("> Reading device config...");
 
-    const request_uuid = this.#getUUID();
-    const bytes = [COMMAND_FLAGS.FLAG_DEVICE_CONFIG_REQUEST, ...numberToBytes(request_uuid, 4)];
-
-    return this.interface.request(bytes, true).then(response => {
-      let reader = new TnglReader(response);
-
-      logging.verbose(`response.byteLength=${response.byteLength}`);
-
-      if (reader.readFlag() !== COMMAND_FLAGS.FLAG_DEVICE_CONFIG_RESPONSE) {
-        throw "InvalidResponseFlag";
-      }
-
-      const response_uuid = reader.readUint32();
-
-      if (response_uuid != request_uuid) {
-        throw "InvalidResponseUuid";
-      }
-
-      const error_code = reader.readUint8();
-
-      logging.verbose(`error_code=${error_code}`);
-
-      if (error_code === 0) {
-        const config_size = reader.readUint32();
-        logging.verbose(`config_size=${config_size}`);
-
-        const config_bytes = reader.readBytes(config_size);
-        logging.verbose(`config_bytes=${config_bytes}`);
-
-        const decoder = new TextDecoder();
-        const config = decoder.decode(new Uint8Array(config_bytes));
-        logging.verbose(`config=${config}`);
-
-        if (config.charAt(config.length - 1) == "\0") {
-          logging.warn("NULL config character detected");
-          return config.slice(0, config.length - 1);
-        }
-
-        return config;
-      } else {
-        throw "Fail";
-      }
-    });
+    return this.interface.readDeviceConfig(mac);
   }
 
   /**
@@ -1242,48 +624,7 @@ export class Spectoda {
   updateDeviceConfig(config_raw) {
     logging.debug("> Updating config...");
 
-    logging.info(`config_raw=${config_raw}`);
-
-    const condif_object = JSON.parse(config_raw);
-    const config = JSON.stringify(condif_object);
-
-    logging.info(`config=${config}`);
-
-    const encoder = new TextEncoder();
-    const config_bytes = encoder.encode(config);
-    const config_bytes_size = config.length;
-
-    // make config update request
-    const request_uuid = this.#getUUID();
-    const bytes = [COMMAND_FLAGS.FLAG_CONFIG_UPDATE_REQUEST, ...numberToBytes(request_uuid, 4), ...numberToBytes(config_bytes_size, 4), ...config_bytes];
-    return this.interface.request(bytes, true).then(response => {
-      let reader = new TnglReader(response);
-
-      logging.verbose(`response.byteLength=${response.byteLength}`);
-
-      if (reader.readFlag() !== COMMAND_FLAGS.FLAG_CONFIG_UPDATE_RESPONSE) {
-        throw "InvalidResponse";
-      }
-
-      const response_uuid = reader.readUint32();
-
-      if (response_uuid != request_uuid) {
-        throw "InvalidResponse";
-      }
-
-      const error_code = reader.readUint8();
-
-      logging.verbose(`error_code=${error_code}`);
-
-      if (error_code === 0) {
-        logging.info("Write Config Success");
-        // reboot device
-        const payload = [COMMAND_FLAGS.FLAG_DEVICE_REBOOT_REQUEST];
-        return this.interface.request(payload, false);
-      } else {
-        throw "Fail";
-      }
-    });
+    return this.interface.updateDeviceConfig(config_raw);
   }
 
   /**
@@ -1353,15 +694,13 @@ export class Spectoda {
   rebootNetwork() {
     logging.debug("> Rebooting network...");
 
-    const payload = [COMMAND_FLAGS.FLAG_DEVICE_REBOOT_REQUEST];
-    return this.interface.execute(payload, null);
+    return this.socket.emitWithAck("rebootNetwork");
   }
 
   rebootDevice() {
     logging.debug("> Rebooting device...");
 
-    const payload = [COMMAND_FLAGS.FLAG_DEVICE_REBOOT_REQUEST];
-    return this.interface.request(payload, false);
+    return this.socket.emitWithAck("rebootDevice");
   }
 
   rebootAndDisconnectDevice() {
