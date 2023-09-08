@@ -170,6 +170,28 @@ export class Spectoda {
     return this.#connectionState;
   }
 
+  #setOwnerSignature(ownerSignature) {
+    const reg = ownerSignature.match(/([\dabcdefABCDEF]{32})/g);
+
+    if (!reg[0]) {
+      throw "InvalidSignature";
+    }
+
+    this.#ownerSignature = reg[0];
+    return true;
+  }
+
+  #setOwnerKey(ownerKey) {
+    const reg = ownerKey.match(/([\dabcdefABCDEF]{32})/g);
+
+    if (!reg[0]) {
+      throw "InvalidKey";
+    }
+
+    this.#ownerKey = reg[0];
+    return true;
+  }
+
   requestWakeLock() {
     return this.interface.requestWakeLock();
   }
@@ -190,10 +212,24 @@ export class Spectoda {
   }
 
   // todo remove, deprecated
-  assignOwnerSignature() {}
+  assignOwnerSignature() { console.error("assignOwnerSignature() is deprecated. Use parameters in connect() instead."); }
 
   // todo remove, deprecated
-  assignOwnerKey() {}
+  assignOwnerKey() { console.error("assignOwnerKey() is deprecated. Use parameters in connect() instead."); }
+
+  // todo remove, deprecated
+  setOwnerSignature() { console.error("setOwnerSignature() is deprecated. Use parameters in connect() instead."); }
+
+  // todo remove, deprecated
+  setOwnerKey() { console.error("setOwnerKey() is deprecated. Use parameters in connect() instead."); }
+
+  getOwnerSignature() {
+    return this.#ownerSignature;
+  }
+
+  getOwnerKey() {
+    return this.#ownerKey;
+  }
 
   connectRemoteControl() {
     this.#reconnectRC = true;
@@ -479,6 +515,22 @@ export class Spectoda {
 
     if (this.#connecting) {
       return Promise.reject("ConnectingInProgress");
+    }
+
+    if (ownerSignature) {
+      this.#setOwnerSignature(ownerSignature);
+    }
+
+    if (ownerKey) {
+      this.#setOwnerKey(ownerKey);
+    }
+
+    if (!this.#ownerSignature) {
+      throw "OwnerSignatureNotAssigned";
+    }
+
+    if (!this.#ownerKey) {
+      throw "OwnerKeyNotAssigned";
     }
 
     this.#setConnectionState("connecting");
@@ -1358,7 +1410,7 @@ export class Spectoda {
       const removed_device_mac_bytes = reader.readBytes(6);
 
       return this.rebootDevice()
-        .catch(() => {})
+        .catch(() => { })
         .then(() => {
           let removed_device_mac = "00:00:00:00:00:00";
           if (removed_device_mac_bytes.length >= 6) {
