@@ -1,7 +1,6 @@
-import { logging } from "./logging";
-import { createNanoEvents, mapValue, sleep } from "./functions";
 import { FFT } from "./dsp.js";
-import { t } from "./i18n.js";
+import { createNanoEvents, mapValue, sleep } from "./functions";
+import { logging } from "./logging";
 
 function calculateSensitivityValue(value, sensitivity) {
   return (value * sensitivity) / 100;
@@ -381,4 +380,8 @@ export class SpectodaSound {
   //   type: 'loudness',
   //   value: value
   // });
+
+  getAudioContext() {
+    return this.#audioContext;
+  }
 }

@@ -114,7 +114,10 @@ export class Spectoda {
         if (this.#getConnectionState() === "connected") {
           return this.syncClock()
             .then(() => {
-              return this.syncEventHistory();
+              return this.syncTimeline();
+            })
+            .then(() => {
+              return this.syncEventHistory(); // ! this might slow down stuff for Bukanyr
             })
             .catch(error => {
               logging.warn(error);
@@ -210,50 +213,6 @@ export class Spectoda {
     }
   }
 
-  setOwnerSignature(ownerSignature) {
-    const reg = ownerSignature.match(/([\dabcdefABCDEF]{32})/g);
-
-    if (!reg[0]) {
-      throw "InvalidSignature";
-    }
-
-    this.#ownerSignature = reg[0];
-    return true;
-  }
-
-  /**
-   * @alias this.setOwnerSignature
-   */
-  assignOwnerSignature(ownerSignature) {
-    return this.setOwnerSignature(ownerSignature);
-  }
-
-  getOwnerSignature() {
-    return this.#ownerSignature;
-  }
-
-  setOwnerKey(ownerKey) {
-    const reg = ownerKey.match(/([\dabcdefABCDEF]{32})/g);
-
-    if (!reg[0]) {
-      throw "InvalidKey";
-    }
-
-    this.#ownerKey = reg[0];
-    return true;
-  }
-
-  /**
-   * @alias this.setOwnerKey
-   */
-  assignOwnerKey(ownerKey) {
-    return this.setOwnerKey(ownerKey);
-  }
-
-  getOwnerKey() {
-    return this.#ownerKey;
-  }
-
   setConnector(connector_type) {
     return this.runtime.assignConnector(connector_type);
   }
@@ -268,6 +227,12 @@ export class Spectoda {
   // begin() {
   //   return this.runtime.begin("con1", "00:00:00:00:00:00", 0, 255);
   // }
+
+  // todo remove, deprecated
+  assignOwnerSignature() { console.warn("assignOwnerSignature() is deprecated"); }
+
+  // todo remove, deprecated
+  assignOwnerKey() { console.warn("assignOwnerKey() is deprecated"); }
 
   // valid UUIDs are in range [1..4294967295] (32-bit unsigned number)
   #getUUID() {
@@ -348,22 +313,6 @@ export class Spectoda {
     this.#adopting = true;
 
     this.#setConnectionState("connecting");
-
-    if (ownerSignature) {
-      this.setOwnerSignature(ownerSignature);
-    }
-
-    if (ownerKey) {
-      this.setOwnerKey(ownerKey);
-    }
-
-    if (!this.#ownerSignature) {
-      throw "OwnerSignatureNotAssigned";
-    }
-
-    if (!this.#ownerKey) {
-      throw "OwnerKeyNotAssigned";
-    }
 
     const criteria = /** @type {any} */ ([{ adoptionFlag: true }]);
 
@@ -451,7 +400,6 @@ export class Spectoda {
       })
       .finally(() => {
         this.#adopting = false;
-
         this.#setConnectionState("disconnected");
       });
   }
