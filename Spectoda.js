@@ -441,14 +441,6 @@ export class Spectoda {
   #connect(autoConnect) {
     logging.info("> Connecting Spectoda Controller");
 
-    if (ownerSignature) {
-      this.#setOwnerSignature(ownerSignature);
-    }
-
-    if (ownerKey) {
-      this.#setOwnerKey(ownerKey);
-    }
-
     if (!this.#ownerSignature) {
       throw "OwnerSignatureNotAssigned";
     }
