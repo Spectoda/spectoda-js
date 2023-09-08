@@ -1,16 +1,13 @@
 import { TnglCodeParser } from "./SpectodaParser.js";
-import { WEBSOCKET_URL } from "./SpectodaWebSocketsConnector.js";
-import { colorToBytes, computeTnglFingerprint, detectSpectodaConnect, hexStringToUint8Array, labelToBytes, numberToBytes, percentageToBytes, sleep, strMacToBytes, stringToBytes, detectNode } from "./functions";
-import { changeLanguage, t } from "./i18n.js";
-import { io } from "./lib/socketio.js";
-import { logging, setLoggingLevel } from "./logging";
-import { COMMAND_FLAGS } from "./src/SpectodaInterface.js";
 import { TimeTrack } from "./TimeTrack.js";
 import "./TnglReader.js";
 import { TnglReader } from "./TnglReader.js";
 import "./TnglWriter.js";
+import { colorToBytes, computeTnglFingerprint, detectSpectodaConnect, hexStringToUint8Array, labelToBytes, numberToBytes, percentageToBytes, sleep, strMacToBytes, stringToBytes } from "./functions";
+import { changeLanguage, t } from "./i18n.js";
+import { logging, setLoggingLevel } from "./logging";
+import { COMMAND_FLAGS } from "./src/SpectodaInterface.js";
 
-import { SpectodaInterface } from "./src/SpectodaInterface.js";
 import { SpectodaRuntime } from "./src/SpectodaRuntime.js";
 
 let lastEvents = {};
@@ -247,16 +244,24 @@ export class Spectoda {
   }
 
   // todo remove, deprecated
-  assignOwnerSignature() { console.error("assignOwnerSignature() is deprecated. Use parameters in connect() instead."); }
+  assignOwnerSignature() {
+    console.error("assignOwnerSignature() is deprecated. Use parameters in connect() instead.");
+  }
 
   // todo remove, deprecated
-  assignOwnerKey() { console.error("assignOwnerKey() is deprecated. Use parameters in connect() instead."); }
+  assignOwnerKey() {
+    console.error("assignOwnerKey() is deprecated. Use parameters in connect() instead.");
+  }
 
   // todo remove, deprecated
-  setOwnerSignature() { console.error("setOwnerSignature() is deprecated. Use parameters in connect() instead."); }
+  setOwnerSignature() {
+    console.error("setOwnerSignature() is deprecated. Use parameters in connect() instead.");
+  }
 
   // todo remove, deprecated
-  setOwnerKey() { console.error("setOwnerKey() is deprecated. Use parameters in connect() instead."); }
+  setOwnerKey() {
+    console.error("setOwnerKey() is deprecated. Use parameters in connect() instead.");
+  }
 
   getOwnerSignature() {
     return this.#ownerSignature;
@@ -441,14 +446,6 @@ export class Spectoda {
   #connect(autoConnect) {
     logging.info("> Connecting Spectoda Controller");
 
-    if (!this.#ownerSignature) {
-      throw "OwnerSignatureNotAssigned";
-    }
-
-    if (!this.#ownerKey) {
-      throw "OwnerKeyNotAssigned";
-    }
-
     this.#setConnectionState("connecting");
 
     logging.info("> Selecting device...");
@@ -511,12 +508,14 @@ export class Spectoda {
       this.#setOwnerKey(ownerKey);
     }
 
-    if (!this.#ownerSignature) {
-      throw "OwnerSignatureNotAssigned";
-    }
+    if (!connectAny) {
+      if (!this.#ownerSignature) {
+        throw "OwnerSignatureNotAssigned";
+      }
 
-    if (!this.#ownerKey) {
-      throw "OwnerKeyNotAssigned";
+      if (!this.#ownerKey) {
+        throw "OwnerKeyNotAssigned";
+      }
     }
 
     let criteria = /** @type {any} */ ([{ ownerSignature: this.#ownerSignature }]);
@@ -1381,7 +1380,7 @@ export class Spectoda {
       const removed_device_mac_bytes = reader.readBytes(6);
 
       return this.rebootDevice()
-        .catch(() => { })
+        .catch(() => {})
         .then(() => {
           let removed_device_mac = "00:00:00:00:00:00";
           if (removed_device_mac_bytes.length >= 6) {
