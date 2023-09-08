@@ -212,16 +212,24 @@ export class Spectoda {
   }
 
   // todo remove, deprecated
-  assignOwnerSignature() { console.error("assignOwnerSignature() is deprecated. Use parameters in connect() instead."); }
+  assignOwnerSignature() {
+    console.error("assignOwnerSignature() is deprecated. Use parameters in connect() instead.");
+  }
 
   // todo remove, deprecated
-  assignOwnerKey() { console.error("assignOwnerKey() is deprecated. Use parameters in connect() instead."); }
+  assignOwnerKey() {
+    console.error("assignOwnerKey() is deprecated. Use parameters in connect() instead.");
+  }
 
   // todo remove, deprecated
-  setOwnerSignature() { console.error("setOwnerSignature() is deprecated. Use parameters in connect() instead."); }
+  setOwnerSignature() {
+    console.error("setOwnerSignature() is deprecated. Use parameters in connect() instead.");
+  }
 
   // todo remove, deprecated
-  setOwnerKey() { console.error("setOwnerKey() is deprecated. Use parameters in connect() instead."); }
+  setOwnerKey() {
+    console.error("setOwnerKey() is deprecated. Use parameters in connect() instead.");
+  }
 
   getOwnerSignature() {
     return this.#ownerSignature;
@@ -525,12 +533,14 @@ export class Spectoda {
       this.#setOwnerKey(ownerKey);
     }
 
-    if (!this.#ownerSignature) {
-      throw "OwnerSignatureNotAssigned";
-    }
+    if (!connectAny) {
+      if (!this.#ownerSignature) {
+        throw "OwnerSignatureNotAssigned";
+      }
 
-    if (!this.#ownerKey) {
-      throw "OwnerKeyNotAssigned";
+      if (!this.#ownerKey) {
+        throw "OwnerKeyNotAssigned";
+      }
     }
 
     this.#setConnectionState("connecting");
@@ -1410,7 +1420,7 @@ export class Spectoda {
       const removed_device_mac_bytes = reader.readBytes(6);
 
       return this.rebootDevice()
-        .catch(() => { })
+        .catch(() => {})
         .then(() => {
           let removed_device_mac = "00:00:00:00:00:00";
           if (removed_device_mac_bytes.length >= 6) {
