@@ -187,6 +187,28 @@ export class Spectoda {
     return this.#connectionState;
   }
 
+  #setOwnerSignature(ownerSignature) {
+    const reg = ownerSignature.match(/([\dabcdefABCDEF]{32})/g);
+
+    if (!reg[0]) {
+      throw "InvalidSignature";
+    }
+
+    this.#ownerSignature = reg[0];
+    return true;
+  }
+
+  #setOwnerKey(ownerKey) {
+    const reg = ownerKey.match(/([\dabcdefABCDEF]{32})/g);
+
+    if (!reg[0]) {
+      throw "InvalidKey";
+    }
+
+    this.#ownerKey = reg[0];
+    return true;
+  }
+
   requestWakeLock() {
     logging.debug("> Activating wakeLock...");
 
@@ -224,15 +246,25 @@ export class Spectoda {
     return this.setConnector(connector_type);
   }
 
-  // begin() {
-  //   return this.runtime.begin("con1", "00:00:00:00:00:00", 0, 255);
-  // }
+  // todo remove, deprecated
+  assignOwnerSignature() { console.error("assignOwnerSignature() is deprecated. Use parameters in connect() instead."); }
 
   // todo remove, deprecated
-  assignOwnerSignature() { console.warn("assignOwnerSignature() is deprecated"); }
+  assignOwnerKey() { console.error("assignOwnerKey() is deprecated. Use parameters in connect() instead."); }
 
   // todo remove, deprecated
-  assignOwnerKey() { console.warn("assignOwnerKey() is deprecated"); }
+  setOwnerSignature() { console.error("setOwnerSignature() is deprecated. Use parameters in connect() instead."); }
+
+  // todo remove, deprecated
+  setOwnerKey() { console.error("setOwnerKey() is deprecated. Use parameters in connect() instead."); }
+
+  getOwnerSignature() {
+    return this.#ownerSignature;
+  }
+
+  getOwnerKey() {
+    return this.#ownerKey;
+  }
 
   // valid UUIDs are in range [1..4294967295] (32-bit unsigned number)
   #getUUID() {
@@ -409,6 +441,22 @@ export class Spectoda {
   #connect(autoConnect) {
     logging.info("> Connecting Spectoda Controller");
 
+    if (ownerSignature) {
+      this.#setOwnerSignature(ownerSignature);
+    }
+
+    if (ownerKey) {
+      this.#setOwnerKey(ownerKey);
+    }
+
+    if (!this.#ownerSignature) {
+      throw "OwnerSignatureNotAssigned";
+    }
+
+    if (!this.#ownerKey) {
+      throw "OwnerKeyNotAssigned";
+    }
+
     this.#setConnectionState("connecting");
 
     logging.info("> Selecting device...");
@@ -464,11 +512,11 @@ export class Spectoda {
     }
 
     if (ownerSignature) {
-      this.setOwnerSignature(ownerSignature);
+      this.#setOwnerSignature(ownerSignature);
     }
 
     if (ownerKey) {
-      this.setOwnerKey(ownerKey);
+      this.#setOwnerKey(ownerKey);
     }
 
     if (!this.#ownerSignature) {
