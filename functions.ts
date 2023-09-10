@@ -334,10 +334,10 @@ export function hexStringToUint8Array(hexString, arrayLength) {
   let arrayBuffer = new Uint8Array(arrayLength);
   for (let i = 0; i < arrayLength; i++) {
     const byteValue = parseInt(hexString.substr(i * 2, 2), 16);
-    if (byteValue !== NaN) {
-      arrayBuffer[i] = byteValue;
-    } else {
+    if (Number.isNaN(byteValue)) {
       arrayBuffer[i] = 0;
+    } else {
+      arrayBuffer[i] = byteValue;
     }
   }
   return arrayBuffer;
