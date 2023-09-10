@@ -423,6 +423,22 @@ export class Spectoda {
       return Promise.reject("AdoptingInProgress");
     }
 
+    if (ownerSignature) {
+      this.#setOwnerSignature(ownerSignature);
+    }
+
+    if (ownerKey) {
+      this.#setOwnerKey(ownerKey);
+    }
+
+    if (!this.#ownerSignature) {
+      throw "OwnerSignatureNotAssigned";
+    }
+
+    if (!this.#ownerKey) {
+      throw "OwnerKeyNotAssigned";
+    }
+
     this.#adopting = true;
 
     this.#setConnectionState("connecting");
@@ -1420,7 +1436,7 @@ export class Spectoda {
       const removed_device_mac_bytes = reader.readBytes(6);
 
       return this.rebootDevice()
-        .catch(() => {})
+        .catch(() => { })
         .then(() => {
           let removed_device_mac = "00:00:00:00:00:00";
           if (removed_device_mac_bytes.length >= 6) {
