@@ -1933,6 +1933,10 @@ export class Spectoda {
   readVariableAddress(variable_address, device_id) {
     logging.debug(`> Reading variable address...`);
 
+    if (this.#getConnectionState() !== "connected") {
+      throw "DeviceDisconnected";
+    }
+
     return this.runtime.readVariableAddress(variable_address, device_id);
   }
 }
