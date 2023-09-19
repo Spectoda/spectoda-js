@@ -1775,8 +1775,6 @@ export class Spectoda {
   }
 
   saveState() {
-    throw "WorkInProgress";
-
     logging.debug("> Saving state...");
 
     const request_uuid = this.#getUUID();
