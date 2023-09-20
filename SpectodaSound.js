@@ -72,11 +72,11 @@ export class SpectodaSound {
     }
     if (!mediaStream || mediaStream === "microphone") {
       // Dotaz na povolení přístupu k mikrofonu
-      if (navigator.mediaDevices) {
+      if (navigator && navigator.mediaDevices) {
         const constraints = (window.constraints = {
           audio: {
             echoCancellation: false,
-            autoGainControl: false,
+            autoGainControl: true,
             noiseSuppression: false,
             sampleRate: 48000,
           },
@@ -97,10 +97,10 @@ export class SpectodaSound {
             });
         });
         console.log("Connected Mic");
-        // await new Promise((resolve, reject) => { navigator.mediaDevices.getUserMedia(constraints).then(resolve).catch(reject)) };
+        // await new Promise((resolve, reject) => { navigator?.mediaDevices?.getUserMedia(constraints).then(resolve).catch(reject)) };
       } else {
         // TODO - check, tato chyba možná vzniká jinak. Navíc ta chyba nemusí být bluefy only
-        throw "MicAccessDenied";
+        throw "MicAccessError";
       }
     } else if (!mediaStream || mediaStream === "system") {
       const gdmOptions = {
@@ -121,18 +121,18 @@ export class SpectodaSound {
       }
 
       await new Promise(async (resolve, reject) => {
-        const srcObject = await navigator.mediaDevices
+        const srcObject = await navigator?.mediaDevices ?
           .getDisplayMedia(gdmOptions)
-          .then(stream => {
-            this.#stream = stream;
-            this.#source = this.#audioContext.createMediaStreamSource(this.#stream);
-            resolve();
-            logging.debug("SpectodaSound.connect", "Connected SystemSound");
-          })
-          .catch(e => {
-            reject(e);
-            throw "DeviceUnsupported";
-          });
+            .then(stream => {
+              this.#stream = stream;
+              this.#source = this.#audioContext.createMediaStreamSource(this.#stream);
+              resolve();
+              logging.debug("SpectodaSound.connect", "Connected SystemSound");
+            })
+            .catch(e => {
+              reject(e);
+              throw "DeviceUnsupported";
+            });
       });
     } else {
       this.#stream = mediaStream;
