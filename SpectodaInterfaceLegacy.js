@@ -20,12 +20,13 @@ import {
   detectIPhone,
   detectMacintosh,
   uint8ArrayToHexString,
+  createNanoEventsWithWrappedEmit,
 } from "./functions";
 import { SpectodaDummyConnector } from "./SpectodaDummyConnector.js";
 import { SpectodaWebBluetoothConnector } from "./SpectodaWebBluetoothConnector.js";
 import { SpectodaWebSerialConnector } from "./SpectodaWebSerialConnector.js";
 // import { SpectodaConnectConnector } from "./SpectodaConnectConnector.js";
-import { SpectodaWebSocketsConnector } from "./SpectodaWebSocketsConnector.js";
+// import { SpectodaWebSocketsConnector } from "./SpectodaWebSocketsConnector.js";
 import { TimeTrack } from "./TimeTrack.js";
 import "./TnglReader.js";
 import "./TnglWriter.js";
@@ -153,6 +154,11 @@ export const COMMAND_FLAGS = Object.freeze({
 // TODO execute commands goes in and when processed goes back out to be handed over to Connectors to sendExecute() the commands to other connected Interfaces
 // TODO request commands goes in and if needed another request command goes out to Connectors to sendRequest() to a external Interface with given mac address.
 
+export const allEventsEmitter = createNanoEvents();
+
+function emitHandler(event, args) {
+  allEventsEmitter.emit("on", { name: event, args });
+}
 /////////////////////////////////////////////////////////////////////////
 
 // Deffered object
@@ -187,6 +193,8 @@ class Query {
   }
 }
 
+
+
 // filters out duplicate payloads and merges them together. Also decodes payloads received from the connector.
 export class SpectodaInterfaceLegacy {
   #deviceReference;
@@ -217,9 +225,9 @@ export class SpectodaInterfaceLegacy {
 
     this.clock = new TimeTrack(0);
 
-    this.connector = /** @type {SpectodaDummyConnector | SpectodaWebBluetoothConnector | SpectodaWebSerialConnector | SpectodaConnectConnector | FlutterConnector | SpectodaWebSocketsConnector | null} */ (null);
+    this.connector = /** @type {SpectodaDummyConnector | SpectodaWebBluetoothConnector | SpectodaWebSerialConnector | SpectodaConnectConnector | FlutterConnector  | null} */ (null);
 
-    this.#eventEmitter = createNanoEvents();
+    this.#eventEmitter = createNanoEventsWithWrappedEmit(emitHandler);
     this.#wakeLock = null;
 
     this.#queue = /** @type {Query[]} */ ([]);
@@ -512,9 +520,9 @@ export class SpectodaInterfaceLegacy {
             }
             break;
 
-          case "websockets":
-            this.connector = new SpectodaWebSocketsConnector(this);
-            break;
+          // case "websockets":
+          //   this.connector = new SpectodaWebSocketsConnector(this);
+          //   break;
 
           default:
             logging.warn("Selected unknown connector");

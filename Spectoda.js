@@ -1,15 +1,15 @@
-import { COMMAND_FLAGS, SpectodaInterfaceLegacy } from "./SpectodaInterfaceLegacy.js";
+import { COMMAND_FLAGS, SpectodaInterfaceLegacy, allEventsEmitter } from "./SpectodaInterfaceLegacy.js";
 import { TnglCodeParser } from "./SpectodaParser.js";
 import { WEBSOCKET_URL } from "./SpectodaWebSocketsConnector.js";
 import { colorToBytes, computeTnglFingerprint, detectSpectodaConnect, hexStringToUint8Array, labelToBytes, numberToBytes, percentageToBytes, sleep, strMacToBytes, stringToBytes } from "./functions";
 import { changeLanguage, t } from "./i18n.js";
-import { io } from "./lib/socketio.js";
 import { logging, setLoggingLevel } from "./logging";
 // import { Interface } from "./src/SpectodaInterface.js";
 import { TimeTrack } from "./TimeTrack.js";
 import "./TnglReader.js";
 import { TnglReader } from "./TnglReader.js";
 import "./TnglWriter.js";
+import { io } from "socket.io-client"
 
 let lastEvents = {};
 
@@ -130,7 +130,7 @@ export class Spectoda {
 
           console.warn("> Spectoda connecting");
           this.#connectionState = connectionState;
-          this.interface.emit("connecting", { target: this });
+          this.interface.emit("connecting");
         }
         break;
       case "connected":
@@ -141,7 +141,7 @@ export class Spectoda {
 
           console.warn("> Spectoda connected");
           this.#connectionState = connectionState;
-          this.interface.emit("connected", { target: this });
+          this.interface.emit("connected");
         }
         break;
       case "disconnecting":
@@ -152,7 +152,7 @@ export class Spectoda {
 
           console.warn("> Spectoda disconnecting");
           this.#connectionState = connectionState;
-          this.interface.emit("disconnecting", { target: this });
+          this.interface.emit("disconnecting");
         }
         break;
       case "disconnected":
@@ -163,7 +163,7 @@ export class Spectoda {
 
           console.warn("> Spectoda disconnected");
           this.#connectionState = connectionState;
-          this.interface.emit("disconnected", { target: this });
+          this.interface.emit("disconnected");
         }
         break;
       default:
@@ -244,105 +244,45 @@ export class Spectoda {
     return this.#ownerKey;
   }
 
-  connectRemoteControl() {
-    this.#reconnectRC = true;
-
+  async connectRemoteControl() {
     logging.debug("> Connecting to Remote Control");
 
-    if (!this.socket) {
-      // TODO - scopovani dle apky
-      // TODO - authentifikace
-      this.socket = io(WEBSOCKET_URL, {
-        transports: ["websocket"],
+    this.socket && this.socket.disconnect();
+    this.socket = io(WEBSOCKET_URL);
+
+    this.socket.connect();
+    this.socket.on("connect", async () => {
+      await this.socket.emitWithAck("join", { signature: "room1", key: "spektrum" });
+      console.log("> Connected and joined room1");
+
+      console.log("> Listening for events", allEventsEmitter);
+      window.allEventsEmitter = allEventsEmitter;
+
+      allEventsEmitter.on("on", ({ name, args }) => {
+        console.log("on", name, args);
+        this.socket.emit("event", { name, args });
       });
 
-      this.socket.on("connect", () => {
-        logging.debug("> Connected to remote control");
-        window.alert(t("Connected to remote control"));
+      this.socket.on("func", async (payload, callback) => {
+        if (!callback) {
+          console.error("No callback provided");
+          return;
+        }
+
+        const { functionName, arguments: args } = payload;
+
+        // call internal class function await this[functionName](...args)
+
+        // call internal class function
+        try {
+          const result = await this[functionName](...args);
+          callback({ status: "success", result });
+        } catch (e) {
+          console.error(e);
+          callback({ status: "error", error: e });
+        }
       });
-
-      this.socket.on("disconnect", () => {
-        logging.debug("> Disconnected from remote control");
-        window.alert(t("Disconnected from remote control"));
-
-        // if (this.#reconnectRC) {
-        //   logging.debug("Disconnected by its own... Reloading");
-        //   window.location.reload();
-        // }
-
-        // if (this.#reconnectRC) {
-        //   logging.debug("> Reconnecting Remote Control...");
-
-        //   this.socket.connect();
-        // }
-      });
-
-      // this.socket.on("deliver", async (reqId, payload) => {
-      //   logging.debug("deliver", reqId, payload);
-      //   this.interface
-      //     .deliver(new Uint8Array(payload))
-      //     .then(payload => {
-      //       // ! missing returned payload
-
-      //       payload = new Uint8Array(payload);
-      //       this.socket.emit("response_success", reqId, payload);
-      //     })
-      //     .catch(error => this.socket.emit("response_error", reqId, error));
-      // });
-
-      // this.socket.on("transmit", async (reqId, payload) => {
-      //   logging.debug("transmit", reqId, payload);
-      //   this.interface
-      //     .transmit(new Uint8Array(payload))
-      //     .then(payload => {
-      //       // ! missing returned payload
-      //       payload = new Uint8Array(payload);
-      //       this.socket.emit("response_success", reqId, payload);
-      //     })
-      //     .catch(error => this.socket.emit("response_error", reqId, error));
-      // });
-
-      this.socket.on("request", async (reqId, payload, read_response) => {
-        logging.warn("request", reqId, payload);
-
-        this.interface
-          .request(payload, read_response)
-          .then(payload => {
-            // ! missing returned payload
-            payload = payload;
-            logging.info({ reqId, payload });
-            this.socket.emit("response_success", reqId, payload);
-          })
-          .catch(error => this.socket.emit("response_error", reqId, error));
-      });
-
-      this.socket.on("connect_error", error => {
-        logging.debug("connect_error", error);
-        setTimeout(() => {
-          this.socket.connect();
-        }, 1000);
-      });
-
-      // this.socket.on("setClock", payload => {
-      //   logging.warn("setClock", payload);
-      // });
-
-      // // ============= CLOCK HACK ==============
-
-      // const hackClock = () => {
-      //   logging.warn("overriding clock with UTC clock");
-      //   this.interface.clock.setMillis(getClockTimestamp());
-      //   this.syncClock();
-      // };
-
-      // hackClock();
-
-      // this.interface.on("connected", () => {
-      //   hackClock();
-      // });
-    } else {
-      this.socket.connect();
-    }
+    });
   }
 
   disconnectRemoteControl() {
@@ -824,7 +764,7 @@ export class Spectoda {
     //   this.saveState();
     // }, 5000);
 
-    const clock_timestamp = this.#getEmitEventClockTimestamp() + 10; // +10ms in the future so that, there is no visual jump 
+    const clock_timestamp = this.#getEmitEventClockTimestamp() + 10; // +10ms in the future so that, there is no visual jump
 
     const func = device_id => {
       const payload = [COMMAND_FLAGS.FLAG_EMIT_EVENT, ...labelToBytes(event_label), ...numberToBytes(clock_timestamp, 6), numberToBytes(device_id, 1)];
@@ -890,7 +830,7 @@ export class Spectoda {
       event_value = -2147483648;
     }
 
-    const clock_timestamp = this.#getEmitEventClockTimestamp() + 10; // +10ms in the future so that, there is no visual jump 
+    const clock_timestamp = this.#getEmitEventClockTimestamp() + 10; // +10ms in the future so that, there is no visual jump
 
     const func = device_id => {
       const payload = [COMMAND_FLAGS.FLAG_EMIT_TIMESTAMP_EVENT, ...numberToBytes(event_value, 4), ...labelToBytes(event_label), ...numberToBytes(clock_timestamp, 6), numberToBytes(device_id, 1)];
@@ -929,7 +869,7 @@ export class Spectoda {
       event_value = "#000000";
     }
 
-    const clock_timestamp = this.#getEmitEventClockTimestamp() + 10; // +10ms in the future so that, there is no visual jump 
+    const clock_timestamp = this.#getEmitEventClockTimestamp() + 10; // +10ms in the future so that, there is no visual jump
 
     const func = device_id => {
       const payload = [COMMAND_FLAGS.FLAG_EMIT_COLOR_EVENT, ...colorToBytes(event_value), ...labelToBytes(event_label), ...numberToBytes(clock_timestamp, 6), numberToBytes(device_id, 1)];
@@ -973,7 +913,7 @@ export class Spectoda {
       event_value = -100.0;
     }
 
-    const clock_timestamp = this.#getEmitEventClockTimestamp() + 10; // +10ms in the future so that, there is no visual jump 
+    const clock_timestamp = this.#getEmitEventClockTimestamp() + 10; // +10ms in the future so that, there is no visual jump
 
     const func = device_id => {
       const payload = [COMMAND_FLAGS.FLAG_EMIT_PERCENTAGE_EVENT, ...percentageToBytes(event_value), ...labelToBytes(event_label), ...numberToBytes(clock_timestamp, 6), numberToBytes(device_id, 1)];
@@ -1018,7 +958,7 @@ export class Spectoda {
       event_value = event_value.slice(0, 5);
     }
 
-    const clock_timestamp = this.#getEmitEventClockTimestamp() + 10; // +10ms in the future so that, there is no visual jump 
+    const clock_timestamp = this.#getEmitEventClockTimestamp() + 10; // +10ms in the future so that, there is no visual jump
 
     const func = device_id => {
       const payload = [COMMAND_FLAGS.FLAG_EMIT_LABEL_EVENT, ...labelToBytes(event_value), ...labelToBytes(event_label), ...numberToBytes(clock_timestamp, 6), numberToBytes(device_id, 1)];
@@ -1462,7 +1402,7 @@ export class Spectoda {
       const removed_device_mac_bytes = reader.readBytes(6);
 
       return this.rebootDevice()
-        .catch(() => { })
+        .catch(() => {})
         .then(() => {
           let removed_device_mac = "00:00:00:00:00:00";
           if (removed_device_mac_bytes.length >= 6) {
