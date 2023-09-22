@@ -1,12 +1,42 @@
 import { logging, setLoggingLevel } from "./logging";
-import { createNanoEvents } from "nanoevents";
 
-export { createNanoEvents };
+export const createNanoEvents = () => ({
+  emit(event, ...args) {
+    const callbacks = this.events[event] || [];
+    for (let i = 0, length = callbacks.length; i < length; i++) {
+      callbacks[i](...args);
+    }
+  },
+  events: {},
+  on(event, cb) {
+    this.events[event]?.push(cb) || (this.events[event] = [cb]);
+    return () => {
+      this.events[event] = this.events[event]?.filter(i => cb !== i);
+    };
+  },
+});
+
+export const createNanoEventsWithWrappedEmit = emitHandler => ({
+  emit(event, ...args) {
+    emitHandler(event, args);
+
+    const callbacks = this.events[event] || [];
+    for (let i = 0, length = callbacks.length; i < length; i++) {
+      callbacks[i](...args);
+    }
+  },
+  events: {},
+  on(event, cb) {
+    this.events[event]?.push(cb) || (this.events[event] = [cb]);
+    return () => {
+      this.events[event] = this.events[event]?.filter(i => cb !== i);
+    };
+  },
+});
 
 export function toBytes(value: number, byteCount: number) {
-
-  if (typeof (value) !== "number") {
-    logging.error("Invalid value type: " + value + " (" + typeof (value) + ")");
+  if (typeof value !== "number") {
+    logging.error("Invalid value type: " + value + " (" + typeof value + ")");
     throw "InvalidValue";
   }
 
@@ -21,7 +51,7 @@ export function toBytes(value: number, byteCount: number) {
   }
 
   let number = BigInt(Math.round(value));
-  var byteArray: number[] = [];
+  const byteArray: number[] = [];
   for (let index = 0; index < byteCount; index++) {
     const byte = number & 0xffn;
     byteArray.push(Number(byte));
@@ -61,10 +91,10 @@ export function numberToBytes(number_value: number, byteCount: number) {
 //   return value_int16;
 // }
 
-export const timeOffset = new Date().getTime() % 0x7fffffff;
+export const timeOffset = Date.now() % 0x7fffffff;
 // must be positive int32 (4 bytes)
 export function getClockTimestamp() {
-  return (new Date().getTime() % 0x7fffffff) - timeOffset;
+  return (Date.now() % 0x7fffffff) - timeOffset;
 }
 
 export function sleep(ms) {
@@ -96,11 +126,11 @@ export function sleep(ms) {
 
 export const getSeconds = str => {
   let seconds = 0;
-  let months = str.match(/(\d+)\s*M/);
-  let days = str.match(/(\d+)\s*D/);
-  let hours = str.match(/(\d+)\s*h/);
-  let minutes = str.match(/(\d+)\s*m/);
-  let secs = str.match(/(\d+)\s*s/);
+  const months = str.match(/(\d+)\s*M/);
+  const days = str.match(/(\d+)\s*D/);
+  const hours = str.match(/(\d+)\s*h/);
+  const minutes = str.match(/(\d+)\s*m/);
+  const secs = str.match(/(\d+)\s*s/);
   if (months) {
     seconds += parseInt(months[1]) * 86400 * 30;
   }
@@ -155,7 +185,7 @@ export function labelToBytes(label_string) {
 }
 
 export function stringToBytes(string, length) {
-  var byteArray: number[] = [];
+  const byteArray: number[] = [];
 
   for (let index = 0; index < length; index++) {
     if (index < string.length) {
@@ -172,15 +202,15 @@ export function colorToBytes(color_hex_code) {
     return [0, 0, 0];
   }
 
-  let reg = color_hex_code.match(/#([0-9a-f][0-9a-f])([0-9a-f][0-9a-f])([0-9a-f][0-9a-f])/i);
+  const reg = color_hex_code.match(/#?([\da-f]{2})([\da-f]{2})([\da-f]{2})/i);
   if (!reg) {
     logging.error('Wrong color code: "' + color_hex_code + '"');
     return [0, 0, 0];
   }
 
-  let r = parseInt(reg[1], 16);
-  let g = parseInt(reg[2], 16);
-  let b = parseInt(reg[3], 16);
+  const r = parseInt(reg[1], 16);
+  const g = parseInt(reg[2], 16);
+  const b = parseInt(reg[3], 16);
 
   return [r, g, b];
 }
@@ -190,16 +220,16 @@ const PERCENTAGE_MAX = 268435455; // 2^28-1
 const PERCENTAGE_MIN = -268435455; // -(2^28)+1  (plus 1 is there for the percentage to be simetric)
 
 export function percentageToBytes(percentage_float) {
-  const value = mapValue(percentage_float, -100.0, 100.0, PERCENTAGE_MIN, PERCENTAGE_MAX);
+  const value = mapValue(percentage_float, -100, 100, PERCENTAGE_MIN, PERCENTAGE_MAX);
   return numberToBytes(Math.floor(value), 4);
 }
 
 export function strMacToBytes(mac_str) {
   // Split the string into an array of hexadecimal values
-  var hexValues = mac_str.split(":");
+  const hexValues = mac_str.split(":");
 
   // Convert each hexadecimal value to a byte
-  var bytes = hexValues.map(function (hex) {
+  const bytes = hexValues.map(function (hex) {
     return parseInt(hex, 16);
   });
 
@@ -216,6 +246,19 @@ export function strMacToBytes(mac_str) {
 // IPhone SE Spectoda Connect       Mozilla/5.0 (iPhone; CPU iPhone OS 15_6_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148
 // IPhone SE Safari                 Mozilla/5.0 (iPhone; CPU iPhone OS 15_6_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/15.6.1 Mobile/15E148 Safari/604.1
 
+const spectodaNodeDetected = typeof process !== "undefined" && process.versions && process.versions.node;
+export function detectNode() {
+  return spectodaNodeDetected;
+}
+
+export function detectNext() {
+  return process.env.NEXT_PUBLIC_NEXTJS;
+}
+
+export function detectGW() {
+  return detectNode() && !detectNext();
+}
+
 const spectodaConnectDetected = typeof window !== "undefined" && "flutter_inappwebview" in window;
 export function detectSpectodaConnect() {
   return spectodaConnectDetected;
@@ -223,37 +266,37 @@ export function detectSpectodaConnect() {
 
 const navigatorUserAgent = typeof navigator === "undefined" ? "" : navigator.userAgent.toLowerCase();
 
-const androidDetected = navigatorUserAgent.indexOf("android") > -1;
+const androidDetected = navigatorUserAgent.includes("android");
 export function detectAndroid() {
   return androidDetected;
 }
 
-const iphoneDetected = navigatorUserAgent.indexOf("iphone") > -1;
+const iphoneDetected = navigatorUserAgent.includes("iphone");
 export function detectIPhone() {
   return iphoneDetected;
 }
 
-const macintoshDetected = navigatorUserAgent.indexOf("macintosh") > -1;
+const macintoshDetected = navigatorUserAgent.includes("macintosh");
 export function detectMacintosh() {
   return macintoshDetected;
 }
 
-const windowsDetected = navigatorUserAgent.indexOf("windows") > -1;
+const windowsDetected = navigatorUserAgent.includes("windows");
 export function detectWindows() {
   return windowsDetected;
 }
 
-const linuxDetected = navigatorUserAgent.indexOf("linux") > -1;
+const linuxDetected = navigatorUserAgent.includes("linux");
 export function detectLinux() {
   return linuxDetected;
 }
 
-const chromeDetected = navigatorUserAgent.indexOf("chrome") > -1;
+const chromeDetected = navigatorUserAgent.includes("chrome");
 export function detectChrome() {
   return chromeDetected && !spectodaConnectDetected;
 }
 
-const safariDetected = navigatorUserAgent.indexOf("safari") > -1 && navigatorUserAgent.indexOf("chrome") == -1;
+const safariDetected = navigatorUserAgent.includes("safari") && !navigatorUserAgent.includes("chrome");
 export function detectSafari() {
   return safariDetected && !spectodaConnectDetected;
 }
@@ -261,20 +304,36 @@ export function detectSafari() {
 //////////////////////////////////////////////////////
 
 export function computeTnglFingerprint(tngl_bytes, tngl_label) {
-  let enc = new TextEncoder();
-  let algorithm = { name: "HMAC", hash: "SHA-256" };
-  let body = new Uint8Array(tngl_bytes);
+  if (detectNode()) {
+    const crypto = require("crypto");
 
-  return crypto.subtle
-    .importKey("raw", enc.encode(tngl_label), algorithm, false, ["sign", "verify"])
-    .then(key => {
-      return crypto.subtle.sign(algorithm.name, key, body);
-    })
-    .then(signature => {
-      // let digest = btoa(String.fromCharCode(...new Uint8Array(signature)));
-      // console.info(digest);
-      return new Uint8Array(signature);
+    return new Promise((resolve, reject) => {
+      const hash = crypto.createHmac("sha256", tngl_label);
+      hash.update(tngl_bytes);
+      const signature = hash.digest();
+
+      // If you want the result as Uint8Array like your browser example:
+      resolve(new Uint8Array(signature));
+
+      // If you want the result as a base64 string (like the commented out line in your example):
+      // resolve(signature.toString('base64'));
     });
+  } else {
+    const enc = new TextEncoder();
+    const algorithm = { name: "HMAC", hash: "SHA-256" };
+    const body = new Uint8Array(tngl_bytes);
+
+    return crypto.subtle
+      .importKey("raw", enc.encode(tngl_label), algorithm, false, ["sign", "verify"])
+      .then(key => {
+        return crypto.subtle.sign(algorithm.name, key, body);
+      })
+      .then(signature => {
+        // let digest = btoa(String.fromCharCode(...new Uint8Array(signature)));
+        // console.info(digest);
+        return new Uint8Array(signature);
+      });
+  }
 }
 
 export function hexStringToUint8Array(hexString, arrayLength) {
@@ -284,13 +343,13 @@ export function hexStringToUint8Array(hexString, arrayLength) {
   if (!arrayLength) {
     arrayLength = hexString.length / 2;
   }
-  let arrayBuffer = new Uint8Array(arrayLength);
+  const arrayBuffer = new Uint8Array(arrayLength);
   for (let i = 0; i < arrayLength; i++) {
-    const byteValue = parseInt(hexString.substr(i * 2, 2), 16);
-    if (byteValue !== NaN) {
-      arrayBuffer[i] = byteValue;
-    } else {
+    const byteValue = parseInt(hexString.slice(i * 2, i * 2 + 2), 16);
+    if (Number.isNaN(byteValue)) {
       arrayBuffer[i] = 0;
+    } else {
+      arrayBuffer[i] = byteValue;
     }
   }
   return arrayBuffer;
@@ -332,156 +391,16 @@ export function czechHackyToEnglish(string) {
     .replace(/Ň/g, "N");
 }
 
-// Detect iOS browsers < version 10
-const oldIOS = () =>
-  typeof navigator !== "undefined" &&
-  parseFloat(("" + (/CPU.*OS ([0-9_]{3,4})[0-9_]{0,1}|(CPU like).*AppleWebKit.*Mobile/i.exec(navigator.userAgent) || [0, ""])[1]).replace("undefined", "3_2").replace("_", ".").replace("_", "")) < 10 &&
-  !window.MSStream;
-
-// Detect native Wake Lock API support
-const nativeWakeLock = () => "wakeLock" in navigator;
-
-const { webm, mp4 } = {
-  webm: "data:video/webm;base64,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",
-  mp4: "data:video/mp4;base64,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",
-};
-
-class NoSleep {
-  constructor() {
-    // nextjs
-    if (typeof window === "undefined") {
-      return;
-    }
-    this.enabled = false;
-    if (nativeWakeLock()) {
-      this._wakeLock = null;
-      const handleVisibilityChange = () => {
-        if (this._wakeLock !== null && document.visibilityState === "visible") {
-          this.enable();
-        }
-      };
-      document.addEventListener("visibilitychange", handleVisibilityChange);
-      document.addEventListener("fullscreenchange", handleVisibilityChange);
-    } else if (oldIOS()) {
-      this.noSleepTimer = null;
-    } else {
-      logging.error("NoSleep is not available");
-      // Set up no sleep video element
-      // this.noSleepVideo = document.createElement("video");
-      // this.noSleepVideo.setAttribute("title", "No Sleep");
-      // this.noSleepVideo.setAttribute("playsinline", "");
-      // this._addSourceToVideo(this.noSleepVideo, "webm", webm);
-      // this._addSourceToVideo(this.noSleepVideo, "mp4", mp4);
-      // this.noSleepVideo.addEventListener("loadedmetadata", () => {
-      //   if (this.noSleepVideo.duration <= 1) {
-      //     // webm source
-      //     this.noSleepVideo.setAttribute("loop", "");
-      //   } else {
-      //     // mp4 source
-      //     this.noSleepVideo.addEventListener("timeupdate", () => {
-      //       if (this.noSleepVideo.currentTime > 0.5) {
-      //         this.noSleepVideo.currentTime = Math.random();
-      //       }
-      //     });
-      //   }
-      // });
-    }
-  }
-
-  _addSourceToVideo(element, type, dataURI) {
-    var source = document.createElement("source");
-    source.src = dataURI;
-    source.type = `video/${type}`;
-    element.appendChild(source);
-  }
-
-  get isEnabled() {
-    return this.enabled;
-  }
-
-  enable() {
-    if (nativeWakeLock()) {
-      return navigator.wakeLock
-        .request("screen")
-        .then(wakeLock => {
-          this._wakeLock = wakeLock;
-          this.enabled = true;
-          console.info("Wake Lock active.");
-          this._wakeLock.addEventListener("release", () => {
-            // ToDo: Potentially emit an event for the page to observe since
-            // Wake Lock releases happen when page visibility changes.
-            // (https://web.dev/wakelock/#wake-lock-lifecycle)
-            console.info("Wake Lock released.");
-          });
-        })
-        .catch(err => {
-          this.enabled = false;
-          logging.error(`${err.name}, ${err.message}`);
-          throw err;
-        });
-    } else if (oldIOS()) {
-      this.disable();
-      console.warn(`
-        NoSleep enabled for older iOS devices. This can interrupt
-        active or long-running network requests from completing successfully.
-        See https://github.com/richtr/NoSleep.js/issues/15 for more details.
-      `);
-      // this.noSleepTimer = window.setInterval(() => {
-      //   if (!document.hidden) {
-      //     window.location.href = window.location.href.split("#")[0];
-      //     window.setTimeout(window.stop, 0);
-      //   }
-      // }, 15000);
-      this.enabled = true;
-      return Promise.resolve();
-    } else {
-      // return this.noSleepVideo.play()
-      //   .then(res => {
-      //     this.enabled = true;
-      //     // return res;
-      //   })
-      //   .catch(err => {
-      //     this.enabled = false;
-      //     throw err;
-      //   });
-    }
-  }
-
-  disable() {
-    if (nativeWakeLock()) {
-      if (this._wakeLock) {
-        this._wakeLock.release();
-      }
-      this._wakeLock = null;
-    } else if (oldIOS()) {
-      if (this.noSleepTimer) {
-        console.warn(`
-          NoSleep now disabled for older iOS devices.
-        `);
-        window.clearInterval(this.noSleepTimer);
-        this.noSleepTimer = null;
-      }
-    } else {
-      // this.noSleepVideo.pause();
-    }
-    this.enabled = false;
-  }
-}
-
-export const noSleep = new NoSleep();
-
 export function enableDebugMode() {
-  if (window.eruda) {
+  if (typeof window !== "undefined" && window.eruda) {
     window.eruda.init();
-    setLoggingLevel(4);
   }
+  setLoggingLevel(5);
 }
 
 export function deactivateDebugMode() {
-  if ("eruda" in window) {
-    if (window.eruda.hasOwnProperty("destroy")) {
-      window.eruda.destroy();
-    }
+  if (typeof window !== "undefined" && "eruda" in window && window.eruda.hasOwnProperty("destroy")) {
+    window.eruda.destroy();
   }
 }
 
@@ -504,8 +423,8 @@ const CRC32_DATA = CRC32_TABLE.split(" ").map(function (s) {
 });
 
 export function crc32(bytes) {
-  var crc = -1;
-  for (var i = 0, iTop = bytes.length; i < iTop; i++) {
+  let crc = -1;
+  for (let i = 0, iTop = bytes.length; i < iTop; i++) {
     crc = (crc >>> 8) ^ CRC32_DATA[(crc ^ bytes[i]) & 0xff];
   }
   return (crc ^ -1) >>> 0;
@@ -517,10 +436,10 @@ const CRC8_TABLE =
   "005EBCE2613FDD83C29C7E20A3FD1F419DC3217FFCA2401E5F01E3BD3E6082DC237D9FC1421CFEA0E1BF5D0380DE3C62BEE0025CDF81633D7C22C09E1D43A1FF4618FAA427799BC584DA3866E5BB5907DB856739BAE406581947A5FB7826C49A653BD987045AB8E6A7F91B45C6987A24F8A6441A99C7257B3A6486D85B05E7B98CD2306EEDB3510F4E10F2AC2F7193CD114FADF3702ECC92D38D6F31B2EC0E50AFF1134DCE90722C6D33D18F0C52B0EE326C8ED0530DEFB1F0AE4C1291CF2D73CA947628ABF517490856B4EA6937D58B5709EBB536688AD495CB2977F4AA4816E9B7550B88D6346A2B7597C94A14F6A8742AC896154BA9F7B6E80A54D7896B35";
 
 export function hexStringToArray(str) {
-  if (!str.length) {
+  if (str.length === 0) {
     return [];
   }
-  var arr = str.match(/[0-9a-f]{2}/gi); // convert into array of hex pairs
+  let arr = str.match(/[\da-f]{2}/gi); // convert into array of hex pairs
   arr = arr.map(x => parseInt(x, 16)); // convert hex pairs into ints (bytes)
   return new Uint8Array(arr);
 }
@@ -530,9 +449,9 @@ export function hexStringToArray(str) {
 const CRC8_DATA = hexStringToArray(CRC8_TABLE);
 
 export function crc8(bArr) {
-  var i = 1;
-  var i2 = bArr.length - 1;
-  var b = 0;
+  let i = 1;
+  const i2 = bArr.length - 1;
+  let b = 0;
   while (i <= i2) {
     b = CRC8_DATA[(b ^ bArr[i]) & 255];
     i++;
@@ -558,7 +477,7 @@ export function crc8(bArr) {
 // window.base64ToUint8Array = base64ToUint8Array;
 
 function componentToHex(c) {
-  var hex = c.toString(16);
+  const hex = c.toString(16);
   return hex.length == 1 ? "0" + hex : hex;
 }
 
@@ -590,11 +509,11 @@ export function validateTimestamp(value) {
     value += "s";
   }
 
-  let days = value.match(/([+-]? *[0-9]+[.]?[0-9]*|[.][0-9]+)\s*d/gi);
-  let hours = value.match(/([+-]? *[0-9]+[.]?[0-9]*|[.][0-9]+)\s*h/gi);
-  let minutes = value.match(/([+-]? *[0-9]+[.]?[0-9]*|[.][0-9]+)\s*m(?!s)/gi);
-  let secs = value.match(/([+-]? *[0-9]+[.]?[0-9]*|[.][0-9]+)\s*s/gi);
-  let msecs = value.match(/([+-]? *[0-9]+[.]?[0-9]*|[.][0-9]+)\s*(t|ms)/gi);
+  const days = value.match(/([+-]? *\d+\.?\d*|\.\d+)\s*d/gi);
+  const hours = value.match(/([+-]? *\d+\.?\d*|\.\d+)\s*h/gi);
+  const minutes = value.match(/([+-]? *\d+\.?\d*|\.\d+)\s*m(?!s)/gi);
+  const secs = value.match(/([+-]? *\d+\.?\d*|\.\d+)\s*s/gi);
+  const msecs = value.match(/([+-]? *\d+\.?\d*|\.\d+)\s*(t|ms)/gi);
 
   let result = "";
   let total = 0;
@@ -605,36 +524,36 @@ export function validateTimestamp(value) {
   logging.verbose(secs);
   logging.verbose(msecs);
 
-  while (days && days.length) {
-    let d = parseFloat(days[0].replace(/\s/, ""));
+  while (days && days.length > 0) {
+    const d = parseFloat(days[0].replace(/\s/, ""));
     result += d + "d ";
     total += d * 86400000;
     days.shift();
   }
 
-  while (hours && hours.length) {
-    let h = parseFloat(hours[0].replace(/\s/, ""));
+  while (hours && hours.length > 0) {
+    const h = parseFloat(hours[0].replace(/\s/, ""));
     result += h + "h ";
     total += h * 3600000;
     hours.shift();
   }
 
-  while (minutes && minutes.length) {
-    let m = parseFloat(minutes[0].replace(/\s/, ""));
+  while (minutes && minutes.length > 0) {
+    const m = parseFloat(minutes[0].replace(/\s/, ""));
     result += m + "m ";
     total += m * 60000;
     minutes.shift();
   }
 
-  while (secs && secs.length) {
-    let s = parseFloat(secs[0].replace(/\s/, ""));
+  while (secs && secs.length > 0) {
+    const s = parseFloat(secs[0].replace(/\s/, ""));
     result += s + "s ";
     total += s * 1000;
     secs.shift();
   }
 
-  while (msecs && msecs.length) {
-    let ms = parseFloat(msecs[0].replace(/\s/, ""));
+  while (msecs && msecs.length > 0) {
+    const ms = parseFloat(msecs[0].replace(/\s/, ""));
     result += ms + "ms ";
     total += ms;
     msecs.shift();
@@ -658,17 +577,17 @@ export function getColorString(r, g, b) {
 export function toUint8Array(numbers) {
   const arrayBuffer = new ArrayBuffer(numbers.length);
   const uint8Array = new Uint8Array(arrayBuffer);
-  for (let i = 0; i < numbers.length; i++) {
-    uint8Array[i] = numbers[i];
+  for (const [i, number_] of numbers.entries()) {
+    uint8Array[i] = number_;
   }
   return uint8Array;
 }
 
 export function hexStringToNumberArray(hexString) {
-  var numberArray = [];
-  for (var i = 0; i < hexString.length; i += 2) {
-    var hexPair = hexString.substr(i, 2);
-    var number = parseInt(hexPair, 16);
+  const numberArray = [];
+  for (let i = 0; i < hexString.length; i += 2) {
+    const hexPair = hexString.substr(i, 2);
+    const number = parseInt(hexPair, 16);
     numberArray.push(number);
   }
   return numberArray;
@@ -677,12 +596,146 @@ export function hexStringToNumberArray(hexString) {
 if (typeof window !== "undefined") {
   window.validateTimestamp = validateTimestamp;
 
-  window.noSleep = noSleep;
-
-  var script = document.createElement("script");
+  const script = document.createElement("script");
   script.src = "//cdn.jsdelivr.net/npm/eruda";
   script.setAttribute("defer", true);
-  document.body.appendChild(script);
+  document.body.append(script);
 
   window.mapValue = mapValue;
 }
+
+// export function cssColorToHex(color) {
+//   if (typeof color !== 'string' || color.trim() === '') {
+//     return null;
+//   }
+
+//   // Create a temporary HTML element
+//   const tempElement = document.createElement('div');
+
+//   // Apply the CSS color string as the element's style
+//   tempElement.style.color = color;
+
+//   // Append the element to the document (offscreen) to compute the style
+//   tempElement.style.display = 'none';
+//   document.body.appendChild(tempElement);
+
+//   // Get the computed RGB color code
+//   const computedColor = getComputedStyle(tempElement).color;
+
+//   // Remove the temporary element from the document
+//   document.body.removeChild(tempElement);
+
+//   // Validate the computed color
+//   if (computedColor === '' || !/^rgba?\(/.test(computedColor)) {
+//     return null;
+//   }
+
+//   // Parse the RGB color code and convert it to a hex color code
+//   const rgbMatch = computedColor.match(/^rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*\d*\.?\d*)?\)$/);
+//   if (rgbMatch) {
+//     const r = parseInt(rgbMatch[1]);
+//     const g = parseInt(rgbMatch[2]);
+//     const b = parseInt(rgbMatch[3]);
+
+//     const hexColor = ((r << 16) | (g << 8) | b).toString(16).padStart(6, '0');
+//     return `#${hexColor}`;
+//   }
+
+//   return null;
+// }
+
+//! ==== NODEJS version =====
+
+const Color = detectNode()
+  ? require("color")
+  : (color: string) => {
+      return "#000000";
+    };
+
+const barvy: { [key: string]: string } = {
+  vypnuto: "#000000",
+  černá: "#000000",
+  bílá: "#ffffff",
+  červená: "#ff0000",
+  rudá: "#ff0000",
+  modrá: "#0000ff",
+  zelená: "#00ff00",
+  žlutá: "#ffff00",
+  růžová: "#ffc0cb",
+  fialová: "#ff00ff",
+  oranžová: "#ff7700",
+  šedá: "#808080",
+  hnědá: "#a52a2a",
+  azurová: "#b0ffff",
+  limetková: "#00ff00",
+  mandlová: "#ff6b5d",
+  purpurová: "#800080",
+  stříbrná: "#c0c0c0",
+  tyrkysová: "#40e0d0",
+  zlatá: "#ffd700",
+  indigo: "#4b0082",
+  khaki: "#f0e68c",
+  lavendulová: "#e6e6fa",
+  měď: "#b87333",
+};
+
+const barvy_bez_hacku: { [key: string]: string } = {
+  vypnuto: "#000000",
+  cerna: "#000000",
+  bila: "#ffffff",
+  cervena: "#ff0000",
+  ruda: "#ff0000",
+  modra: "#0000ff",
+  zelena: "#00ff00",
+  zluta: "#ffff00",
+  ruzova: "#ffc0cb",
+  fialova: "#ff00ff",
+  oranzova: "#ff7700",
+  seda: "#808080",
+  hneda: "#a52a2a",
+  azurova: "#b0ffff",
+  limetkova: "#00ff00",
+  mandlova: "#ff6b5d",
+  purpurova: "#800080",
+  stribrna: "#c0c0c0",
+  tyrkysova: "#40e0d0",
+  zlata: "#ffd700",
+  indigo: "#4b0082",
+  khaki: "#f0e68c",
+  lavendulova: "#e6e6fa",
+  med: "#b87333",
+};
+
+export function cssColorToHex(color: typeof barvy | typeof barvy_bez_hacku | string) {
+  if (typeof color !== "string" || color.trim() === "") {
+    return null;
+  }
+
+  if (color.toLocaleLowerCase() in barvy) {
+    return barvy[color];
+  }
+
+  if (color.toLocaleLowerCase() in barvy_bez_hacku) {
+    return barvy_bez_hacku[color];
+  }
+
+  // Add a '#' symbol before the hexadecimal color code if it's missing
+  if (/^[\dA-Fa-f]{6}$/.test(color)) {
+    return `#${color}`.toLocaleLowerCase();
+  }
+
+  try {
+    const parsedColor = Color(color);
+    const hexColor = parsedColor.hex();
+    return hexColor;
+  } catch {
+    return null;
+  }
+}
+
+//! ============================
+
+// // Usage:
+// console.log(cssColorToHex('red')); // Output: #ff0000
+// console.log(cssColorToHex('blue')); // Output: #0000ff
+// console.log(cssColorToHex('invalidColor')); // Output: null

@@ -1,7 +1,7 @@
-const WASM_VERSION = "DEBUG_0.9.0_20230309";
+import { TimeTrack } from "../TimeTrack";
+import { logging } from "../logging";
 
-console.log("spectoda-js wasm version " + WASM_VERSION);
-
+let moduleInitilizing = false;
 let moduleInitilized = false;
 let waitingQueue = [];
 
@@ -39,6 +39,37 @@ function onWasmLoad() {
     SpectodaWasm.evaluate_result_t = Module.evaluate_result_t;
     SpectodaWasm.send_result_t = Module.send_result_t;
 
+    if (typeof window !== "undefined") {
+      // Make a directory other than '/'
+      FS.mkdir('/littlefs');
+      // Then mount with IDBFS type
+      FS.mount(IDBFS, {}, '/littlefs');
+
+      // Then sync
+      FS.syncfs(true, function (err) {
+        if (err) {
+          logging.error("FS.syncfs error:", err);
+        }
+      });
+
+    } else {
+      // TODO! implement FS pro NODE
+
+      //   // Make a directory other than '/'
+      //   Module.FS.mkdir('/littlefs');
+      //   // Then mount with IDBFS type
+      //   Module.FS.mount(Module.FS.filesystems.NODEFS, {}, '/littlefs');
+
+      //   // Then sync
+      //   Module.FS.syncfs(true, function (err) {
+      //       if (err) {
+      //           logging.error("FS.syncfs error:", err);
+      //       }
+      //   });
+
+    }
+
+
     waitingQueue.forEach(wait => {
       wait.resolve();
     });
@@ -47,19 +78,40 @@ function onWasmLoad() {
   };
 }
 
-if (typeof window !== "undefined") {
-  // First try to load local version
-  injectScript(`http://localhost:5555/webassembly/builds/${WASM_VERSION}.js`)
-    .then(onWasmLoad)
-    .catch(error => {
-      console.error(error);
-      // if local version fails, load public file
-      injectScript(`https://updates.spectoda.com/subdom/updates/webassembly/daily/${WASM_VERSION}.js`)
-        .then(onWasmLoad)
-        .catch(error => {
-          console.error(error);
-        });
-    });
+function loadWasm(wasmVersion) {
+
+  if (moduleInitilizing || moduleInitilized) {
+    return;
+  }
+
+  moduleInitilizing = true;
+
+  console.log("spectoda-js wasm version " + wasmVersion);
+
+  if (typeof window !== "undefined") {
+    // First try to load local version
+    injectScript(`http://localhost:5555/builds/${wasmVersion}.js`)
+      .then(onWasmLoad)
+      .catch(error => {
+        console.error(error);
+        // if local version fails, load public file
+        injectScript(`https://updates.spectoda.com/subdom/updates/webassembly/daily/${wasmVersion}.js`)
+          .then(onWasmLoad)
+          .catch(error => {
+            console.error(error);
+          });
+      });
+  }
+
+  else {
+
+    // NODE enviroment
+
+    globalThis.Module = require(`./webassembly/${wasmVersion}.js`);
+    onWasmLoad();
+
+  }
+
 }
 
 // This class binds the JS world with the webassembly's C
@@ -105,6 +157,11 @@ export const SpectodaWasm = {
     return array;
   },
 
+  // wasmVersion might be DEBUG_0.9.2_20230814
+  initilize(wasmVersion) {
+    loadWasm(wasmVersion);
+  },
+
   // TODO make it a getter?
   /**
    * @return {boolean}
@@ -117,6 +174,7 @@ export const SpectodaWasm = {
    * @return {Promise<null>}
    */
   waitForInitilize() {
+
     if (moduleInitilized) {
       return Promise.resolve();
     }
@@ -125,8 +183,28 @@ export const SpectodaWasm = {
     waitingQueue.push(wait);
     return wait.promise;
   },
+
+  toHandle(value) {
+    return Module.Emval.toHandle(value);
+  },
+
+  toValue(value) {
+    return Module.Emval.toValue(value);
+  }
 };
 
 if (typeof window !== "undefined") {
   window.SpectodaWasm = SpectodaWasm;
+}
+
+
+export class synchronization_t {
+
+  constructor() {
+    this.clock = new TimeTrack();
+    this.timeline = new TimeTrack();
+    this.tnglFingerprint = null;
+    this.historyFingerprint = null;
+  }
+
 }

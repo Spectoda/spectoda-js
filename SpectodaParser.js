@@ -228,6 +228,10 @@ export class TnglCompiler {
     this.#var_declarations = []; // addresses starts from 0x0001 to 0xfffe. 0x0000 is a "nullptr", 0xffff is unknown address
   }
 
+  getVariableDeclarations() {
+    return this.#var_declarations;
+  }
+
   reset() {
     this.#const_declarations_stack.length = 0;
     this.#const_scope_depth_stack.length = 0;
@@ -333,6 +337,8 @@ export class TnglCompiler {
         break;
       }
     }
+
+    // ! there is an issue where variables that have the same name as a const or let variable will be treated as a const or let variable
 
     // check if the variable is already declared
     // look for the latest variable address on the stack
@@ -547,8 +553,8 @@ export class TnglCompiler {
     const PERCENTAGE_MAX = 268435455; // 2^28-1
     const PERCENTAGE_MIN = -268435455; // -(2^28)+1  (plus 1 is there for the percentage to be simetric)
 
-    // percentage has 28 bits of resolution dividing range from -100.0 to 100.0
-    const UNIT_ERROR = (100.0 - -100.0) / 2 ** 28;
+    // percentage has 29 bits of resolution dividing range from -100.0 to 100.0
+    const UNIT_ERROR = (100.0 - -100.0) / 2 ** 29;
 
     if (val > -UNIT_ERROR && val < UNIT_ERROR) {
       this.#tnglWriter.writeFlag(TNGL_FLAGS.CONST_PERCENTAGE_ZERO);
@@ -644,9 +650,11 @@ export class TnglCompiler {
 
     const var_name = reg[1];
     const var_address = VAR_VALUE_ADDRESS_OFFSET + this.#var_declarations.length + 1;
+    //? const var_address = VAR_VALUE_ADDRESS_OFFSET + Object.keys(this.#var_declarations).length + 1;
 
     // insert the var_name into var_name->var_address map
     this.#var_declarations.push({ name: var_name, address: var_address });
+    //? this.#var_declarations[var_name] = var_address;
 
     logging.verbose(`DECLARE_VALUE_ADDRESS name=${var_name} address=${var_address}`);
     // retrieve the var_address and write the TNGL_FLAGS with uint16_t variable address value.
@@ -1070,6 +1078,8 @@ export class TnglCompiler {
           }
         }
 
+        //? var_address = this.#var_declarations[word];
+
         if (var_address !== undefined) {
           logging.verbose(`VALUE_READ_ADDRESS name=${word}, address=${var_address}`);
           this.#tnglWriter.writeFlag(TNGL_FLAGS.VALUE_READ_ADDRESS);
@@ -1181,7 +1191,7 @@ export class TnglCodeParser {
     const tokens = this.#tokenize(tngl_code, TnglCodeParser.#parses);
     logging.verbose(tokens);
 
-     // 2rd stage: compile the code
+    // 2rd stage: compile the code
 
     for (let index = 0; index < tokens.length; index++) {
       const element = tokens[index];
@@ -1313,6 +1323,11 @@ export class TnglCodeParser {
     whitespace: /\s+/,
     punctuation: /[^\w\s]/,
   };
+
+  getVariableDeclarations() {
+    return this.#compiler.getVariableDeclarations();
+  }
+
 
   /*
    * Tiny tokenizer

@@ -13,8 +13,8 @@ export class TnglWriter {
         value = Math.floor(value / Math.pow(2, 8));
       }
     } else {
-      console.warn("End of the data");
-      throw "Tried to write out of range";
+      console.error("WriteOutOfRange");
+      throw "WriteOutOfRange";
     }
   }
 
@@ -32,8 +32,8 @@ export class TnglWriter {
         }
       }
     } else {
-      console.warn("End of the data");
-      throw "Tried to write out of range";
+      console.error("WriteOutOfRange");
+      throw "WriteOutOfRange";
     }
   }
 
@@ -47,8 +47,8 @@ export class TnglWriter {
         this._dataView.setUint8(this._index++, string.charCodeAt(i));
       }
     } else {
-      console.warn("End of the data");
-      throw "Tried to write out of range";
+      console.error("WriteOutOfRange");
+      throw "WriteOutOfRange";
     }
   }
 
