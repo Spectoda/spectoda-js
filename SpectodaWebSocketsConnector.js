@@ -2,6 +2,7 @@ import { io } from "socket.io-client";
 // import { TimeTrack } from "./TimeTrack.js";
 // import { logging } from "./logging";
 
+import customParser from "socket.io-msgpack-parser";
 import { TimeTrack } from "./TimeTrack";
 import { createNanoEvents } from "./functions";
 
@@ -12,8 +13,6 @@ const eventStream = createNanoEvents();
 
 // todo sync timeline
 const timeline = new TimeTrack();
-
-const customParser = require("socket.io-msgpack-parser");
 
 const socket = io(WEBSOCKET_URL, {
   parser: customParser,
