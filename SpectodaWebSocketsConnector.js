@@ -42,7 +42,7 @@ class SpectodaVirtualProxy {
         } else if (prop === "timeline") {
           return timeline;
         } else if (prop === "init") {
-          return () => socket.emitWithAck("join", { signature: "room1", key: "spektrum" });
+          return ({ signature, key }) => socket.emitWithAck("join", { signature, key });
         }
 
         // Always return an async function for any property

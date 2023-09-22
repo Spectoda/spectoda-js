@@ -263,7 +263,7 @@ export class Spectoda {
           const roomId = await this.socket.emitWithAck("join-session");
           console.log("Remote control id for this session is", { roomId });
         } else {
-          await this.socket.emitWithAck("join", { signature: "room1", key: "spektrum" });
+          await this.socket.emitWithAck("join", { signature, key });
         }
         console.log("> Connected and joined room1");
 
