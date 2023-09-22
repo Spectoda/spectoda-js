@@ -36,6 +36,9 @@ export class Spectoda {
   #reconnectionInterval;
   #connectionState;
 
+  // mechanism for event ordering
+  #lastEmitClockTimestamp;
+
   constructor(connectorType = "default", reconnectionInterval = 1000) {
     // nextjs
     if (typeof window === "undefined") {
@@ -65,6 +68,8 @@ export class Spectoda {
 
     this.#reconnectionInterval = reconnectionInterval;
     this.#connectionState = "disconnected";
+
+    this.#lastEmitClockTimestamp = 0;
 
     this.interface.onConnected = event => {
       logging.info("> Interface connected");
@@ -781,6 +786,17 @@ export class Spectoda {
     });
   }
 
+  #getEmitEventClockTimestamp() {
+    // this mechanizm is used to ensure that events are emitted in the correct order
+    let emit_timestamp = this.interface.clock.millis();
+    if (emit_timestamp <= this.#lastEmitClockTimestamp && this.#lastEmitClockTimestamp - emit_timestamp < 100) {
+      emit_timestamp = this.#lastEmitClockTimestamp + 1;
+    }
+    this.#lastEmitClockTimestamp = emit_timestamp;
+
+    return emit_timestamp;
+  }
+
   // event_label example: "evt1"
   // event_value example: 1000
   /**
@@ -808,8 +824,10 @@ export class Spectoda {
     //   this.saveState();
     // }, 5000);
 
+    const clock_timestamp = this.#getEmitEventClockTimestamp() + 10; // +10ms in the future so that, there is no visual jump 
+
     const func = device_id => {
-      const payload = [COMMAND_FLAGS.FLAG_EMIT_EVENT, ...labelToBytes(event_label), ...numberToBytes(this.interface.clock.millis() + 10, 6), numberToBytes(device_id, 1)];
+      const payload = [COMMAND_FLAGS.FLAG_EMIT_EVENT, ...labelToBytes(event_label), ...numberToBytes(clock_timestamp, 6), numberToBytes(device_id, 1)];
       return this.interface.execute(payload, force_delivery ? null : "E" + event_label + device_id);
     };
 
@@ -872,8 +890,10 @@ export class Spectoda {
       event_value = -2147483648;
     }
 
+    const clock_timestamp = this.#getEmitEventClockTimestamp() + 10; // +10ms in the future so that, there is no visual jump 
+
     const func = device_id => {
-      const payload = [COMMAND_FLAGS.FLAG_EMIT_TIMESTAMP_EVENT, ...numberToBytes(event_value, 4), ...labelToBytes(event_label), ...numberToBytes(this.interface.clock.millis() + 10, 6), numberToBytes(device_id, 1)];
+      const payload = [COMMAND_FLAGS.FLAG_EMIT_TIMESTAMP_EVENT, ...numberToBytes(event_value, 4), ...labelToBytes(event_label), ...numberToBytes(clock_timestamp, 6), numberToBytes(device_id, 1)];
       return this.interface.execute(payload, force_delivery ? null : "E" + event_label + device_id);
     };
 
@@ -909,8 +929,10 @@ export class Spectoda {
       event_value = "#000000";
     }
 
+    const clock_timestamp = this.#getEmitEventClockTimestamp() + 10; // +10ms in the future so that, there is no visual jump 
+
     const func = device_id => {
-      const payload = [COMMAND_FLAGS.FLAG_EMIT_COLOR_EVENT, ...colorToBytes(event_value), ...labelToBytes(event_label), ...numberToBytes(this.interface.clock.millis() + 10, 6), numberToBytes(device_id, 1)];
+      const payload = [COMMAND_FLAGS.FLAG_EMIT_COLOR_EVENT, ...colorToBytes(event_value), ...labelToBytes(event_label), ...numberToBytes(clock_timestamp, 6), numberToBytes(device_id, 1)];
       return this.interface.execute(payload, force_delivery ? null : "E" + event_label + device_id);
     };
 
@@ -951,8 +973,10 @@ export class Spectoda {
       event_value = -100.0;
     }
 
+    const clock_timestamp = this.#getEmitEventClockTimestamp() + 10; // +10ms in the future so that, there is no visual jump 
+
     const func = device_id => {
-      const payload = [COMMAND_FLAGS.FLAG_EMIT_PERCENTAGE_EVENT, ...percentageToBytes(event_value), ...labelToBytes(event_label), ...numberToBytes(this.interface.clock.millis() + 10, 6), numberToBytes(device_id, 1)];
+      const payload = [COMMAND_FLAGS.FLAG_EMIT_PERCENTAGE_EVENT, ...percentageToBytes(event_value), ...labelToBytes(event_label), ...numberToBytes(clock_timestamp, 6), numberToBytes(device_id, 1)];
       return this.interface.execute(payload, force_delivery ? null : "E" + event_label + device_id);
     };
 
@@ -994,8 +1018,10 @@ export class Spectoda {
       event_value = event_value.slice(0, 5);
     }
 
+    const clock_timestamp = this.#getEmitEventClockTimestamp() + 10; // +10ms in the future so that, there is no visual jump 
+
     const func = device_id => {
-      const payload = [COMMAND_FLAGS.FLAG_EMIT_LABEL_EVENT, ...labelToBytes(event_value), ...labelToBytes(event_label), ...numberToBytes(this.interface.clock.millis() + 10, 6), numberToBytes(device_id, 1)];
+      const payload = [COMMAND_FLAGS.FLAG_EMIT_LABEL_EVENT, ...labelToBytes(event_value), ...labelToBytes(event_label), ...numberToBytes(clock_timestamp, 6), numberToBytes(device_id, 1)];
       return this.interface.execute(payload, force_delivery ? null : "E" + event_label + device_id);
     };
 
