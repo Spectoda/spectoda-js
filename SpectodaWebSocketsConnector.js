@@ -7,7 +7,7 @@ import { TimeTrack } from "./TimeTrack";
 import { createNanoEvents } from "./functions";
 
 // const WEBSOCKET_URL = "https://tangle-remote-control.glitch.me/"
-export const WEBSOCKET_URL = "http://localhost:4000";
+export const WEBSOCKET_URL = "https://cloud.host.spectoda.com";
 
 const eventStream = createNanoEvents();
 
