@@ -13,7 +13,11 @@ const eventStream = createNanoEvents();
 // todo sync timeline
 const timeline = new TimeTrack();
 
-const socket = io(WEBSOCKET_URL);
+const customParser = require("socket.io-msgpack-parser");
+
+const socket = io(WEBSOCKET_URL, {
+  parser: customParser,
+});
 if (typeof window !== "undefined") window.socket = socket;
 
 socket.on("event", data => {
@@ -52,7 +56,7 @@ class SpectodaVirtualProxy {
           const result = await this.sendThroughWebsocket(payload);
 
           if (result.status === "success") {
-            return result?.data;
+            return result?.data?.[0].result;
           } else {
             return result?.error;
           }

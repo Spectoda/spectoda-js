@@ -5,11 +5,11 @@ import { colorToBytes, computeTnglFingerprint, detectSpectodaConnect, hexStringT
 import { changeLanguage, t } from "./i18n.js";
 import { logging, setLoggingLevel } from "./logging";
 // import { Interface } from "./src/SpectodaInterface.js";
+import { io } from "socket.io-client";
 import { TimeTrack } from "./TimeTrack.js";
 import "./TnglReader.js";
 import { TnglReader } from "./TnglReader.js";
 import "./TnglWriter.js";
-import { io } from "socket.io-client"
 
 let lastEvents = {};
 
@@ -248,7 +248,11 @@ export class Spectoda {
     logging.debug("> Connecting to Remote Control");
 
     this.socket && this.socket.disconnect();
-    this.socket = io(WEBSOCKET_URL);
+    const customParser = require("socket.io-msgpack-parser");
+
+    this.socket = io(WEBSOCKET_URL, {
+      parser: customParser,
+    });
 
     this.socket.connect();
     this.socket.on("connect", async () => {
