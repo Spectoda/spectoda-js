@@ -1,26 +1,26 @@
 import { io } from "socket.io-client";
-// import { TimeTrack } from "./TimeTrack.js";
-// import { logging } from "./logging";
 
+import customParser from "socket.io-msgpack-parser";
 import { TimeTrack } from "./TimeTrack";
 import { createNanoEvents } from "./functions";
 
-// const WEBSOCKET_URL = "https://tangle-remote-control.glitch.me/"
-export const WEBSOCKET_URL = "http://localhost:4000";
+export const WEBSOCKET_URL = "https://cloud.host.spectoda.com";
 
 const eventStream = createNanoEvents();
 
 // todo sync timeline
 const timeline = new TimeTrack();
 
-const socket = io(WEBSOCKET_URL);
+const socket = io(WEBSOCKET_URL, {
+  parser: customParser,
+});
 if (typeof window !== "undefined") window.socket = socket;
 
 socket.on("event", data => {
   eventStream.emit(data.name, ...data.args);
 });
 /////////////////////////////////////////////////////////////////////////////////////
-class VirtualProxy {
+class SpectodaVirtualProxy {
   constructor() {
     return new Proxy(this, {
       get: (_, prop) => {
@@ -39,7 +39,7 @@ class VirtualProxy {
         } else if (prop === "timeline") {
           return timeline;
         } else if (prop === "init") {
-          return () => socket.emitWithAck("join", { signature: "room1", key: "spektrum" });
+          return ({ signature, key }) => socket.emitWithAck("join", { signature, key });
         }
 
         // Always return an async function for any property
@@ -52,7 +52,7 @@ class VirtualProxy {
           const result = await this.sendThroughWebsocket(payload);
 
           if (result.status === "success") {
-            return result?.data;
+            return result?.data?.[0].result;
           } else {
             return result?.error;
           }
@@ -70,26 +70,6 @@ class VirtualProxy {
   }
 }
 
-// // Mocking a websocket for the sake of the example
-// const mockWebsocket = {
-//   send(data) {
-//     console.log("Data sent:", data);
-
-//     // setTimeout(() => {
-//     //   // eventStream.emit("connecting");
-//     // }, 300);
-
-//     // setTimeout(() => {
-//     //   const payload = JSON.parse(data);
-//     //   this.onmessage({ data: JSON.stringify({ result: "Server response for " + JSON.parse(data).functionName }) });
-
-//     //   if (payload.functionName === "connect") {
-//     //     eventStream.emit("connected");
-//     //   }
-//     // }, 1000);
-//   },
-// };
-
 export function createSpectodaWebsocket() {
-  return new VirtualProxy();
+  return new SpectodaVirtualProxy();
 }

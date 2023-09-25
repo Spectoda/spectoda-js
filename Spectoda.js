@@ -1,4 +1,5 @@
 import { io } from "socket.io-client";
+import customParser from "socket.io-msgpack-parser";
 import { TnglCodeParser } from "./SpectodaParser.js";
 import { TimeTrack } from "./TimeTrack.js";
 import "./TnglReader.js";
@@ -183,50 +184,73 @@ export class Spectoda {
     }
   }
 
-  // { ownerSignature, ownerKey }
-  async connectRemoteControl() {
+  /**
+   * @param {Object} options
+   * @param {string} options.signature - The network signature.
+   * @param {string} options.key - The network key.
+   * @param {boolean} [options.sessionOnly] - Whether to enable remote control for the current session only.
+   */
+  async enableRemoteControl({ signature, key, sessionOnly }) {
     logging.debug("> Connecting to Remote Control");
 
-    if (!this.socket) {
-      // TODO - scopovani dle apky
-      // TODO - authentifikace
-      this.socket = io(WEBSOCKET_URL);
-    } else {
-      this.socket.connect();
-      await this.socket.emitWithAck("join", { signature: "room1", key: "spektrum" });
-      console.log("> Connected and joined room1");
+    this.socket && this.socket.disconnect();
 
-      console.log("> Listening for events", allEventsEmitter);
-      window.allEventsEmitter = allEventsEmitter;
+    this.socket = io(WEBSOCKET_URL, {
+      parser: customParser,
+    });
 
-      allEventsEmitter.on("on", ({ name, args }) => {
-        console.log("on", name, args);
-        this.socket.emit("event", { name, args });
-      });
+    this.socket.connect();
 
-      this.socket.on("func", async (payload, callback) => {
-        if (!callback) {
-          console.error("No callback provided");
-          return;
+    return await new Promise((resolve, reject) => {
+      this.socket.on("connect", async () => {
+        if (sessionOnly) {
+          // todo finish impl + UI
+          const roomId = await this.socket.emitWithAck("join-session");
+          console.log("Remote control id for this session is", { roomId });
+        } else {
+          await this.socket.emitWithAck("join", { signature, key });
         }
+        console.log("> Connected and joined room1");
 
-        const { functionName, arguments: args } = payload;
+        resolve({ status: "success" });
 
-        // call internal class function await this[functionName](...args)
+        console.log("> Listening for events", allEventsEmitter);
+        window.allEventsEmitter = allEventsEmitter;
 
-        // call internal class function
-        try {
-          const result = await this[functionName](...args);
-          callback({ status: "success", result });
-        } catch (e) {
-          console.error(e);
-          callback({ status: "error", error: e });
-        }
+        allEventsEmitter.on("on", ({ name, args }) => {
+          console.log("on", name, args);
+          this.socket.emit("event", { name, args });
+        });
+
+        this.socket.on("func", async (payload, callback) => {
+          if (!callback) {
+            console.error("No callback provided");
+            return;
+          }
+
+          let { functionName, arguments: args } = payload;
+
+          // call internal class function await this[functionName](...args)
+
+          // call internal class function
+          try {
+            if (functionName === "updateDeviceFirmware" || (functionName === "updateNetworkFirmware" && typeof args?.[0] === "object")) {
+              const arr = Object.values(args[0]);
+              const uint8Array = new Uint8Array(arr);
+              args[0] = uint8Array;
+            }
+            const result = await this[functionName](...args);
+            callback({ status: "success", result });
+          } catch (e) {
+            console.error(e);
+            callback({ status: "error", error: e });
+          }
+        });
       });
-    }
+    });
   }
 
-  disconnectRemoteControl() {
+  disableRemoteControl() {
     logging.debug("> Disonnecting from the Remote Control");
 
     this.socket?.disconnect();
