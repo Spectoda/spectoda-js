@@ -271,7 +271,7 @@ export class Spectoda {
         } else {
           await this.socket.emitWithAck("join", { signature, key });
         }
-        console.log("> Connected and joined room1");
+        console.log("> Connected and joined network remotely");
 
         resolve({ status: "success" });
 
