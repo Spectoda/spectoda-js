@@ -245,7 +245,13 @@ export class Spectoda {
     return this.#ownerKey;
   }
 
-  async connectRemoteControl({ signature, key, sessionOnly }) {
+  /**
+   * @param {Object} options
+   * @param {string} options.signature - The network signature.
+   * @param {string} options.key - The network key.
+   * @param {boolean} [options.sessionOnly] - Whether to enable remote control for the current session only.
+   */
+  async enableRemoteControl({ signature, key, sessionOnly }) {
     logging.debug("> Connecting to Remote Control");
 
     this.socket && this.socket.disconnect();
@@ -305,7 +311,7 @@ export class Spectoda {
     });
   }
 
-  disconnectRemoteControl() {
+  disableRemoteControl() {
     logging.debug("> Disonnecting from the Remote Control");
 
     this.#reconnectRC = false;
