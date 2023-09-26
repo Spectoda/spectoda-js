@@ -52,7 +52,7 @@ class SpectodaVirtualProxy {
           const result = await this.sendThroughWebsocket(payload);
 
           if (result.status === "success") {
-            return result?.data?.[0].result;
+            return result?.data?.[0]?.result;
           } else {
             return result?.error;
           }
