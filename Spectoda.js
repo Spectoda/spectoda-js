@@ -215,7 +215,7 @@ export class Spectoda {
         resolve({ status: "success" });
 
         console.log("> Listening for events", allEventsEmitter);
-        window.allEventsEmitter = allEventsEmitter;
+        globalThis.allEventsEmitter = allEventsEmitter;
 
         allEventsEmitter.on("on", ({ name, args }) => {
           console.log("on", name, args);
