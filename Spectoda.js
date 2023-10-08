@@ -1429,7 +1429,7 @@ export class Spectoda {
       const removed_device_mac_bytes = reader.readBytes(6);
 
       return this.rebootDevice()
-        .catch(() => {})
+        .catch(() => { })
         .then(() => {
           let removed_device_mac = "00:00:00:00:00:00";
           if (removed_device_mac_bytes.length >= 6) {
@@ -1779,14 +1779,14 @@ export class Spectoda {
     logging.debug("> Requesting controller info ...");
 
     const request_uuid = this.#getUUID();
-    const bytes = [DEVICE_FLAGS.FLAG_CONTROLLER_INFO_REQUEST, ...numberToBytes(request_uuid, 4)];
+    const bytes = [COMMAND_FLAGS.FLAG_CONTROLLER_INFO_REQUEST, ...numberToBytes(request_uuid, 4)];
 
     return this.interface.request(bytes, true).then(response => {
       let reader = new TnglReader(response);
 
       logging.verbose("response=", response);
 
-      if (reader.readFlag() !== DEVICE_FLAGS.FLAG_CONTROLLER_INFO_RESPONSE) {
+      if (reader.readFlag() !== COMMAND_FLAGS.FLAG_CONTROLLER_INFO_RESPONSE) {
         throw "InvalidResponseFlag";
       }
 
@@ -1948,4 +1948,36 @@ export class Spectoda {
       return name;
     });
   }
+
+  hideHomeButton() {
+    logging.debug("> Hiding home button...");
+
+    if (!detectSpectodaConnect()) {
+      return Promise.reject("PlatformNotSupported");
+    }
+
+    return window.flutter_inappwebview.callHandler("hideHomeButton");
+
+  }
+
+  // option:
+  //  0 = no restriction, 1 = portrait, 2 = landscape
+  setOrientation(option) {
+    logging.debug("> Setting orientation...");
+
+    if (!detectSpectodaConnect()) {
+      return Promise.reject("PlatformNotSupported")
+    }
+
+    if (typeof option !== "number") {
+      return Promise.reject("InvalidOption")
+    }
+
+    if (option < 0 || option > 2) {
+      return Promise.reject("InvalidOption")
+    }
+
+    return window.flutter_inappwebview.callHandler("setOrientation", option);
+  }
+
 }
