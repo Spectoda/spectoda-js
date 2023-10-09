@@ -67,6 +67,13 @@ export const COMMAND_FLAGS = Object.freeze({
 
   // Former CommandFlag end
 
+  FLAG_READ_CONTROLLER_CODES_REQUEST: 196,
+  FLAG_READ_CONTROLLER_CODES_RESPONSE: 197,
+  FLAG_WRITE_CONTROLLER_CODES_REQUEST: 198,
+  FLAG_WRITE_CONTROLLER_CODES_RESPONSE: 199,
+  FLAG_READ_OWNER_SIGNATURE_REQUEST: 200,
+  FLAG_READ_OWNER_SIGNATURE_RESPONSE: 201,
+
   FLAG_WRITE_CONTROLLER_NAME_REQUEST: 202,
   FLAG_WRITE_CONTROLLER_NAME_RESPONSE: 203,
   FLAG_READ_CONTROLLER_NAME_REQUEST: 204,
@@ -366,7 +373,7 @@ export class SpectodaInterfaceLegacy {
 
   requestWakeLock() {
     logging.verbose("requestWakeLock()");
-    
+
     logging.info("> Activating wakeLock...");
     if (detectSpectodaConnect()) {
       return window.flutter_inappwebview.callHandler("setWakeLock", true);
@@ -377,7 +384,7 @@ export class SpectodaInterfaceLegacy {
 
   releaseWakeLock() {
     logging.verbose("releaseWakeLock()");
-    
+
     logging.info("> Deactivating wakeLock...");
     if (detectSpectodaConnect()) {
       return window.flutter_inappwebview.callHandler("setWakeLock", false);
@@ -1079,11 +1086,11 @@ export class SpectodaInterfaceLegacy {
                   //   .request([COMMAND_FLAGS.FLAG_DEVICE_DISCONNECT_REQUEST], false)
                   //   .catch(() => { })
                   //   .then(() => {
-                      await this.connector.disconnect();
-                    // })
-                    // .then(() => {
-                      await this.connector.destroy();
-                    // })
+                  await this.connector.disconnect();
+                  // })
+                  // .then(() => {
+                  await this.connector.destroy();
+                  // })
 
                   // .catch(error => {
                   //   //logging.warn(error);
@@ -1091,7 +1098,7 @@ export class SpectodaInterfaceLegacy {
                   //   item.reject(error);
                   // });
 
-                } catch(error) {
+                } catch (error) {
                   console.warn("Error while destroying connector:", error);
                 } finally {
                   this.connector = null;

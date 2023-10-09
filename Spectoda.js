@@ -1,7 +1,7 @@
 import { COMMAND_FLAGS, SpectodaInterfaceLegacy, allEventsEmitter } from "./SpectodaInterfaceLegacy.js";
 import { TnglCodeParser } from "./SpectodaParser.js";
 import { WEBSOCKET_URL } from "./SpectodaWebSocketsConnector.js";
-import { colorToBytes, computeTnglFingerprint, detectSpectodaConnect, hexStringToUint8Array, labelToBytes, numberToBytes, percentageToBytes, sleep, strMacToBytes, stringToBytes } from "./functions";
+import { colorToBytes, computeTnglFingerprint, detectSpectodaConnect, hexStringToUint8Array, labelToBytes, numberToBytes, percentageToBytes, sleep, strMacToBytes, stringToBytes, uint8ArrayToHexString } from "./functions";
 import { changeLanguage, t } from "./i18n.js";
 import { logging, setLoggingLevel } from "./logging";
 // import { Interface } from "./src/SpectodaInterface.js";
@@ -1783,48 +1783,6 @@ export class Spectoda {
     return this.interface.execute(payload, null);
   }
 
-  getControllerInfo() {
-    logging.debug("> Requesting controller info ...");
-
-    const request_uuid = this.#getUUID();
-    const bytes = [COMMAND_FLAGS.FLAG_CONTROLLER_INFO_REQUEST, ...numberToBytes(request_uuid, 4)];
-
-    return this.interface.request(bytes, true).then(response => {
-      let reader = new TnglReader(response);
-
-      logging.verbose("response=", response);
-
-      if (reader.readFlag() !== COMMAND_FLAGS.FLAG_CONTROLLER_INFO_RESPONSE) {
-        throw "InvalidResponseFlag";
-      }
-
-      const response_uuid = reader.readUint32();
-
-      if (response_uuid != request_uuid) {
-        throw "InvalidResponseUuid";
-      }
-
-      const error_code = reader.readUint8();
-
-      logging.verbose(`error_code=${error_code}`);
-
-      let pcb_code = null;
-      let product_code = null;
-
-      if (error_code === 0) {
-        pcb_code = reader.readUint16();
-        product_code = reader.readUint16();
-      } else {
-        throw "Fail";
-      }
-
-      logging.info(`pcb_code=${pcb_code}`);
-      logging.info(`product_code=${product_code}`);
-
-      return { pcb_code: pcb_code, product_code: product_code };
-    });
-  }
-
   writeOwner(ownerSignature = "00000000000000000000000000000000", ownerKey = "00000000000000000000000000000000") {
     logging.debug("> Writing owner to device...", ownerSignature, ownerKey);
 
@@ -1965,7 +1923,6 @@ export class Spectoda {
     }
 
     return window.flutter_inappwebview.callHandler("hideHomeButton");
-
   }
 
   // option:
@@ -1986,6 +1943,120 @@ export class Spectoda {
     }
 
     return window.flutter_inappwebview.callHandler("setOrientation", option);
+  }
+
+  // 0.9.4
+
+  readNetworkSignature() {
+    logging.debug("> Reading network signature...");
+
+    const request_uuid = this.#getUUID();
+    const bytes = [COMMAND_FLAGS.FLAG_READ_OWNER_SIGNATURE_REQUEST, ...numberToBytes(request_uuid, 4)];
+
+    return this.interface.request(bytes, true).then(response => {
+      let reader = new TnglReader(response);
+
+      logging.verbose(`response.byteLength=${response.byteLength}`);
+
+      if (reader.readFlag() !== COMMAND_FLAGS.FLAG_READ_OWNER_SIGNATURE_RESPONSE) {
+        throw "InvalidResponseFlag";
+      }
+
+      const response_uuid = reader.readUint32();
+
+      if (response_uuid != request_uuid) {
+        throw "InvalidResponseUuid";
+      }
+
+      const error_code = reader.readUint8();
+      logging.verbose(`error_code=${error_code}`);
+
+      if (error_code !== 0) {
+        throw "Fail";
+      }
+
+      const signature_bytes = reader.readBytes(16);
+      logging.debug(`signature_bytes=${signature_bytes}`);
+
+      const signature_string = uint8ArrayToHexString(signature_bytes);
+      logging.debug(`signature_string=${signature_string}`);
+
+      logging.info(`> Network Signature: ${signature_string}`);
+
+      return signature_string;
+    });
+  }
+
+  writeControllerCodes(pcb_code, product_code) {
+    logging.debug("> Writing controller codes...");
+
+    const request_uuid = this.#getUUID();
+    const bytes = [COMMAND_FLAGS.FLAG_WRITE_CONTROLLER_CODES_REQUEST, ...numberToBytes(request_uuid, 4), ...numberToBytes(pcb_code, 2), ...numberToBytes(product_code, 2)];
+
+    return this.interface.request(bytes, true).then(response => {
+      let reader = new TnglReader(response);
+
+      logging.verbose(`response.byteLength=${response.byteLength}`);
+
+      if (reader.readFlag() !== COMMAND_FLAGS.FLAG_WRITE_CONTROLLER_CODES_RESPONSE) {
+        throw "InvalidResponseFlag";
+      }
+
+      const response_uuid = reader.readUint32();
+
+      if (response_uuid != request_uuid) {
+        throw "InvalidResponseUuid";
+      }
+
+      const error_code = reader.readUint8();
+      logging.verbose(`error_code=${error_code}`);
+
+      if (error_code !== 0) {
+        throw "Fail";
+      }
+
+    });
+  }
+
+  readControllerCodes() {
+    logging.debug("> Requesting controller codes ...");
+
+    const request_uuid = this.#getUUID();
+    const bytes = [COMMAND_FLAGS.FLAG_READ_CONTROLLER_CODES_REQUEST, ...numberToBytes(request_uuid, 4)];
+
+    return this.interface.request(bytes, true).then(response => {
+      let reader = new TnglReader(response);
+
+      logging.verbose("response=", response);
+
+      if (reader.readFlag() !== COMMAND_FLAGS.FLAG_READ_CONTROLLER_CODES_RESPONSE) {
+        throw "InvalidResponseFlag";
+      }
+
+      const response_uuid = reader.readUint32();
+
+      if (response_uuid != request_uuid) {
+        throw "InvalidResponseUuid";
+      }
+
+      const error_code = reader.readUint8();
+
+      logging.verbose(`error_code=${error_code}`);
+
+      if (error_code !== 0) {
+        throw "Fail";
+      }
+
+      const pcb_code = reader.readUint16();
+      const product_code = reader.readUint16();
+
+      logging.debug(`pcb_code=${pcb_code}`);
+      logging.debug(`product_code=${product_code}`);
+
+      logging.info(`> Controller Codes: pcb_code=${pcb_code}, product_code=${product_code}`);
+
+      return { pcb_code: pcb_code, product_code: product_code };
+    });
   }
 
 }
