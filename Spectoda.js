@@ -602,6 +602,14 @@ export class Spectoda {
       .catch(error => {
         logging.error("Error during connect():", error);
 
+        // TODO! make this work
+
+        if (error === "user gesto needed") {
+          alert("Klikni na me").then(() => {
+            return this.connect(devices, autoConnect, ownerSignature, ownerKey, connectAny, fwVersion);
+          });
+        }
+
         this.#setConnectionState("disconnected");
 
         if (typeof error != "string") {

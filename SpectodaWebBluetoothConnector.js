@@ -795,6 +795,9 @@ criteria example:
     return navigator.bluetooth
       .requestDevice(web_ble_options)
       .catch(e => {
+
+        // TODO! if e === "user did not make a guesto" then throw something that will be catched in the connect() at Spectoda.js
+
         logging.error(e);
         throw "UserCanceledSelection";
       })
@@ -1090,10 +1093,10 @@ criteria example:
   destroy() {
     //this.#interfaceReference = null; // dont know if I need to destroy this reference.. But I guess I dont need to?
     return this.disconnect()
-      .catch(() => {})
+      .catch(() => { })
       .then(() => {
         return this.unselect();
       })
-      .catch(() => {});
+      .catch(() => { });
   }
 }
