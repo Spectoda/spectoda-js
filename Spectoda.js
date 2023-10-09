@@ -602,13 +602,7 @@ export class Spectoda {
       .catch(error => {
         logging.error("Error during connect():", error);
 
-        // TODO! make this work
-
-        if (error === "user gesto needed") {
-          alert("Klikni na me").then(() => {
-            return this.connect(devices, autoConnect, ownerSignature, ownerKey, connectAny, fwVersion);
-          });
-        }
+        // TODO! Initiate user gesture if (error === "UserGestureRequired") and handle connection, ad DEV-3298
 
         this.#setConnectionState("disconnected");
 
@@ -1437,7 +1431,7 @@ export class Spectoda {
       const removed_device_mac_bytes = reader.readBytes(6);
 
       return this.rebootDevice()
-        .catch(() => { })
+        .catch(() => {})
         .then(() => {
           let removed_device_mac = "00:00:00:00:00:00";
           if (removed_device_mac_bytes.length >= 6) {
@@ -1931,15 +1925,15 @@ export class Spectoda {
     logging.debug("> Setting orientation...");
 
     if (!detectSpectodaConnect()) {
-      return Promise.reject("PlatformNotSupported")
+      return Promise.reject("PlatformNotSupported");
     }
 
     if (typeof option !== "number") {
-      return Promise.reject("InvalidOption")
+      return Promise.reject("InvalidOption");
     }
 
     if (option < 0 || option > 2) {
-      return Promise.reject("InvalidOption")
+      return Promise.reject("InvalidOption");
     }
 
     return window.flutter_inappwebview.callHandler("setOrientation", option);
@@ -2014,7 +2008,6 @@ export class Spectoda {
       if (error_code !== 0) {
         throw "Fail";
       }
-
     });
   }
 
@@ -2058,5 +2051,4 @@ export class Spectoda {
       return { pcb_code: pcb_code, product_code: product_code };
     });
   }
-
 }

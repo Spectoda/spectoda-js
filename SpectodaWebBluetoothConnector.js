@@ -1,11 +1,11 @@
 // npm install --save-dev @types/web-bluetooth
 /// <reference types="web-bluetooth" />
 
-import { logging } from "./logging";
-import { detectAndroid, detectSafari, hexStringToUint8Array, numberToBytes, sleep, toBytes } from "./functions";
 import { COMMAND_FLAGS } from "./SpectodaInterfaceLegacy.js";
 import { TimeTrack } from "./TimeTrack.js";
 import { TnglReader } from "./TnglReader.js";
+import { detectAndroid, hexStringToUint8Array, numberToBytes, sleep, toBytes } from "./functions";
+import { logging } from "./logging";
 
 // od 0.8.0 maji vsechny spectoda enabled BLE zarizeni jednotne SPECTODA_DEVICE_UUID.
 // kazdy typ (produkt) Spectoda Zarizeni ma svuj kod v manufacturer data
@@ -790,20 +790,15 @@ criteria example:
       web_ble_options = { acceptAllDevices: true, optionalServices: [this.SPECTODA_SERVICE_UUID] };
     }
 
-    // logging.debug(web_ble_options);
-
     return navigator.bluetooth
       .requestDevice(web_ble_options)
       .catch(e => {
-
-        // TODO! if e === "user did not make a guesto" then throw something that will be catched in the connect() at Spectoda.js
+        // TODO! Throw UserGestureRequired if e.message.includes("user gesture"). ad DEV-3298
 
         logging.error(e);
         throw "UserCanceledSelection";
       })
       .then(device => {
-        // logging.debug(device);
-
         this.#webBTDevice = device;
 
         this.#webBTDevice.ongattserverdisconnected = () => {
@@ -1093,10 +1088,10 @@ criteria example:
   destroy() {
     //this.#interfaceReference = null; // dont know if I need to destroy this reference.. But I guess I dont need to?
     return this.disconnect()
-      .catch(() => { })
+      .catch(() => {})
       .then(() => {
         return this.unselect();
       })
-      .catch(() => { });
+      .catch(() => {});
   }
 }
