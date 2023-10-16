@@ -36,8 +36,7 @@ function onWasmLoad() {
 
     SpectodaWasm.WasmInterface = Module.WasmInterface;
     SpectodaWasm.Uint8Vector = Module.Uint8Vector;
-    SpectodaWasm.evaluate_result_t = Module.evaluate_result_t;
-    SpectodaWasm.send_result_t = Module.send_result_t;
+    // SpectodaWasm.send_result_t = Module.send_result_t;
 
     if (typeof window !== "undefined") {
       // Make a directory other than '/'
@@ -145,8 +144,8 @@ export const SpectodaWasm = {
 
   Uint8Vector: null,
 
-  evaluate_result_t: null,
-  send_result_t: null,
+  // evaluate_result_t: null,
+  // send_result_t: null,
 
   // oposite of convertJSArrayToNumberVector() in https://emscripten.org/docs/api_reference/val.h.html
   convertNumberVectorToJSArray(vector) {

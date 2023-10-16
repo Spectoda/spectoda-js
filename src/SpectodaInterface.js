@@ -1,7 +1,7 @@
 import { logging } from "../logging";
 import { SpectodaWasm } from "./SpectodaWasm.js";
 
-const WASM_VERSION = "DEBUG_0.9.3_20230913";
+const WASM_VERSION = "DEBUG_0.10.0_20231016";
 
 export const COMMAND_FLAGS = Object.freeze({
   FLAG_UNSUPPORTED_COMMND_RESPONSE: 255, // TODO change FLAG_OTA_BEGIN to not be 255.
@@ -207,18 +207,17 @@ export class SpectodaInterface {
         _onExecute: (commands_bytecode_vector, source_connection) => {
           logging.verbose("_onExecute", commands_bytecode_vector, source_connection);
 
-          try {
-            // dont know how to make Uint8Array in C++ yet. So I am forced to give data out in C++ std::vector
-            const commands_bytecode = SpectodaWasm.convertNumberVectorToJSArray(commands_bytecode_vector);
+          // try {
+          // dont know how to make Uint8Array in C++ yet. So I am forced to give data out in C++ std::vector
+          // const commands_bytecode = SpectodaWasm.convertNumberVectorToJSArray(commands_bytecode_vector);
 
-            // TODO IMPLEMENT SENDING TO OTHER INTERFACES
+          // TODO IMPLEMENT SENDING TO OTHER INTERFACES
+
+          // } catch {
+
+          // }
 
 
-          } catch {
-            return Module.send_result_t.SEND_ERROR;
-          }
-
-          return Module.send_result_t.SEND_OK;
         },
 
         // _onRequest: () => {
@@ -267,7 +266,7 @@ export class SpectodaInterface {
       };
 
       this.#instance = SpectodaWasm.WasmInterface.implement(WasmInterfaceImplementation);
-      this.#instance.begin(label, mac_address, id_offset);
+      this.#instance.begin(label, mac_address, id_offset, 255);
 
       // this.#instance.makePort("A", 1, brightness, 255, true, false);
       // this.#instance.makePort("B", 1, brightness, 255, true, false);
@@ -336,9 +335,9 @@ export class SpectodaInterface {
       throw "NotConstructed";
     }
 
-    const evaluate_result = this.#instance.execute(SpectodaWasm.toHandle(execute_bytecode), source_connection);
+    const execute_sucess = this.#instance.execute(SpectodaWasm.toHandle(execute_bytecode), source_connection);
 
-    if (evaluate_result != SpectodaWasm.evaluate_result_t.COMMAND_SUCCESS) {
+    if (!execute_sucess) {
       throw "EvaluateError";
     }
   }
@@ -358,9 +357,9 @@ export class SpectodaInterface {
     let response_bytecode = undefined;
 
     try {
-      const evaluate_result = this.#instance.request(SpectodaWasm.toHandle(request_bytecode), response_bytecode_vector, source_connection);
+      const request_sucess = this.#instance.request(SpectodaWasm.toHandle(request_bytecode), response_bytecode_vector, source_connection);
 
-      if (evaluate_result != SpectodaWasm.evaluate_result_t.COMMAND_SUCCESS) {
+      if (!request_sucess) {
         throw "EvaluateError";
       }
 

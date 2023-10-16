@@ -13,6 +13,7 @@ import { t } from "../i18n.js";
 import { SpectodaInterface } from "./SpectodaInterface.js";
 import { SimulationConnector } from "./connector/SimulationConnector.js";
 import { SpectodaNodeBluetoothConnector } from "./connector/SpectodaNodeBleConnector";
+import { PreviewController } from "./PreviewController.js";
 
 // Spectoda.js -> SpectodaRuntime.js -> | SpectodaXXXConnector.js ->
 
@@ -214,6 +215,28 @@ export class SpectodaRuntime {
         }
       });
     }
+
+    this.previewControllers = {};
+
+    this.#eventEmitter.on("wasm_execute", command => {
+      for (const previewController of Object.values(this.previewControllers)) {
+        previewController.execute(command, 123456789);
+      }
+    });
+
+    // this.#eventEmitter.on("wasm_request", command => {
+    //   for (const previewController of Object.values(this.previewControllers)) {
+    //     previewController.request(e, 123456789);
+    //   }
+    // });
+
+    this.#eventEmitter.on("wasm_clock", timestamp => {
+      for (const previewController of Object.values(this.previewControllers)) {
+        previewController.setClock(timestamp, 123456789);
+      }
+    });
+
+
   }
 
   #runtimeTask = async () => {
@@ -1008,4 +1031,38 @@ export class SpectodaRuntime {
     logging.verbose("readVariableAddress", { variable_address, device_id });
     return this.interface.readVariableAddress(variable_address, device_id);
   }
+
+  WIP_makePreviewController(controller_mac_address, controller_config) {
+    logging.debug(`> Making preview controller ${controller_mac_address}...`);
+
+    if (typeof controller_config === "string") {
+      controller_config = JSON.parse(controller_config);
+    }
+
+    logging.verbose(`controller_config=`, controller_config);
+
+    this.previewControllers[controller_mac_address] = new PreviewController(controller_config);
+    this.previewControllers[controller_mac_address].construct();
+  }
+
+  WIP_getPreviewController(controller_mac_address) {
+    logging.verbose(`> Getting preview controller ${controller_mac_address}...`);
+
+    return this.previewControllers[controller_mac_address];
+  }
+
+  WIP_getPreviewControllers() {
+    logging.verbose(`> Getting preview controllers...`);
+
+    return this.previewControllers;
+  }
+
+  WIP_renderPreview() {
+    logging.verbose(`> Rendering preview...`);
+
+    for (const previewController of Object.values(this.previewControllers)) {
+      previewController.render();
+    }
+  }
+
 }

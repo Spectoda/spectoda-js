@@ -8,6 +8,7 @@ import { changeLanguage, t } from "./i18n.js";
 import { logging, setLoggingLevel } from "./logging";
 import { COMMAND_FLAGS } from "./src/SpectodaInterface.js";
 
+
 import { SpectodaRuntime } from "./src/SpectodaRuntime.js";
 
 let lastEvents = {};
@@ -1380,7 +1381,7 @@ export class Spectoda {
       const removed_device_mac_bytes = reader.readBytes(6);
 
       return this.rebootDevice()
-        .catch(() => {})
+        .catch(() => { })
         .then(() => {
           let removed_device_mac = "00:00:00:00:00:00";
           if (removed_device_mac_bytes.length >= 6) {
