@@ -42,7 +42,7 @@ export class PreviewController {
                 // },
 
                 _onEvents: event_array => {
-                    logging.verbose("_onEvents", event_array);
+                    // logging.verbose("_onEvents", event_array);
 
                     // for (let i = 0; i < event_array.length; i++) {
                     //     event_array[i].timestamp_utc = Date.now();
@@ -70,7 +70,7 @@ export class PreviewController {
                 },
 
                 _onLocalEvents: event_array => {
-                    logging.verbose("_onLocalEvents", event_array);
+                    // logging.verbose("_onLocalEvents", event_array);
 
                     // for (let i = 0; i < event_array.length; i++) {
                     //     event_array[i].timestamp_utc = Date.now();
@@ -98,7 +98,7 @@ export class PreviewController {
                 },
 
                 _onExecute: (commands_bytecode_vector, source_connection) => {
-                    logging.verbose("_onExecute", commands_bytecode_vector, source_connection);
+                    // logging.verbose("_onExecute", commands_bytecode_vector, source_connection);
 
                     // try {
                     //     // dont know how to make Uint8Array in C++ yet. So I am forced to give data out in C++ std::vector

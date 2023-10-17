@@ -96,6 +96,10 @@ export class TnglWriter {
     }
   }
 
+  reset() {
+    this._index = 0;
+  }
+
   get bytes() {
     return new DataView(this._buffer.slice(0, this._index));
   }

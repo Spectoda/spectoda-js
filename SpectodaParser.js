@@ -233,6 +233,8 @@ export class TnglCompiler {
   }
 
   reset() {
+    this.#tnglWriter.reset();
+
     this.#const_declarations_stack.length = 0;
     this.#const_scope_depth_stack.length = 0;
     this.#let_declarations_stack.length = 0;
