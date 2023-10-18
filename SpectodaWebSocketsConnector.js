@@ -7,7 +7,7 @@ import { TimeTrack } from "./TimeTrack";
 import { createNanoEvents } from "./functions";
 
 // const WEBSOCKET_URL = "https://tangle-remote-control.glitch.me/"
-export const WEBSOCKET_URL = "https://cloud.host.spectoda.com";
+export const WEBSOCKET_URL = "http://cloud.host.spectoda.com";
 
 const eventStream = createNanoEvents();
 
@@ -42,7 +42,8 @@ class SpectodaVirtualProxy {
         } else if (prop === "timeline") {
           return timeline;
         } else if (prop === "init") {
-          return ({ signature, key }) => socket.emitWithAck("join", { signature, key });
+          // Expects [{key,sig}, ...] or {key,sig}
+          return socket.emitWithAck("join", params);
         }
 
         // Always return an async function for any property
