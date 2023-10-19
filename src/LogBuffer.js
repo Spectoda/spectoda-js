@@ -43,6 +43,17 @@ export class RingLogBuffer {
   // Method to retrieve all logs in the buffer
   getAllLogs() {
     let logs = [];
+    let start = this.start;
+    let end = this.end;
+    while (start !== end) {
+      logs.push(this.buffer[start]);
+      start = (start + 1) % this.size;
+    }
+    return logs;
+  }
+
+  getAllLogsWithPop() {
+    let logs = [];
     while (!this.isEmpty()) {
       logs.push(this.pop());
     }

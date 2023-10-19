@@ -1,20 +1,20 @@
-import { logging } from "../logging";
-import { createNanoEvents, sleep, detectSpectodaConnect, detectAndroid, detectChrome, detectWindows, detectLinux, detectIPhone, detectMacintosh, uint8ArrayToHexString, detectNode } from "../functions";
 import { SpectodaDummyConnector } from "../SpectodaDummyConnector.js";
 import { SpectodaWebBluetoothConnector } from "../SpectodaWebBluetoothConnector.js";
 import { SpectodaWebSerialConnector } from "../SpectodaWebSerialConnector.js";
+import { createNanoEvents, detectAndroid, detectChrome, detectIPhone, detectLinux, detectMacintosh, detectNode, detectSpectodaConnect, detectWindows, sleep, uint8ArrayToHexString } from "../functions";
+import { logging } from "../logging";
 // import { SpectodaConnectConnector } from "./SpectodaConnectConnector.js";
+import { FlutterConnector } from "../FlutterConnector.js";
 import { SpectodaWebSocketsConnector } from "../SpectodaWebSocketsConnector.js";
 import { TimeTrack } from "../TimeTrack.js";
 import "../TnglReader.js";
 import "../TnglWriter.js";
-import { FlutterConnector } from "../FlutterConnector.js";
 import { t } from "../i18n.js";
+import { PreviewController } from "./PreviewController.js";
 import { SpectodaInterface } from "./SpectodaInterface.js";
+import { SpectodaWasm } from "./SpectodaWasm";
 import { SimulationConnector } from "./connector/SimulationConnector.js";
 import { SpectodaNodeBluetoothConnector } from "./connector/SpectodaNodeBleConnector";
-import { PreviewController } from "./PreviewController.js";
-import { SpectodaWasm } from "./SpectodaWasm";
 
 // Spectoda.js -> SpectodaRuntime.js -> | SpectodaXXXConnector.js ->
 
@@ -123,8 +123,8 @@ export class SpectodaRuntime {
     this.#lastUpdateTime = new Date().getTime();
     this.#lastUpdatePercentage = 0;
 
-    this.onConnected = e => { };
-    this.onDisconnected = e => { };
+    this.onConnected = e => {};
+    this.onDisconnected = e => {};
 
     this.#eventEmitter.on("ota_progress", value => {
       const now = new Date().getTime();
@@ -160,42 +160,42 @@ export class SpectodaRuntime {
       // @ts-ignore
 
       /** @type {HTMLBodyElement} */ document.querySelector("body").addEventListener("click", function (e) {
-      e.preventDefault();
+        e.preventDefault();
 
-      (function (e, d, w) {
-        if (!e.composedPath) {
-          e.composedPath = function () {
-            if (this.path) {
+        (function (e, d, w) {
+          if (!e.composedPath) {
+            e.composedPath = function () {
+              if (this.path) {
+                return this.path;
+              }
+              var target = this.target;
+
+              this.path = [];
+              while (target.parentNode !== null) {
+                this.path.push(target);
+                target = target.parentNode;
+              }
+              this.path.push(d, w);
               return this.path;
-            }
-            var target = this.target;
+            };
+          }
+        })(Event.prototype, document, window);
+        // @ts-ignore
+        const path = e.path || (e.composedPath && e.composedPath());
 
-            this.path = [];
-            while (target.parentNode !== null) {
-              this.path.push(target);
-              target = target.parentNode;
-            }
-            this.path.push(d, w);
-            return this.path;
-          };
+        // @ts-ignore
+        for (let el of path) {
+          if (el.tagName === "A" && el.getAttribute("target") === "_blank") {
+            e.preventDefault();
+            const url = el.getAttribute("href");
+            logging.verbose(url);
+            // @ts-ignore
+            logging.debug("Openning external url", url);
+            window.flutter_inappwebview.callHandler("openExternalUrl", url);
+            break;
+          }
         }
-      })(Event.prototype, document, window);
-      // @ts-ignore
-      const path = e.path || (e.composedPath && e.composedPath());
-
-      // @ts-ignore
-      for (let el of path) {
-        if (el.tagName === "A" && el.getAttribute("target") === "_blank") {
-          e.preventDefault();
-          const url = el.getAttribute("href");
-          logging.verbose(url);
-          // @ts-ignore
-          logging.debug("Openning external url", url);
-          window.flutter_inappwebview.callHandler("openExternalUrl", url);
-          break;
-        }
-      }
-    });
+      });
     }
 
     if (typeof window !== "undefined") {
@@ -236,8 +236,6 @@ export class SpectodaRuntime {
         previewController.setClock(timestamp, 123456789);
       }
     });
-
-
   }
 
   #runtimeTask = async () => {
@@ -325,7 +323,7 @@ export class SpectodaRuntime {
     }
 
     return (this.connector ? this.destroyConnector() : Promise.resolve())
-      .catch(() => { })
+      .catch(() => {})
       .then(() => {
         switch (connector_type) {
           case "none":
@@ -968,7 +966,7 @@ export class SpectodaRuntime {
                 {
                   try {
                     await this.requestWakeLock();
-                  } catch { }
+                  } catch {}
 
                   try {
                     await this.connector.updateFW(item.a).then(response => {
@@ -980,7 +978,7 @@ export class SpectodaRuntime {
 
                   try {
                     this.releaseWakeLock();
-                  } catch { }
+                  } catch {}
                 }
                 break;
 
@@ -1062,7 +1060,7 @@ export class SpectodaRuntime {
   }
 
   WIP_renderPreview() {
-    logging.verbose(`> Rendering preview...`);
+    // logging.verbose(`> Rendering preview...`);
 
     for (const previewController of Object.values(this.previewControllers)) {
       previewController.render();
@@ -1076,6 +1074,4 @@ export class SpectodaRuntime {
   WIP_saveFS() {
     return SpectodaWasm.saveFS();
   }
-
-
 }
