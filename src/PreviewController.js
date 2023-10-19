@@ -187,12 +187,15 @@ export class PreviewController {
                             break;
                         case 2:
                             logging.warn(`<${this.mac}> [W][${filename}]: ${message}`);
+                            this.#eventEmitter.emit("warn", logEntry);
                             break;
                         case 1:
                             logging.error(`<${this.mac}> [E][${filename}]: ${message}`);
+                            this.#eventEmitter.emit("error", logEntry);
                             break;
                         default:
                             logging.error(`<${this.mac}> [?][${filename}]: ${message}`);
+                            this.#eventEmitter.emit("unknown", logEntry);
                             break;
                     }
                 },
