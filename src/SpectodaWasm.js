@@ -189,6 +189,22 @@ export const SpectodaWasm = {
 
   toValue(value) {
     return Module.Emval.toValue(value);
+  },
+
+  loadFS() {
+    return Module.FS.syncfs(true, (err) => {
+      if (err) {
+        logging.error("FS.syncfs error:", err);
+      }
+    });
+  },
+
+  saveFS() {
+    return Module.FS.syncfs(false, (err) => {
+      if (err) {
+        logging.error("FS.syncfs error:", err);
+      }
+    });
   }
 };
 

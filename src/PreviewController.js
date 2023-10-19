@@ -3,29 +3,34 @@ import { SpectodaWasm } from "./SpectodaWasm.js";
 
 export class PreviewController {
 
+    #macAddress;
+
     #instance;
     #config;
 
     #ports;
 
-    constructor(congif) {
+    constructor(controller_mac_address) {
+        this.#macAddress = controller_mac_address;
+
         this.#instance = null;
-        this.#config = congif;
+        this.#config = undefined;
 
         this.#ports = {};
     }
 
-    // controller_identifier, controller_mac, controller_id_offset, controller_brightness
     /**
-     * @param {string} label
-     * @param {string} mac_address
-     * @param {number} id_offset
+     * @param {string} controller_mac_address 
      * @return {Promise<null>}
      */
-    construct() {
+    construct(config) {
+        logging.debug(`construct(config=${JSON.stringify(config)})`);
+
         if (this.#instance) {
             throw "AlreadyContructed";
         }
+
+        this.#config = config;
 
         return SpectodaWasm.waitForInitilize().then(() => {
 
@@ -132,7 +137,7 @@ export class PreviewController {
                 // },
 
                 _onSynchronize: synchronization_object => {
-                    logging.debug("_onSynchronize", synchronization_object);
+                    // logging.debug("_onSynchronize", synchronization_object);
                 },
 
                 _handlePeerConnected: peer_mac => {
@@ -157,16 +162,42 @@ export class PreviewController {
 
                     return Module.interface_error_t.SUCCESS;
                 },
+
+                _onLog: (level, filename, message) => {
+                    switch (level) {
+                        case 5:
+                            logging.verbose(`<${this.mac}> [V][${filename}]: ${message}`);
+                            break;
+                        case 4:
+                            logging.debug(`<${this.mac}> [D][${filename}]: ${message}`);
+                            break;
+                        case 3:
+                            logging.info(`<${this.mac}> [I][${filename}]: ${message}`);
+                            break;
+                        case 2:
+                            logging.warn(`<${this.mac}> [W][${filename}]: ${message}`);
+                            break;
+                        case 1:
+                            logging.error(`<${this.mac}> [E][${filename}]: ${message}`);
+                            break;
+                        default:
+                            logging.error(`<${this.mac}> [?][${filename}]: ${message}`);
+                            break;
+                    }
+                },
+
+
             };
 
             this.#instance = SpectodaWasm.WasmInterface.implement(PreviewControllerImplementation);
 
             const label = this.#config.controller?.label ? this.#config.controller?.label : "Spect";
-            const mac_address = this.#config.controller?.mac_address ? this.#config.controller?.mac_address : "00:00:00:00:00:00";
+            // const mac_address = this.#config.controller?.mac_address ? this.#config.controller?.mac_address : "00:00:00:00:00:00";
             const id_offset = this.#config.controller?.id_offset ? this.#config.controller?.id_offset : 0;
             const brightness = this.#config.controller?.brightness ? this.#config.controller?.brightness : 255;
 
-            this.#instance.begin(label, mac_address, id_offset, brightness);
+            this.#instance.init(this.#macAddress);
+            this.#instance.begin(label, id_offset, brightness);
 
             let current_tag = "A";
 
@@ -335,6 +366,14 @@ export class PreviewController {
         }
 
         return this.#instance.readVariableAddress(variable_address, device_id);
+    }
+
+    get mac() {
+        if (!this.#instance) {
+            throw "NotConstructed";
+        }
+
+        return this.#macAddress;
     }
 }
 

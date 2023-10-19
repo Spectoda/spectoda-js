@@ -14,6 +14,7 @@ import { SpectodaInterface } from "./SpectodaInterface.js";
 import { SimulationConnector } from "./connector/SimulationConnector.js";
 import { SpectodaNodeBluetoothConnector } from "./connector/SpectodaNodeBleConnector";
 import { PreviewController } from "./PreviewController.js";
+import { SpectodaWasm } from "./SpectodaWasm";
 
 // Spectoda.js -> SpectodaRuntime.js -> | SpectodaXXXConnector.js ->
 
@@ -240,7 +241,7 @@ export class SpectodaRuntime {
   }
 
   #runtimeTask = async () => {
-    const UPS = 10; // updates per second
+    const UPS = 2; // updates per second
 
     try {
       await this.interface.construct("spectoda", "01:23:45:67:89:ab", 0, 255);
@@ -1019,7 +1020,7 @@ export class SpectodaRuntime {
             }
           }
         } catch (e) {
-          logging.error("Error while #process", item, ":", e);
+          logging.error("Runtime::#process() ERROR", item, ":", e);
         } finally {
           this.#processing = false;
         }
@@ -1033,7 +1034,7 @@ export class SpectodaRuntime {
   }
 
   WIP_makePreviewController(controller_mac_address, controller_config) {
-    logging.debug(`> Making preview controller ${controller_mac_address}...`);
+    logging.debug(`> Making PreviewController ${controller_mac_address}...`);
 
     if (typeof controller_config === "string") {
       controller_config = JSON.parse(controller_config);
@@ -1041,21 +1042,21 @@ export class SpectodaRuntime {
 
     logging.verbose(`controller_config=`, controller_config);
 
-    let controller = new PreviewController(controller_config);
+    let controller = new PreviewController(controller_mac_address);
     this.previewControllers[controller_mac_address] = controller;
-    controller.construct();
+    controller.construct(controller_config);
 
     return controller;
   }
 
   WIP_getPreviewController(controller_mac_address) {
-    logging.verbose(`> Getting preview controller ${controller_mac_address}...`);
+    logging.verbose(`> Getting PreviewController ${controller_mac_address}...`);
 
     return this.previewControllers[controller_mac_address];
   }
 
   WIP_getPreviewControllers() {
-    logging.verbose(`> Getting preview controllers...`);
+    logging.verbose(`> Getting PreviewControllers...`);
 
     return this.previewControllers;
   }
@@ -1067,5 +1068,14 @@ export class SpectodaRuntime {
       previewController.render();
     }
   }
+
+  WIP_loadFS() {
+    return SpectodaWasm.loadFS();
+  }
+
+  WIP_saveFS() {
+    return SpectodaWasm.saveFS();
+  }
+
 
 }

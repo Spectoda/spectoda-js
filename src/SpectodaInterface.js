@@ -1,7 +1,7 @@
 import { logging } from "../logging";
 import { SpectodaWasm } from "./SpectodaWasm.js";
 
-const WASM_VERSION = "DEBUG_0.10.0_20231016";
+const WASM_VERSION = "DEBUG_0.10.0_20231019";
 
 export const COMMAND_FLAGS = Object.freeze({
   FLAG_UNSUPPORTED_COMMND_RESPONSE: 255, // TODO change FLAG_OTA_BEGIN to not be 255.
@@ -263,10 +263,36 @@ export class SpectodaInterface {
 
           return Module.interface_error_t.SUCCESS;
         },
+
+        _onLog: (level, filename, message) => {
+          switch (level) {
+            case 5:
+              logging.verbose(`<spectoda> [V][${filename}]: ${message}`);
+              break;
+            case 4:
+              logging.debug(`<spectoda> [D][${filename}]: ${message}`);
+              break;
+            case 3:
+              logging.info(`<spectoda> [I][${filename}]: ${message}`);
+              break;
+            case 2:
+              logging.warn(`<spectoda> [W][${filename}]: ${message}`);
+              break;
+            case 1:
+              logging.error(`<spectoda> [E][${filename}]: ${message}`);
+              break;
+            default:
+              logging.error(`<spectoda> [?][${filename}]: ${message}`);
+              break;
+          }
+        }
+
       };
 
       this.#instance = SpectodaWasm.WasmInterface.implement(WasmInterfaceImplementation);
-      this.#instance.begin(label, mac_address, id_offset, 255);
+
+      this.#instance.init(mac_address);
+      this.#instance.begin(label, id_offset, brightness);
 
       // this.#instance.makePort("A", 1, brightness, 255, true, false);
       // this.#instance.makePort("B", 1, brightness, 255, true, false);
