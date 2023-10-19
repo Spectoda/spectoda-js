@@ -1,4 +1,6 @@
+import { createNanoEvents } from "../functions";
 import { logging } from "../logging";
+import { LogEntry, RingLogBuffer } from "./LogBuffer";
 import { SpectodaWasm } from "./SpectodaWasm.js";
 
 export class PreviewController {
@@ -9,6 +11,8 @@ export class PreviewController {
     #config;
 
     #ports;
+    #ringLogBuffer;
+    #eventEmitter;
 
     constructor(controller_mac_address) {
         this.#macAddress = controller_mac_address;
@@ -17,6 +21,7 @@ export class PreviewController {
         this.#config = undefined;
 
         this.#ports = {};
+        this.#eventEmitter = createNanoEvents();
     }
 
     /**
@@ -31,6 +36,7 @@ export class PreviewController {
         }
 
         this.#config = config;
+        this.#ringLogBuffer = new RingLogBuffer(1000);
 
         return SpectodaWasm.waitForInitilize().then(() => {
 
@@ -164,6 +170,11 @@ export class PreviewController {
                 },
 
                 _onLog: (level, filename, message) => {
+
+                    const logEntry = new LogEntry(level, filename, message);
+                    this.#ringLogBuffer.push(logEntry);
+                    this.#eventEmitter.emit("log", logEntry);
+
                     switch (level) {
                         case 5:
                             logging.verbose(`<${this.mac}> [V][${filename}]: ${message}`);
@@ -367,6 +378,19 @@ export class PreviewController {
 
         return this.#instance.readVariableAddress(variable_address, device_id);
     }
+
+    getLogs() {
+        return this.#ringLogBuffer.getAllLogs();
+    }
+
+    clearLogs() {
+        this.#ringLogBuffer.clear();
+        this.#eventEmitter.emit("clear_logs");
+    }
+
+    on(event,callback) {
+        return this.#eventEmitter.on(event, callback);
+    } 
 
     get mac() {
         if (!this.#instance) {
