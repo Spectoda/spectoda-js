@@ -1,9 +1,7 @@
-import { logging } from "./logging";
-import { mapValue, uint8ArrayToHexString, percentageToBytes } from "./functions";
 import { TnglWriter } from "./TnglWriter.js";
+import { mapValue } from "./functions";
+import { logging } from "./logging";
 
-import { sendTnglToApi } from "./tnglapi.js";
-import { fetchTnglFromApiById } from "./tnglapi.js";
 
 
 // ! must stay this order VAR_VALUE_ADDRESS_OFFSET < CONST_VALUE_ADDRESS_OFFSET < LET_VALUE_ADDRESS_OFFSET
@@ -140,6 +138,8 @@ const TNGL_FLAGS = Object.freeze({
   LABEL: 191,
   PIXELS: 192,
   TUPLE: 193,
+  NUMBER: 205,
+
 
   // TODO Operations and Providers should be Object values.
   // OBJECT: ???, // Operations and Providers are objects
@@ -1171,6 +1171,23 @@ export class TnglCompiler {
     this.#tnglWriter.writeUint16(destination_variable_address);
     this.#tnglWriter.writeUint8(pin);
   }
+  // number_t, 3 bytes, max: 16777215
+  compileNumber(number) {
+    let bytes = new Uint8Array(3);
+
+    // msb
+    bytes[0] = (number >> 16) & 0xff;
+
+    // msbl
+    bytes[1] = (number >> 8) & 0xff;
+
+    // lsb
+    bytes[2] = number & 0xff;
+
+    console.log(bytes);
+    this.#tnglWriter.writeFlag(TNGL_FLAGS.NUMBER);
+    bytes.forEach((byte) => { this.#tnglWriter.writeUint8(byte); });
+  }
 
   get tnglBytes() {
     return new Uint8Array(this.#tnglWriter.bytes.buffer, 0, this.#tnglWriter.written);
@@ -1271,7 +1288,7 @@ export class TnglCodeParser {
           break;
 
         case "number":
-          logging.error('"Naked" numbers are not permitted.');
+          this.#compiler.compileNumber(element.token);
           break;
 
         case "word":
