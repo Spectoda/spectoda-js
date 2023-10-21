@@ -2,7 +2,7 @@ import { logging } from "../../logging";
 import { sleep, toBytes, detectSpectodaConnect, numberToBytes, detectAndroid } from "../../functions";
 import { TimeTrack } from "../../TimeTrack.js";
 import { TnglReader } from "../../TnglReader.js";
-import { COMMAND_FLAGS } from "../SpectodaInterface.js";
+import { COMMAND_FLAGS } from "../Spectoda_JS.js";
 
 /////////////////////////////////////////////////////////////////////////////////////
 
@@ -21,10 +21,10 @@ export class SimulationConnector extends SimulatedConnection {
 
     this.type = "simulation";
 
-    this.#interfaceReference = interfaceReference;    
+    this.#interfaceReference = interfaceReference;
   }
 
- 
+
   /*
 
 criteria: JSON pole objektu, kde plati: [{ tohle AND tamto AND toto } OR { tohle AND tamto }]
@@ -193,10 +193,10 @@ criteria example:
   destroy() {
     //this.#interfaceReference = null; // dont know if I need to destroy this reference.. But I guess I dont need to?
     return this.disconnect()
-      .catch(() => {})
+      .catch(() => { })
       .then(() => {
         return this.unselect();
       })
-      .catch(() => {});
+      .catch(() => { });
   }
 }

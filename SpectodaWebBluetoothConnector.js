@@ -3,7 +3,7 @@
 
 import { logging } from "./logging";
 import { detectAndroid, detectSafari, hexStringToUint8Array, numberToBytes, sleep, toBytes } from "./functions";
-import { COMMAND_FLAGS } from "./src/SpectodaInterface.js";
+import { COMMAND_FLAGS } from "./src/Spectoda_JS.js";
 import { TimeTrack } from "./TimeTrack.js";
 import { TnglReader } from "./TnglReader.js";
 
@@ -1086,10 +1086,10 @@ criteria example:
   destroy() {
     //this.#runtimeReference = null; // dont know if I need to destroy this reference.. But I guess I dont need to?
     return this.disconnect()
-      .catch(() => {})
+      .catch(() => { })
       .then(() => {
         return this.unselect();
       })
-      .catch(() => {});
+      .catch(() => { });
   }
 }

@@ -34,7 +34,7 @@ function onWasmLoad() {
 
     console.log("Webassembly runtime initilized");
 
-    SpectodaWasm.WasmInterface = Module.WasmInterface;
+    SpectodaWasm.Spectoda_WASM = Module.Spectoda_WASM;
     SpectodaWasm.Uint8Vector = Module.Uint8Vector;
     // SpectodaWasm.send_result_t = Module.send_result_t;
 
@@ -132,7 +132,7 @@ export const SpectodaWasm = {
    *   end: () => void
    * } }
    */
-  WasmInterface: null, // Uint8Array;    let array = new Uint8Array()
+  Spectoda_WASM: null, // Uint8Array;    let array = new Uint8Array()
 
   // get(arg0)
   // push_back(arg0)

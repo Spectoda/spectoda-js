@@ -6,8 +6,7 @@ import "./TnglWriter.js";
 import { colorToBytes, computeTnglFingerprint, detectSpectodaConnect, hexStringToUint8Array, labelToBytes, numberToBytes, percentageToBytes, sleep, strMacToBytes, stringToBytes } from "./functions";
 import { changeLanguage, t } from "./i18n.js";
 import { logging, setLoggingLevel } from "./logging";
-import { COMMAND_FLAGS } from "./src/SpectodaInterface.js";
-
+import { COMMAND_FLAGS } from "./src/Spectoda_JS.js";
 
 import { SpectodaRuntime } from "./src/SpectodaRuntime.js";
 

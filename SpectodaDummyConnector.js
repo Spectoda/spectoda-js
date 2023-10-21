@@ -1,7 +1,7 @@
 import { logging } from "./logging";
 import { sleep } from "./functions";
 import { TimeTrack } from "./TimeTrack.js";
-import { COMMAND_FLAGS } from "./src/SpectodaInterface.js";
+import { COMMAND_FLAGS } from "./src/Spectoda_JS.js";
 import { TnglReader } from "./TnglReader.js";
 import { TnglWriter } from "./TnglWriter.js";
 
@@ -538,11 +538,11 @@ criteria example:
     logging.verbose(`destroy()`);
 
     return this.disconnect()
-      .catch(() => {})
+      .catch(() => { })
       .then(() => {
         return this.unselect();
       })
-      .catch(() => {});
+      .catch(() => { });
 
     return Promise.resolve();
   }

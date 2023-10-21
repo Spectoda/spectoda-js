@@ -123,6 +123,8 @@ export class PreviewController {
                     // }
 
                     // return Module.send_result_t.SEND_OK;
+
+                    return true;
                 },
 
                 // _onRequest: () => {
@@ -140,10 +142,14 @@ export class PreviewController {
                 //   }
 
                 //   return Module.send_result_t.SEND_OK;
+
+                // return true;
                 // },
 
                 _onSynchronize: synchronization_object => {
                     // logging.debug("_onSynchronize", synchronization_object);
+
+                    return true;
                 },
 
                 _handlePeerConnected: peer_mac => {
@@ -203,15 +209,14 @@ export class PreviewController {
 
             };
 
-            this.#instance = SpectodaWasm.WasmInterface.implement(PreviewControllerImplementation);
+            this.#instance = SpectodaWasm.Spectoda_WASM.implement(PreviewControllerImplementation);
 
-            const label = this.#config.controller?.label ? this.#config.controller?.label : "Spect";
-            // const mac_address = this.#config.controller?.mac_address ? this.#config.controller?.mac_address : "00:00:00:00:00:00";
-            const id_offset = this.#config.controller?.id_offset ? this.#config.controller?.id_offset : 0;
-            const brightness = this.#config.controller?.brightness ? this.#config.controller?.brightness : 255;
+            // const label = this.#config.controller?.label ? this.#config.controller?.label : "Spect";
+            // const id_offset = this.#config.controller?.id_offset ? this.#config.controller?.id_offset : 0;
+            // const brightness = this.#config.controller?.brightness ? this.#config.controller?.brightness : 255;
 
-            this.#instance.init(this.#macAddress);
-            this.#instance.begin(label, id_offset, brightness);
+            this.#instance.init(this.#macAddress, JSON.stringify(this.#config));
+            this.#instance.begin();
 
             let current_tag = "A";
 
@@ -391,9 +396,9 @@ export class PreviewController {
         this.#eventEmitter.emit("clear_logs");
     }
 
-    on(event,callback) {
+    on(event, callback) {
         return this.#eventEmitter.on(event, callback);
-    } 
+    }
 
     get mac() {
         if (!this.#instance) {

@@ -11,7 +11,7 @@ import "../TnglReader.js";
 import "../TnglWriter.js";
 import { t } from "../i18n.js";
 import { PreviewController } from "./PreviewController.js";
-import { SpectodaInterface } from "./SpectodaInterface.js";
+import { Spectoda_JS } from "./Spectoda_JS.js";
 import { SpectodaWasm } from "./SpectodaWasm";
 import { SimulationConnector } from "./connector/SimulationConnector.js";
 import { SpectodaNodeBluetoothConnector } from "./connector/SpectodaNodeBleConnector";
@@ -102,7 +102,7 @@ export class SpectodaRuntime {
   constructor(spectodaReference) {
     this.#spectodaReference = spectodaReference;
 
-    this.interface = new SpectodaInterface(this);
+    this.spectoda = new Spectoda_JS(this);
 
     this.clock = new TimeTrack(0);
 
@@ -123,8 +123,8 @@ export class SpectodaRuntime {
     this.#lastUpdateTime = new Date().getTime();
     this.#lastUpdatePercentage = 0;
 
-    this.onConnected = e => {};
-    this.onDisconnected = e => {};
+    this.onConnected = e => { };
+    this.onDisconnected = e => { };
 
     this.#eventEmitter.on("ota_progress", value => {
       const now = new Date().getTime();
@@ -160,42 +160,42 @@ export class SpectodaRuntime {
       // @ts-ignore
 
       /** @type {HTMLBodyElement} */ document.querySelector("body").addEventListener("click", function (e) {
-        e.preventDefault();
+      e.preventDefault();
 
-        (function (e, d, w) {
-          if (!e.composedPath) {
-            e.composedPath = function () {
-              if (this.path) {
-                return this.path;
-              }
-              var target = this.target;
-
-              this.path = [];
-              while (target.parentNode !== null) {
-                this.path.push(target);
-                target = target.parentNode;
-              }
-              this.path.push(d, w);
+      (function (e, d, w) {
+        if (!e.composedPath) {
+          e.composedPath = function () {
+            if (this.path) {
               return this.path;
-            };
-          }
-        })(Event.prototype, document, window);
-        // @ts-ignore
-        const path = e.path || (e.composedPath && e.composedPath());
+            }
+            var target = this.target;
 
-        // @ts-ignore
-        for (let el of path) {
-          if (el.tagName === "A" && el.getAttribute("target") === "_blank") {
-            e.preventDefault();
-            const url = el.getAttribute("href");
-            logging.verbose(url);
-            // @ts-ignore
-            logging.debug("Openning external url", url);
-            window.flutter_inappwebview.callHandler("openExternalUrl", url);
-            break;
-          }
+            this.path = [];
+            while (target.parentNode !== null) {
+              this.path.push(target);
+              target = target.parentNode;
+            }
+            this.path.push(d, w);
+            return this.path;
+          };
         }
-      });
+      })(Event.prototype, document, window);
+      // @ts-ignore
+      const path = e.path || (e.composedPath && e.composedPath());
+
+      // @ts-ignore
+      for (let el of path) {
+        if (el.tagName === "A" && el.getAttribute("target") === "_blank") {
+          e.preventDefault();
+          const url = el.getAttribute("href");
+          logging.verbose(url);
+          // @ts-ignore
+          logging.debug("Openning external url", url);
+          window.flutter_inappwebview.callHandler("openExternalUrl", url);
+          break;
+        }
+      }
+    });
     }
 
     if (typeof window !== "undefined") {
@@ -212,7 +212,7 @@ export class SpectodaRuntime {
 
         if (this.#inicilized) {
           this.destroyConnector();
-          this.interface.destruct();
+          this.spectoda.destruct();
         }
       });
     }
@@ -242,12 +242,12 @@ export class SpectodaRuntime {
     const UPS = 2; // updates per second
 
     try {
-      await this.interface.construct("spectoda", "01:23:45:67:89:ab", 0, 255);
+      await this.spectoda.construct("spectoda", "01:23:45:67:89:ab", 0, 255);
 
       await sleep(0.1); // short delay to let fill up the queue to merge the execute items if possible
 
       const f = async () => {
-        await this.interface.compute(); // for non visual mode compute is sufficient
+        await this.spectoda.compute(); // for non visual mode compute is sufficient
         setTimeout(f, 1000 / UPS);
       };
 
@@ -263,7 +263,7 @@ export class SpectodaRuntime {
       this.#inicilized = true;
     }
 
-    return this.interface.waitForInitilize();
+    return this.spectoda.waitForInitilize();
   }
 
   /**
@@ -323,7 +323,7 @@ export class SpectodaRuntime {
     }
 
     return (this.connector ? this.destroyConnector() : Promise.resolve())
-      .catch(() => {})
+      .catch(() => { })
       .then(() => {
         switch (connector_type) {
           case "none":
@@ -604,7 +604,7 @@ export class SpectodaRuntime {
   evaluate(bytecode_uint8array, source_connection) {
     logging.debug("evaluate", { bytecode_uint8array, source_connection });
 
-    this.interface.execute(bytecode_uint8array, source_connection);
+    this.spectoda.execute(bytecode_uint8array, source_connection);
   }
 
   execute(bytes, bytes_label, timeout = 5000) {
@@ -819,7 +819,7 @@ export class SpectodaRuntime {
                         try {
                           return this.connector.getClock().then(clock => {
                             this.emit("wasm_clock", clock.millis());
-                            this.interface.setClock(clock.millis());
+                            this.spectoda.setClock(clock.millis());
 
                             this.clock = clock;
                             item.resolve(device);
@@ -901,7 +901,7 @@ export class SpectodaRuntime {
                   logging.debug("EXECUTE", uint8ArrayToHexString(data));
 
                   this.emit("wasm_execute", data);
-                  this.interface.execute(data, 0x00);
+                  this.spectoda.execute(data, 0x00);
 
                   try {
                     await this.connector.deliver(data, timeout).then(() => {
@@ -920,7 +920,7 @@ export class SpectodaRuntime {
                   logging.debug("REQUEST", uint8ArrayToHexString(item.a));
 
                   this.emit("wasm_request", item.a);
-                  this.interface.request(item.a, 0x00);
+                  this.spectoda.request(item.a, 0x00);
 
                   try {
                     await this.connector.request(item.a, item.b, item.c).then(response => {
@@ -935,7 +935,7 @@ export class SpectodaRuntime {
               case Query.TYPE_SET_CLOCK:
                 {
                   this.emit("wasm_clock", item.a.millis());
-                  this.interface.setClock(item.a.millis());
+                  this.spectoda.setClock(item.a.millis());
 
                   try {
                     await this.connector.setClock(item.a).then(response => {
@@ -952,7 +952,7 @@ export class SpectodaRuntime {
                   try {
                     await this.connector.getClock().then(clock => {
                       this.emit("wasm_clock", clock.millis());
-                      this.interface.setClock(clock.millis());
+                      this.spectoda.setClock(clock.millis());
 
                       item.resolve(clock);
                     });
@@ -966,7 +966,7 @@ export class SpectodaRuntime {
                 {
                   try {
                     await this.requestWakeLock();
-                  } catch {}
+                  } catch { }
 
                   try {
                     await this.connector.updateFW(item.a).then(response => {
@@ -978,7 +978,7 @@ export class SpectodaRuntime {
 
                   try {
                     this.releaseWakeLock();
-                  } catch {}
+                  } catch { }
                 }
                 break;
 
@@ -1028,7 +1028,7 @@ export class SpectodaRuntime {
 
   readVariableAddress(variable_address, device_id) {
     logging.verbose("readVariableAddress", { variable_address, device_id });
-    return this.interface.readVariableAddress(variable_address, device_id);
+    return this.spectoda.readVariableAddress(variable_address, device_id);
   }
 
   WIP_makePreviewController(controller_mac_address, controller_config) {

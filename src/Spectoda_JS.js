@@ -1,7 +1,8 @@
+import { TextureLoader } from "three";
 import { logging } from "../logging";
 import { SpectodaWasm } from "./SpectodaWasm.js";
 
-const WASM_VERSION = "DEBUG_0.10.0_20231019";
+const WASM_VERSION = "DEBUG_0.10.0_20231020";
 
 export const COMMAND_FLAGS = Object.freeze({
   FLAG_UNSUPPORTED_COMMND_RESPONSE: 255, // TODO change FLAG_OTA_BEGIN to not be 255.
@@ -96,12 +97,12 @@ export const COMMAND_FLAGS = Object.freeze({
   FLAG_ADOPT_RESPONSE: 241,
 });
 
-// Implements SpectodaInterface in javascript
+// Implements Spectoda_JS in javascript
 
-// We can make many objects of SpectodaInterface if we desire (for simulation purposes for example)
+// We can make many objects of Spectoda_JS if we desire (for simulation purposes for example)
 
 // InterfaceWrapper
-export class SpectodaInterface {
+export class Spectoda_JS {
 
   #runtimeReference;
 
@@ -217,6 +218,7 @@ export class SpectodaInterface {
 
           // }
 
+          return true;
 
         },
 
@@ -231,14 +233,15 @@ export class SpectodaInterface {
 
         //     // TODO IMPLEMENT SENDING TO OTHER INTERFACES
         //   } catch {
-        //     return Module.send_result_t.SEND_ERROR;
         //   }
 
-        //   return Module.send_result_t.SEND_OK;
+        // return true;
         // },
 
         _onSynchronize: synchronization_object => {
           logging.debug("_onSynchronize", synchronization_object);
+
+          return true;
         },
 
         _handlePeerConnected: peer_mac => {
@@ -289,10 +292,10 @@ export class SpectodaInterface {
 
       };
 
-      this.#instance = SpectodaWasm.WasmInterface.implement(WasmInterfaceImplementation);
+      this.#instance = SpectodaWasm.Spectoda_WASM.implement(WasmInterfaceImplementation);
 
-      this.#instance.init(mac_address);
-      this.#instance.begin(label, id_offset, brightness);
+      this.#instance.init(mac_address, `{"controller":{"name": "Spectoda"}}`);
+      this.#instance.begin();
 
       // this.#instance.makePort("A", 1, brightness, 255, true, false);
       // this.#instance.makePort("B", 1, brightness, 255, true, false);
@@ -440,10 +443,10 @@ export class SpectodaInterface {
 }
 
 // if (typeof window !== "undefined") {
-//   window.SpectodaInterface = SpectodaInterface;
+//   window.Spectoda_JS = Spectoda_JS;
 
 //   window.test_wasm = function () {
-//     window.instance = new SpectodaInterface();
+//     window.instance = new Spectoda_JS();
 //     window.instance.construct("con1", "ff:ff:ff:ff:ff:ff", 0).then(() => {
 //       console.log(window.instance.makePort("A", 144, 255, 255, true, false));
 //       window.instance.execute([0x69, 0xaf, 0x06, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x10, 0x68, 0xaf, 0x06, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0xff], 0xffff);
