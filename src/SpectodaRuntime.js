@@ -665,6 +665,12 @@ export class SpectodaRuntime {
     });
   }
 
+  setClock() {
+    const item = new Query(Query.TYPE_SET_CLOCK, this.clock);
+    this.#process(item);
+    return item.promise;
+  }
+
   // getClock() {
   //   const item = new Query(Query.TYPE_GET_CLOCK);
 
@@ -809,7 +815,7 @@ export class SpectodaRuntime {
                   try {
                     await this.connector
                       .connect(item.a, item.b) // a = timeout, b = supportLegacy
-                      .then(device => {
+                      .then(async device => {
                         if (!this.#connectGuard) {
                           logging.error("Connection logic error. #connected not called during successful connect()?");
                           logging.warn("Emitting #connected");
@@ -817,13 +823,10 @@ export class SpectodaRuntime {
                         }
 
                         try {
-                          return this.connector.getClock().then(clock => {
-                            this.emit("wasm_clock", clock.millis());
-                            this.spectoda.setClock(clock.millis());
-
-                            this.clock = clock;
-                            item.resolve(device);
-                          });
+                          this.clock = await this.connector.getClock();
+                          this.emit("wasm_clock", this.clock.millis());
+                          this.spectoda.setClock(this.clock.millis());
+                          item.resolve(device);
                         } catch (error) {
                           logging.error(error);
                           this.clock = null;

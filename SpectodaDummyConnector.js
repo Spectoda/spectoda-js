@@ -472,6 +472,7 @@ criteria example:
         return;
       }
       this.#clock.setMillis(clock.millis());
+      logging.verbose(`setClock() -> ${this.#clock.millis()}`);
 
       resolve();
     });
@@ -487,12 +488,17 @@ criteria example:
         reject("DeviceDisconnected");
         return;
       }
+
+      // reject("ClockReadFailed");
+      // return;
+
       await sleep(50); // reading clock logic.
       if (this.#fail(0.1)) {
         reject("ClockReadFailed");
         return;
       }
 
+      logging.verbose(`getClock() -> ${this.#clock.millis()}`);
       resolve(this.#clock);
     });
   }

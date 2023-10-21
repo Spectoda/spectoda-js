@@ -173,7 +173,7 @@ export class Spectoda_JS {
           }
 
 
-          this.#runtimeReference.emit("emitted_events", event_array);
+          this.#runtimeReference.emit("emitted_global_events", event_array);
         },
 
         _onLocalEvents: event_array => {
@@ -202,7 +202,7 @@ export class Spectoda_JS {
           }
 
 
-          this.#runtimeReference.emit("emitted_local_events", event_array);
+          this.#runtimeReference.emit("emitted_events", event_array);
         },
 
         _onExecute: (commands_bytecode_vector, source_connection) => {
@@ -240,6 +240,8 @@ export class Spectoda_JS {
 
         _onSynchronize: synchronization_object => {
           logging.debug("_onSynchronize", synchronization_object);
+
+          this.#runtimeReference.setClock(synchronization_object.clock_timestamp);
 
           return true;
         },

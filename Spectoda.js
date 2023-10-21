@@ -110,12 +110,12 @@ export class Spectoda {
 
         if (this.#getConnectionState() === "connected") {
           return this.syncClock()
-            .then(() => {
-              return this.syncTimeline();
-            })
-            .then(() => {
-              return this.syncEventHistory(); // ! this might slow down stuff for Bukanyr
-            })
+            // .then(() => {
+            //   return this.syncTimeline();
+            // })
+            // .then(() => {
+            //   return this.syncEventHistory(); // ! this might slow down stuff for Bukanyr
+            // })
             .catch(error => {
               logging.warn(error);
             });
@@ -933,7 +933,7 @@ export class Spectoda {
   syncTimeline() {
     logging.verbose("syncTimeline()");
 
-    logging.info(`> Synchronizing timeline from device`);
+    logging.info(`> Synchronizing timeline to device`);
 
     const flags = this.timeline.paused() ? 0b00010000 : 0b00000000; // flags: [reserved,reserved,reserved,timeline_paused,reserved,reserved,reserved,reserved]
     const payload = [COMMAND_FLAGS.FLAG_SET_TIMELINE, ...numberToBytes(this.runtime.clock.millis(), 6), ...numberToBytes(this.timeline.millis(), 4), flags];
