@@ -14,7 +14,9 @@ import { PreviewController } from "./PreviewController.js";
 import { Spectoda_JS } from "./Spectoda_JS.js";
 import { SpectodaWasm } from "./SpectodaWasm";
 import { SimulationConnector } from "./connector/SimulationConnector.js";
+
 import { SpectodaNodeBluetoothConnector } from "./connector/SpectodaNodeBleConnector";
+import { SpectodaNodeSerialConnector } from "./connector/SpectodaNodeSerialConnector";
 
 // Spectoda.js -> SpectodaRuntime.js -> | SpectodaXXXConnector.js ->
 
@@ -421,6 +423,15 @@ export class SpectodaRuntime {
           case "nodebluetooth":
             if (detectNode()) {
               this.connector = new SpectodaNodeBluetoothConnector(this);
+            } else {
+              logging.error("Error: Assigning unsupported connector");
+              this.connector = null;
+            }
+            break;
+
+          case "nodeserial":
+            if (detectNode()) {
+              this.connector = new SpectodaNodeSerialConnector(this);
             } else {
               logging.error("Error: Assigning unsupported connector");
               this.connector = null;
