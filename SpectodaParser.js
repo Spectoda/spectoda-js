@@ -1184,7 +1184,6 @@ export class TnglCompiler {
     // lsb
     bytes[2] = number & 0xff;
 
-    console.log(bytes);
     this.#tnglWriter.writeFlag(TNGL_FLAGS.NUMBER);
     bytes.forEach((byte) => { this.#tnglWriter.writeUint8(byte); });
   }
