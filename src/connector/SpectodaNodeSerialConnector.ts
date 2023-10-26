@@ -1,47 +1,27 @@
-// @ts-nocheck
+// // @ts-nocheck
 
 import { logging } from "../../logging";
-import { sleep, toBytes, numberToBytes, crc8, crc32, hexStringToArray, rgbToHex, stringToBytes } from "../../functions";
+import { sleep, toBytes, numberToBytes, crc8, crc32, hexStringToArray, rgbToHex, stringToBytes, convertToByteArray } from "../../functions";
 import { TimeTrack } from "../../TimeTrack.js";
 import { COMMAND_FLAGS } from "../Spectoda_JS.js";
 import { TnglWriter } from "../../TnglWriter.js";
 import { TnglReader } from "../../TnglReader.js";
 
+import { SerialPort, ReadlineParser } from 'serialport'
+
+// const SerialPort = require('serialport');
+// const { TextDecoder, TextEncoder } = require('util');
+// const { Transform, pipeline } = require('stream');
 
 ///////////////////////////////////////////////////////////////////////////////////
 
-// const SERIAL_CLOCK_DRIFT = 228;
-const SERIAL_CLOCK_DRIFT = 0;
 
-/**
- * @name LineBreakTransformer
- * TransformStream to parse the stream into lines.
- */
-class LineBreakTransformer {
-  constructor() {
-    // A container for holding stream data until a new line.
-    this.container = "";
-  }
-
-  transform(chunk, controller) {
-    // Handle incoming chunk
-    this.container += chunk;
-    const lines = this.container.split("\n");
-    this.container = lines.pop();
-    lines.forEach(line => controller.enqueue(line));
-  }
-
-  flush(controller) {
-    // Flush the stream
-    controller.enqueue(this.container);
-  }
-}
 
 ///////////////////////////////////////////////////////////////////////////////////
 
 // Connector connects the application with one Spectoda Device, that is then in a
 // position of a controller for other Spectoda Devices
-export class SpectodaWebSerialConnector {
+export class SpectodaNodeSerialConnector {
   #runtimeReference;
 
   #serialPort;
@@ -50,13 +30,6 @@ export class SpectodaWebSerialConnector {
   #connected;
   #opened;
   #disconnecting;
-
-  #transmitStream;
-  #transmitStreamWriter;
-
-  #receiveStream;
-  #receiveStreamReader;
-  #receiveTextDecoderDone;
 
   #divisor;
 
@@ -69,7 +42,7 @@ export class SpectodaWebSerialConnector {
   #dataCallback;
 
   constructor(runtimeReference) {
-    this.type = "webserial";
+    this.type = "nodeserial";
 
     this.#runtimeReference = runtimeReference;
 
@@ -81,13 +54,6 @@ export class SpectodaWebSerialConnector {
     this.#connected = false;
     this.#opened = false;
     this.#disconnecting = false;
-
-    this.#transmitStream = null;
-    this.#transmitStreamWriter = null;
-
-    this.#receiveStream = null;
-    this.#receiveStreamReader = null;
-    this.#receiveTextDecoderDone = null;
 
     this.#divisor = 4;
 
@@ -116,123 +82,47 @@ export class SpectodaWebSerialConnector {
     this.INITIATE_CLOCK_READ = this.CODE_READ + this.CHANNEL_CLOCK;
   }
 
-  /**
-   * @name #run()
-   * Reads data from the input stream until it is interruped in some way. Then it returns.
-   * Received data is handled to the processor's funtion onReceive(value).
-   */
-  async #run() {
-    while (true) {
-      // try {
-      let { value, done } = await this.#receiveStreamReader.read().catch(e => {
-
-        if (e.toString().includes("break condition")) {
-          logging.warn("Error includes break condition", e);
-          return { value: null, done: true };
-        }
-
-        logging.error("Error", e);
-        return { value: null, done: true };
-      });
-
-      // logging.debug(value);
-
-      try {
-
-        if (value) {
-          value = value.replace(/>>>[\w\d=]*<<</g, async (match) => {
-            // logging.warn(match);
-
-            if (match === ">>>BEGIN<<<") {
-              this.#beginCallback && this.#beginCallback(true);
-            } else if (match === ">>>END<<<") {
-              await this.disconnect();
-            } else if (match === ">>>READY<<<") {
-              await this.disconnect();
-              this.#beginCallback && this.#beginCallback(false);
-              this.#feedbackCallback && this.#feedbackCallback(false);
-            } else if (match === ">>>SUCCESS<<<") {
-              this.#feedbackCallback && this.#feedbackCallback(true);
-            } else if (match === ">>>FAIL<<<") {
-              logging.warn(match);
-              this.#feedbackCallback && this.#feedbackCallback(false);
-            } else if (match.match(/>>>DATA=/)) {
-              logging.verbose("match", match);
-              let reg = match.match(/>>>DATA=([0123456789abcdef]*)<<</i); // >>>DATA=ab2351ab90cfe72209999009f08e987a9bcd8dcbbd<<<
-              reg && this.#dataCallback && this.#dataCallback(hexStringToArray(reg[1]));
-            } else if (match.match(/>>>NOTIFY=/)) {
-              logging.verbose("match", match);
-              let reg = match.match(/>>>NOTIFY=([0123456789abcdef]*)<<</i); // >>>NOTIFY=ab2351ab90cfe72209999009f08e987a9bcd8dcbbd<<<
-              reg && this.#runtimeReference.interface.execute(new Uint8Array(hexStringToArray(reg[1])).buffer);
-            }
-
-            // Return the replacement leveraging the parameters.
-            return "";
-          });
-
-          if (value.length !== 0) {
-            // logging.verbose(value);
-            this.#runtimeReference.emit("receive", { target: this, payload: value });
-          }
-        }
-
-      } catch (error) {
-        logging.error("Error during #run:", error);
-      }
-
-      if (done) {
-        this.#receiveStreamReader.releaseLock();
-        logging.info("Reader DONE");
-        break;
-      }
-    }
-
-    if (!this.#disconnecting) {
-      this.disconnect();
-    }
-  }
-
   /*
-
-criteria: pole objektu, kde plati: [{ tohle and tamto and toto } or { tohle and tamto }]
-
-možnosti:
-  name: string
-  namePrefix: string
-  fwVersion: string
-  ownerSignature: string
-  productCode: number
-  adoptionFlag: bool
-
-criteria example:
-[
-  // all Devices that are named "NARA Aplha", are on 0.7.2 fw and are
-  // adopted by the owner with "baf2398ff5e6a7b8c9d097d54a9f865f" signature.
-  // Product code is 1 what means NARA Alpha
-  {
-    name:"NARA Alpha" 
-    fwVersion:"0.7.2"
-    ownerSignature:"baf2398ff5e6a7b8c9d097d54a9f865f"
-    productCode:1
-  },
-  // all the devices with the name starting with "NARA", without the 0.7.3 FW and 
-  // that are not adopted by anyone
-  // Product code is 2 what means NARA Beta 
-  {
-    namePrefix:"NARA"
-    fwVersion:"!0.7.3"
-    productCode:2
-    adoptionFlag:true
-  }
-]
-
-*/
+  
+  criteria: pole objektu, kde plati: [{ tohle and tamto and toto } or { tohle and tamto }]
+  
+  možnosti:
+    name: string
+    namePrefix: string
+    fwVersion: string
+    ownerSignature: string
+    productCode: number
+    adoptionFlag: bool
+  
+  criteria example:
+  [
+    // all Devices that are named "NARA Aplha", are on 0.7.2 fw and are
+    // adopted by the owner with "baf2398ff5e6a7b8c9d097d54a9f865f" signature.
+    // Product code is 1 what means NARA Alpha
+    {
+      name:"NARA Alpha" 
+      fwVersion:"0.7.2"
+      ownerSignature:"baf2398ff5e6a7b8c9d097d54a9f865f"
+      productCode:1
+    },
+    // all the devices with the name starting with "NARA", without the 0.7.3 FW and 
+    // that are not adopted by anyone
+    // Product code is 2 what means NARA Beta 
+    {
+      namePrefix:"NARA"
+      fwVersion:"!0.7.3"
+      productCode:2
+      adoptionFlag:true
+    }
+  ]
+  
+  */
   // choose one Spectoda device (user chooses which device to connect to via a popup)
   // if no criteria are set, then show all Spectoda devices visible.
   // first bonds the BLE device with the PC/Phone/Tablet if it is needed.
   // Then selects the device
   userSelect(criteria) {
-    logging.verbose("userSelect()");
+    logging.verbose("userSelect(criteria=" + JSON.stringify(criteria) + ")");
 
     if (this.#connected) {
       return this.disconnect().then(() => {
@@ -241,6 +131,7 @@ criteria example:
     }
 
     if (this.#serialPort) {
+      this.#serialPort.removeAllListeners();
       this.#serialPort = null;
     }
 
@@ -249,7 +140,12 @@ criteria example:
     //   return Promise.resolve({ connector: this.type });
     // });
 
-    this.#serialPort = SerialPort({ path: "/dev/ttyS3", baudRate: 1000000, autoOpen: false });
+    // ls /dev/cu.*
+    this.#serialPort = new SerialPort({ path: "/dev/cu.usbserial-0278D9D7", baudRate: 1000000, dataBits: 8, parity: "none", stopBits: 1, autoOpen: false });
+    logging.verbose("this.#serialPort=", this.#serialPort);
+
+    return Promise.resolve({ connector: this.type });
+
   }
 
   // takes the criteria, scans for scan_period and automatically selects the device,
@@ -262,35 +158,79 @@ criteria example:
   // are eligible.
 
   autoSelect(criteria, scan_period, timeout) {
-    logging.verbose("autoSelect()");
+    logging.verbose("autoSelect(criteria=" + JSON.stringify(criteria) + ", scan_period=" + scan_period + ", timeout=" + timeout + ")");
+
+    if (this.#connected) {
+      return this.disconnect().then(() => {
+        return this.autoSelect(criteria, scan_period, timeout);
+      });
+    }
+
+    if (this.#serialPort) {
+      this.#serialPort.removeAllListeners();
+      this.#serialPort = null;
+    }
 
     // step 1. for the scan_period scan the surroundings for BLE devices.
     // step 2. if some devices matching the criteria are found, then select the one with
     //         the greatest signal strength. If no device is found until the timeout,
     //         then return error
 
-    return this.userSelect();
+    return this.scan(criteria, scan_period).then(ports => {
+      logging.debug("ports=", ports);
+
+      if (ports.length === 0) {
+        throw "NoDeviceFound";
+      }
+
+      const port_path = ports[ports.length - 1].path;
+      logging.debug("port_path=", port_path);
+
+      this.#serialPort = new SerialPort({ path: port_path, baudRate: 1000000, dataBits: 8, parity: "none", stopBits: 1, autoOpen: false });
+      logging.debug("this.#serialPort=", this.#serialPort);
+
+      return Promise.resolve({ connector: this.type });
+    });
   }
 
   selected() {
+    logging.verbose("selected()");
+
     return Promise.resolve(this.#serialPort ? { connector: this.type } : null);
   }
 
   unselect() {
+    logging.verbose("unselect()");
+
     if (this.#connected) {
       return this.disconnect().then(() => {
         return this.unselect();
       });
     }
 
+    this.#serialPort.removeAllListeners();
     this.#serialPort = null;
 
     return Promise.resolve();
   }
 
-  scan(criteria, scan_period) {
+  scan(criteria: object, scan_period: number) {
+    logging.verbose("scan(criteria=" + JSON.stringify(criteria) + ", scan_period=" + scan_period + ")");
+
+    // const ports = await SerialPort.list();
+
     // returns devices like autoSelect scan() function
-    return Promise.resolve("{}");
+    return new Promise(async (resolve, reject) => {
+      try {
+        const ports = await SerialPort.list();
+        logging.verbose("ports=", ports);
+        resolve(ports);
+      } catch (error) {
+        logging.error(error);
+        reject(error);
+      }
+    });
+
   }
 
   connect(timeout = 15000) {
@@ -312,28 +252,237 @@ criteria example:
       return Promise.resolve();
     }
 
-    return this.#serialPort
-      .open(this.PORT_OPTIONS)
-      .catch(error => {
-        logging.error(error);
-        throw "OpenSerialError";
-      })
+    const openSerialPromise = new Promise((resolve, reject) => {
+      this.#serialPort.open(error => {
+        if (error) {
+          logging.error(error);
+          reject("OpenSerialError");
+        } else {
+          logging.info("Serial port opened");
+          resolve(null);
+        }
+      });
+    });
+
+    // this.#serialPort.write(">>>ENABLE_SERIAL<<<\n");
+
+    const starts_with = (buffer: number[], string: string, start_offset: number = 0) => {
+      for (let index = 0; index < string.length; index++) {
+        if (buffer[index + start_offset] !== string.charCodeAt(index)) {
+          return false;
+        }
+      }
+
+      return true;
+    }
+
+    const ends_with = (buffer: number[], string: string, start_offset: number = 0) => {
+      for (let index = 0; index < string.length; index++) {
+        if (buffer[buffer.length - start_offset - string.length + index] !== string.charCodeAt(index)) {
+          return false;
+        }
+      }
+
+      return true;
+    }
+
+    return openSerialPromise
       .then(() => {
         this.#opened = true;
 
-        // this.transmitter.attach(this.serialPort.writable);
-        this.#transmitStream = this.#serialPort.writable;
+        const parser = new ReadlineParser();
+        this.#serialPort.pipe(parser);
 
-        // this.receiver.attach(this.serialPort.readable);
-        this.#receiveStream = this.#serialPort.readable;
-        let textDecoder = new window.TextDecoderStream();
-        this.#receiveTextDecoderDone = this.#receiveStream.pipeTo(textDecoder.writable);
-        this.#receiveStream = textDecoder.readable.pipeThrough(new window.TransformStream(new LineBreakTransformer()));
-        //.pipeThrough(new TransformStream(new JSONTransformer()));
+        let command_bytes: number[] = [];
 
-        this.#receiveStreamReader = this.#receiveStream.getReader();
+        let header_bytes: number[] = [];
+        let data_header: undefined | object = undefined;
+        let data_bytes: number[] = [];
 
-        this.#run();
+        let notify_header: undefined | object = undefined;
+        let notify_bytes: number[] = [];
+
+        let line_bytes: number[] = [];
+
+        const MODE_UTF8_RECEIVE = 0;
+        const MODE_DATA_RECEIVE = 1;
+
+        let mode = MODE_UTF8_RECEIVE;
+
+        const NEWLINE_ASCII_CODE = 10;
+
+        const decoder = new TextDecoder();
+
+        this.#serialPort.on('data', async (chunk: Buffer) => {
+          const command_string = decoder.decode(chunk);
+
+          // logging.info(command_string);
+
+          for (const byte of chunk) {
+
+            if (mode === MODE_UTF8_RECEIVE) {
+
+              const command_bytes_length = command_bytes.push(byte);
+              if (command_bytes_length >= 3) {
+
+                if (starts_with(command_bytes, ">>>")) {
+
+                  if (ends_with(command_bytes, "<<<\n")) {
+
+                    if (starts_with(command_bytes, "BEGIN", 3)) {
+                      this.#beginCallback && this.#beginCallback(true);
+                      command_bytes.length = 0;
+                    }
+
+                    else if (starts_with(command_bytes, "END", 3)) {
+                      await this.disconnect();
+                      this.#beginCallback && this.#beginCallback(false);
+                      this.#feedbackCallback && this.#feedbackCallback(false);
+                      command_bytes.length = 0;
+                    }
+
+                    else if (starts_with(command_bytes, "READY", 3)) {
+                      await this.disconnect();
+                      this.#beginCallback && this.#beginCallback(false);
+                      this.#feedbackCallback && this.#feedbackCallback(false);
+                      command_bytes.length = 0;
+                    }
+
+                    else if (starts_with(command_bytes, "SUCCESS", 3)) {
+                      this.#feedbackCallback && this.#feedbackCallback(true);
+                      command_bytes.length = 0;
+                    }
+
+                    else if (starts_with(command_bytes, "FAIL", 3)) {
+                      this.#feedbackCallback && this.#feedbackCallback(false);
+                      command_bytes.length = 0;
+                    }
+
+                    else if (starts_with(command_bytes, "DATA", 3)) {
+                      this.#dataCallback && this.#dataCallback(new Uint8Array(data_bytes));
+                      command_bytes.length = 0;
+                    }
+
+                  }
+
+                  else if (ends_with(command_bytes, "DATA=")) {
+                    mode = MODE_DATA_RECEIVE;
+                  }
+
+                  else if (command_bytes.length > 20) {
+                    logging.error("Unknown command_bytes", command_bytes);
+                    command_bytes.length = 0;
+                  }
+                }
+
+                ////
+                else /* if(!starts_with(command_bytes, ">>>")) */ {
+                  const character = command_bytes.shift() as number;
+
+                  if (character === NEWLINE_ASCII_CODE) {
+                    const line = decoder.decode(new Uint8Array(line_bytes));
+                    // TODO! process line
+                    logging.info(line);
+                    line_bytes.length = 0;
+                  }
+
+                  else /* if(character !== NEWLINE_ASCII_CODE) */ {
+                    line_bytes.push(character);
+                  }
+                }
+              }
+            }
+
+            else if (mode == MODE_DATA_RECEIVE) {
+
+              if (!data_header) {
+
+                header_bytes.push(byte);
+
+                if (header_bytes.length >= 20) {
+
+                  let tnglReader = new TnglReader(new DataView(new Uint8Array(header_bytes).buffer));
+
+                  data_header = {};
+                  data_header.data_type = tnglReader.readUint32();
+                  data_header.data_size = tnglReader.readUint32();
+                  data_header.data_receive_timeout = tnglReader.readUint32();
+                  data_header.data_crc32 = tnglReader.readUint32();
+                  data_header.header_crc32 = tnglReader.readUint32();
+
+                  logging.info(data_header);
+                }
+
+              } else /* if (data_header) */ {
+
+                data_bytes.push(byte);
+
+                if (data_bytes.length >= data_header.data_size) {
+
+                  const data_array = new Uint8Array(data_bytes);
+                  logging.info(data_array);
+
+                  this.#dataCallback && this.#dataCallback(data_array);
+                  header_bytes.length = 0;
+                  data_bytes.length = 0;
+                  data_header = undefined;
+                  mode = MODE_UTF8_RECEIVE;
+                }
+
+              }
+            }
+
+          }
+
+        });
+
+        // parser.on('data', async (line : string) => {
+
+        //   try {
+
+        //     if (line) {
+        //       line = line.replace(/>>>[\w\W]*<<</g, async (match: string) => {
+        //         logging.warn(match);
+
+        //         if (match === ">>>BEGIN<<<") {
+        //           this.#beginCallback && this.#beginCallback(true);
+        //         } else if (match === ">>>END<<<") {
+        //           await this.disconnect();
+        //         } else if (match === ">>>READY<<<") {
+        //           await this.disconnect();
+        //           this.#beginCallback && this.#beginCallback(false);
+        //           this.#feedbackCallback && this.#feedbackCallback(false);
+        //         } else if (match === ">>>SUCCESS<<<") {
+        //           this.#feedbackCallback && this.#feedbackCallback(true);
+        //         } else if (match === ">>>FAIL<<<") {
+        //           logging.warn(match);
+        //           this.#feedbackCallback && this.#feedbackCallback(false);
+        //         } else if (match.match(/>>>DATA=/)) {
+        //           logging.verbose("match", match);
+        //           let reg = match.match(/>>>DATA=([\w\W]*)<<</i); // >>>DATA=ab2351ab90cfe72209999009f08e987a9bcd8dcbbd<<<
+        //           reg && this.#dataCallback && this.#dataCallback(convertToByteArray(reg[1]));
+        //         } else if (match.match(/>>>NOTIFY=/)) {
+        //           logging.verbose("match", match);
+        //           let reg = match.match(/>>>NOTIFY=([\w\W]*)<<</i); // >>>NOTIFY=ab2351ab90cfe72209999009f08e987a9bcd8dcbbd<<<
+        //           reg && this.#runtimeReference.evaluate(new Uint8Array(convertToByteArray(reg[1])));
+        //         }
+
+        //         // Return the replacement leveraging the parameters.
+        //         return "";
+        //       });
+
+        //       if (line.length !== 0) {
+        //         logging.verbose(line);
+        //         this.#runtimeReference.emit("receive", { target: this, payload: line });
+        //       }
+        //     }
+
+        //   } catch (error) {
+        //     logging.error(error);
+        //   }
+
+
+        // });
 
         return new Promise((resolve, reject) => {
 
@@ -367,10 +516,9 @@ criteria example:
 
           };
 
-          this.#transmitStreamWriter = this.#transmitStream.getWriter();
-          this.#transmitStreamWriter.write(new Uint8Array(stringToBytes(">>>ENABLE_SERIAL<<<\n", 20)));
-          this.#transmitStreamWriter.releaseLock();
+          this.#serialPort.write(">>>ENABLE_SERIAL<<<\n");
         });
+
       })
       .catch(error => {
         logging.error("SerialConnector connect() failed with error:", error);
@@ -379,6 +527,8 @@ criteria example:
   }
 
   connected() {
+    logging.verbose("connected()");
+
     return Promise.resolve(this.#connected ? { connector: this.type } : null);
   }
 
@@ -403,39 +553,21 @@ criteria example:
 
     this.#disconnecting = true;
 
-    if (this.#receiveStream) {
-      if (this.#receiveStreamReader) {
-        await this.#receiveStreamReader.cancel().catch(() => { });
-        await this.#receiveTextDecoderDone.catch(() => { });
-        this.#receiveStreamReader = null;
+    try {
+      await this.#serialPort.close();
+      this.#opened = false;
+    }
+    catch (error) {
+      logging.error("Failed to close serial port. Error: " + error);
+    }
+    finally {
+      this.#disconnecting = false;
+      if (this.#connected) {
+        this.#connected = false;
+        this.#runtimeReference.emit("#disconnected");
       }
-      this.#receiveStream = null;
     }
 
-    if (this.#transmitStream) {
-      if (this.#transmitStreamWriter) {
-        await this.#transmitStreamWriter.close().catch(() => { });
-        this.#transmitStreamWriter = null;
-      }
-      this.#transmitStream = null;
-    }
-
-    return this.#serialPort
-      .close()
-      .then(() => {
-        this.#opened = false;
-        logging.info("> Serial port closed");
-      })
-      .catch(error => {
-        logging.error("Failed to close serial port. Error: " + error);
-      })
-      .finally(() => {
-        this.#disconnecting = false;
-        if (this.#connected) {
-          this.#connected = false;
-          this.#runtimeReference.emit("#disconnected");
-        }
-      });
   }
 
   // serial_connector_channel_type_t channel_type;
@@ -479,49 +611,49 @@ criteria example:
     header_writer.writeUint32(crc32(payload));
     header_writer.writeUint32(crc32(new Uint8Array(header_writer.bytes.buffer)));
 
-    if (!this.#transmitStream) {
-      logging.warn("this.#transmitStream is nullptr");
-      throw "WriteFailed";
-    }
+    // if (!this.transmitStream) {
+    //   logging.warn("this.transmitStream is nullptr");
+    //   throw "WriteFailed";
+    // }
 
-    this.#transmitStreamWriter = this.#transmitStream.getWriter();
+    // this.#transmitStreamWriter = this.transmitStream.getWriter();
 
-    return new Promise((resolve, reject) => {
+    return new Promise(async (resolve, reject) => {
 
       const timeout_handle = setTimeout(() => {
         logging.warn("Response timeouted");
         this.#feedbackCallback = null;
 
-        if (this.#transmitStreamWriter) {
-          this.#transmitStreamWriter.releaseLock();
-        }
+        // if (this.#transmitStreamWriter) {
+        //   this.#transmitStreamWriter.releaseLock();
+        // }
 
         this.disconnect().finally(() => {
           reject("ResponseTimeout");
         });
       }, timeout + 250); // +100 for the controller to response timeout if reveive timeoutes
 
-      this.#feedbackCallback = success => {
+      this.#feedbackCallback = (success: boolean) => {
         this.#feedbackCallback = null;
         clearInterval(timeout_handle);
 
         if (success) {
           logging.verbose("this.#feedbackCallback SUCESS");
-          setTimeout(() => {
-            if (this.#transmitStreamWriter) {
-              this.#transmitStreamWriter.releaseLock();
-            }
-            resolve();
-          }, 100); // 50ms equals 5 RTOS ticks to pass to not cause problems
+          // setTimeout(() => {
+          //   if (this.#transmitStreamWriter) {
+          //     this.#transmitStreamWriter.releaseLock();
+          //   }
+          resolve(null);
+          // }, 100); // 50ms equals 5 RTOS ticks to pass to not cause problems
         }
 
         else {
           //try to write it once more
           logging.verbose("this.#feedbackCallback FAIL");
           setTimeout(() => {
-            if (this.#transmitStreamWriter) {
-              this.#transmitStreamWriter.releaseLock();
-            }
+            // if (this.#transmitStreamWriter) {
+            //   this.#transmitStreamWriter.releaseLock();
+            // }
             try {
               resolve(this.#initiate(initiate_code, payload, tries - 1, 0));
             } catch (e) {
@@ -532,16 +664,25 @@ criteria example:
 
       };
 
-      return this.#transmitStreamWriter
-        .write(new Uint8Array(header_writer.bytes.buffer))
-        .then(() => {
-          return this.#transmitStreamWriter.write(new Uint8Array(payload));
-        })
-        .catch(error => {
-          logging.error(error);
-          // this.#transmitStreamWriter.releaseLock();
-          reject(error);
-        });
+      // return this.#transmitStreamWriter
+      //   .write(new Uint8Array(header_writer.bytes.buffer))
+      //   .then(() => {
+      //     return this.#transmitStreamWriter.write(new Uint8Array(payload));
+      //   })
+      //   .catch(error => {
+      //     logging.error(error);
+      //     // this.#transmitStreamWriter.releaseLock();
+      //     reject(error);
+      //   });
+
+      try {
+        await this.#serialPort.write(new Uint8Array(header_writer.bytes.buffer));
+        await this.#serialPort.write(new Uint8Array(payload));
+      } catch (e) {
+        logging.error(e);
+        reject(error);
+      }
+
     });
   }
 
@@ -575,7 +716,7 @@ criteria example:
   // deliver handles the communication with the Spectoda network in a way
   // that the command is guaranteed to arrive
   deliver(payload, timeout) {
-    // logging.debug(`deliver(payload=${payload})`);
+    logging.debug(`deliver(payload=${payload})`);
 
     if (!this.#connected) {
       throw "DeviceDisconnected";
@@ -591,7 +732,7 @@ criteria example:
   // transmit handles the communication with the Spectoda network in a way
   // that the command is NOT guaranteed to arrive
   transmit(payload, timeout) {
-    // logging.debug(`transmit(payload=${payload})`);
+    logging.debug(`transmit(payload=${payload})`);
 
     if (!this.#connected) {
       throw "DeviceDisconnected";
@@ -607,6 +748,8 @@ criteria example:
   // request handles the requests on the Spectoda network. The command request
   // is guaranteed to get a response
   request(payload, read_response, timeout) {
+    logging.debug(`request(payload=${payload})`);
+
     if (!this.#connected) {
       throw "DeviceDisconnected";
     }
@@ -622,7 +765,7 @@ criteria example:
   // synchronizes the device internal clock with the provided TimeTrack clock
   // of the application as precisely as possible
   setClock(clock) {
-    // logging.debug(`setClock(clock.millis()=${clock.millis()})`);
+    logging.debug(`setClock(clock.millis()=${clock.millis()})`);
 
     if (!this.#connected) {
       throw "DeviceDisconnected";
@@ -649,7 +792,7 @@ criteria example:
   // returns a TimeTrack clock object that is synchronized with the internal clock
   // of the device as precisely as possible
   getClock() {
-    // logging.debug(`getClock()`);
+    logging.debug(`getClock()`);
 
     if (!this.#connected) {
       throw "DeviceDisconnected";
@@ -662,7 +805,7 @@ criteria example:
           const bytes = await this.#read(this.CHANNEL_CLOCK);
 
           const reader = new TnglReader(bytes);
-          const timestamp = reader.readUint64() + SERIAL_CLOCK_DRIFT;
+          const timestamp = reader.readUint64();
 
           // const timestamp = await this.#promise;
           logging.debug("Clock read success:", timestamp);
@@ -688,7 +831,7 @@ criteria example:
   // handles the firmware updating. Sends "ota" events
   // to all handlers
   updateFW(firmware) {
-    // logging.debug(`updateFW(firmware=${firmware})`);
+    logging.debug(`updateFW(firmware=${firmware})`);
 
     if (!this.#serialPort) {
       logging.warn("Serial Port is null");
@@ -792,6 +935,8 @@ criteria example:
   }
 
   destroy() {
+    logging.verbose("destroy()");
+
     //this.#runtimeReference = null; // dont know if I need to destroy this reference.. But I guess I dont need to?
     return this.disconnect()
       .catch(() => { })
