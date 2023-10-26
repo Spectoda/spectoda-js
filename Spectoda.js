@@ -444,6 +444,7 @@ export class Spectoda {
   // devices: [ {name:"Lampa 1", mac:"12:34:56:78:9a:bc"}, {name:"Lampa 2", mac:"12:34:56:78:9a:bc"} ]
 
   #connect(autoConnect) {
+    logging.debug(`#connect(autoConnect=${autoConnect})`);
     logging.info("> Connecting Spectoda Controller");
 
     this.#setConnectionState("connecting");

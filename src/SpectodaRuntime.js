@@ -223,7 +223,11 @@ export class SpectodaRuntime {
 
     this.#eventEmitter.on("wasm_execute", command => {
       for (const previewController of Object.values(this.previewControllers)) {
-        previewController.execute(command, 123456789);
+        try {
+          previewController.execute(command, 123456789);
+        } catch (error) {
+          logging.error(error);
+        }
       }
     });
 
@@ -235,8 +239,13 @@ export class SpectodaRuntime {
 
     this.#eventEmitter.on("wasm_clock", timestamp => {
       for (const previewController of Object.values(this.previewControllers)) {
-        previewController.setClock(timestamp, 123456789);
+        try {
+          previewController.setClock(timestamp, 123456789);
+        } catch (error) {
+          logging.error(error);
+        }
       }
+
     });
   }
 
@@ -561,15 +570,15 @@ export class SpectodaRuntime {
     });
   }
 
-  connect(timeout = 10000, supportLegacy = false) {
-    logging.verbose(`connect(timeout=${timeout}, supportLegacy=${supportLegacy}`);
+  connect(timeout = 10000) {
+    logging.verbose(`connect(timeout=${timeout})`);
 
     if (timeout < 1000) {
       logging.error("Timeout is too short.");
       return Promise.reject("InvalidTimeout");
     }
 
-    const item = new Query(Query.TYPE_CONNECT, timeout, supportLegacy);
+    const item = new Query(Query.TYPE_CONNECT, timeout);
     this.#process(item);
     return item.promise;
   }
@@ -825,7 +834,7 @@ export class SpectodaRuntime {
                 {
                   try {
                     await this.connector
-                      .connect(item.a, item.b) // a = timeout, b = supportLegacy
+                      .connect(item.a) // a = timeout
                       .then(async device => {
                         if (!this.#connectGuard) {
                           logging.error("Connection logic error. #connected not called during successful connect()?");
@@ -835,8 +844,8 @@ export class SpectodaRuntime {
 
                         try {
                           this.clock = await this.connector.getClock();
-                          this.emit("wasm_clock", this.clock.millis());
                           this.spectoda.setClock(this.clock.millis());
+                          this.emit("wasm_clock", this.clock.millis());
                           item.resolve(device);
                         } catch (error) {
                           logging.error(error);
@@ -965,8 +974,8 @@ export class SpectodaRuntime {
                 {
                   try {
                     await this.connector.getClock().then(clock => {
-                      this.emit("wasm_clock", clock.millis());
-                      this.spectoda.setClock(clock.millis());
+                      // this.emit("wasm_clock", clock.millis());
+                      // this.spectoda.setClock(clock.millis());
 
                       item.resolve(clock);
                     });
