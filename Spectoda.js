@@ -31,6 +31,7 @@ export class Spectoda {
   #saveStateTimeoutHandle;
 
   #connectionState;
+  #websocketConnectionState;
 
   #criteria;
   #reconnecting;
@@ -62,6 +63,7 @@ export class Spectoda {
 
     this.#reconnecting = reconnecting ? true : false;
     this.#connectionState = "disconnected";
+    this.#websocketConnectionState = "disconnected";
 
     this.runtime.onConnected = event => {
       logging.info("> Runtime connected");
@@ -109,16 +111,18 @@ export class Spectoda {
         // });
 
         if (this.#getConnectionState() === "connected") {
-          return this.syncClock()
-            // .then(() => {
-            //   return this.syncTimeline();
-            // })
-            // .then(() => {
-            //   return this.syncEventHistory(); // ! this might slow down stuff for Bukanyr
-            // })
-            .catch(error => {
-              logging.warn(error);
-            });
+          return (
+            this.syncClock()
+              // .then(() => {
+              //   return this.syncTimeline();
+              // })
+              // .then(() => {
+              //   return this.syncEventHistory(); // ! this might slow down stuff for Bukanyr
+              // })
+              .catch(error => {
+                logging.warn(error);
+              })
+          );
         } else if (this.#getConnectionState() === "disconnected" && this.#autonomousConnection) {
           return this.#connect(true).catch(error => {
             logging.warn(error);
@@ -126,6 +130,34 @@ export class Spectoda {
         }
       }
     }, 60000);
+  }
+
+  #setWebSocketConnectionState(websocketConnectionState) {
+    switch (websocketConnectionState) {
+      case "connecting":
+        if (websocketConnectionState !== this.#websocketConnectionState) {
+          console.warn("> Spectoda connecting");
+          this.#websocketConnectionState = websocketConnectionState;
+          this.interface.emit("connecting-websockets");
+        }
+        break;
+      case "connected":
+        if (websocketConnectionState !== this.#websocketConnectionState) {
+          console.warn("> Spectoda connected");
+          this.#websocketConnectionState = websocketConnectionState;
+          this.interface.emit("connected-websockets");
+        }
+        break;
+      case "disconnecting":
+        if (websocketConnectionState !== this.#websocketConnectionState) {
+          console.warn("> Spectoda disconnecting");
+          this.#connectionState = connectionState;
+          this.interface.emit("disconnecting-websockets");
+        }
+        break;
+      default:
+        throw "InvalidState";
+    }
   }
 
   #setConnectionState(connectionState) {
@@ -253,9 +285,31 @@ export class Spectoda {
     console.error("assignOwnerKey() is deprecated. Use parameters in connect() instead.");
   }
 
-  // todo remove, deprecated
-  setOwnerSignature() {
-    console.error("setOwnerSignature() is deprecated. Use parameters in connect() instead.");
+  assignOwnerSignature(ownerSignature) {
+    return this.#setOwnerSignature(ownerSignature);
+  }
+
+  getOwnerSignature() {
+    return this.#ownerSignature;
+  }
+
+  setOwnerKey(ownerKey) {
+    const reg = ownerKey.match(/([\dabcdefABCDEF]{32})/g);
+
+    if (!reg[0]) {
+      throw "InvalidKey";
+    }
+
+    this.#ownerKey = reg[0];
+    return true;
+  }
+
+  assignOwnerKey(ownerKey) {
+    return this.setOwnerKey(ownerKey);
+  }
+
+  getOwnerKey() {
+    return this.#ownerKey;
   }
 
   // todo remove, deprecated
@@ -269,6 +323,107 @@ export class Spectoda {
 
   getOwnerKey() {
     return this.#ownerKey;
+  }
+
+  /**
+   * @param {Object} options
+   * @param {string} options.signature - The network signature.
+   * @param {string} options.key - The network key.
+   * @param {boolean} [options.sessionOnly] - Whether to enable remote control for the current session only.
+   */
+  async enableRemoteControl({ signature, key, sessionOnly }) {
+    logging.debug("> Connecting to Remote Control");
+
+    this.socket && this.socket.disconnect();
+
+    this.socket = io(WEBSOCKET_URL, {
+      parser: customParser,
+    });
+
+    this.socket.connect();
+
+    this.on("connect", async () => {
+      const peers = await this.getConnectedPeersInfo();
+      console.log("peers", peers);
+      this.socket.emit("set-connection-data", peers);
+    });
+
+    this.on("disconnect", () => {
+      this.socket.emit("set-connection-data", null);
+    });
+
+    return await new Promise((resolve, reject) => {
+      this.socket.on("disconnect", () => {
+        this.#setWebSocketConnectionState("disconnected");
+      });
+
+      this.socket.on("connect", async () => {
+        if (sessionOnly) {
+          // todo finish impl + UI
+          const roomId = await this.socket.emitWithAck("join-session");
+          console.log("Remote control id for this session is", { roomId });
+        } else {
+          this.#setWebSocketConnectionState("connecting");
+          await this.socket
+            .emitWithAck("join", { signature, key })
+            .then(e => {
+              this.#setWebSocketConnectionState("connected");
+            })
+            .catch(e => {
+              this.#setWebSocketConnectionState("disconnected");
+            });
+        }
+
+        console.log("> Connected and joined network remotely");
+
+        resolve({ status: "success" });
+
+        console.log("> Listening for events", allEventsEmitter);
+        window.allEventsEmitter = allEventsEmitter;
+
+        allEventsEmitter.on("on", ({ name, args }) => {
+          console.log("on", name, args);
+          this.socket.emit("event", { name, args });
+        });
+
+        this.socket.on("func", async (payload, callback) => {
+          if (!callback) {
+            console.error("No callback provided");
+            return;
+          }
+
+          let { functionName, arguments: args } = payload;
+
+          // call internal class function await this[functionName](...args)
+
+          // call internal class function
+          try {
+            if (functionName === "assignOwnerSignature" || functionName === "assignOwnerKey") {
+              return callback({ status: "success", message: "assign key/signature is ignored on remote." });
+            }
+
+            if (functionName === "updateDeviceFirmware" || (functionName === "updateNetworkFirmware" && typeof args?.[0] === "object")) {
+              const arr = Object.values(args[0]);
+              const uint8Array = new Uint8Array(arr);
+              args[0] = uint8Array;
+            }
+            const result = await this[functionName](...args);
+            callback({ status: "success", result });
+          } catch (e) {
+            console.error(e);
+            callback({ status: "error", error: e });
+          }
+        });
+      });
+    });
+  }
+
+  disableRemoteControl() {
+    logging.debug("> Disonnecting from the Remote Control");
+
+    this.#reconnectRC = false;
+
+    this.socket?.disconnect();
   }
 
   // valid UUIDs are in range [1..4294967295] (32-bit unsigned number)
@@ -1380,7 +1535,7 @@ export class Spectoda {
       const removed_device_mac_bytes = reader.readBytes(6);
 
       return this.rebootDevice()
-        .catch(() => { })
+        .catch(() => {})
         .then(() => {
           let removed_device_mac = "00:00:00:00:00:00";
           if (removed_device_mac_bytes.length >= 6) {
