@@ -5,9 +5,10 @@ import { io } from "socket.io-client";
 import customParser from "socket.io-msgpack-parser";
 import { TimeTrack } from "./TimeTrack";
 import { createNanoEvents } from "./functions";
+import { logging } from "./logging";
 
 // const WEBSOCKET_URL = "https://tangle-remote-control.glitch.me/"
-export const WEBSOCKET_URL = "http://localhost:4000"; //"https://cloud.host.spectoda.com";
+export const WEBSOCKET_URL = "https://cloud.host.spectoda.com"; //"http://localhost:4000";
 
 const eventStream = createNanoEvents();
 
@@ -23,6 +24,28 @@ if (typeof window !== "undefined") window.socket = socket;
 socket.on("event", data => {
   eventStream.emit(data.name, ...data.args);
 });
+
+let networkJoinParams = [];
+
+socket.on("connect", () => {
+  if (networkJoinParams) {
+    eventStream.emit("connecting-websockets");
+
+    socket
+      .emitWithAck("join", networkJoinParams)
+      .then(() => {
+        console.log("re/connected to websocket server", networkJoinParams);
+        eventStream.emit("connected-websockets");
+      })
+      .catch(err => {
+        console.log("error connecting to websocket server", err);
+      });
+  }
+});
+
+socket.on("disconnect", () => {
+  eventStream.emit("disconnected-websockets");
+});
 /////////////////////////////////////////////////////////////////////////////////////
 class SpectodaVirtualProxy {
   constructor() {
@@ -31,7 +54,7 @@ class SpectodaVirtualProxy {
         if (prop === "on") {
           // Special handling for "on" method
           return (eventName, callback) => {
-            console.log("Subscribing to event", eventName);
+            logging.verbose("Subscribing to event", eventName);
 
             const unsub = eventStream.on(eventName, callback);
 
@@ -45,8 +68,21 @@ class SpectodaVirtualProxy {
         } else if (prop === "init") {
           // Expects [{key,sig}, ...] or {key,sig}
           return params => {
+            if (!Array.isArray(params)) params = [params];
+
+            for (let param of params) {
+              param.type = "sender";
+            }
+
+            networkJoinParams = params;
             return socket.emitWithAck("join", params);
           };
+        } else if (prop === "fetchClients") {
+          return () => {
+            return socket.emitWithAck("list-clients");
+          };
+        } else if (prop === "connectionState") {
+          return websocketConnectionState;
         }
 
         // Always return an async function for any property

@@ -36,6 +36,7 @@ export class Spectoda {
 
   #reconnectionInterval;
   #connectionState;
+  #websocketConnectionState;
 
   // mechanism for event ordering
   #lastEmitClockTimestamp;
@@ -69,6 +70,7 @@ export class Spectoda {
 
     this.#reconnectionInterval = reconnectionInterval;
     this.#connectionState = "disconnected";
+    this.#websocketConnectionState = "disconnected";
 
     this.#lastEmitClockTimestamp = 0;
 
@@ -119,6 +121,34 @@ export class Spectoda {
         });
       }
     }, 30000);
+  }
+
+  #setWebSocketConnectionState(websocketConnectionState) {
+    switch (websocketConnectionState) {
+      case "connecting":
+        if (websocketConnectionState !== this.#websocketConnectionState) {
+          console.warn("> Spectoda connecting");
+          this.#websocketConnectionState = websocketConnectionState;
+          this.interface.emit("connecting-websockets");
+        }
+        break;
+      case "connected":
+        if (websocketConnectionState !== this.#websocketConnectionState) {
+          console.warn("> Spectoda connected");
+          this.#websocketConnectionState = websocketConnectionState;
+          this.interface.emit("connected-websockets");
+        }
+        break;
+      case "disconnecting":
+        if (websocketConnectionState !== this.#websocketConnectionState) {
+          console.warn("> Spectoda disconnecting");
+          this.#connectionState = connectionState;
+          this.interface.emit("disconnecting-websockets");
+        }
+        break;
+      default:
+        throw "InvalidState";
+    }
   }
 
   #setConnectionState(connectionState) {
@@ -227,9 +257,31 @@ export class Spectoda {
     console.error("assignOwnerKey() is deprecated. Use parameters in connect() instead.");
   }
 
-  // todo remove, deprecated
-  setOwnerSignature() {
-    console.error("setOwnerSignature() is deprecated. Use parameters in connect() instead.");
+  assignOwnerSignature(ownerSignature) {
+    return this.#setOwnerSignature(ownerSignature);
+  }
+
+  getOwnerSignature() {
+    return this.#ownerSignature;
+  }
+
+  setOwnerKey(ownerKey) {
+    const reg = ownerKey.match(/([\dabcdefABCDEF]{32})/g);
+
+    if (!reg[0]) {
+      throw "InvalidKey";
+    }
+
+    this.#ownerKey = reg[0];
+    return true;
+  }
+
+  assignOwnerKey(ownerKey) {
+    return this.setOwnerKey(ownerKey);
+  }
+
+  getOwnerKey() {
+    return this.#ownerKey;
   }
 
   // todo remove, deprecated
@@ -262,15 +314,38 @@ export class Spectoda {
 
     this.socket.connect();
 
+    this.on("connect", async () => {
+      const peers = await this.getConnectedPeersInfo();
+      console.log("peers", peers);
+      this.socket.emit("set-connection-data", peers);
+    });
+
+    this.on("disconnect", () => {
+      this.socket.emit("set-connection-data", null);
+    });
+
     return await new Promise((resolve, reject) => {
+      this.socket.on("disconnect", () => {
+        this.#setWebSocketConnectionState("disconnected");
+      });
+
       this.socket.on("connect", async () => {
         if (sessionOnly) {
           // todo finish impl + UI
           const roomId = await this.socket.emitWithAck("join-session");
           console.log("Remote control id for this session is", { roomId });
         } else {
-          await this.socket.emitWithAck("join", { signature, key });
+          this.#setWebSocketConnectionState("connecting");
+          await this.socket
+            .emitWithAck("join", { signature, key })
+            .then(e => {
+              this.#setWebSocketConnectionState("connected");
+            })
+            .catch(e => {
+              this.#setWebSocketConnectionState("disconnected");
+            });
         }
+
         console.log("> Connected and joined network remotely");
 
         resolve({ status: "success" });
@@ -295,6 +370,10 @@ export class Spectoda {
 
           // call internal class function
           try {
+            if (functionName === "assignOwnerSignature" || functionName === "assignOwnerKey") {
+              return callback({ status: "success", message: "assign key/signature is ignored on remote." });
+            }
+
             if (functionName === "updateDeviceFirmware" || (functionName === "updateNetworkFirmware" && typeof args?.[0] === "object")) {
               const arr = Object.values(args[0]);
               const uint8Array = new Uint8Array(arr);
