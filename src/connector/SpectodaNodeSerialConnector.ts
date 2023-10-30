@@ -46,7 +46,7 @@ export class SpectodaNodeSerialConnector {
 
     this.#runtimeReference = runtimeReference;
 
-    this.PORT_OPTIONS = { baudRate: 1000000, dataBits: 8, stopBits: 1, parity: "none", bufferSize: 65535, flowControl: "none" };
+    this.PORT_OPTIONS = { baudRate: 115200, dataBits: 8, stopBits: 1, parity: "none", bufferSize: 65535, flowControl: "none" };
 
     this.#serialPort = null;
     this.#writing = false;
@@ -141,7 +141,7 @@ export class SpectodaNodeSerialConnector {
     // });
 
     // ls /dev/cu.*
-    this.#serialPort = new SerialPort({ path: "/dev/cu.usbserial-0278D9D7", baudRate: 1000000, dataBits: 8, parity: "none", stopBits: 1, autoOpen: false });
+    this.#serialPort = new SerialPort({ path: "/dev/cu.usbserial-0278D9D7", baudRate: 115200, dataBits: 8, parity: "none", stopBits: 1, autoOpen: false });
     logging.verbose("this.#serialPort=", this.#serialPort);
 
     return Promise.resolve({ connector: this.type });
@@ -186,7 +186,7 @@ export class SpectodaNodeSerialConnector {
       const port_path = ports[ports.length - 1].path;
       logging.debug("port_path=", port_path);
 
-      this.#serialPort = new SerialPort({ path: port_path, baudRate: 1000000, dataBits: 8, parity: "none", stopBits: 1, autoOpen: false });
+      this.#serialPort = new SerialPort({ path: port_path, baudRate: 115200, dataBits: 8, parity: "none", stopBits: 1, autoOpen: false });
       logging.debug("this.#serialPort=", this.#serialPort);
 
       return Promise.resolve({ connector: this.type });
@@ -316,7 +316,7 @@ export class SpectodaNodeSerialConnector {
         this.#serialPort.on('data', async (chunk: Buffer) => {
           const command_string = decoder.decode(chunk);
 
-          // logging.info(command_string);
+          // logging.debug("[data] " + command_string);
 
           for (const byte of chunk) {
 
@@ -595,7 +595,7 @@ export class SpectodaNodeSerialConnector {
     }
 
     const header_writer = new TnglWriter(32);
-    const timeout_min = (25 + payload.length / this.#divisor);
+    const timeout_min = 50;
 
     if (!timeout || timeout < timeout_min) {
       timeout = timeout_min;
@@ -631,7 +631,7 @@ export class SpectodaNodeSerialConnector {
         this.disconnect().finally(() => {
           reject("ResponseTimeout");
         });
-      }, timeout + 250); // +100 for the controller to response timeout if reveive timeoutes
+      }, timeout + 1000); // +1000 for the controller to response timeout if reveive timeoutes
 
       this.#feedbackCallback = (success: boolean) => {
         this.#feedbackCallback = null;
@@ -678,9 +678,10 @@ export class SpectodaNodeSerialConnector {
       try {
         await this.#serialPort.write(new Uint8Array(header_writer.bytes.buffer));
         await this.#serialPort.write(new Uint8Array(payload));
+
       } catch (e) {
         logging.error(e);
-        reject(error);
+        reject(e);
       }
 
     });

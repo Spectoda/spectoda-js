@@ -37,6 +37,8 @@ export class Spectoda {
   #reconnecting;
   #autonomousConnection;
 
+  #reconnectRC;
+
   constructor(connectorType = "default", reconnecting = true) {
     // // nextjs
     // if (typeof window === "undefined") {
