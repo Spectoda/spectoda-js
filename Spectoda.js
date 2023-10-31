@@ -314,13 +314,13 @@ export class Spectoda {
 
     this.socket.connect();
 
-    this.on("connect", async () => {
+    this.on("connected", async () => {
       const peers = await this.getConnectedPeersInfo();
       console.log("peers", peers);
       this.socket.emit("set-connection-data", peers);
     });
 
-    this.on("disconnect", () => {
+    this.on("disconnected", () => {
       this.socket.emit("set-connection-data", null);
     });
 
