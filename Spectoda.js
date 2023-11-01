@@ -421,8 +421,6 @@ export class Spectoda {
   disableRemoteControl() {
     logging.debug("> Disonnecting from the Remote Control");
 
-    this.#reconnectRC = false;
-
     this.socket?.disconnect();
   }
 
