@@ -14,15 +14,21 @@ export const WEBSOCKET_URL = "http://localhost:4000";
 
 const eventStream = createNanoEvents();
 
+if (typeof window !== "undefined") {
+  window.sockets = [];
+}
 /////////////////////////////////////////////////////////////////////////////////////
 
 export function createSpectodaWebsocket() {
-  // todo sync timeline
   const timeline = new TimeTrack();
+
+  // todo sync timeline
 
   const socket = io(WEBSOCKET_URL, {
     parser: customParser,
   });
+
+  window.sockets.push(socket);
 
   if (typeof window !== "undefined") window.socket = socket;
 
