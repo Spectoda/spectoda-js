@@ -370,7 +370,7 @@ export class PreviewController {
         this.#instance.compute();
     }
 
-    render() {
+    bakeTnglFrame() {
         if (!this.#instance) {
             throw "NotConstructed";
         }
