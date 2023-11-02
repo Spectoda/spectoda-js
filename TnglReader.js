@@ -13,7 +13,7 @@ export class TnglReader {
     }
 
     if (this._index + byteCount > this._dataView.byteLength) {
-      console.error("ReadOutOfRange");
+      console.trace("ReadOutOfRange");
       throw new RangeError("ReadOutOfRange");
     }
 
@@ -46,7 +46,7 @@ export class TnglReader {
       this.forward(byteCount);
       return val;
     } catch {
-      console.error("End of the data");
+      console.trace("ReadOutOfRange");
       throw "ReadOutOfRange";
     }
   }
@@ -63,7 +63,7 @@ export class TnglReader {
 
       return bytes;
     } else {
-      console.error("ReadOutOfRange");
+      console.trace("ReadOutOfRange");
       throw "ReadOutOfRange";
     }
   }
@@ -85,7 +85,7 @@ export class TnglReader {
 
       return string;
     } else {
-      console.error("ReadOutOfRange");
+      console.trace("ReadOutOfRange");
       throw "ReadOutOfRange";
     }
   }

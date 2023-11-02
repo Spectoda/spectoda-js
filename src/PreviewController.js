@@ -402,6 +402,8 @@ export class PreviewController {
 
     // returns string
     get mac() {
+        // logging.debug("get mac()");
+
         if (!this.#instance) {
             throw "NotConstructed";
         }
@@ -411,6 +413,8 @@ export class PreviewController {
 
     // returns std::string a.k.a string
     get label() {
+        // logging.debug("get label()");
+
         if (!this.#instance) {
             throw "NotConstructed";
         }
@@ -420,6 +424,8 @@ export class PreviewController {
 
     // returns int32_t a.k.a number
     get identifier() {
+        // logging.debug("get identifier()");
+
         if (!this.#instance) {
             throw "NotConstructed";
         }

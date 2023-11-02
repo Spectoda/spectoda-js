@@ -1,3 +1,5 @@
+import { logging } from "./logging";
+
 export class TnglWriter {
   constructor(buffer_size = 65535) {
     this._buffer = new ArrayBuffer(buffer_size);
@@ -13,26 +15,29 @@ export class TnglWriter {
         value = Math.floor(value / Math.pow(2, 8));
       }
     } else {
-      console.error("WriteOutOfRange");
+      console.trace("WriteOutOfRange");
       throw "WriteOutOfRange";
     }
   }
 
   writeBytes(bytes, size) {
-    if (size === null) {
-      size = bytes.byteLength;
+    if (size === null || size === undefined) {
+      size = bytes.length;
     }
+
+    logging.debug("writeBytes", bytes, size);
 
     if (this._index + size <= this._dataView.byteLength) {
       for (let i = 0; i < size; i++) {
-        if (i < bytes.byteLength) {
+        if (i < bytes.length) {
           this._dataView.setUint8(this._index++, bytes[i]);
         } else {
+          logging.warn("writeBytes: padding with 0");
           this._dataView.setUint8(this._index++, 0);
         }
       }
     } else {
-      console.error("WriteOutOfRange");
+      console.trace("WriteOutOfRange");
       throw "WriteOutOfRange";
     }
   }
@@ -47,7 +52,7 @@ export class TnglWriter {
         this._dataView.setUint8(this._index++, string.charCodeAt(i));
       }
     } else {
-      console.error("WriteOutOfRange");
+      console.trace("WriteOutOfRange");
       throw "WriteOutOfRange";
     }
   }
