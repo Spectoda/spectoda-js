@@ -1,7 +1,7 @@
 import { SpectodaDummyConnector } from "../SpectodaDummyConnector.js";
 import { SpectodaWebBluetoothConnector } from "../SpectodaWebBluetoothConnector.js";
 import { SpectodaWebSerialConnector } from "../SpectodaWebSerialConnector.js";
-import { createNanoEvents, detectAndroid, detectChrome, detectIPhone, detectLinux, detectMacintosh, detectNode, detectSpectodaConnect, detectWindows, sleep, uint8ArrayToHexString } from "../functions";
+import { createNanoEvents, detectAndroid, detectChrome, detectIPhone, detectLinux, detectMacintosh, detectNode, detectSpectodaConnect, detectWindows, numberToBytes, sleep, uint8ArrayToHexString } from "../functions";
 import { logging } from "../logging";
 // import { SpectodaConnectConnector } from "./SpectodaConnectConnector.js";
 import { FlutterConnector } from "../FlutterConnector.js";
@@ -11,10 +11,11 @@ import "../TnglReader.js";
 import "../TnglWriter.js";
 import { t } from "../i18n.js";
 import { PreviewController } from "./PreviewController.js";
-import { Spectoda_JS } from "./Spectoda_JS.js";
+import { COMMAND_FLAGS, Spectoda_JS } from "./Spectoda_JS.js";
 import { SpectodaWasm } from "./SpectodaWasm";
 import { SimulationConnector } from "./connector/SimulationConnector.js";
 import { SpectodaNodeBluetoothConnector } from "./connector/SpectodaNodeBleConnector";
+import { TnglWriter } from "../TnglWriter.js";
 
 // Spectoda.js -> SpectodaRuntime.js -> | SpectodaXXXConnector.js ->
 
@@ -1077,4 +1078,58 @@ export class SpectodaRuntime {
   WIP_saveFS() {
     return SpectodaWasm.saveFS();
   }
+
+  // returns a promise that resolves a bytecode of the captured port pixels
+  async WIP_capturePixels() {
+
+    const A_ASCII_CODE = "A".charCodeAt(0);
+    const D_ASCII_CODE = "D".charCodeAt(0);
+
+    const PIXEL_ENCODING_CODE = 1;
+
+    let uuidCounter = Math.floor(Math.random() * 0xffffffff);
+
+    const writer = new TnglWriter();
+
+    for (const previewController of Object.values(this.previewControllers)) {
+
+      const tempWriter = new TnglWriter();
+
+      for (let portTag = A_ASCII_CODE; portTag <= D_ASCII_CODE; portTag++) {
+
+        const request_bytes = [COMMAND_FLAGS.FLAG_READ_PORT_PIXELS_REQUEST, ...numberToBytes(uuidCounter++, 4), portTag, PIXEL_ENCODING_CODE];
+
+        const response = await previewController.request(new Uint8Array(request_bytes), 123456789);
+
+        const tempReader = new TnglReader(response);
+
+        const response_flag = tempReader.readFlag();
+        if (response_flag !== COMMAND_FLAGS.FLAG_READ_PORT_PIXELS_RESPONSE) {
+          logging.error("InvalidResponse");
+          continue;
+        }
+
+        const response_uuid = tempReader.readUint32();
+        if (response_uuid != request_uuid) {
+          logging.error("InvalidResponse");
+          continue;
+        }
+
+        const error_code = tempReader.readUint8();
+        if (error_code === 0) { // error_code 0 is success
+          const pixelDataSize = tempReader.readUint16();
+          const pixelData = tempReader.readBytes(pixelData);
+
+          tempWriter.writeBytes([COMMAND_FLAGS.FLAG_WRITE_PORT_PIXELS_REQUEST, ...numberToBytes(uuidCounter++, 4), portTag, PIXEL_ENCODING_CODE, ...numberToBytes(pixelDataSize, 2), ...pixelData]);
+        }
+      }
+
+      const controllerIdentifier = previewController.identifier;
+
+      writer.writeBytes([COMMAND_FLAGS.FLAG_EVALUATE_ON_CONTROLLER_REQUEST, ...numberToBytes(controllerIdentifier, 4), ...numberToBytes(tempWriter.written(), 2), ...tempWriter.bytes]);
+    }
+
+    return writer.bytes;
+  }
+
 }
