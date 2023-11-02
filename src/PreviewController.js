@@ -400,12 +400,31 @@ export class PreviewController {
         return this.#eventEmitter.on(event, callback);
     }
 
+    // returns string
     get mac() {
         if (!this.#instance) {
             throw "NotConstructed";
         }
 
         return this.#macAddress;
+    }
+
+    // returns std::string a.k.a string
+    get label() {
+        if (!this.#instance) {
+            throw "NotConstructed";
+        }
+
+        return this.#instance.getLabel();
+    }
+
+    // returns int32_t a.k.a number
+    get identifier() {
+        if (!this.#instance) {
+            throw "NotConstructed";
+        }
+
+        return this.#instance.getIdentifier();
     }
 }
 
