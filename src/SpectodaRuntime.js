@@ -5,7 +5,6 @@ import { createNanoEvents, detectAndroid, detectChrome, detectIPhone, detectLinu
 import { logging } from "../logging";
 // import { SpectodaConnectConnector } from "./SpectodaConnectConnector.js";
 import { FlutterConnector } from "../FlutterConnector.js";
-import { SpectodaWebSocketsConnector } from "../SpectodaWebSocketsConnector.js";
 import { TimeTrack } from "../TimeTrack.js";
 import { t } from "../i18n.js";
 import { PreviewController } from "./PreviewController.js";
@@ -107,7 +106,7 @@ export class SpectodaRuntime {
     this.clock = new TimeTrack(0);
 
     // TODO implement a way of having more than one connector at the same time
-    this.connector = /** @type {SpectodaDummyConnector | SpectodaWebBluetoothConnector | SpectodaWebSerialConnector | SpectodaConnectConnector | FlutterConnector | SpectodaWebSocketsConnector | null} */ (null);
+    this.connector = /** @type {SpectodaDummyConnector | SpectodaWebBluetoothConnector | SpectodaWebSerialConnector | SpectodaConnectConnector | FlutterConnector | null} */ (null);
 
     this.#eventEmitter = createNanoEvents();
 
