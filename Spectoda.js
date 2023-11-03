@@ -37,6 +37,7 @@ export class Spectoda {
   #reconnecting;
   #autonomousConnection;
   #wakeLock;
+  #isPrioritizedWakelock;
 
   constructor(connectorType = "default", reconnecting = true) {
     // // nextjs
@@ -239,8 +240,12 @@ export class Spectoda {
     return true;
   }
 
-  requestWakeLock() {
+  requestWakeLock(prioritized = false) {
     logging.debug("> Activating wakeLock...");
+
+    if (prioritized) {
+      this.#isPrioritizedWakelock = true;
+    }
 
     try {
       if (detectSpectodaConnect()) {
@@ -262,8 +267,14 @@ export class Spectoda {
     }
   }
 
-  releaseWakeLock() {
+  releaseWakeLock(prioritized = false) {
     logging.debug("> Deactivating wakeLock...");
+
+    if (prioritized) {
+      this.#isPrioritizedWakelock = false;
+    } else if (this.#isPrioritizedWakelock) {
+      return Promise.resolve();
+    }
 
     try {
       if (detectSpectodaConnect()) {
@@ -362,6 +373,7 @@ export class Spectoda {
     });
 
     this.socket.connect();
+    this.requestWakeLock(true);
 
     this.on("connect", async () => {
       const peers = await this.getConnectedPeersInfo();
@@ -442,6 +454,7 @@ export class Spectoda {
   disableRemoteControl() {
     logging.debug("> Disonnecting from the Remote Control");
 
+    this.releaseWakeLock(true);
     this.socket?.disconnect();
   }
 
