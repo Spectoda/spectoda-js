@@ -106,9 +106,11 @@ export function createSpectodaWebsocket() {
             const result = await this.sendThroughWebsocket(payload);
 
             if (result.status === "success") {
+              logging.verbose("[WEBSOCKET]", result);
               return result?.data?.[0].result;
             } else {
-              return result?.error;
+              logging.error("[WEBSOCKET]", result);
+              throw new Error(result?.error);
             }
           };
         },

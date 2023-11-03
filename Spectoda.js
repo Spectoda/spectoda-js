@@ -314,10 +314,14 @@ export class Spectoda {
 
     this.socket.connect();
 
-    this.on("connected", async () => {
+    const setConnectionSocketData = async () => {
       const peers = await this.getConnectedPeersInfo();
       console.log("peers", peers);
       this.socket.emit("set-connection-data", peers);
+    };
+
+    this.on("connected", async () => {
+      setConnectionSocketData();
     });
 
     this.on("disconnected", () => {
@@ -340,6 +344,7 @@ export class Spectoda {
             .emitWithAck("join", { signature, key })
             .then(e => {
               this.#setWebSocketConnectionState("connected");
+              setConnectionSocketData();
             })
             .catch(e => {
               this.#setWebSocketConnectionState("disconnected");
@@ -390,12 +395,16 @@ export class Spectoda {
     });
   }
 
-  disableRemoteControl() {
+  async disableRemoteControl() {
     logging.debug("> Disonnecting from the Remote Control");
 
     this.#reconnectRC = false;
 
-    this.socket?.disconnect();
+    try {
+      await this.socket.emit("leave");
+    } finally {
+      return this.socket?.disconnect();
+    }
   }
 
   // valid UUIDs are in range [1..4294967295] (32-bit unsigned number)
