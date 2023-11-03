@@ -36,6 +36,7 @@ export class Spectoda {
   #criteria;
   #reconnecting;
   #autonomousConnection;
+  #wakeLock;
 
   constructor(connectorType = "default", reconnecting = true) {
     // // nextjs
@@ -244,6 +245,16 @@ export class Spectoda {
     try {
       if (detectSpectodaConnect()) {
         window.flutter_inappwebview.callHandler("setWakeLock", true);
+      } else {
+        navigator.wakeLock
+          .request("screen")
+          .then(Wakelock => {
+            logging.info("Web Wakelock activated.");
+            this.#wakeLock = Wakelock;
+          })
+          .catch(() => {
+            logging.warn("Web Wakelock activation failed.");
+          });
       }
       return Promise.resolve();
     } catch (e) {
@@ -257,6 +268,16 @@ export class Spectoda {
     try {
       if (detectSpectodaConnect()) {
         window.flutter_inappwebview.callHandler("setWakeLock", false);
+      } else {
+        this.#wakeLock
+          ?.release()
+          .then(() => {
+            logging.info("Web Wakelock deactivated.");
+            this.#wakeLock = null;
+          })
+          .catch(() => {
+            logging.warn("Web Wakelock deactivation failed.");
+          });
       }
       return Promise.resolve();
     } catch (e) {
@@ -1533,7 +1554,7 @@ export class Spectoda {
       const removed_device_mac_bytes = reader.readBytes(6);
 
       return this.rebootDevice()
-        .catch(() => { })
+        .catch(() => {})
         .then(() => {
           let removed_device_mac = "00:00:00:00:00:00";
           if (removed_device_mac_bytes.length >= 6) {
