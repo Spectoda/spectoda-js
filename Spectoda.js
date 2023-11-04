@@ -309,17 +309,11 @@ export class Spectoda {
     return this.setConnector(connector_type);
   }
 
-  // todo remove, deprecated
-  assignOwnerSignature() {
-    console.error("assignOwnerSignature() is deprecated. Use parameters in connect() instead.");
-  }
-
-  // todo remove, deprecated
-  assignOwnerKey() {
-    console.error("assignOwnerKey() is deprecated. Use parameters in connect() instead.");
-  }
-
   assignOwnerSignature(ownerSignature) {
+    return this.#setOwnerSignature(ownerSignature);
+  }
+
+  setOwnerSignature(ownerSignature) {
     return this.#setOwnerSignature(ownerSignature);
   }
 
@@ -327,32 +321,12 @@ export class Spectoda {
     return this.#ownerSignature;
   }
 
-  setOwnerKey(ownerKey) {
-    const reg = ownerKey.match(/([\dabcdefABCDEF]{32})/g);
-
-    if (!reg[0]) {
-      throw "InvalidKey";
-    }
-
-    this.#ownerKey = reg[0];
-    return true;
-  }
-
   assignOwnerKey(ownerKey) {
     return this.setOwnerKey(ownerKey);
   }
 
-  getOwnerKey() {
-    return this.#ownerKey;
-  }
-
-  // todo remove, deprecated
-  setOwnerKey() {
-    console.error("setOwnerKey() is deprecated. Use parameters in connect() instead.");
-  }
-
-  getOwnerSignature() {
-    return this.#ownerSignature;
+  setOwnerKey(ownerKey) {
+    return this.setOwnerKey(ownerKey);
   }
 
   getOwnerKey() {
