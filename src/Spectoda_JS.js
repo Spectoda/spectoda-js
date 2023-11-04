@@ -255,7 +255,14 @@ export class Spectoda_JS {
         _onSynchronize: synchronization_object => {
           logging.debug("_onSynchronize", synchronization_object);
 
-          this.#runtimeReference.setClock(synchronization_object.clock_timestamp);
+          try {
+            this.#runtimeReference.setClock(synchronization_object.clock_timestamp).catch(e => {
+              logging.error(e);
+            });
+          } catch(e) {
+            logging.error(e);
+          }
+
 
           return true;
         },
