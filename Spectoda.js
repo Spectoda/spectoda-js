@@ -51,8 +51,8 @@ export class Spectoda {
 
     this.#uuidCounter = Math.floor(Math.random() * 0xffffffff);
 
-    this.#ownerSignature = null;
-    this.#ownerKey = null;
+    this.#ownerSignature = "00000000000000000000000000000000";
+    this.#ownerKey = "00000000000000000000000000000000";
 
     this.runtime = new SpectodaRuntime(this);
 
@@ -605,7 +605,7 @@ export class Spectoda {
   // devices: [ {name:"Lampa 1", mac:"12:34:56:78:9a:bc"}, {name:"Lampa 2", mac:"12:34:56:78:9a:bc"} ]
 
   #connect(autoConnect) {
-    logging.info("> Connecting Spectoda Controller");
+    logging.info("> Connecting Spectoda...");
 
     this.#setConnectionState("connecting");
 
@@ -650,9 +650,9 @@ export class Spectoda {
       });
   }
 
-  connect(devices = null, autoConnect = true, ownerSignature = null, ownerKey = null, connectAny = false, fwVersion = "", autonomousConnection = false, overrideConnection = false) {
+  connect(criteria = null, autoConnect = true, ownerSignature = null, ownerKey = null, connectAny = false, fwVersion = "", autonomousConnection = false, overrideConnection = false) {
     logging.debug(
-      `connect(devices=${devices}, autoConnect=${autoConnect}, ownerSignature=${ownerSignature}, ownerKey=${ownerKey}, connectAny=${connectAny}, fwVersion=${fwVersion}, autonomousConnection=${autonomousConnection}, overrideConnection=${overrideConnection})`,
+      `connect(criteria=${devices}, autoConnect=${autoConnect}, ownerSignature=${ownerSignature}, ownerKey=${ownerKey}, connectAny=${connectAny}, fwVersion=${fwVersion}, autonomousConnection=${autonomousConnection}, overrideConnection=${overrideConnection})`,
     );
 
     this.#autonomousConnection = autonomousConnection;
@@ -669,46 +669,22 @@ export class Spectoda {
       this.#setOwnerKey(ownerKey);
     }
 
+    // if criteria is object or array of obects
+    if(criteria && typeof criteria === "object") {
+      // if criteria is not an array, make it an array
+      if (!Array.isArray(criteria)) {
+        criteria = [criteria];
+      }
+    } 
+    //
+    else {
+      criteria = [{ ownerSignature: this.#ownerSignature }];
+    }
+
     if (!connectAny) {
-      if (!this.#ownerSignature) {
-        throw "OwnerSignatureNotAssigned";
-      }
-
-      if (!this.#ownerKey) {
-        throw "OwnerKeyNotAssigned";
-      }
-    }
-
-    let criteria = /** @type {any} */ ([{ ownerSignature: this.#ownerSignature }]);
-
-    if (devices && devices.length > 0) {
-      let devices_criteria = /** @type {any} */ ([]);
-
-      for (let i = 0; i < devices.length; i++) {
-        let criterium = { ownerSignature: this.#ownerSignature };
-
-        if (devices[i].name) {
-          criterium.name = devices[i].name.slice(0, 11);
-        }
-        if (devices[i].mac) {
-          criterium.mac = devices[i].mac;
-        }
-
-        if (devices[i].name || devices[i].mac) {
-          devices_criteria.push(criterium);
-        }
-      }
-
-      if (devices_criteria.length != 0) {
-        criteria = devices_criteria;
-      }
-    }
-
-    if (connectAny) {
-      if (detectSpectodaConnect()) {
-        criteria = [{}];
-      } else {
-        criteria = [{}, { adoptionFlag: true }, { legacy: true }];
+      // add ownerSignature to each criteria
+      for (let i = 0; i < criteria.length; i++) {
+        criteria[i].ownerSignature = this.#ownerSignature;
       }
     }
 
