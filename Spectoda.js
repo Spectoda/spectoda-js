@@ -36,6 +36,8 @@ export class Spectoda {
   #criteria;
   #reconnecting;
   #autonomousConnection;
+  #wakeLock;
+  #isPrioritizedWakelock;
 
   #reconnectRC;
 
@@ -240,12 +242,26 @@ export class Spectoda {
     return true;
   }
 
-  requestWakeLock() {
+  requestWakeLock(prioritized = false) {
     logging.debug("> Activating wakeLock...");
+
+    if (prioritized) {
+      this.#isPrioritizedWakelock = true;
+    }
 
     try {
       if (detectSpectodaConnect()) {
         window.flutter_inappwebview.callHandler("setWakeLock", true);
+      } else {
+        navigator.wakeLock
+          .request("screen")
+          .then(Wakelock => {
+            logging.info("Web Wakelock activated.");
+            this.#wakeLock = Wakelock;
+          })
+          .catch(() => {
+            logging.warn("Web Wakelock activation failed.");
+          });
       }
       return Promise.resolve();
     } catch (e) {
@@ -253,12 +269,28 @@ export class Spectoda {
     }
   }
 
-  releaseWakeLock() {
+  releaseWakeLock(prioritized = false) {
     logging.debug("> Deactivating wakeLock...");
+
+    if (prioritized) {
+      this.#isPrioritizedWakelock = false;
+    } else if (this.#isPrioritizedWakelock) {
+      return Promise.resolve();
+    }
 
     try {
       if (detectSpectodaConnect()) {
         window.flutter_inappwebview.callHandler("setWakeLock", false);
+      } else {
+        this.#wakeLock
+          ?.release()
+          .then(() => {
+            logging.info("Web Wakelock deactivated.");
+            this.#wakeLock = null;
+          })
+          .catch(() => {
+            logging.warn("Web Wakelock deactivation failed.");
+          });
       }
       return Promise.resolve();
     } catch (e) {
@@ -343,6 +375,7 @@ export class Spectoda {
     });
 
     this.socket.connect();
+    this.requestWakeLock(true);
 
     this.on("connect", async () => {
       const peers = await this.getConnectedPeersInfo();
@@ -423,8 +456,7 @@ export class Spectoda {
   disableRemoteControl() {
     logging.debug("> Disonnecting from the Remote Control");
 
-    this.#reconnectRC = false;
-
+    this.releaseWakeLock(true);
     this.socket?.disconnect();
   }
 

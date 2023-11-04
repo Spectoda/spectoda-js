@@ -68,7 +68,6 @@ function onWasmLoad() {
 
     }
 
-
     waitingQueue.forEach(wait => {
       wait.resolve();
     });
@@ -88,6 +87,9 @@ function loadWasm(wasmVersion) {
   console.log("spectoda-js wasm version " + wasmVersion);
 
   if (typeof window !== "undefined") {
+
+    // BROWSER enviroment
+
     // First try to load local version
     injectScript(`http://localhost:5555/builds/${wasmVersion}.js`)
       .then(onWasmLoad)
@@ -100,14 +102,15 @@ function loadWasm(wasmVersion) {
             console.error(error);
           });
       });
-  }
 
-  else {
+  } else {
 
     // NODE enviroment
-
-    globalThis.Module = require(`./webassembly/${wasmVersion}.js`);
-    onWasmLoad();
+    
+    if (!process.env.NEXT_PUBLIC_VERSION) {
+      globalThis.Module = require(`./webassembly/${wasmVersion}.js`);
+      onWasmLoad();
+    }
 
   }
 
@@ -132,7 +135,7 @@ export const SpectodaWasm = {
    *   end: () => void
    * } }
    */
-  Spectoda_WASM: null, // Uint8Array;    let array = new Uint8Array()
+  Spectoda_WASM: null,
 
   // get(arg0)
   // push_back(arg0)

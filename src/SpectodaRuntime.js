@@ -1,22 +1,21 @@
 import { SpectodaDummyConnector } from "../SpectodaDummyConnector.js";
 import { SpectodaWebBluetoothConnector } from "../SpectodaWebBluetoothConnector.js";
 import { SpectodaWebSerialConnector } from "../SpectodaWebSerialConnector.js";
-import { createNanoEvents, detectAndroid, detectChrome, detectIPhone, detectLinux, detectMacintosh, detectNode, detectSpectodaConnect, detectWindows, sleep, uint8ArrayToHexString } from "../functions";
+import { createNanoEvents, detectAndroid, detectChrome, detectIPhone, detectLinux, detectMacintosh, detectNode, detectSpectodaConnect, detectWindows, numberToBytes, sleep, uint8ArrayToHexString } from "../functions";
 import { logging } from "../logging";
 // import { SpectodaConnectConnector } from "./SpectodaConnectConnector.js";
 import { FlutterConnector } from "../FlutterConnector.js";
-import { SpectodaWebSocketsConnector } from "../SpectodaWebSocketsConnector.js";
 import { TimeTrack } from "../TimeTrack.js";
-import "../TnglReader.js";
-import "../TnglWriter.js";
 import { t } from "../i18n.js";
 import { PreviewController } from "./PreviewController.js";
-import { Spectoda_JS } from "./Spectoda_JS.js";
+import { COMMAND_FLAGS, Spectoda_JS } from "./Spectoda_JS.js";
 import { SpectodaWasm } from "./SpectodaWasm";
 import { SimulationConnector } from "./connector/SimulationConnector.js";
 
 import { SpectodaNodeBluetoothConnector } from "./connector/SpectodaNodeBleConnector";
 import { SpectodaNodeSerialConnector } from "./connector/SpectodaNodeSerialConnector";
+import { TnglWriter } from "../TnglWriter.js";
+import { TnglReader } from "../TnglReader.js";
 
 // Spectoda.js -> SpectodaRuntime.js -> | SpectodaXXXConnector.js ->
 
@@ -109,7 +108,7 @@ export class SpectodaRuntime {
     this.clock = new TimeTrack(0);
 
     // TODO implement a way of having more than one connector at the same time
-    this.connector = /** @type {SpectodaDummyConnector | SpectodaWebBluetoothConnector | SpectodaWebSerialConnector | SpectodaConnectConnector | FlutterConnector | SpectodaWebSocketsConnector | null} */ (null);
+    this.connector = /** @type {SpectodaDummyConnector | SpectodaWebBluetoothConnector | SpectodaWebSerialConnector | SpectodaConnectConnector | FlutterConnector | null} */ (null);
 
     this.#eventEmitter = createNanoEvents();
 
@@ -1086,7 +1085,7 @@ export class SpectodaRuntime {
     // logging.verbose(`> Rendering preview...`);
 
     for (const previewController of Object.values(this.previewControllers)) {
-      previewController.render();
+      previewController.bakeTnglFrame();
     }
   }
 
@@ -1097,4 +1096,73 @@ export class SpectodaRuntime {
   WIP_saveFS() {
     return SpectodaWasm.saveFS();
   }
+
+  // returns a promise that resolves a bytecode of the captured port pixels
+  async WIP_capturePixels() {
+
+    const A_ASCII_CODE = "A".charCodeAt(0);
+    const D_ASCII_CODE = "D".charCodeAt(0);
+
+    const PIXEL_ENCODING_CODE = 1;
+
+    let uuidCounter = Math.floor(Math.random() * 0xffffffff);
+
+    const writer = new TnglWriter(65535);
+
+    for (const previewController of Object.values(this.previewControllers)) {
+
+      const tempWriter = new TnglWriter(65535);
+
+      for (let portTag = A_ASCII_CODE; portTag <= D_ASCII_CODE; portTag++) {
+
+        const request_uuid = uuidCounter++;
+        const request_bytes = [COMMAND_FLAGS.FLAG_READ_PORT_PIXELS_REQUEST, ...numberToBytes(request_uuid, 4), portTag, PIXEL_ENCODING_CODE];
+
+        logging.debug("Sending request", uint8ArrayToHexString(request_bytes));
+        const response = await previewController.request(new Uint8Array(request_bytes), 123456789);
+
+        logging.debug("Received response", uint8ArrayToHexString(response));
+        const tempReader = new TnglReader(new DataView(response.buffer));
+
+        const response_flag = tempReader.readFlag();
+        if (response_flag !== COMMAND_FLAGS.FLAG_READ_PORT_PIXELS_RESPONSE) {
+          logging.error("InvalidResponse1");
+          continue;
+        }
+
+        const response_uuid = tempReader.readUint32();
+        if (response_uuid !== request_uuid) {
+          logging.error("InvalidResponse2");
+          continue;
+        }
+
+        const error_code = tempReader.readUint8();
+        if (error_code === 0) { // error_code 0 is success
+          const pixelDataSize = tempReader.readUint16();
+          logging.debug("pixelDataSize=", pixelDataSize);
+
+          const pixelData = tempReader.readBytes(pixelDataSize);
+          logging.debug("pixelData=", pixelData);
+
+          tempWriter.writeBytes([COMMAND_FLAGS.FLAG_WRITE_PORT_PIXELS_REQUEST, ...numberToBytes(uuidCounter++, 4), portTag, PIXEL_ENCODING_CODE, ...numberToBytes(pixelDataSize, 2), ...pixelData]);
+        }
+      }
+
+      const controllerIdentifier = previewController.identifier;
+      logging.debug("controllerIdentifier=", controllerIdentifier);
+
+      const tempWriterDataView = tempWriter.bytes;
+      const tempWriterDataArray = new Uint8Array(tempWriterDataView.buffer);
+
+      writer.writeBytes([COMMAND_FLAGS.FLAG_EVALUATE_ON_CONTROLLER_REQUEST, ...numberToBytes(uuidCounter++, 4), ...numberToBytes(controllerIdentifier, 4), ...numberToBytes(tempWriter.written, 2), ...tempWriterDataArray]);
+    }
+
+    const command_bytes = new Uint8Array(writer.bytes.buffer);
+    console.log("command_bytes=", command_bytes);
+
+    this.execute(command_bytes);
+
+    return command_bytes;
+  }
+
 }

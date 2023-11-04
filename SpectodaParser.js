@@ -214,7 +214,7 @@ export class TnglCompiler {
   #var_declarations;
 
   constructor() {
-    this.#tnglWriter = new TnglWriter();
+    this.#tnglWriter = new TnglWriter(65535);
 
     // @type array of {name: "variable", address: 0x0001};
     this.#const_declarations_stack = []; // stack of variable name-address pairs

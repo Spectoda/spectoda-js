@@ -370,7 +370,7 @@ export class PreviewController {
         this.#instance.compute();
     }
 
-    render() {
+    bakeTnglFrame() {
         if (!this.#instance) {
             throw "NotConstructed";
         }
@@ -400,12 +400,37 @@ export class PreviewController {
         return this.#eventEmitter.on(event, callback);
     }
 
+    // returns string
     get mac() {
+        // logging.debug("get mac()");
+
         if (!this.#instance) {
             throw "NotConstructed";
         }
 
         return this.#macAddress;
+    }
+
+    // returns std::string a.k.a string
+    get label() {
+        // logging.debug("get label()");
+
+        if (!this.#instance) {
+            throw "NotConstructed";
+        }
+
+        return this.#instance.getLabel();
+    }
+
+    // returns int32_t a.k.a number
+    get identifier() {
+        // logging.debug("get identifier()");
+
+        if (!this.#instance) {
+            throw "NotConstructed";
+        }
+
+        return this.#instance.getIdentifier();
     }
 }
 
