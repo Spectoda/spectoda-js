@@ -919,14 +919,15 @@ export class SpectodaInterfaceLegacy {
 
                       try {
                         return this.connector
-                        .getClock()
-                        .then(clock => {
-                          this.clock = clock;
-                          item.resolve(device);
-                        }).catch(error => {
-                          logging.warn(error);
-                          item.resolve(device);
-                        })
+                          .getClock()
+                          .then(clock => {
+                            this.clock = clock;
+                            item.resolve(device);
+                          }).catch(error => {
+                            this.clock = new TimeTrack(0)
+                            logging.warn(error);
+                            item.resolve(device);
+                          })
                       }
                       catch (error) {
                         logging.error(error);
