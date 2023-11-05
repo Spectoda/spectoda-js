@@ -106,10 +106,24 @@ export function createSpectodaWebsocket() {
             const result = await this.sendThroughWebsocket(payload);
 
             if (result.status === "success") {
+              for (let res of result?.data) {
+                if (res.status === "error") {
+                  logging.error("[WEBSOCKET]", result);
+
+                  throw new Error(res.error);
+                }
+              }
+
               logging.verbose("[WEBSOCKET]", result);
+
               return result?.data?.[0].result;
             } else {
-              logging.error("[WEBSOCKET]", result);
+              let error = new Error(result?.error);
+              if (Array.isArray(result)) {
+                error = new Error(result[0]);
+              }
+              logging.error("[WEBSOCKET]", error);
+
               throw new Error(result?.error);
             }
           };
@@ -119,8 +133,6 @@ export function createSpectodaWebsocket() {
 
     async sendThroughWebsocket(data) {
       const result = await socket.emitWithAck("func", data);
-
-      console.log("received result", result);
 
       return result;
     }
