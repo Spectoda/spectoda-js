@@ -322,11 +322,11 @@ export class Spectoda {
   }
 
   assignOwnerKey(ownerKey) {
-    return this.setOwnerKey(ownerKey);
+    return this.#setOwnerKey(ownerKey);
   }
 
   setOwnerKey(ownerKey) {
-    return this.setOwnerKey(ownerKey);
+    return this.#setOwnerKey(ownerKey);
   }
 
   getOwnerKey() {
