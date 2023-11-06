@@ -293,12 +293,23 @@ export function computeTnglFingerprint(tngl_bytes, tngl_label) {
     const crypto = require('crypto');
 
     return new Promise((resolve, reject) => {
-      const hash = crypto.createHmac('sha256', tngl_label);
-      hash.update(tngl_bytes);
-      const signature = hash.digest();
 
-      // If you want the result as Uint8Array like your browser example:
-      resolve(new Uint8Array(signature));
+      try {
+        const hash = crypto.createHmac('sha256', tngl_label);
+        hash.update(tngl_bytes);
+        const fingerprint = hash.digest();
+
+        logging.info("TNGL Fingerprint:", uint8ArrayToHexString(fingerprint));
+
+        // If you want the result as Uint8Array like your browser example:
+        resolve(new Uint8Array(fingerprint));
+        return;
+
+      } catch (error) {
+
+        reject(error);
+        return;
+      }
 
       // If you want the result as a base64 string (like the commented out line in your example):
       // resolve(signature.toString('base64'));
@@ -318,6 +329,9 @@ export function computeTnglFingerprint(tngl_bytes, tngl_label) {
       .then(signature => {
         // let digest = btoa(String.fromCharCode(...new Uint8Array(signature)));
         // console.info(digest);
+
+        logging.info("TNGL Fingerprint:", uint8ArrayToHexString(fingerprint));
+
         return new Uint8Array(signature);
       });
 

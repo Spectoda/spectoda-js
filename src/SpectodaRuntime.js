@@ -318,7 +318,7 @@ export class SpectodaRuntime {
     logging.info(`> Assigning ${connector_type} connector...`);
 
     if ((!this.connector && connector_type === "none") || (this.connector && this.connector.type === connector_type)) {
-      logging.warn("Reassigning current connector.");
+      logging.warn("Reassigning current connector");
       // return Promise.resolve();
     }
 
@@ -621,7 +621,7 @@ export class SpectodaRuntime {
   }
 
   evaluate(bytecode_uint8array, source_connection) {
-    logging.debug("evaluate", { bytecode_uint8array, source_connection });
+    logging.verbose("evaluate(bytecode_uint8array=", bytecode_uint8array, "source_connection=", source_connection, ")");
 
     this.spectoda.execute(bytecode_uint8array, source_connection);
   }
