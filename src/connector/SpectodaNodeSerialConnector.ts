@@ -177,17 +177,17 @@ export class SpectodaNodeSerialConnector {
     //         then return error
 
     return this.scan(criteria, scan_period).then(ports => {
-      logging.debug("ports=", ports);
+      logging.verbose("ports=", ports);
 
       if (ports.length === 0) {
         throw "NoDeviceFound";
       }
 
-      const port_path = ports[ports.length - 1].path;
-      logging.debug("port_path=", port_path);
+      const port_path = ports[ports.length - 2].path;
+      logging.verbose("port_path=", port_path);
 
       this.#serialPort = new SerialPort({ path: port_path, baudRate: 115200, dataBits: 8, parity: "none", stopBits: 1, autoOpen: false });
-      logging.debug("this.#serialPort=", this.#serialPort);
+      logging.verbose("this.#serialPort=", this.#serialPort);
 
       return Promise.resolve({ connector: this.type });
     });
@@ -237,7 +237,7 @@ export class SpectodaNodeSerialConnector {
     logging.verbose("connect(timeout=" + timeout + ")");
 
     if (timeout <= 0) {
-      logging.info("> Connect timeout have expired");
+      logging.warn("Connect timeout have expired");
       throw "ConnectionFailed";
     }
 
@@ -314,9 +314,7 @@ export class SpectodaNodeSerialConnector {
         const decoder = new TextDecoder();
 
         this.#serialPort.on('data', async (chunk: Buffer) => {
-          const command_string = decoder.decode(chunk);
-
-          // logging.debug("[data] " + command_string);
+          // logging.verbose("[data]", decoder.decode(chunk));
 
           for (const byte of chunk) {
 
@@ -382,7 +380,7 @@ export class SpectodaNodeSerialConnector {
                   if (character === NEWLINE_ASCII_CODE) {
                     const line = decoder.decode(new Uint8Array(line_bytes));
                     // TODO! process line
-                    logging.info(line);
+                    logging.verbose("line=", line);
                     line_bytes.length = 0;
                   }
 
@@ -410,7 +408,7 @@ export class SpectodaNodeSerialConnector {
                   data_header.data_crc32 = tnglReader.readUint32();
                   data_header.header_crc32 = tnglReader.readUint32();
 
-                  logging.info(data_header);
+                  logging.verbose("data_header=", data_header);
                 }
 
               } else /* if (data_header) */ {
@@ -420,7 +418,7 @@ export class SpectodaNodeSerialConnector {
                 if (data_bytes.length >= data_header.data_size) {
 
                   const data_array = new Uint8Array(data_bytes);
-                  logging.info(data_array);
+                  logging.verbose("data_array=", data_array);
 
                   this.#dataCallback && this.#dataCallback(data_array);
                   header_bytes.length = 0;
@@ -497,13 +495,11 @@ export class SpectodaNodeSerialConnector {
           }, timeout);
 
           this.#beginCallback = result => {
-            logging.info("Connection begin", result ? "sucess" : "error");
-
             clearTimeout(timeout_handle);
             this.#beginCallback = null;
 
             if (result) {
-              logging.debug("> Serial Connector Connected");
+              logging.info("Serial connection connected");
               this.#connected = true;
 
               this.#runtimeReference.emit("#connected");
@@ -534,7 +530,7 @@ export class SpectodaNodeSerialConnector {
 
   // disconnect Connector from the connected Spectoda Device. But keep it selected
   async disconnect() {
-    logging.info("> Closing serial port...");
+    logging.debug("> Closing serial port...");
 
     if (!this.#serialPort) {
       logging.debug("No Serial Port selected");
@@ -717,7 +713,7 @@ export class SpectodaNodeSerialConnector {
   // deliver handles the communication with the Spectoda network in a way
   // that the command is guaranteed to arrive
   deliver(payload, timeout) {
-    logging.debug(`deliver(payload=${payload})`);
+    logging.verbose(`deliver(payload=${payload})`);
 
     if (!this.#connected) {
       throw "DeviceDisconnected";
@@ -733,7 +729,7 @@ export class SpectodaNodeSerialConnector {
   // transmit handles the communication with the Spectoda network in a way
   // that the command is NOT guaranteed to arrive
   transmit(payload, timeout) {
-    logging.debug(`transmit(payload=${payload})`);
+    logging.verbose(`transmit(payload=${payload})`);
 
     if (!this.#connected) {
       throw "DeviceDisconnected";
@@ -749,7 +745,7 @@ export class SpectodaNodeSerialConnector {
   // request handles the requests on the Spectoda network. The command request
   // is guaranteed to get a response
   request(payload, read_response, timeout) {
-    logging.debug(`request(payload=${payload})`);
+    logging.verbose(`request(payload=${payload})`);
 
     if (!this.#connected) {
       throw "DeviceDisconnected";
@@ -766,7 +762,7 @@ export class SpectodaNodeSerialConnector {
   // synchronizes the device internal clock with the provided TimeTrack clock
   // of the application as precisely as possible
   setClock(clock) {
-    logging.debug(`setClock(clock.millis()=${clock.millis()})`);
+    logging.verbose(`setClock(clock.millis()=${clock.millis()})`);
 
     if (!this.#connected) {
       throw "DeviceDisconnected";
@@ -793,7 +789,7 @@ export class SpectodaNodeSerialConnector {
   // returns a TimeTrack clock object that is synchronized with the internal clock
   // of the device as precisely as possible
   getClock() {
-    logging.debug(`getClock()`);
+    logging.verbose(`getClock()`);
 
     if (!this.#connected) {
       throw "DeviceDisconnected";
@@ -809,7 +805,7 @@ export class SpectodaNodeSerialConnector {
           const timestamp = reader.readUint64();
 
           // const timestamp = await this.#promise;
-          logging.debug("Clock read success:", timestamp);
+          logging.debug("> Clock read success:", timestamp);
           resolve(new TimeTrack(timestamp));
           return;
         } catch (e) {
@@ -832,7 +828,7 @@ export class SpectodaNodeSerialConnector {
   // handles the firmware updating. Sends "ota" events
   // to all handlers
   updateFW(firmware) {
-    logging.debug(`updateFW(firmware=${firmware})`);
+    logging.verbose(`updateFW(firmware=${firmware})`);
 
     if (!this.#serialPort) {
       logging.warn("Serial Port is null");
@@ -856,8 +852,8 @@ export class SpectodaNodeSerialConnector {
 
       let written = 0;
 
-      logging.debug("OTA UPDATE");
-      logging.debug(firmware);
+      logging.info("OTA UPDATE");
+      logging.verbose(firmware);
 
       const start_timestamp = new Date().getTime();
 
@@ -866,7 +862,7 @@ export class SpectodaNodeSerialConnector {
 
         {
           //===========// RESET //===========//
-          logging.debug("OTA RESET");
+          logging.info("OTA RESET");
 
           const bytes = [COMMAND_FLAGS.FLAG_OTA_RESET, 0x00, ...numberToBytes(0x00000000, 4)];
           await this.#write(this.CHANNEL_DEVICE, bytes);
@@ -876,7 +872,7 @@ export class SpectodaNodeSerialConnector {
 
         {
           //===========// BEGIN //===========//
-          logging.debug("OTA BEGIN");
+          logging.info("OTA BEGIN");
 
           const bytes = [COMMAND_FLAGS.FLAG_OTA_BEGIN, 0x00, ...numberToBytes(firmware.length, 4)];
           await this.#write(this.CHANNEL_DEVICE, bytes, 20000);
@@ -886,7 +882,7 @@ export class SpectodaNodeSerialConnector {
 
         {
           //===========// WRITE //===========//
-          logging.debug("OTA WRITE");
+          logging.info("OTA WRITE");
 
           while (written < firmware.length) {
             if (index_to > firmware.length) {
@@ -899,7 +895,7 @@ export class SpectodaNodeSerialConnector {
             written += index_to - index_from;
 
             const percentage = Math.floor((written * 10000) / firmware.length) / 100;
-            logging.debug(percentage + "%");
+            logging.info(percentage + "%");
 
             this.#runtimeReference.emit("ota_progress", percentage);
 
@@ -912,7 +908,7 @@ export class SpectodaNodeSerialConnector {
 
         {
           //===========// END //===========//
-          logging.debug("OTA END");
+          logging.info("OTA END");
 
           const bytes = [COMMAND_FLAGS.FLAG_OTA_END, 0x00, ...numberToBytes(written, 4)];
           await this.#write(this.CHANNEL_DEVICE, bytes);

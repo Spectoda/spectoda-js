@@ -3,7 +3,7 @@ import { TimeTrack } from "./TimeTrack.js";
 import "./TnglReader.js";
 import { TnglReader } from "./TnglReader.js";
 import "./TnglWriter.js";
-import { colorToBytes, computeTnglFingerprint, detectSpectodaConnect, hexStringToUint8Array, labelToBytes, numberToBytes, percentageToBytes, sleep, strMacToBytes, stringToBytes } from "./functions";
+import { colorToBytes, computeTnglFingerprint, detectSpectodaConnect, hexStringToUint8Array, labelToBytes, numberToBytes, percentageToBytes, sleep, strMacToBytes, stringToBytes, uint8ArrayToHexString } from "./functions";
 import { changeLanguage, t } from "./i18n.js";
 import { logging, setLoggingLevel } from "./logging";
 import { COMMAND_FLAGS } from "./src/Spectoda_JS.js";
@@ -70,16 +70,16 @@ export class Spectoda {
     this.#websocketConnectionState = "disconnected";
 
     this.runtime.onConnected = event => {
-      logging.info("> Runtime connected");
+      logging.debug("> Runtime connected");
     };
 
     this.runtime.onDisconnected = event => {
-      logging.info("> Runtime disconnected");
+      logging.debug("> Runtime disconnected");
 
       const TIME = 2000;
 
       if (this.#getConnectionState() === "connected" && this.#reconnecting) {
-        logging.info(`> Reconnecting in ${TIME}ms`);
+        logging.debug(`> Reconnecting in ${TIME}ms`);
         this.#setConnectionState("connecting");
 
         return sleep(TIME)
@@ -95,7 +95,7 @@ export class Spectoda {
             this.#setConnectionState("disconnected");
           });
       } else {
-        logging.info(`> Spectoda disconnected`);
+        logging.debug(`> Spectoda disconnected`);
         this.#setConnectionState("disconnected");
       }
     };
@@ -497,14 +497,14 @@ export class Spectoda {
   // }
 
   scan(scan_criteria = [{}], scan_period = 5000) {
-    logging.debug(`scan(scan_criteria=${scan_criteria}, scan_period=${scan_period})`);
+    logging.verbose(`scan(scan_criteria=${scan_criteria}, scan_period=${scan_period})`);
 
-    logging.info("> Scanning Spectoda Controllers...");
+    logging.debug("> Scanning Spectoda Controllers...");
     return this.runtime.scan(scan_criteria, scan_period);
   }
 
   adopt(newDeviceName = null, newDeviceId = null, tnglCode = null, ownerSignature = null, ownerKey = null, autoSelect = false) {
-    logging.info(`adopt(newDeviceName=${newDeviceName}, newDeviceId=${newDeviceId}, tnglCode=${tnglCode}, ownerSignature=${ownerSignature}, ownerKey=${ownerKey}, autoSelect=${autoSelect})`);
+    logging.verbose(`adopt(newDeviceName=${newDeviceName}, newDeviceId=${newDeviceId}, tnglCode=${tnglCode}, ownerSignature=${ownerSignature}, ownerKey=${ownerKey}, autoSelect=${autoSelect})`);
 
     if (this.#adopting) {
       return Promise.reject("AdoptingInProgress");
@@ -524,8 +524,8 @@ export class Spectoda {
         const owner_signature_bytes = hexStringToUint8Array(this.#ownerSignature, 16);
         const owner_key_bytes = hexStringToUint8Array(this.#ownerKey, 16);
 
-        logging.info("owner_signature_bytes", owner_signature_bytes);
-        logging.info("owner_key_bytes", owner_key_bytes);
+        logging.verbose("owner_signature_bytes", owner_signature_bytes);
+        logging.verbose("owner_key_bytes", owner_key_bytes);
 
         const request_uuid = this.#getUUID();
         const bytes = [COMMAND_FLAGS.FLAG_ADOPT_REQUEST, ...numberToBytes(request_uuid, 4), ...owner_signature_bytes, ...owner_key_bytes /*, ...device_name_bytes, ...numberToBytes(device_id, 1)*/];
@@ -538,7 +538,7 @@ export class Spectoda {
           .then(response => {
             let reader = new TnglReader(response);
 
-            logging.debug("> Got response:", response);
+            logging.verbose("response=", response);
 
             if (reader.readFlag() !== COMMAND_FLAGS.FLAG_ADOPT_RESPONSE) {
               throw "InvalidResponse";
@@ -607,18 +607,19 @@ export class Spectoda {
   // devices: [ {name:"Lampa 1", mac:"12:34:56:78:9a:bc"}, {name:"Lampa 2", mac:"12:34:56:78:9a:bc"} ]
 
   #connect(autoConnect) {
-    logging.debug(`#connect(autoConnect=${autoConnect})`);
-    logging.info("> Connecting Spectoda Controller");
+    logging.verbose(`#connect(autoConnect=${autoConnect})`);
+
+    logging.debug("> Connecting Spectoda Controller");
 
     this.#setConnectionState("connecting");
 
-    logging.info("> Selecting device...");
+    logging.debug("> Selecting device...");
     return (autoConnect ? this.runtime.autoSelect(this.#criteria, 1000, 10000) : this.runtime.userSelect(this.#criteria))
       .then(() => {
         return this.runtime.connect();
       })
       .then(connectedDeviceInfo => {
-        logging.info("> Synchronizing Network State...");
+        logging.debug("> Synchronizing Network State...");
         return (this.timeline.paused() ? this.requestTimeline() : this.syncTimeline())
           .catch(e => {
             logging.error("Timeline sync after reconnection failed:", e);
@@ -654,7 +655,7 @@ export class Spectoda {
   }
 
   connect(devices = null, autoConnect = true, ownerSignature = null, ownerKey = null, connectAny = false, fwVersion = "", autonomousConnection = false, overrideConnection = false) {
-    logging.debug(
+    logging.verbose(
       `connect(devices=${devices}, autoConnect=${autoConnect}, ownerSignature=${ownerSignature}, ownerKey=${ownerKey}, connectAny=${connectAny}, fwVersion=${fwVersion}, autonomousConnection=${autonomousConnection}, overrideConnection=${overrideConnection})`,
     );
 
@@ -733,7 +734,7 @@ export class Spectoda {
       Promise.reject("DeviceAlreadyDisconnected");
     }
 
-    logging.info(`> Disconnecting controller...`);
+    logging.debug(`> Disconnecting controller...`);
     this.#setConnectionState("disconnecting");
 
     return this.runtime.disconnect().finally(() => {
@@ -751,8 +752,6 @@ export class Spectoda {
     logging.verbose(`preprocessTngl(tngl_code=${tngl_code})`);
 
     // 1st stage: preprocess the code
-
-    // logging.debug(tngl_code);
 
     let processed_tngl_code = tngl_code;
 
@@ -772,7 +771,7 @@ export class Spectoda {
       const tngl = match[2];
 
       try {
-        logging.debug(`sendTnglToApi({ id=${id}, name=${name}, tngl=${tngl} })`);
+        logging.verbose(`sendTnglToApi({ id=${id}, name=${name}, tngl=${tngl} })`);
         await sendTnglToApi({ id, name, tngl });
         processed_tngl_code = processed_tngl_code.replace(match[0], "");
       } catch (e) {
@@ -793,7 +792,7 @@ export class Spectoda {
       const id = encodeURIComponent(name);
 
       try {
-        logging.debug(`fetchTnglFromApiById({ id=${id} })`);
+        logging.verbose(`fetchTnglFromApiById({ id=${id} })`);
         const response = await fetchTnglFromApiById(id);
         processed_tngl_code = processed_tngl_code.replace(match[0], response.tngl);
       } catch (e) {
@@ -1091,7 +1090,7 @@ export class Spectoda {
   syncTimeline() {
     logging.verbose("syncTimeline()");
 
-    logging.info(`> Synchronizing timeline to device`);
+    logging.debug(`> Synchronizing timeline to device`);
 
     const flags = this.timeline.paused() ? 0b00010000 : 0b00000000; // flags: [reserved,reserved,reserved,timeline_paused,reserved,reserved,reserved,reserved]
     const payload = [COMMAND_FLAGS.FLAG_SET_TIMELINE, ...numberToBytes(this.runtime.clock.millis(), 6), ...numberToBytes(this.timeline.millis(), 4), flags];
@@ -1099,7 +1098,7 @@ export class Spectoda {
   }
 
   syncClock() {
-    logging.info("> Syncing clock from device");
+    logging.debug("> Syncing clock from device");
 
     return this.runtime.syncClock().then(() => {
       logging.debug("> App clock synchronized");
@@ -1107,7 +1106,7 @@ export class Spectoda {
   }
 
   syncState(deviceId) {
-    logging.info("> Synchronizing state...");
+    logging.debug("> Synchronizing state...");
 
     const request_uuid = this.#getUUID();
     const device_request = [COMMAND_FLAGS.FLAG_SYNC_STATE_REQUEST, ...numberToBytes(request_uuid, 4), deviceId];
@@ -1117,7 +1116,7 @@ export class Spectoda {
   updateDeviceFirmware(firmware) {
     logging.verbose(`updateDeviceFirmware(firmware.length=${firmware?.length})`);
 
-    logging.info(`> Updating Controller FW...`);
+    logging.debug(`> Updating Controller FW...`);
 
     if (!firmware || firmware.length < 10000) {
       logging.error("Invalid firmware");
@@ -1145,7 +1144,7 @@ export class Spectoda {
   updateNetworkFirmware(firmware) {
     logging.verbose(`updateNetworkFirmware(firmware.length=${firmware?.length})`);
 
-    logging.info(`> Updating Network FW...`);
+    logging.debug(`> Updating Network FW...`);
 
     if (!firmware || firmware.length < 10000) {
       logging.error("Invalid firmware");
@@ -1236,11 +1235,9 @@ export class Spectoda {
 
         await sleep(3000);
 
-        logging.debug("Rebooting whole network...");
-
         await this.rebootNetwork();
 
-        logging.debug("Firmware written in " + (new Date().getTime() - start_timestamp) / 1000 + " seconds");
+        logging.debug("> Firmware written in " + (new Date().getTime() - start_timestamp) / 1000 + " seconds");
 
         this.runtime.emit("ota_status", "success");
 
@@ -1265,7 +1262,7 @@ export class Spectoda {
   }
 
   async updatePeerFirmware(peer) {
-    logging.debug(`updatePeerFirmware(peer=${peer})`);
+    logging.verbose(`updatePeerFirmware(peer=${peer})`);
 
     if (peer === null || peer === undefined) {
       // Prompt the user to enter a MAC address
@@ -1375,12 +1372,12 @@ export class Spectoda {
   updateDeviceConfig(config_raw) {
     logging.debug("> Updating config...");
 
-    logging.info(`config_raw=${config_raw}`);
+    logging.verbose(`config_raw=${config_raw}`);
 
     const condif_object = JSON.parse(config_raw);
     const config = JSON.stringify(condif_object);
 
-    logging.info(`config=${config}`);
+    logging.verbose(`config=${config}`);
 
     const encoder = new TextEncoder();
     const config_bytes = encoder.encode(config);
@@ -1600,7 +1597,7 @@ export class Spectoda {
       }
       logging.verbose(`version=${version}`);
 
-      logging.debug(`> FW Version: ${version}`);
+      logging.info(`FW Version: ${version}`);
 
       return version.trim();
     });
@@ -1615,7 +1612,7 @@ export class Spectoda {
     return this.runtime.request(bytes, true).then(response => {
       let reader = new TnglReader(response);
 
-      logging.debug("response:", response);
+      logging.verbose("response:", response);
 
       if (reader.readFlag() !== COMMAND_FLAGS.FLAG_TNGL_FINGERPRINT_RESPONSE) {
         throw "InvalidResponseFlag";
@@ -1646,6 +1643,8 @@ export class Spectoda {
           .join(",")}`,
       );
 
+      logging.info("Controller TNGL Fingerprint: " + uint8ArrayToHexString(fingerprint));
+
       return new Uint8Array(fingerprint);
     });
   }
@@ -1668,7 +1667,7 @@ export class Spectoda {
   }
 
   readRomPhyVdd33() {
-    logging.debug("> Requesting rom_phy_vdd33 ...");
+    logging.debug("> Requesting rom_phy_vdd33...");
 
     const request_uuid = this.#getUUID();
     const bytes = [COMMAND_FLAGS.FLAG_ROM_PHY_VDD33_REQUEST, ...numberToBytes(request_uuid, 4)];
@@ -1837,7 +1836,7 @@ export class Spectoda {
 
       if (error_code === 0) {
         const historic_events_bytecode_size = reader.readUint16();
-        logging.info(`historic_events_bytecode_size=${historic_events_bytecode_size}`);
+        logging.verbose(`historic_events_bytecode_size=${historic_events_bytecode_size}`);
 
         const historic_events_bytecode = reader.readBytes(historic_events_bytecode_size);
         logging.verbose(`historic_events_bytecode=[${historic_events_bytecode}]`);
@@ -1883,7 +1882,7 @@ export class Spectoda {
   }
 
   getControllerInfo() {
-    logging.debug("> Requesting controller info ...");
+    logging.debug("> Requesting controller info...");
 
     const request_uuid = this.#getUUID();
     const bytes = [DEVICE_FLAGS.FLAG_CONTROLLER_INFO_REQUEST, ...numberToBytes(request_uuid, 4)];
@@ -1925,13 +1924,15 @@ export class Spectoda {
   }
 
   writeOwner(ownerSignature = "00000000000000000000000000000000", ownerKey = "00000000000000000000000000000000") {
-    logging.debug("> Writing owner to device...", ownerSignature, ownerKey);
+    logging.verbose("writeOwner(ownerSignature=", ownerSignature, "ownerKey=", ownerKeym, ")");
+    
+    logging.debug("> Writing owner to device...");
 
     const owner_signature_bytes = hexStringToUint8Array(ownerSignature, 16);
     const owner_key_bytes = hexStringToUint8Array(ownerKey, 16);
 
-    logging.info("owner_signature_bytes", owner_signature_bytes);
-    logging.info("owner_key_bytes", owner_key_bytes);
+    logging.verbose("owner_signature_bytes=", owner_signature_bytes);
+    logging.verbose("owner_key_bytes=", owner_key_bytes);
 
     const request_uuid = this.#getUUID();
     const bytes = [COMMAND_FLAGS.FLAG_ADOPT_REQUEST, ...numberToBytes(request_uuid, 4), ...owner_signature_bytes, ...owner_key_bytes];
@@ -1943,7 +1944,7 @@ export class Spectoda {
       .then(response => {
         let reader = new TnglReader(response);
 
-        logging.debug("> Got response:", response);
+        logging.verbose("response=", response);
 
         if (reader.readFlag() !== COMMAND_FLAGS.FLAG_ADOPT_RESPONSE) {
           throw "InvalidResponse";
@@ -1991,13 +1992,15 @@ export class Spectoda {
   }
 
   writeNetworkOwner(ownerSignature = "00000000000000000000000000000000", ownerKey = "00000000000000000000000000000000") {
+    logging.verbose("writeNetworkOwner(ownerSignature=", ownerSignature, "ownerKey=", ownerKeym, ")");
+
     logging.debug("> Writing owner to network...");
 
     const owner_signature_bytes = hexStringToUint8Array(ownerSignature, 16);
     const owner_key_bytes = hexStringToUint8Array(ownerKey, 16);
 
-    logging.info("owner_signature_bytes", owner_signature_bytes);
-    logging.info("owner_key_bytes", owner_key_bytes);
+    logging.verbose("owner_signature_bytes", owner_signature_bytes);
+    logging.verbose("owner_key_bytes", owner_key_bytes);
 
     const request_uuid = this.#getUUID();
     const bytes = [COMMAND_FLAGS.FLAG_ADOPT_REQUEST, ...numberToBytes(request_uuid, 4), ...owner_signature_bytes, ...owner_key_bytes];
@@ -2079,13 +2082,13 @@ export class Spectoda {
     }
 
     const variable_value = this.runtime.readVariableAddress(variable_address, device_id);
-    logging.debug(`variable_name=${variable_name}, device_id=${device_id}, variable_value=${variable_value.debug}`);
+    logging.verbose(`variable_name=${variable_name}, device_id=${device_id}, variable_value=${variable_value.debug}`);
 
     return variable_value;
   }
 
   readVariableAddress(variable_address, device_id) {
-    logging.debug(`> Reading variable address...`);
+    logging.debug("> Reading variable address...");
 
     if (this.#getConnectionState() !== "connected") {
       throw "DeviceDisconnected";
