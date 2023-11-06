@@ -3,7 +3,7 @@ import { TimeTrack } from "./TimeTrack.js";
 import "./TnglReader.js";
 import { TnglReader } from "./TnglReader.js";
 import "./TnglWriter.js";
-import { colorToBytes, computeTnglFingerprint, detectSpectodaConnect, hexStringToUint8Array, labelToBytes, numberToBytes, percentageToBytes, sleep, strMacToBytes, stringToBytes, uint8ArrayToHexString } from "./functions";
+import { colorToBytes, computeTnglFingerprint, detectNode, detectSpectodaConnect, hexStringToUint8Array, labelToBytes, numberToBytes, percentageToBytes, sleep, strMacToBytes, stringToBytes, uint8ArrayToHexString } from "./functions";
 import { changeLanguage, t } from "./i18n.js";
 import { logging, setLoggingLevel } from "./logging";
 import { COMMAND_FLAGS } from "./src/Spectoda_JS.js";
@@ -250,7 +250,10 @@ export class Spectoda {
     }
 
     try {
-      if (detectSpectodaConnect()) {
+
+      if(detectNode()) {
+        // NOP
+      } else if (detectSpectodaConnect()) {
         window.flutter_inappwebview.callHandler("setWakeLock", true);
       } else {
         navigator.wakeLock
@@ -279,7 +282,9 @@ export class Spectoda {
     }
 
     try {
-      if (detectSpectodaConnect()) {
+      if(detectNode()) {
+        // NOP
+      } else if (detectSpectodaConnect()) {
         window.flutter_inappwebview.callHandler("setWakeLock", false);
       } else {
         this.#wakeLock
@@ -654,9 +659,9 @@ export class Spectoda {
       });
   }
 
-  connect(devices = null, autoConnect = true, ownerSignature = null, ownerKey = null, connectAny = false, fwVersion = "", autonomousConnection = false, overrideConnection = false) {
+  connect(criteria = null, autoConnect = true, ownerSignature = null, ownerKey = null, connectAny = false, fwVersion = "", autonomousConnection = false, overrideConnection = false) {
     logging.verbose(
-      `connect(devices=${devices}, autoConnect=${autoConnect}, ownerSignature=${ownerSignature}, ownerKey=${ownerKey}, connectAny=${connectAny}, fwVersion=${fwVersion}, autonomousConnection=${autonomousConnection}, overrideConnection=${overrideConnection})`,
+      `connect(criteria=${criteria}, autoConnect=${autoConnect}, ownerSignature=${ownerSignature}, ownerKey=${ownerKey}, connectAny=${connectAny}, fwVersion=${fwVersion}, autonomousConnection=${autonomousConnection}, overrideConnection=${overrideConnection})`,
     );
 
     this.#autonomousConnection = autonomousConnection;
