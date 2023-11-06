@@ -289,6 +289,11 @@ export class Spectoda_JS {
         },
 
         _onLog: (level, filename, message) => {
+
+          if(level - 1 < logging.level) {
+            return;
+          }
+
           switch (level) {
             case 5:
               logging.verbose(`<spectoda> [V][${filename}]: ${message}`);
