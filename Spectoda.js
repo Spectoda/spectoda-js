@@ -811,10 +811,10 @@ export class Spectoda {
   }
 
   // writes Tngl only if fingerprints does not match
-  syncTngl(tngl_code, tngl_bytes = null, tngl_bank = 0) {
-    logging.verbose(`syncTngl(tngl_code=${tngl_code}, tngl_bytes=${tngl_bytes}, tngl_bank=${tngl_bank})`);
+  syncTngl(tngl_code, tngl_bytes = null) {
+    logging.verbose(`syncTngl(tngl_code=${tngl_code}, tngl_bytes=${tngl_bytes})`);
 
-    logging.info(`> Syncing Tngl code...`);
+    logging.debug("> Syncing Tngl code...");
 
     if (tngl_code === null && tngl_bytes === null) {
       return Promise.reject("InvalidParameters");
@@ -824,28 +824,24 @@ export class Spectoda {
       tngl_bytes = this.#parser.parseTnglCode(tngl_code);
     }
 
-    return this.getTnglFingerprint(tngl_bank).then(device_fingerprint => {
-      return computeTnglFingerprint(tngl_bytes, "fingerprint").then(new_fingerprint => {
-        // logging.debug(device_fingerprint);
-        // logging.debug(new_fingerprint);
+    const reinterpret_bytecode = [COMMAND_FLAGS.FLAG_REINTERPRET_TNGL, ...numberToBytes(this.runtime.clock.millis(), 6), 0, ...numberToBytes(tngl_bytes.length, 4), ...tngl_bytes];
+    this.runtime.evaluate(reinterpret_bytecode);
 
+    return this.getTnglFingerprint().then(device_fingerprint => {
+      return computeTnglFingerprint(tngl_bytes, "fingerprint").then(new_fingerprint => {
         for (let i = 0; i < device_fingerprint.length; i++) {
           if (device_fingerprint[i] !== new_fingerprint[i]) {
-            return this.writeTngl(null, tngl_bytes, tngl_bank);
+            return this.writeTngl(null, tngl_bytes);
           }
         }
       });
     });
   }
 
-  writeTngl(tngl_code, tngl_bytes = null, memory_bank = 0) {
-    logging.verbose(`writeTngl(tngl_code=${tngl_code}, tngl_bytes=${tngl_bytes}, memory_bank=${memory_bank})`);
+  writeTngl(tngl_code, tngl_bytes = null) {
+    logging.verbose(`writeTngl(tngl_code=${tngl_code}, tngl_bytes=${tngl_bytes})`);
 
-    logging.info(`> Writing Tngl code...`);
-
-    if (memory_bank === null || memory_bank === undefined) {
-      memory_bank = 0;
-    }
+    logging.debug(`> Writing Tngl code...`);
 
     if (tngl_code === null && tngl_bytes === null) {
       return Promise.reject("InvalidParameters");
@@ -858,9 +854,7 @@ export class Spectoda {
     const timeline_flags = this.timeline.paused() ? 0b00010000 : 0b00000000; // flags: [reserved,reserved,reserved,timeline_paused,reserved,reserved,reserved,reserved]
     const timeline_bytecode = [COMMAND_FLAGS.FLAG_SET_TIMELINE, ...numberToBytes(this.runtime.clock.millis(), 6), ...numberToBytes(this.timeline.millis(), 4), timeline_flags];
 
-    const reinterpret_bytecode = [COMMAND_FLAGS.FLAG_REINTERPRET_TNGL, ...numberToBytes(this.runtime.clock.millis(), 6), memory_bank, ...numberToBytes(tngl_bytes.length, 4), ...tngl_bytes];
-
-    // logging.info(reinterpret_bytecode);
+    const reinterpret_bytecode = [COMMAND_FLAGS.FLAG_REINTERPRET_TNGL, ...numberToBytes(this.runtime.clock.millis(), 6), 0, ...numberToBytes(tngl_bytes.length, 4), ...tngl_bytes];
 
     const payload = [...timeline_bytecode, ...reinterpret_bytecode];
     return this.runtime.execute(payload, "TNGL").then(() => {
@@ -1612,15 +1606,11 @@ export class Spectoda {
     });
   }
 
-  getTnglFingerprint(tngl_bank = 0) {
+  getTnglFingerprint() {
     logging.debug("> Getting TNGL fingerprint...");
 
-    if (tngl_bank === null || tngl_bank === undefined) {
-      tngl_bank = 0;
-    }
-
     const request_uuid = this.#getUUID();
-    const bytes = [COMMAND_FLAGS.FLAG_TNGL_FINGERPRINT_REQUEST, ...numberToBytes(request_uuid, 4), tngl_bank];
+    const bytes = [COMMAND_FLAGS.FLAG_TNGL_FINGERPRINT_REQUEST, ...numberToBytes(request_uuid, 4), 0];
 
     return this.runtime.request(bytes, true).then(response => {
       let reader = new TnglReader(response);
