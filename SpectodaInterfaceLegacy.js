@@ -1,37 +1,29 @@
-import { logging } from "./logging";
-import {
-  colorToBytes,
-  createNanoEvents,
-  hexStringToUint8Array,
-  labelToBytes,
-  numberToBytes,
-  percentageToBytes,
-  sleep,
-  stringToBytes,
-  noSleep,
-  detectSpectodaConnect,
-  mapValue,
-  rgbToHex,
-  detectAndroid,
-  detectSafari,
-  detectChrome,
-  detectWindows,
-  detectLinux,
-  detectIPhone,
-  detectMacintosh,
-  uint8ArrayToHexString,
-  createNanoEventsWithWrappedEmit,
-} from "./functions";
 import { SpectodaDummyConnector } from "./SpectodaDummyConnector.js";
 import { SpectodaWebBluetoothConnector } from "./SpectodaWebBluetoothConnector.js";
 import { SpectodaWebSerialConnector } from "./SpectodaWebSerialConnector.js";
+import {
+  createNanoEvents,
+  createNanoEventsWithWrappedEmit,
+  detectAndroid,
+  detectChrome,
+  detectIPhone,
+  detectLinux,
+  detectMacintosh,
+  detectSpectodaConnect,
+  detectWindows,
+  mapValue,
+  rgbToHex,
+  sleep,
+  uint8ArrayToHexString
+} from "./functions";
+import { logging } from "./logging";
 // import { SpectodaConnectConnector } from "./SpectodaConnectConnector.js";
 // import { SpectodaWebSocketsConnector } from "./SpectodaWebSocketsConnector.js";
+import { FlutterConnector } from "./FlutterConnector.js";
 import { TimeTrack } from "./TimeTrack.js";
 import "./TnglReader.js";
-import "./TnglWriter.js";
 import { TnglReader } from "./TnglReader.js";
-import { FlutterConnector } from "./FlutterConnector.js";
+import "./TnglWriter.js";
 import { t } from "./i18n.js";
 
 export const COMMAND_FLAGS = Object.freeze({
@@ -227,6 +219,8 @@ export class SpectodaInterfaceLegacy {
 
   #connectedPeers;
 
+  #isPrioritizedWakelock;
+
   constructor(deviceReference /*, reconnectionInterval = 1000*/) {
     this.#deviceReference = deviceReference;
 
@@ -371,26 +365,65 @@ export class SpectodaInterfaceLegacy {
     this.#eventEmitter.emit(event, ...arg);
   }
 
-  requestWakeLock() {
-    logging.verbose("requestWakeLock()");
 
-    logging.info("> Activating wakeLock...");
-    if (detectSpectodaConnect()) {
-      return window.flutter_inappwebview.callHandler("setWakeLock", true);
-    } else {
-      return noSleep.enable();
+  requestWakeLock(prioritized = false) {
+    logging.debug("> Activating wakeLock...");
+
+    if (prioritized) {
+      this.#isPrioritizedWakelock = true;
+    }
+
+    try {
+
+      if(detectNode()) {
+        // NOP
+      } else if (detectSpectodaConnect()) {
+        window.flutter_inappwebview.callHandler("setWakeLock", true);
+      } else {
+        navigator.wakeLock
+          .request("screen")
+          .then(Wakelock => {
+            logging.info("Web Wakelock activated.");
+            this.#wakeLock = Wakelock;
+          })
+          .catch(() => {
+            logging.warn("Web Wakelock activation failed.");
+          });
+      }
+      return Promise.resolve();
+    } catch (e) {
+      return Promise.reject(e);
     }
   }
 
-  releaseWakeLock() {
-    logging.verbose("releaseWakeLock()");
+  releaseWakeLock(prioritized = false) {
+    logging.debug("> Deactivating wakeLock...");
 
-    logging.info("> Deactivating wakeLock...");
-    if (detectSpectodaConnect()) {
-      return window.flutter_inappwebview.callHandler("setWakeLock", false);
-    } else {
-      noSleep.disable();
+    if (prioritized) {
+      this.#isPrioritizedWakelock = false;
+    } else if (this.#isPrioritizedWakelock) {
       return Promise.resolve();
+    }
+
+    try {
+      if(detectNode()) {
+        // NOP
+      } else if (detectSpectodaConnect()) {
+        window.flutter_inappwebview.callHandler("setWakeLock", false);
+      } else {
+        this.#wakeLock
+          ?.release()
+          .then(() => {
+            logging.info("Web Wakelock deactivated.");
+            this.#wakeLock = null;
+          })
+          .catch(() => {
+            logging.warn("Web Wakelock deactivation failed.");
+          });
+      }
+      return Promise.resolve();
+    } catch (e) {
+      return Promise.reject(e);
     }
   }
 

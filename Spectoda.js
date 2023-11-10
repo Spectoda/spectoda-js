@@ -228,12 +228,12 @@ export class Spectoda {
     return true;
   }
 
-  requestWakeLock() {
-    return this.interface.requestWakeLock();
+  requestWakeLock(prioritized = false) {
+    return this.interface.requestWakeLock(prioritized);
   }
 
-  releaseWakeLock() {
-    return this.interface.releaseWakeLock();
+  releaseWakeLock(prioritized = false) {
+    return this.interface.releaseWakeLock(prioritized);
   }
 
   setConnector(connector_type) {
@@ -297,6 +297,7 @@ export class Spectoda {
     return this.#ownerKey;
   }
 
+
   /**
    * @param {Object} options
    * @param {string} options.signature - The network signature.
@@ -313,6 +314,7 @@ export class Spectoda {
     });
 
     this.socket.connect();
+    this.requestWakeLock(true);
 
     const setConnectionSocketData = async () => {
       const peers = await this.getConnectedPeersInfo();
@@ -395,16 +397,11 @@ export class Spectoda {
     });
   }
 
-  async disableRemoteControl() {
+  disableRemoteControl() {
     logging.debug("> Disonnecting from the Remote Control");
 
-    this.#reconnectRC = false;
-
-    try {
-      await this.socket.emit("leave");
-    } finally {
-      return this.socket?.disconnect();
-    }
+    this.releaseWakeLock(true);
+    this.socket?.disconnect();
   }
 
   // valid UUIDs are in range [1..4294967295] (32-bit unsigned number)
