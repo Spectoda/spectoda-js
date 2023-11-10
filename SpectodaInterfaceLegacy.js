@@ -9,6 +9,7 @@ import {
   detectIPhone,
   detectLinux,
   detectMacintosh,
+  detectNode,
   detectSpectodaConnect,
   detectWindows,
   mapValue,
