@@ -7,15 +7,13 @@ import { COMMAND_FLAGS } from "../Spectoda_JS.js";
 import { TnglWriter } from "../../TnglWriter.js";
 import { TnglReader } from "../../TnglReader.js";
 
-const { SerialPort, ReadlineParser }: { SerialPort: any; ReadlineParser: any } = { SerialPort: null, ReadlineParser: null };
-
-if (typeof window === "undefined" && !process.env.NEXT_PUBLIC_VERSION) {
-  const { SerialPort, ReadlineParser } = require("serialport");
-}
-
-// const SerialPort = require('serialport');
-// const { TextDecoder, TextEncoder } = require('util');
-// const { Transform, pipeline } = require('stream');
+// const { SerialPort, ReadlineParser }: { SerialPort: any; ReadlineParser: any } = { SerialPort: null, ReadlineParser: null };
+// if (typeof window === "undefined" && !process.env.NEXT_PUBLIC_VERSION) {
+//   const { SerialPort, ReadlineParser } = require("serialport");
+// 
+const { SerialPort, ReadlineParser } = require("serialport");
+const { TextDecoder, TextEncoder } = require('util');
+const { Transform, pipeline } = require('stream');
 
 ///////////////////////////////////////////////////////////////////////////////////
 
@@ -182,9 +180,7 @@ export class SpectodaNodeSerialConnector {
 
     // criteria.uart == "/dev/ttyS0"
 
-    const criteria_object = JSON.parse(criteria);
-
-    if (!criteria_object.uart) {
+    if (!(criteria && criteria.length && criteria[0].uart)) {
 
       return this.scan(criteria, scan_period).then(ports => {
         logging.verbose("ports=", ports);
@@ -206,11 +202,10 @@ export class SpectodaNodeSerialConnector {
 
     else {
 
-      this.#serialPort = new SerialPort({ path: criteria_object.uart, baudRate: 115200, dataBits: 8, parity: "none", stopBits: 1, autoOpen: false });
+      this.#serialPort = new SerialPort({ path: criteria[0].uart, baudRate: 115200, dataBits: 8, parity: "none", stopBits: 1, autoOpen: false });
       logging.verbose("this.#serialPort=", this.#serialPort);
 
       return Promise.resolve({ connector: this.type });
-
     }
 
 
