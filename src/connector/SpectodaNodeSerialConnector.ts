@@ -7,7 +7,11 @@ import { COMMAND_FLAGS } from "../Spectoda_JS.js";
 import { TnglWriter } from "../../TnglWriter.js";
 import { TnglReader } from "../../TnglReader.js";
 
-import { SerialPort, ReadlineParser } from 'serialport'
+const { SerialPort, ReadlineParser }: { SerialPort: any; ReadlineParser: any } = { SerialPort: null, ReadlineParser: null };
+
+if (typeof window === "undefined" && !process.env.NEXT_PUBLIC_VERSION) {
+  const { SerialPort, ReadlineParser } = require("serialport");
+}
 
 // const SerialPort = require('serialport');
 // const { TextDecoder, TextEncoder } = require('util');

@@ -1123,7 +1123,7 @@ export class TnglCompiler {
     // origin->[0x00]destination
     // using regex, we can split the connection into 3 parts:
     // origin -> [0x00] -> destination
-    const regex = /([a-zA-Z0-9_]+)->\[0x([0-9a-fA-F]+)\]([a-zA-Z0-9_]+)/;
+    const regex = /([a-zA-Z0-9_]+)->\[([0-9a-fA-F]+)\]([a-zA-Z0-9_]+)/;
 
     const match = connection.match(regex);
     if (match === null) {
@@ -1169,7 +1169,9 @@ export class TnglCompiler {
     this.#tnglWriter.writeFlag(OBJECT_TYPE.OPERATION_CONNECTION);
     this.#tnglWriter.writeUint16(origin_value_address);
     this.#tnglWriter.writeUint16(destination_variable_address);
-    this.#tnglWriter.writeUint8(pin);
+    // classic Number token will be ignore, because we are in the connection token context
+    // therefore, we need to compile the pin number manually
+    this.compileNumber(pin);
   }
   // number_t, 3 bytes, max: 16777215
   compileNumber(number) {
