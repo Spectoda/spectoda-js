@@ -182,7 +182,9 @@ export class SpectodaNodeSerialConnector {
 
     // criteria.uart == "/dev/ttyS0"
 
-    if (!criteria.uart) {
+    const criteria_object = JSON.parse(criteria);
+
+    if (!criteria_object.uart) {
 
       return this.scan(criteria, scan_period).then(ports => {
         logging.verbose("ports=", ports);
@@ -204,7 +206,7 @@ export class SpectodaNodeSerialConnector {
 
     else {
 
-      this.#serialPort = new SerialPort({ path: criteria.uart, baudRate: 115200, dataBits: 8, parity: "none", stopBits: 1, autoOpen: false });
+      this.#serialPort = new SerialPort({ path: criteria_object.uart, baudRate: 115200, dataBits: 8, parity: "none", stopBits: 1, autoOpen: false });
       logging.verbose("this.#serialPort=", this.#serialPort);
 
       return Promise.resolve({ connector: this.type });
