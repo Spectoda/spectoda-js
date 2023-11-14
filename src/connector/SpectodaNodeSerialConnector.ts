@@ -158,7 +158,7 @@ export class SpectodaNodeSerialConnector {
   // are eligible.
 
   autoSelect(criteria, scan_period, timeout) {
-    logging.verbose("autoSelect(criteria=" + JSON.stringify(criteria) + ", scan_period=" + scan_period + ", timeout=" + timeout + ")");
+    logging.debug("autoSelect(criteria=" + JSON.stringify(criteria) + ", scan_period=" + scan_period + ", timeout=" + timeout + ")");
 
     if (this.#connected) {
       return this.disconnect().then(() => {
@@ -176,21 +176,38 @@ export class SpectodaNodeSerialConnector {
     //         the greatest signal strength. If no device is found until the timeout,
     //         then return error
 
-    return this.scan(criteria, scan_period).then(ports => {
-      logging.verbose("ports=", ports);
+    // criteria.uart == "/dev/ttyS0"
 
-      if (ports.length === 0) {
-        throw "NoDeviceFound";
-      }
+    if (!criteria.uart) {
 
-      const port_path = ports[ports.length - 2].path;
-      logging.verbose("port_path=", port_path);
+      return this.scan(criteria, scan_period).then(ports => {
+        logging.verbose("ports=", ports);
 
-      this.#serialPort = new SerialPort({ path: port_path, baudRate: 115200, dataBits: 8, parity: "none", stopBits: 1, autoOpen: false });
+        if (ports.length === 0) {
+          throw "NoDeviceFound";
+        }
+
+        const port_path = ports[ports.length - 2].path;
+        logging.verbose("port_path=", port_path);
+
+        this.#serialPort = new SerialPort({ path: port_path, baudRate: 115200, dataBits: 8, parity: "none", stopBits: 1, autoOpen: false });
+        logging.verbose("this.#serialPort=", this.#serialPort);
+
+        return Promise.resolve({ connector: this.type });
+      });
+
+    }
+
+    else {
+
+      this.#serialPort = new SerialPort({ path: criteria.uart, baudRate: 115200, dataBits: 8, parity: "none", stopBits: 1, autoOpen: false });
       logging.verbose("this.#serialPort=", this.#serialPort);
 
       return Promise.resolve({ connector: this.type });
-    });
+
+    }
+
+
   }
 
   selected() {
