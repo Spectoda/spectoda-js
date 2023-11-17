@@ -205,6 +205,18 @@ const OBJECT_TYPE = Object.freeze({
   OPERATION_CONNECTION: 253,
 });
 
+const ENUMS = Object.freeze({
+    MyEnum: Object.freeze({
+        VALUE_1: 0,
+        VALUE_2: 1,
+    }),
+
+    MyEnum2: Object.freeze({
+        VALUE_1: 0,
+        VALUE_2: 1,
+    })
+});
+
 export class TnglCompiler {
   #tnglWriter;
   #const_declarations_stack;
@@ -1348,6 +1360,9 @@ export class TnglCodeParser {
     return this.#compiler.getVariableDeclarations();
   }
 
+  getEnums() {
+    return ENUMS;
+  }
 
   /*
    * Tiny tokenizer
