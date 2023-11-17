@@ -188,17 +188,6 @@ const OBJECT_TYPE = Object.freeze({
   OPERATION_MODULO: 21,
   OPERATION_EVENT_SET: 22,
   // TODO OPERATIONS and PROVIDERS should be one type of object
-  PROVIDER_PROXIMITY: 151,
-  PROVIDER_BUTTON: 152,
-  PROVIDER_TOUCH: 153,
-  PROVIDER_VOLTAGE: 154,
-  PROVIDER_PIR: 155,
-  PROVIDER_SLIDER: 156,
-  PROVIDER_SONOFF_ULTIMATE: 157,
-  PROVIDER_NETWORKSYNC: 158,
-  PROVIDER_AMBIENT_LIGHT: 159,
-  PROVIDER_LUXV30B: 160,
-  PROVIDER_VEML7700: 161,
   PROVIDER: 162,
 
   // TODO OPERATION_CONNECTION should be FLAG in TNGL_FLAGS
@@ -206,14 +195,18 @@ const OBJECT_TYPE = Object.freeze({
 });
 
 const ENUMS = Object.freeze({
-    MyEnum: Object.freeze({
-        VALUE_1: 0,
-        VALUE_2: 1,
-    }),
-
-    MyEnum2: Object.freeze({
-        VALUE_1: 0,
-        VALUE_2: 1,
+    ProviderType: Object.freeze({
+        Invalid: 0,
+        Proximity: 1,
+        Button: 2,
+        Touch: 3,
+        Voltage: 4,
+        PIR: 5,
+        Slider: 6,
+        SonoffTXUltimate: 7,
+        NetworkSync: 8,
+        VEML7700: 9,
+        EVENT: 10
     })
 });
 
