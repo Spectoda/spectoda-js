@@ -376,7 +376,7 @@ export class SpectodaInterfaceLegacy {
 
     try {
 
-      if(detectNode()) {
+      if (detectNode()) {
         // NOP
       } else if (detectSpectodaConnect()) {
         window.flutter_inappwebview.callHandler("setWakeLock", true);
@@ -407,7 +407,7 @@ export class SpectodaInterfaceLegacy {
     }
 
     try {
-      if(detectNode()) {
+      if (detectNode()) {
         // NOP
       } else if (detectSpectodaConnect()) {
         window.flutter_inappwebview.callHandler("setWakeLock", false);
@@ -1416,6 +1416,7 @@ export class SpectodaInterfaceLegacy {
       }
 
       if (emitted_events.length) {
+        emitted_events.sort((a, b) => a.timestamp - b.timestamp);
         this.emit("emitted_events", emitted_events);
 
         const informations = emitted_events.map(x => x.info);

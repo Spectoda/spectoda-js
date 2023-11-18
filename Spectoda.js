@@ -2211,7 +2211,7 @@ export class Spectoda {
         }
 
         // Step 2: Sort the events by timestamp
-        events.sort((a, b) => b.timestamp - a.timestamp);
+        events.sort((a, b) => a.timestamp - b.timestamp);
 
         return JSON.stringify(events); // need to stringify because of deleting references to objects
       });
