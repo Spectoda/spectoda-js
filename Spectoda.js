@@ -39,6 +39,8 @@ export class Spectoda {
   // mechanism for event ordering
   #lastEmitClockTimestamp;
 
+  #eventHistory;
+
   constructor(connectorType = "default", reconnectionInterval = 1000) {
     // nextjs
     if (typeof window === "undefined") {
@@ -71,6 +73,87 @@ export class Spectoda {
     this.#websocketConnectionState = "disconnected";
 
     this.#lastEmitClockTimestamp = 0;
+
+    this.#eventHistory = {};
+    for (let id = 0; id < 256; id++) {
+      this.#eventHistory[id] = {};
+    }
+
+    // this.#eventHistory = [];
+
+    this.interface.on("emitted_events", events => {
+
+      // interface Event {
+      //   type: number;
+      //   value: any;
+      //   id: number;
+      //   label: string;
+      //   identifier: number;
+      //   timestamp: number;
+      //   meta: EventMeta;
+      // }
+
+      for (const event of events) {
+
+        if (event.id === 255) {
+
+          for (let id = 0; id < 255; id++) {
+
+            if (!this.#eventHistory[id][event.label]) {
+              this.#eventHistory[id][event.label] = {};
+            }
+
+            if (!this.#eventHistory[id][event.label] || !this.#eventHistory[id][event.label].timestamp || event.timestamp >= this.#eventHistory[id][event.label].timestamp) {
+              this.#eventHistory[id][event.label].type = event.type;
+              this.#eventHistory[id][event.label].value = event.value;
+              this.#eventHistory[id][event.label].id = id;
+              this.#eventHistory[id][event.label].label = event.label;
+              this.#eventHistory[id][event.label].timestamp = event.timestamp;
+            }
+          }
+
+          continue;
+        }
+
+        if (!this.#eventHistory[event.id][event.label]) {
+          this.#eventHistory[event.id][event.label] = {};
+        }
+
+        if (!this.#eventHistory[event.id][event.label] || !this.#eventHistory[event.id][event.label].timestamp || event.timestamp >= this.#eventHistory[event.id][event.label].timestamp) {
+          this.#eventHistory[event.id][event.label].type = event.type;
+          this.#eventHistory[event.id][event.label].value = event.value;
+          this.#eventHistory[event.id][event.label].id = event.id;
+          this.#eventHistory[event.id][event.label].label = event.label;
+          this.#eventHistory[event.id][event.label].timestamp = event.timestamp;
+        }
+      }
+
+      // for (const event of events) {
+      //   // Find if an event with the same id and identifier already exists
+      //   const existingEventIndex = this.#eventHistory.findIndex(e => e.id === event.id && e.label === event.label);
+
+      //   if (existingEventIndex !== -1) {
+      //     // Check if the new event has a larger timestamp
+      //     if (event.timestamp > this.#eventHistory[existingEventIndex].timestamp) {
+      //       // Replace the existing event
+      //       this.#eventHistory[existingEventIndex] = event;
+      //       // Re-sort the array since the updated event might change the order
+      //       this.#eventHistory.sort((a, b) => a.timestamp - b.timestamp);
+      //     }
+      //   } else {
+      //     // Insert the new event in a sorted manner
+      //     const insertIndex = this.#eventHistory.findIndex(sortedEvent => sortedEvent.timestamp > event.timestamp);
+      //     if (insertIndex === -1) {
+      //       this.#eventHistory.push(event);
+      //     } else {
+      //       this.#eventHistory.splice(insertIndex, 0, event);
+      //     }
+      //   }
+      // }
+
+      console.log("#eventHistory", this.#eventHistory);
+
+    });
 
     this.interface.onConnected = event => {
       logging.info("> Interface connected");
@@ -2107,4 +2190,110 @@ export class Spectoda {
       return { pcb_code: pcb_code, product_code: product_code };
     });
   }
+
+  getEmittedEvents(ids) {
+
+    // if ids is not an array, make it an array
+    if (typeof ids === "object") {
+      ids = [ids];
+    }
+
+    return this.readEventHistory()
+      .catch(() => { console.warn("Failed to read event history"); })
+      .then(() => {
+
+        const events = [];
+
+        for (const id of ids) {
+          for (const event in this.#eventHistory[id]) {
+            events.push(this.#eventHistory[id][event]);
+          }
+        }
+
+        // Step 2: Sort the events by timestamp
+        events.sort((a, b) => b.timestamp - a.timestamp);
+
+        return JSON.stringify(events); // need to stringify because of deleting references to objects
+      });
+  }
+
+  emitEvents(events) {
+
+    const EVENT_VALUE_TYPE = {
+      TIMESTAMP: 32,
+      LABEL: 31,
+      PERCENTAGE: 30,
+      NUMBER: 29,
+      VALUE_ARRAY: 27,
+      COLOR: 26,
+      TRIPLE: 25,
+      PIXELS: 19,
+      VALUE_ADDRESS: 18,
+      BOOL: 2,
+      NULL: 1,
+      UNDEFINED: 0,
+    };
+
+
+    if (typeof events === "string") {
+      events = JSON.parse(events);
+    }
+
+    // if events is not an array, make it an array
+    if (typeof events !== "object") {
+      events = [events];
+    }
+
+
+    for (const event of events) {
+
+      switch (event.type) {
+        case "timestamp":
+        case EVENT_VALUE_TYPE.TIMESTAMP:
+          this.emitTimestampEvent(event.label, event.value, event.id);
+          break;
+        case "label":
+        case EVENT_VALUE_TYPE.LABEL:
+          this.emitLabelEvent(event.label, event.value, event.id);
+          break;
+        case "percentage":
+        case EVENT_VALUE_TYPE.PERCENTAGE:
+          this.emitPercentageEvent(event.label, event.value, event.id);
+          break;
+        // case EVENT_VALUE_TYPE.NUMBER:
+        //   this.emitNumberEvent(event.label, event.value, event.id);
+        //   break;
+        // case EVENT_VALUE_TYPE.VALUE_ARRAY:
+        //   this.emitValueArrayEvent(event.label, event.value, event.id);
+        //   break;
+        case "color":
+        case EVENT_VALUE_TYPE.COLOR:
+          this.emitColorEvent(event.label, event.value, event.id);
+          break;
+        // case EVENT_VALUE_TYPE.TRIPLE:
+        //   this.emitTripleEvent(event.label, event.value, event.id);
+        //   break;
+        // case EVENT_VALUE_TYPE.PIXELS:
+        //   this.emitPixelsEvent(event.label, event.value, event.id);
+        //   break;
+        // case EVENT_VALUE_TYPE.VALUE_ADDRESS:
+        //   this.emitValueAddressEvent(event.label, event.value, event.id);
+        //   break;
+        // case EVENT_VALUE_TYPE.BOOL:
+        //   this.emitBoolEvent(event.label, event.value, event.id);
+        //   break;
+        // case EVENT_VALUE_TYPE.NULL:
+        //   this.emitNullEvent(event.label, event.value, event.id);
+        //   break;
+        case "none":
+        case EVENT_VALUE_TYPE.UNDEFINED:
+          this.emitEvent(event.label, event.id);
+          break;
+        default:
+          logging.error(`Unknown event type: ${event.type}`);
+          break;
+      }
+    }
+  }
+
 }
