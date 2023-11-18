@@ -251,7 +251,7 @@ export class Spectoda {
 
     try {
 
-      if(detectNode()) {
+      if (detectNode()) {
         // NOP
       } else if (detectSpectodaConnect()) {
         window.flutter_inappwebview.callHandler("setWakeLock", true);
@@ -282,7 +282,7 @@ export class Spectoda {
     }
 
     try {
-      if(detectNode()) {
+      if (detectNode()) {
         // NOP
       } else if (detectSpectodaConnect()) {
         window.flutter_inappwebview.callHandler("setWakeLock", false);
@@ -679,15 +679,15 @@ export class Spectoda {
     }
 
     // if criteria is object or array of obects
-    if(criteria && typeof criteria === "object") {
+    if (criteria && typeof criteria === "object") {
       // if criteria is not an array, make it an array
       if (!Array.isArray(criteria)) {
         criteria = [criteria];
       }
-    } 
+    }
     //
     else {
-      criteria = [{ ownerSignature: this.#ownerSignature }];
+      criteria = [{}];
     }
 
     if (!connectAny) {
@@ -1516,7 +1516,7 @@ export class Spectoda {
       const removed_device_mac_bytes = reader.readBytes(6);
 
       return this.rebootDevice()
-        .catch(() => {})
+        .catch(() => { })
         .then(() => {
           let removed_device_mac = "00:00:00:00:00:00";
           if (removed_device_mac_bytes.length >= 6) {
@@ -1906,7 +1906,7 @@ export class Spectoda {
 
   writeOwner(ownerSignature = "00000000000000000000000000000000", ownerKey = "00000000000000000000000000000000") {
     logging.verbose("writeOwner(ownerSignature=", ownerSignature, "ownerKey=", ownerKeym, ")");
-    
+
     logging.debug("> Writing owner to device...");
 
     const owner_signature_bytes = hexStringToUint8Array(ownerSignature, 16);
