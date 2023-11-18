@@ -1909,7 +1909,7 @@ export class Spectoda {
   }
 
   writeOwner(ownerSignature = "00000000000000000000000000000000", ownerKey = "00000000000000000000000000000000") {
-    logging.verbose("writeOwner(ownerSignature=", ownerSignature, "ownerKey=", ownerKeym, ")");
+    logging.verbose("writeOwner(ownerSignature=", ownerSignature, "ownerKey=", ownerKey, ")");
 
     logging.debug("> Writing owner to device...");
 
@@ -1977,7 +1977,7 @@ export class Spectoda {
   }
 
   writeNetworkOwner(ownerSignature = "00000000000000000000000000000000", ownerKey = "00000000000000000000000000000000") {
-    logging.verbose("writeNetworkOwner(ownerSignature=", ownerSignature, "ownerKey=", ownerKeym, ")");
+    logging.verbose("writeNetworkOwner(ownerSignature=", ownerSignature, "ownerKey=", ownerKey, ")");
 
     logging.debug("> Writing owner to network...");
 
