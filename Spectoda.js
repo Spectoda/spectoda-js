@@ -1183,7 +1183,7 @@ export class Spectoda {
         // TODO optimalize this begin by detecting when all controllers have erased its flash
         // TODO also, right now the gateway controller sends to other controlles to erase flash after it is done.
         // TODO that slows things down
-        await sleep(10000);
+        await sleep(5000);
 
         {
           //===========// WRITE //===========//
@@ -1195,7 +1195,7 @@ export class Spectoda {
             }
 
             const command_bytes = [COMMAND_FLAGS.FLAG_OTA_WRITE, 0x00, ...numberToBytes(written, 4), ...firmware.slice(index_from, index_to)];
-            await this.runtime.execute(command_bytes, null);
+            await this.runtime.execute(command_bytes, null, 20000);
 
             written += index_to - index_from;
 
@@ -1215,10 +1215,10 @@ export class Spectoda {
           logging.info("OTA END");
 
           const command_bytes = [COMMAND_FLAGS.FLAG_OTA_END, 0x00, ...numberToBytes(written, 4)];
-          await this.runtime.execute(command_bytes, null);
+          await this.runtime.execute(command_bytes, null, 20000);
         }
 
-        await sleep(3000);
+        await sleep(2500);
 
         await this.rebootNetwork();
 

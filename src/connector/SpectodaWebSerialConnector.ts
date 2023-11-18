@@ -53,9 +53,9 @@ const ends_with = function (buffer: number[], string: string, start_offset: numb
 export class SpectodaWebSerialConnector {
     #runtimeReference;
 
+    #serialPort: SerialPort | undefined;
     #criteria: any[] | undefined;
 
-    #serialPort: SerialPort | undefined;
     #writer: WritableStreamDefaultWriter<Uint8Array> | undefined;
     #reader: ReadableStreamDefaultReader<Uint8Array> | undefined;
 
@@ -65,7 +65,7 @@ export class SpectodaWebSerialConnector {
     #opened;
     #disconnecting;
 
-    #divisor;
+    #timeoutMultiplier;
 
     #beginCallback: ((result: boolean) => void) | null;
     #feedbackCallback: ((success: boolean) => void) | null;
@@ -78,9 +78,9 @@ export class SpectodaWebSerialConnector {
 
         this.#runtimeReference = runtimeReference;
 
+        this.#serialPort = undefined;
         this.#criteria = undefined;
 
-        this.#serialPort = undefined;
         this.#writer = undefined;
         this.#reader = undefined;
 
@@ -90,7 +90,7 @@ export class SpectodaWebSerialConnector {
         this.#opened = false;
         this.#disconnecting = false;
 
-        this.#divisor = 4;
+        this.#timeoutMultiplier = 1.2;
 
         this.#beginCallback = null;
         this.#feedbackCallback = null;
@@ -136,7 +136,7 @@ export class SpectodaWebSerialConnector {
     // if no criteria are set, then show all Spectoda devices visible.
     // first bonds the BLE device with the PC/Phone/Tablet if it is needed.
     // Then selects the device
-    userSelect(criteria: object): Promise<{ connector: string }> {
+    userSelect(criteria: object[]): Promise<{ connector: string }> {
         logging.verbose("userSelect()");
 
         if (this.#connected) {
@@ -147,6 +147,7 @@ export class SpectodaWebSerialConnector {
 
         if (this.#serialPort) {
             this.#serialPort = undefined;
+            this.#criteria = undefined;
         }
 
         return navigator.serial.requestPort().then(port => {
@@ -195,6 +196,7 @@ export class SpectodaWebSerialConnector {
             // this.#serialPort.removeEventListener("connect");
             // this.#serialPort.removeEventListener("disconnect");
             this.#serialPort = undefined;
+            this.#criteria = undefined;
         }
 
         return Promise.resolve();
@@ -543,20 +545,26 @@ export class SpectodaWebSerialConnector {
             payload = [];
         }
 
-        const header_writer = new TnglWriter(32);
-        const timeout_min = 50;
+        if (timeout < 0) {
+            throw "TimeoutExpired";
+        }
 
-        if (!timeout || timeout < timeout_min) {
-            timeout = timeout_min;
+        const packet_timeout_min = 10;
+        let packet_timeout = (payload.length * 8 * 1000 * this.#timeoutMultiplier) / 115200 + packet_timeout_min;
+
+        if (!packet_timeout || packet_timeout < packet_timeout_min) {
+            logging.warn("Packet Timeout is too small:", packet_timeout);
+            packet_timeout = packet_timeout_min;
         }
 
         logging.verbose(`initiate_code=${initiate_code}`);
         logging.verbose(`payload.length=${payload.length}`);
-        logging.verbose(`timeout=${timeout}`);
+        logging.verbose(`packet_timeout=${packet_timeout}`);
 
+        const header_writer = new TnglWriter(32);
         header_writer.writeUint32(initiate_code);
         header_writer.writeUint32(payload.length);
-        header_writer.writeUint32(timeout);
+        header_writer.writeUint32(packet_timeout);
         header_writer.writeUint32(crc32(payload));
         header_writer.writeUint32(crc32(new Uint8Array(header_writer.bytes.buffer)));
 
@@ -569,7 +577,7 @@ export class SpectodaWebSerialConnector {
                 this.disconnect().finally(() => {
                     reject("ResponseTimeout");
                 });
-            }, timeout + 1000); // +1000 for the controller to response timeout if reveive timeoutes
+            }, timeout + 250); // +250ms for the controller to response timeout if reveive timeoutes
 
             this.#feedbackCallback = (success: boolean) => {
                 this.#feedbackCallback = null;
@@ -585,11 +593,11 @@ export class SpectodaWebSerialConnector {
                     logging.verbose("this.#feedbackCallback FAIL");
                     setTimeout(() => {
                         try {
-                            resolve(this.#initiate(initiate_code, payload, tries - 1, 0));
+                            resolve(this.#initiate(initiate_code, payload, tries - 1, timeout - packet_timeout));
                         } catch (e) {
                             reject(e);
                         }
-                    }, 250); // 100ms to be safe
+                    }, 100); // 100ms to be safe
                 }
 
             };
@@ -768,7 +776,7 @@ export class SpectodaWebSerialConnector {
         return new Promise(async (resolve, reject) => {
             const chunk_size = 3984; // must be modulo 16
 
-            this.#divisor = 24;
+            this.#timeoutMultiplier = 2;
 
             let index_from = 0;
             let index_to = chunk_size;
@@ -850,7 +858,7 @@ export class SpectodaWebSerialConnector {
                 reject("UpdateFailed");
             }
         }).finally(() => {
-            this.#divisor = 4;
+            this.#timeoutMultiplier = 1.2;
             this.#writing = false;
         });
     }
