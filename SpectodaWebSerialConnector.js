@@ -233,7 +233,7 @@ criteria example:
 
     if (this.#connected) {
       return this.disconnect().then(() => {
-        return this.userSelect();
+        return this.userSelect(criteria);
       });
     }
 
@@ -264,7 +264,7 @@ criteria example:
     //         the greatest signal strength. If no device is found until the timeout,
     //         then return error
 
-    return this.userSelect();
+    return this.userSelect(criteria);
   }
 
   selected() {

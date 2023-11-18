@@ -1,6 +1,6 @@
 import { SpectodaDummyConnector } from "../SpectodaDummyConnector.js";
 import { SpectodaWebBluetoothConnector } from "../SpectodaWebBluetoothConnector.js";
-import { SpectodaWebSerialConnector } from "../SpectodaWebSerialConnector.js";
+import { SpectodaWebSerialConnector } from "./connector/SpectodaWebSerialConnector";
 import { createNanoEvents, detectAndroid, detectChrome, detectIPhone, detectLinux, detectMacintosh, detectNode, detectSpectodaConnect, detectWindows, numberToBytes, sleep, uint8ArrayToHexString } from "../functions";
 import { logging } from "../logging";
 // import { SpectodaConnectConnector } from "./SpectodaConnectConnector.js";
@@ -484,10 +484,9 @@ export class SpectodaRuntime {
 
     this.#selecting = true;
 
-    if (criteria === null) {
-      criteria = [];
-    } else if (!Array.isArray(criteria)) {
-      criteria = [criteria];
+    // TODO! make sure that criteria is always an array of at least one object
+    if (criteria === null || criteria === undefined || typeof criteria !== "object" || !Array.isArray(criteria)) {
+      throw "InvalidCriteria";
     }
 
     const item = new Query(Query.TYPE_USERSELECT, criteria, timeout);
@@ -512,10 +511,9 @@ export class SpectodaRuntime {
 
     this.#selecting = true;
 
-    if (criteria === null) {
-      criteria = [];
-    } else if (!Array.isArray(criteria)) {
-      criteria = [criteria];
+    // TODO! make sure that criteria is always an array of at least one object
+    if (criteria === null || criteria === undefined || typeof criteria !== "object" || !Array.isArray(criteria)) {
+      throw "InvalidCriteria";
     }
 
     const item = new Query(Query.TYPE_AUTOSELECT, criteria, scan_period, timeout);
