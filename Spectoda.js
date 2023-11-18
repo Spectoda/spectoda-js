@@ -151,7 +151,7 @@ export class Spectoda {
       //   }
       // }
 
-      console.log("#eventHistory", this.#eventHistory);
+      logging.verbose("#eventHistory", this.#eventHistory);
 
     });
 
@@ -208,21 +208,21 @@ export class Spectoda {
     switch (websocketConnectionState) {
       case "connecting":
         if (websocketConnectionState !== this.#websocketConnectionState) {
-          console.warn("> Spectoda connecting");
+          logging.warn("> Spectoda connecting");
           this.#websocketConnectionState = websocketConnectionState;
           this.interface.emit("connecting-websockets");
         }
         break;
       case "connected":
         if (websocketConnectionState !== this.#websocketConnectionState) {
-          console.warn("> Spectoda connected");
+          logging.warn("> Spectoda connected");
           this.#websocketConnectionState = websocketConnectionState;
           this.interface.emit("connected-websockets");
         }
         break;
       case "disconnecting":
         if (websocketConnectionState !== this.#websocketConnectionState) {
-          console.warn("> Spectoda disconnecting");
+          logging.warn("> Spectoda disconnecting");
           this.#connectionState = connectionState;
           this.interface.emit("disconnecting-websockets");
         }
@@ -240,7 +240,7 @@ export class Spectoda {
           //   throw "DisconnectingInProgress";
           // }
 
-          console.warn("> Spectoda connecting");
+          logging.warn("> Spectoda connecting");
           this.#connectionState = connectionState;
           this.interface.emit("connecting");
         }
@@ -251,7 +251,7 @@ export class Spectoda {
           //   throw "ConnectionFailed";
           // }
 
-          console.warn("> Spectoda connected");
+          logging.warn("> Spectoda connected");
           this.#connectionState = connectionState;
           this.interface.emit("connected");
         }
@@ -262,7 +262,7 @@ export class Spectoda {
           //   throw "ConnectingInProgress";
           // }
 
-          console.warn("> Spectoda disconnecting");
+          logging.warn("> Spectoda disconnecting");
           this.#connectionState = connectionState;
           this.interface.emit("disconnecting");
         }
@@ -273,7 +273,7 @@ export class Spectoda {
           //   throw "DisconnectFailed";
           // }
 
-          console.warn("> Spectoda disconnected");
+          logging.warn("> Spectoda disconnected");
           this.#connectionState = connectionState;
           this.interface.emit("disconnected");
         }
@@ -330,12 +330,12 @@ export class Spectoda {
 
   // todo remove, deprecated
   assignOwnerSignature() {
-    console.error("assignOwnerSignature() is deprecated. Use parameters in connect() instead.");
+    logging.error("assignOwnerSignature() is deprecated. Use parameters in connect() instead.");
   }
 
   // todo remove, deprecated
   assignOwnerKey() {
-    console.error("assignOwnerKey() is deprecated. Use parameters in connect() instead.");
+    logging.error("assignOwnerKey() is deprecated. Use parameters in connect() instead.");
   }
 
   assignOwnerSignature(ownerSignature) {
@@ -367,7 +367,7 @@ export class Spectoda {
 
   // todo remove, deprecated
   setOwnerKey() {
-    console.error("setOwnerKey() is deprecated. Use parameters in connect() instead.");
+    logging.error("setOwnerKey() is deprecated. Use parameters in connect() instead.");
   }
 
   getOwnerSignature() {
@@ -399,7 +399,7 @@ export class Spectoda {
 
     const setConnectionSocketData = async () => {
       const peers = await this.getConnectedPeersInfo();
-      console.log("peers", peers);
+      logging.debug("peers", peers);
       this.socket.emit("set-connection-data", peers);
     };
 
@@ -420,7 +420,7 @@ export class Spectoda {
         if (sessionOnly) {
           // todo finish impl + UI
           const roomId = await this.socket.emitWithAck("join-session");
-          console.log("Remote control id for this session is", { roomId });
+          logging.debug("Remote control id for this session is", { roomId });
         } else {
           this.#setWebSocketConnectionState("connecting");
           await this.socket
@@ -434,21 +434,21 @@ export class Spectoda {
             });
         }
 
-        console.log("> Connected and joined network remotely");
+        logging.info("> Connected and joined network remotely");
 
         resolve({ status: "success" });
 
-        console.log("> Listening for events", allEventsEmitter);
+        logging.info("> Listening for events", allEventsEmitter);
         window.allEventsEmitter = allEventsEmitter;
 
         allEventsEmitter.on("on", ({ name, args }) => {
-          console.log("on", name, args);
+          logging.debug("on", name, args);
           this.socket.emit("event", { name, args });
         });
 
         this.socket.on("func", async (payload, callback) => {
           if (!callback) {
-            console.error("No callback provided");
+            logging.error("No callback provided");
             return;
           }
 
@@ -470,7 +470,7 @@ export class Spectoda {
             const result = await this[functionName](...args);
             callback({ status: "success", result });
           } catch (e) {
-            console.error(e);
+            logging.error(e);
             callback({ status: "error", error: e });
           }
         });
@@ -1165,7 +1165,7 @@ export class Spectoda {
 
   updateDeviceFirmware(firmware) {
     logging.verbose(`updateDeviceFirmware(firmware.length=${firmware?.length})`);
-    console.log({ firmware });
+    logging.debug({ firmware });
 
     if (!firmware || firmware.length < 10000) {
       logging.error("Invalid firmware");
@@ -2199,7 +2199,7 @@ export class Spectoda {
     }
 
     return this.readEventHistory()
-      .catch(() => { console.warn("Failed to read event history"); })
+      .catch(() => { logging.warn("Failed to read event history"); })
       .then(() => {
 
         const events = [];
