@@ -2193,8 +2193,8 @@ export class Spectoda {
 
   getEmittedEvents(ids) {
 
-    // if ids is not an array, make it an array
-    if (typeof ids === "object") {
+    // Check if ids is not an array and make it an array if necessary
+    if (!Array.isArray(ids)) {
       ids = [ids];
     }
 
@@ -2239,8 +2239,8 @@ export class Spectoda {
       events = JSON.parse(events);
     }
 
-    // if events is not an array, make it an array
-    if (typeof events !== "object") {
+    // Check if events is not an array and make it an array if necessary
+    if (!Array.isArray(events)) {
       events = [events];
     }
 
