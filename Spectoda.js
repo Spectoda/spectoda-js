@@ -12,8 +12,6 @@ import "./TnglReader.js";
 import { TnglReader } from "./TnglReader.js";
 import "./TnglWriter.js";
 
-let lastEvents = {};
-
 // should not create more than one object!
 // the destruction of the Spectoda is not well implemented
 
@@ -870,7 +868,6 @@ export class Spectoda {
    */
   emitEvent(event_label, device_ids = [0xff], force_delivery = true) {
     logging.verbose(`emitEvent(label=${event_label},id=${device_ids},force=${force_delivery})`);
-    lastEvents[event_label] = { value: null, type: "none" };
 
     // clearTimeout(this.#saveStateTimeoutHandle);
     // this.#saveStateTimeoutHandle = setTimeout(() => {
@@ -892,28 +889,6 @@ export class Spectoda {
     }
   }
 
-  resendAll() {
-    Object.keys(lastEvents).forEach(key => {
-      switch (lastEvents[key].type) {
-        case "percentage":
-          this.emitPercentageEvent(key, lastEvents[key].value);
-          break;
-        case "timestamp":
-          this.emitTimestampEvent(key, lastEvents[key].value);
-          break;
-        case "color":
-          this.emitColorEvent(key, lastEvents[key].value);
-          break;
-        case "label":
-          this.emitLabelEvent(key, lastEvents[key].value);
-          break;
-        case "none":
-          this.emitEvent(key);
-          break;
-      }
-    });
-  }
-
   // event_label example: "evt1"
   // event_value example: 1000
   /**
@@ -926,7 +901,6 @@ export class Spectoda {
    */
   emitTimestampEvent(event_label, event_value, device_ids = [0xff], force_delivery = false) {
     logging.verbose(`emitTimestampEvent(label=${event_label},value=${event_value},id=${device_ids},force=${force_delivery})`);
-    lastEvents[event_label] = { value: event_value, type: "timestamp" };
 
     // clearTimeout(this.#saveStateTimeoutHandle);
     // this.#saveStateTimeoutHandle = setTimeout(() => {
@@ -970,7 +944,6 @@ export class Spectoda {
    */
   emitColorEvent(event_label, event_value, device_ids = [0xff], force_delivery = false) {
     logging.verbose(`emitColorEvent(label=${event_label},value=${event_value},id=${device_ids},force=${force_delivery})`);
-    lastEvents[event_label] = { value: event_value, type: "color" };
 
     // clearTimeout(this.#saveStateTimeoutHandle);
     // this.#saveStateTimeoutHandle = setTimeout(() => {
@@ -1009,7 +982,6 @@ export class Spectoda {
    */
   emitPercentageEvent(event_label, event_value, device_ids = [0xff], force_delivery = false) {
     logging.info(`emitPercentageEvent(label=${event_label},value=${event_value},id=${device_ids},force=${force_delivery})`);
-    lastEvents[event_label] = { value: event_value, type: "percentage" };
 
     // clearTimeout(this.#saveStateTimeoutHandle);
     // this.#saveStateTimeoutHandle = setTimeout(() => {
@@ -1054,7 +1026,6 @@ export class Spectoda {
    */
   emitLabelEvent(event_label, event_value, device_ids = [0xff], force_delivery = false) {
     logging.verbose(`emitLabelEvent(label=${event_label},value=${event_value},id=${device_ids},force=${force_delivery})`);
-    lastEvents[event_label] = { value: event_value, type: "label" };
 
     // clearTimeout(this.#saveStateTimeoutHandle);
     // this.#saveStateTimeoutHandle = setTimeout(() => {
@@ -1516,7 +1487,7 @@ export class Spectoda {
       const removed_device_mac_bytes = reader.readBytes(6);
 
       return this.rebootDevice()
-        .catch(() => {})
+        .catch(() => { })
         .then(() => {
           let removed_device_mac = "00:00:00:00:00:00";
           if (removed_device_mac_bytes.length >= 6) {
