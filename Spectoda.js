@@ -142,21 +142,21 @@ export class Spectoda {
         if (websocketConnectionState !== this.#websocketConnectionState) {
           console.warn("> Spectoda connecting");
           this.#websocketConnectionState = websocketConnectionState;
-          this.interface.emit("connecting-websockets");
+          this.runtime.emit("connecting-websockets");
         }
         break;
       case "connected":
         if (websocketConnectionState !== this.#websocketConnectionState) {
           console.warn("> Spectoda connected");
           this.#websocketConnectionState = websocketConnectionState;
-          this.interface.emit("connected-websockets");
+          this.runtime.emit("connected-websockets");
         }
         break;
       case "disconnecting":
         if (websocketConnectionState !== this.#websocketConnectionState) {
           console.warn("> Spectoda disconnecting");
           this.#connectionState = connectionState;
-          this.interface.emit("disconnecting-websockets");
+          this.runtime.emit("disconnecting-websockets");
         }
         break;
       default:
@@ -1460,7 +1460,7 @@ export class Spectoda {
     });
   }
 
-  // Code.device.interface.execute([240,1,0,0,0,5],null)
+  // Code.device.runtime.execute([240,1,0,0,0,5],null)
   rebootNetwork() {
     logging.debug("> Rebooting network...");
 
@@ -2076,5 +2076,151 @@ export class Spectoda {
     }
 
     return this.runtime.readVariableAddress(variable_address, device_id);
+  }
+
+
+  hideHomeButton() {
+    logging.debug("> Hiding home button...");
+
+    if (!detectSpectodaConnect()) {
+      return Promise.reject("PlatformNotSupported");
+    }
+
+    return window.flutter_inappwebview.callHandler("hideHomeButton");
+
+  }
+
+  // option:
+  //  0 = no restriction, 1 = portrait, 2 = landscape
+  setOrientation(option) {
+    logging.debug("> Setting orientation...");
+
+    if (!detectSpectodaConnect()) {
+      return Promise.reject("PlatformNotSupported")
+    }
+
+    if (typeof option !== "number") {
+      return Promise.reject("InvalidOption")
+    }
+
+    if (option < 0 || option > 2) {
+      return Promise.reject("InvalidOption")
+    }
+
+    return window.flutter_inappwebview.callHandler("setOrientation", option);
+  }
+
+  // 0.9.4
+
+  readNetworkSignature() {
+    logging.debug("> Reading network signature...");
+
+    const request_uuid = this.#getUUID();
+    const bytes = [COMMAND_FLAGS.FLAG_READ_OWNER_SIGNATURE_REQUEST, ...numberToBytes(request_uuid, 4)];
+
+    return this.runtime.request(bytes, true).then(response => {
+      let reader = new TnglReader(response);
+
+      logging.verbose(`response.byteLength=${response.byteLength}`);
+
+      if (reader.readFlag() !== COMMAND_FLAGS.FLAG_READ_OWNER_SIGNATURE_RESPONSE) {
+        throw "InvalidResponseFlag";
+      }
+
+      const response_uuid = reader.readUint32();
+
+      if (response_uuid != request_uuid) {
+        throw "InvalidResponseUuid";
+      }
+
+      const error_code = reader.readUint8();
+      logging.verbose(`error_code=${error_code}`);
+
+      if (error_code !== 0) {
+        throw "Fail";
+      }
+
+      const signature_bytes = reader.readBytes(16);
+      logging.debug(`signature_bytes=${signature_bytes}`);
+
+      const signature_string = uint8ArrayToHexString(signature_bytes);
+      logging.debug(`signature_string=${signature_string}`);
+
+      logging.info(`> Network Signature: ${signature_string}`);
+
+      return signature_string;
+    });
+  }
+
+  writeControllerCodes(pcb_code, product_code) {
+    logging.debug("> Writing controller codes...");
+
+    const request_uuid = this.#getUUID();
+    const bytes = [COMMAND_FLAGS.FLAG_WRITE_CONTROLLER_CODES_REQUEST, ...numberToBytes(request_uuid, 4), ...numberToBytes(pcb_code, 2), ...numberToBytes(product_code, 2)];
+
+    return this.runtime.request(bytes, true).then(response => {
+      let reader = new TnglReader(response);
+
+      logging.verbose(`response.byteLength=${response.byteLength}`);
+
+      if (reader.readFlag() !== COMMAND_FLAGS.FLAG_WRITE_CONTROLLER_CODES_RESPONSE) {
+        throw "InvalidResponseFlag";
+      }
+
+      const response_uuid = reader.readUint32();
+
+      if (response_uuid != request_uuid) {
+        throw "InvalidResponseUuid";
+      }
+
+      const error_code = reader.readUint8();
+      logging.verbose(`error_code=${error_code}`);
+
+      if (error_code !== 0) {
+        throw "Fail";
+      }
+
+    });
+  }
+
+  readControllerCodes() {
+    logging.debug("> Requesting controller codes ...");
+
+    const request_uuid = this.#getUUID();
+    const bytes = [COMMAND_FLAGS.FLAG_READ_CONTROLLER_CODES_REQUEST, ...numberToBytes(request_uuid, 4)];
+
+    return this.runtime.request(bytes, true).then(response => {
+      let reader = new TnglReader(response);
+
+      logging.verbose("response=", response);
+
+      if (reader.readFlag() !== COMMAND_FLAGS.FLAG_READ_CONTROLLER_CODES_RESPONSE) {
+        throw "InvalidResponseFlag";
+      }
+
+      const response_uuid = reader.readUint32();
+
+      if (response_uuid != request_uuid) {
+        throw "InvalidResponseUuid";
+      }
+
+      const error_code = reader.readUint8();
+
+      logging.verbose(`error_code=${error_code}`);
+
+      if (error_code !== 0) {
+        throw "Fail";
+      }
+
+      const pcb_code = reader.readUint16();
+      const product_code = reader.readUint16();
+
+      logging.debug(`pcb_code=${pcb_code}`);
+      logging.debug(`product_code=${product_code}`);
+
+      logging.info(`> Controller Codes: pcb_code=${pcb_code}, product_code=${product_code}`);
+
+      return { pcb_code: pcb_code, product_code: product_code };
+    });
   }
 }

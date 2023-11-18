@@ -848,7 +848,7 @@ export class SpectodaRuntime {
                           item.resolve(device);
                         } catch (error) {
                           logging.error(error);
-                          this.clock = null;
+                          this.clock = new TimeTrack(0);
                           item.resolve(device);
                         }
                       });
