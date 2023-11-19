@@ -162,6 +162,12 @@ export class Spectoda {
     this.interface.onDisconnected = event => {
       logging.info("> Interface disconnected");
 
+      // clear out the local event history
+      this.#eventHistory = {};
+      for (let id = 0; id < 256; id++) {
+        this.#eventHistory[id] = {};
+      }
+
       const TIME = 2000;
 
       if (this.#connectionState === "connected" && this.#reconnectionInterval) {
