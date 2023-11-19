@@ -187,6 +187,7 @@ const OBJECT_TYPE = Object.freeze({
   OPERATION_EVENT_STEPPER: 20,
   OPERATION_MODULO: 21,
   OPERATION_EVENT_SET: 22,
+  OPERATION_DEBOUNCE: 23,
   // TODO OPERATIONS and PROVIDERS should be one type of object
   PROVIDER_PROXIMITY: 151,
   PROVIDER_BUTTON: 152,
@@ -1033,6 +1034,10 @@ export class TnglCompiler {
 
       case "EventSet":
         this.#tnglWriter.writeFlag(OBJECT_TYPE.OPERATION_EVENT_SET);
+        break;
+    
+      case "Debounce":
+        this.#tnglWriter.writeFlag(OBJECT_TYPE.OPERATION_DEBOUNCE);
         break;
 
       case "NetworkSyncProvider":
