@@ -1262,11 +1262,15 @@ export class SpectodaInterfaceLegacy {
               const event_label = String.fromCharCode(...reader.readBytes(5)).match(/[\w\d_]*/g)[0]; // 5 bytes
               logging.verbose(`event_label = ${event_label}`);
 
-              const event_timestamp = reader.readUint48(); // 6 bytes in 0.9
+              let event_timestamp = reader.readUint48(); // 6 bytes in 0.9
               logging.verbose(`event_timestamp = ${event_timestamp} ms`);
 
               const event_device_id = reader.readUint8(); // 1 byte
               logging.verbose(`event_device_id = ${event_device_id}`);
+
+              if (event_timestamp === 0 || event_timestamp >= 0xffffffffffff) {
+                event_timestamp = this.clock.millis();
+              }
 
               emitted_events.unshift({
                 type: event_type, // The type of the event as string "none", "timestamp", "color", "percentage", "label"
@@ -1417,6 +1421,7 @@ export class SpectodaInterfaceLegacy {
 
       if (emitted_events.length) {
         emitted_events.sort((a, b) => a.timestamp - b.timestamp);
+        logging.verbose("emitted_events", emitted_events);
         this.emit("emitted_events", emitted_events);
 
         const informations = emitted_events.map(x => x.info);
