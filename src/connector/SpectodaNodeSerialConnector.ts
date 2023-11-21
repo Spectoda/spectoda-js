@@ -15,14 +15,6 @@ if (typeof window === "undefined" && !process.env.NEXT_PUBLIC_VERSION) {
   ReadlineParser = serialport.ReadlineParser;
 }
 
-// const { SerialPort, ReadlineParser } = require('serialport');
-// const { TextDecoder, TextEncoder } = require('util');
-// const { Transform, pipeline } = require('stream');
-
-///////////////////////////////////////////////////////////////////////////////////
-
-
-
 ///////////////////////////////////////////////////////////////////////////////////
 
 // Connector connects the application with one Spectoda Device, that is then in a
@@ -40,10 +32,6 @@ export class SpectodaNodeSerialConnector {
   #divisor;
 
   #beginCallback;
-  // #endCallback;
-  // #successCallback;
-  // #failCallback;
-
   #feedbackCallback;
   #dataCallback;
 
@@ -62,11 +50,6 @@ export class SpectodaNodeSerialConnector {
     this.#disconnecting = false;
 
     this.#divisor = 4;
-
-    // this.#beginCallback = null;
-    // this.#endCallback = null;
-    // this.#successCallback = null;
-    // this.#failCallback = null;
 
     this.#beginCallback = null;
     this.#feedbackCallback = null;
@@ -141,10 +124,6 @@ export class SpectodaNodeSerialConnector {
       this.#serialPort = null;
     }
 
-    // return navigator.serial.requestPort().then(port => {
-    //   this.#serialPort = port;
-    //   return Promise.resolve({ connector: this.type });
-    // });
 
     // ls /dev/cu.*
     this.#serialPort = new SerialPort({ path: "/dev/cu.usbserial-0278D9D7", baudRate: 115200, dataBits: 8, parity: "none", stopBits: 1, autoOpen: false });
@@ -239,8 +218,6 @@ export class SpectodaNodeSerialConnector {
   scan(criteria: object, scan_period: number) {
     logging.verbose("scan(criteria=" + JSON.stringify(criteria) + ", scan_period=" + scan_period + ")");
 
-    // const ports = await SerialPort.list();
-
     // returns devices like autoSelect scan() function
     return new Promise(async (resolve, reject) => {
       try {
@@ -285,8 +262,6 @@ export class SpectodaNodeSerialConnector {
         }
       });
     });
-
-    // this.#serialPort.write(">>>ENABLE_SERIAL<<<\n");
 
     const starts_with = (buffer: number[], string: string, start_offset: number = 0) => {
       for (let index = 0; index < string.length; index++) {
@@ -456,54 +431,6 @@ export class SpectodaNodeSerialConnector {
 
         });
 
-        // parser.on('data', async (line : string) => {
-
-        //   try {
-
-        //     if (line) {
-        //       line = line.replace(/>>>[\w\W]*<<</g, async (match: string) => {
-        //         logging.warn(match);
-
-        //         if (match === ">>>BEGIN<<<") {
-        //           this.#beginCallback && this.#beginCallback(true);
-        //         } else if (match === ">>>END<<<") {
-        //           await this.disconnect();
-        //         } else if (match === ">>>READY<<<") {
-        //           await this.disconnect();
-        //           this.#beginCallback && this.#beginCallback(false);
-        //           this.#feedbackCallback && this.#feedbackCallback(false);
-        //         } else if (match === ">>>SUCCESS<<<") {
-        //           this.#feedbackCallback && this.#feedbackCallback(true);
-        //         } else if (match === ">>>FAIL<<<") {
-        //           logging.warn(match);
-        //           this.#feedbackCallback && this.#feedbackCallback(false);
-        //         } else if (match.match(/>>>DATA=/)) {
-        //           logging.verbose("match", match);
-        //           let reg = match.match(/>>>DATA=([\w\W]*)<<</i); // >>>DATA=ab2351ab90cfe72209999009f08e987a9bcd8dcbbd<<<
-        //           reg && this.#dataCallback && this.#dataCallback(convertToByteArray(reg[1]));
-        //         } else if (match.match(/>>>NOTIFY=/)) {
-        //           logging.verbose("match", match);
-        //           let reg = match.match(/>>>NOTIFY=([\w\W]*)<<</i); // >>>NOTIFY=ab2351ab90cfe72209999009f08e987a9bcd8dcbbd<<<
-        //           reg && this.#runtimeReference.evaluate(new Uint8Array(convertToByteArray(reg[1])));
-        //         }
-
-        //         // Return the replacement leveraging the parameters.
-        //         return "";
-        //       });
-
-        //       if (line.length !== 0) {
-        //         logging.verbose(line);
-        //         this.#runtimeReference.emit("receive", { target: this, payload: line });
-        //       }
-        //     }
-
-        //   } catch (error) {
-        //     logging.error(error);
-        //   }
-
-
-        // });
-
         return new Promise((resolve, reject) => {
 
           const timeout_handle = setTimeout(() => {
@@ -629,22 +556,11 @@ export class SpectodaNodeSerialConnector {
     header_writer.writeUint32(crc32(payload));
     header_writer.writeUint32(crc32(new Uint8Array(header_writer.bytes.buffer)));
 
-    // if (!this.transmitStream) {
-    //   logging.warn("this.transmitStream is nullptr");
-    //   throw "WriteFailed";
-    // }
-
-    // this.#transmitStreamWriter = this.transmitStream.getWriter();
-
     return new Promise(async (resolve, reject) => {
 
       const timeout_handle = setTimeout(() => {
         logging.warn("Response timeouted");
         this.#feedbackCallback = null;
-
-        // if (this.#transmitStreamWriter) {
-        //   this.#transmitStreamWriter.releaseLock();
-        // }
 
         this.disconnect().finally(() => {
           reject("ResponseTimeout");
@@ -657,21 +573,13 @@ export class SpectodaNodeSerialConnector {
 
         if (success) {
           logging.verbose("this.#feedbackCallback SUCESS");
-          // setTimeout(() => {
-          //   if (this.#transmitStreamWriter) {
-          //     this.#transmitStreamWriter.releaseLock();
-          //   }
           resolve(null);
-          // }, 100); // 50ms equals 5 RTOS ticks to pass to not cause problems
         }
 
         else {
           //try to write it once more
           logging.verbose("this.#feedbackCallback FAIL");
           setTimeout(() => {
-            // if (this.#transmitStreamWriter) {
-            //   this.#transmitStreamWriter.releaseLock();
-            // }
             try {
               resolve(this.#initiate(initiate_code, payload, tries - 1, 0));
             } catch (e) {
@@ -681,17 +589,6 @@ export class SpectodaNodeSerialConnector {
         }
 
       };
-
-      // return this.#transmitStreamWriter
-      //   .write(new Uint8Array(header_writer.bytes.buffer))
-      //   .then(() => {
-      //     return this.#transmitStreamWriter.write(new Uint8Array(payload));
-      //   })
-      //   .catch(error => {
-      //     logging.error(error);
-      //     // this.#transmitStreamWriter.releaseLock();
-      //     reject(error);
-      //   });
 
       try {
         await this.#serialPort.write(new Uint8Array(header_writer.bytes.buffer));
@@ -964,4 +861,5 @@ export class SpectodaNodeSerialConnector {
       })
       .catch(() => { });
   }
+
 }
