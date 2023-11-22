@@ -1152,6 +1152,8 @@ export class Spectoda {
 
       let written = 0;
 
+      setLoggingLevel(logging.level - 1);
+
       logging.info("OTA UPDATE");
       logging.verbose(firmware);
 
@@ -1243,6 +1245,8 @@ export class Spectoda {
           logging.error("Failed to release wake lock", e);
         });
         this.#updating = false;
+
+        setLoggingLevel(logging.level + 1);
       });
   }
 
