@@ -314,7 +314,7 @@ export class SpectodaWebSerialConnector {
                                     if (character === NEWLINE_ASCII_CODE) {
                                         const line = decoder.decode(new Uint8Array(line_bytes));
                                         // TODO! process line
-                                        logging.verbose("line=", line);
+                                        logging.info(line);
                                         line_bytes.length = 0;
                                     }
 
