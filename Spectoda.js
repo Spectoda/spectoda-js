@@ -82,7 +82,6 @@ export class Spectoda {
     // this.#eventHistory = [];
 
     this.interface.on("emitted_events", events => {
-
       // interface Event {
       //   type: number;
       //   value: any;
@@ -94,11 +93,8 @@ export class Spectoda {
       // }
 
       for (const event of events) {
-
         if (event.id === 255) {
-
           for (let id = 0; id < 255; id++) {
-
             if (!this.#eventHistory[id][event.label]) {
               this.#eventHistory[id][event.label] = {};
             }
@@ -152,7 +148,6 @@ export class Spectoda {
       // }
 
       logging.verbose("#eventHistory", this.#eventHistory);
-
     });
 
     this.interface.onConnected = event => {
@@ -384,7 +379,6 @@ export class Spectoda {
     return this.#ownerKey;
   }
 
-
   /**
    * @param {Object} options
    * @param {string} options.signature - The network signature.
@@ -464,14 +458,22 @@ export class Spectoda {
 
           // call internal class function
           try {
+            if (functionName === "debug") {
+              logging.debug(...args);
+              return callback({ status: "success", message: "debug", payload: args });
+            }
             if (functionName === "assignOwnerSignature" || functionName === "assignOwnerKey") {
               return callback({ status: "success", message: "assign key/signature is ignored on remote." });
             }
 
-            if (functionName === "updateDeviceFirmware" || (functionName === "updateNetworkFirmware" && typeof args?.[0] === "object")) {
-              const arr = Object.values(args[0]);
-              const uint8Array = new Uint8Array(arr);
-              args[0] = uint8Array;
+            if (functionName === "updateDeviceFirmware" || functionName === "updateNetworkFirmware") {
+              if (Array.isArray(args?.[0])) {
+                args[0] = new Uint8Array(args[0]);
+              } else if (typeof args?.[0] === "object") {
+                const arr = Object.values(args[0]);
+                const uint8Array = new Uint8Array(arr);
+                args[0] = uint8Array;
+              }
             }
             const result = await this[functionName](...args);
             callback({ status: "success", result });
@@ -1576,7 +1578,7 @@ export class Spectoda {
       const removed_device_mac_bytes = reader.readBytes(6);
 
       return this.rebootDevice()
-        .catch(() => { })
+        .catch(() => {})
         .then(() => {
           let removed_device_mac = "00:00:00:00:00:00";
           if (removed_device_mac_bytes.length >= 6) {
@@ -2198,16 +2200,16 @@ export class Spectoda {
   }
 
   getEmittedEvents(ids) {
-
     // Check if ids is not an array and make it an array if necessary
     if (!Array.isArray(ids)) {
       ids = [ids];
     }
 
     return this.readEventHistory()
-      .catch(() => { logging.warn("Failed to read event history"); })
+      .catch(() => {
+        logging.warn("Failed to read event history");
+      })
       .then(() => {
-
         const events = [];
 
         for (const id of ids) {
@@ -2224,7 +2226,6 @@ export class Spectoda {
   }
 
   emitEvents(events) {
-
     const EVENT_VALUE_TYPE = {
       TIMESTAMP: 32,
       LABEL: 31,
@@ -2240,7 +2241,6 @@ export class Spectoda {
       UNDEFINED: 0,
     };
 
-
     if (typeof events === "string") {
       events = JSON.parse(events);
     }
@@ -2250,9 +2250,7 @@ export class Spectoda {
       events = [events];
     }
 
-
     for (const event of events) {
-
       switch (event.type) {
         case "timestamp":
         case EVENT_VALUE_TYPE.TIMESTAMP:
@@ -2301,5 +2299,4 @@ export class Spectoda {
       }
     }
   }
-
 }

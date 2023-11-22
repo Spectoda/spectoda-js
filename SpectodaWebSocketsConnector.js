@@ -103,6 +103,12 @@ export function createSpectodaWebsocket() {
               arguments: args,
             };
 
+            if (prop === "updateDeviceFirmware" || prop === "updateNetworkFirmware") {
+              if (Array.isArray(args?.[0])) {
+                args[0] = Uint8Array.from(args[0]).buffer;
+              }
+            }
+
             const result = await this.sendThroughWebsocket(payload);
 
             if (result.status === "success") {
