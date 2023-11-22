@@ -324,7 +324,7 @@ export class SpectodaNodeSerialConnector {
         const decoder = new TextDecoder();
 
         this.#serialPort.on('data', async (chunk: Buffer) => {
-          // logging.verbose("[data]", decoder.decode(chunk));
+          // logging.info("[data]", decoder.decode(chunk));
 
           for (const byte of chunk) {
 
@@ -591,20 +591,20 @@ export class SpectodaNodeSerialConnector {
         clearInterval(timeout_handle);
 
         if (success) {
-          logging.verbose("this.#feedbackCallback SUCESS");
+          logging.debug("this.#feedbackCallback SUCESS");
           resolve(null);
         }
 
         else {
           //try to write it once more
-          logging.verbose("this.#feedbackCallback FAIL");
+          logging.warn("this.#feedbackCallback FAIL");
           setTimeout(() => {
             try {
               resolve(this.#initiate(initiate_code, payload, tries - 1, timeout - packet_timeout));
             } catch (e) {
               reject(e);
             }
-          }, 250); // 100ms to be safe
+          }, 100); // 100ms to be safe
         }
 
       };
@@ -783,6 +783,8 @@ export class SpectodaNodeSerialConnector {
 
       let written = 0;
 
+      setLoggingLevel(logging.level - 1);
+
       logging.info("OTA UPDATE");
       logging.verbose(firmware);
 
@@ -859,6 +861,7 @@ export class SpectodaNodeSerialConnector {
       }
     }).finally(() => {
       this.#timeoutMultiplier = 1.2;
+      setLoggingLevel(logging.level + 1);
     });
   }
 
