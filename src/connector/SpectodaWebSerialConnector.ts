@@ -54,12 +54,10 @@ export class SpectodaWebSerialConnector {
     #runtimeReference;
 
     #serialPort: SerialPort | undefined;
-    #criteria: any[] | undefined;
+    #criteria: { baudrate: number | undefined, baudRate: number | undefined }[] | undefined;
 
     #writer: WritableStreamDefaultWriter<Uint8Array> | undefined;
     #reader: ReadableStreamDefaultReader<Uint8Array> | undefined;
-
-    #writing;
 
     #connected;
     #opened;
@@ -67,9 +65,9 @@ export class SpectodaWebSerialConnector {
 
     #timeoutMultiplier;
 
-    #beginCallback: ((result: boolean) => void) | null;
-    #feedbackCallback: ((success: boolean) => void) | null;
-    #dataCallback: ((data: Uint8Array) => void) | null;
+    #beginCallback: ((result: boolean) => void) | undefined;
+    #feedbackCallback: ((success: boolean) => void) | undefined;
+    #dataCallback: ((data: Uint8Array) => void) | undefined;
 
     type: string;
 
@@ -84,17 +82,15 @@ export class SpectodaWebSerialConnector {
         this.#writer = undefined;
         this.#reader = undefined;
 
-        this.#writing = false;
-
         this.#connected = false;
         this.#opened = false;
         this.#disconnecting = false;
 
         this.#timeoutMultiplier = 1.2;
 
-        this.#beginCallback = null;
-        this.#feedbackCallback = null;
-        this.#dataCallback = null;
+        this.#beginCallback = undefined;
+        this.#feedbackCallback = undefined;
+        this.#dataCallback = undefined;
     }
 
     /*
@@ -136,7 +132,7 @@ export class SpectodaWebSerialConnector {
     // if no criteria are set, then show all Spectoda devices visible.
     // first bonds the BLE device with the PC/Phone/Tablet if it is needed.
     // Then selects the device
-    userSelect(criteria: object[]): Promise<{ connector: string }> {
+    userSelect(criteria: { baudrate: number | undefined, baudRate: number | undefined }[]): Promise<{ connector: string }> {
         logging.verbose("userSelect()");
 
         if (this.#connected) {
@@ -153,11 +149,11 @@ export class SpectodaWebSerialConnector {
         return navigator.serial.requestPort().then(port => {
             this.#serialPort = port;
             this.#criteria = criteria;
-            return Promise.resolve({ connector: this.type });
+            return Promise.resolve({ connector: this.type, criteria: this.#criteria });
         });
     }
 
-    // takes the criteria, scans for scan_period and automatically selects the device,
+    // takes the criteria, scans for scan_period and asudutomatically selects the device,
     // you can then connect to. This works only for BLE devices that are bond with the phone/PC/tablet
     // the app is running on OR doesnt need to be bonded in a special way.
     // if more devices are found matching the criteria, then the strongest signal wins
@@ -166,7 +162,7 @@ export class SpectodaWebSerialConnector {
     // if no criteria are provided, all Spectoda enabled devices (with all different FWs and Owners and such)
     // are eligible.
 
-    autoSelect(criteria: object, scan_period: number, timeout: number): Promise<{ connector: string }> {
+    autoSelect(criteria: { baudrate: number | undefined, baudRate: number | undefined }[], scan_period: number, timeout: number): Promise<{ connector: string }> {
         logging.verbose("autoSelect()");
 
         // step 1. for the scan_period scan the surroundings for BLE devices.
@@ -202,7 +198,7 @@ export class SpectodaWebSerialConnector {
         return Promise.resolve();
     }
 
-    scan(criteria: object, scan_period: number) {
+    scan(criteria: { baudrate: number | undefined, baudRate: number | undefined }[], scan_period: number) {
         logging.verbose("scan(criteria=" + JSON.stringify(criteria) + ", scan_period=" + scan_period + ")");
 
         // TODO implement this
@@ -408,8 +404,8 @@ export class SpectodaWebSerialConnector {
 
         let port_options = PORT_OPTIONS;
 
-        if (this.#criteria && Array.isArray(this.#criteria) && this.#criteria.length && this.#criteria[0].baudRate) {
-            port_options.baudRate = this.#criteria[0].baudRate;
+        if (this.#criteria && Array.isArray(this.#criteria) && this.#criteria.length && (this.#criteria[0].baudrate || this.#criteria[0].baudRate)) {
+            port_options.baudRate = this.#criteria[0].baudrate || this.#criteria[0].baudRate;
         }
 
         logging.info("> Opening serial port on 'baudRate':", port_options.baudRate);
@@ -427,7 +423,7 @@ export class SpectodaWebSerialConnector {
 
                     const timeout_handle = setTimeout(() => {
                         logging.warn("Connection begin timeouted");
-                        this.#beginCallback = null;
+                        this.#beginCallback = undefined;
 
                         this.disconnect().finally(() => {
                             reject("ConnectTimeout");
@@ -437,14 +433,14 @@ export class SpectodaWebSerialConnector {
 
                     this.#beginCallback = result => {
                         clearTimeout(timeout_handle);
-                        this.#beginCallback = null;
+                        this.#beginCallback = undefined;
 
                         if (result) {
                             logging.debug("> Serial Connector Connected");
                             this.#connected = true;
 
                             this.#runtimeReference.emit("#connected");
-                            resolve({ connector: this.type });
+                            resolve({ connector: this.type, criteria: this.#criteria });
                         } else {
                             logging.warn("Trying to connect again")
                             const passed = new Date().getTime() - start;
@@ -466,7 +462,7 @@ export class SpectodaWebSerialConnector {
     connected() {
         logging.verbose("connected()");
 
-        return Promise.resolve(this.#connected ? { connector: this.type } : null);
+        return Promise.resolve(this.#connected ? { connector: this.type, criteria: this.#criteria } : null);
     }
 
     // disconnect Connector from the connected Spectoda Device. But keep it selected
@@ -573,7 +569,7 @@ export class SpectodaWebSerialConnector {
 
             const timeout_handle = setTimeout(() => {
                 logging.warn("Response timeouted");
-                this.#feedbackCallback = null;
+                this.#feedbackCallback = undefined;
 
                 this.disconnect().finally(() => {
                     reject("ResponseTimeout");
@@ -581,7 +577,7 @@ export class SpectodaWebSerialConnector {
             }, timeout + 250); // +250ms for the controller to response timeout if reveive timeoutes
 
             this.#feedbackCallback = (success: boolean) => {
-                this.#feedbackCallback = null;
+                this.#feedbackCallback = undefined;
                 clearInterval(timeout_handle);
 
                 if (success) {
@@ -624,7 +620,7 @@ export class SpectodaWebSerialConnector {
 
         this.#dataCallback = data => {
             response = new DataView(data.buffer);
-            this.#dataCallback = null;
+            this.#dataCallback = undefined;
         };
 
         return this.#initiate(CODE_READ + channel_type, [], 10, timeout).then(() => {
@@ -767,13 +763,6 @@ export class SpectodaWebSerialConnector {
             throw "UpdateFailed";
         }
 
-        if (this.#writing) {
-            logging.warn("Communication in proccess");
-            throw "UpdateFailed";
-        }
-
-        this.#writing = true;
-
         return new Promise(async (resolve, reject) => {
             const chunk_size = 3984; // must be modulo 16
 
@@ -836,7 +825,7 @@ export class SpectodaWebSerialConnector {
                     }
                 }
 
-                await sleep(1000);
+                await sleep(100);
 
                 {
                     //===========// END //===========//
@@ -846,9 +835,9 @@ export class SpectodaWebSerialConnector {
                     await this.#write(CHANNEL_DEVICE, bytes, 10000);
                 }
 
-                await sleep(100);
-
                 logging.info("Firmware written in " + (new Date().getTime() - start_timestamp) / 1000 + " seconds");
+
+                await sleep(2000);
 
                 this.#runtimeReference.emit("ota_status", "success");
                 resolve(null);
@@ -860,7 +849,6 @@ export class SpectodaWebSerialConnector {
             }
         }).finally(() => {
             this.#timeoutMultiplier = 1.2;
-            this.#writing = false;
         });
     }
 

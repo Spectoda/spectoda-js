@@ -1552,8 +1552,6 @@ export class Spectoda {
     const request_uuid = this.#getUUID();
     const bytes = [COMMAND_FLAGS.FLAG_FW_VERSION_REQUEST, ...numberToBytes(request_uuid, 4)];
 
-    logging.info("getFwVersion", { bytes });
-
     return this.runtime.request(bytes, true).then(response => {
       let reader = new TnglReader(response);
 
