@@ -236,13 +236,14 @@ export class SpectodaWebSerialConnector {
             try {
 
                 const { value, done } = !this.#reader ? { value: null, done: true } : await this.#reader.read().catch(e => {
+                    logging.error("this.#reader.read()", e);
 
                     if (e.toString().includes("break condition")) {
-                        logging.warn("Error includes break condition", e);
-                        return { value: null, done: true };
+                        logging.warn("> Break Condition Detected");
+                        return { value: null, done: false };
                     }
 
-                    logging.error("Error", e);
+                    this.disconnect().catch(() => { });
                     return { value: null, done: true };
                 });
 
