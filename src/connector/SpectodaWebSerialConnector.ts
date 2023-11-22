@@ -598,7 +598,7 @@ export class SpectodaWebSerialConnector {
                         } catch (e) {
                             reject(e);
                         }
-                    }, 100); // 100ms to be safe
+                    }, 250); // 100ms to be safe
                 }
 
             };
