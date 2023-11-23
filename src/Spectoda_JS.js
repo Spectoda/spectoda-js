@@ -2,7 +2,7 @@ import { TextureLoader } from "three";
 import { logging } from "../logging";
 import { SpectodaWasm } from "./SpectodaWasm.js";
 
-const WASM_VERSION = "DEBUG_0.10.0_20231102";
+const WASM_VERSION = "DEBUG_0.10.0_20231123";
 
 export const COMMAND_FLAGS = Object.freeze({
   FLAG_UNSUPPORTED_COMMND_RESPONSE: 255, // TODO change FLAG_OTA_BEGIN to not be 255.
@@ -257,7 +257,7 @@ export class Spectoda_JS {
             this.#runtimeReference.setClock(synchronization_object.clock_timestamp).catch(e => {
               logging.error(e);
             });
-          } catch(e) {
+          } catch (e) {
             logging.error(e);
           }
 
@@ -290,7 +290,7 @@ export class Spectoda_JS {
 
         _onLog: (level, filename, message) => {
 
-          if(level - 1 < logging.level) {
+          if (level - 1 < logging.level) {
             return;
           }
 
