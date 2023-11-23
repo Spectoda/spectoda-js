@@ -605,6 +605,19 @@ export function hexStringToNumberArray(hexString) {
   return numberArray;
 }
 
+export async function fetchFirmware(url: string) {
+  return fetch(url)
+    .then(response => {
+      return response.arrayBuffer();
+    })
+    .then(buffer => {
+      return new Uint8Array(buffer);
+    })
+    .catch(e => {
+      logging.error("Failed to fetch firmware", e);
+    });
+}
+
 if (typeof window !== "undefined") {
   window.validateTimestamp = validateTimestamp;
 

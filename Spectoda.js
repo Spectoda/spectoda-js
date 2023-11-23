@@ -1114,6 +1114,26 @@ export class Spectoda {
     return this.runtime.request(device_request, false);
   }
 
+  /**
+   * downloads firmware and calls updateDeviceFirmware()
+   * @param {string} url - whole URL of the firmware file
+   */
+  async fetchAndUpdateDeviceFirmware(url) {
+    const fw = fetchFirmware(url);
+
+    return this.updateDeviceFirmware(fw);
+  }
+
+  /**
+   * downloads firmware and calls updateNetworkFirmware()
+   * @param {string} url - whole URL of the firmware file
+   */
+  async fetchAndUpdateNetworkFirmware(url) {
+    const fw = fetchFirmware(url);
+
+    return this.updateNetworkFirmware(fw);
+  }
+
   updateDeviceFirmware(firmware) {
     logging.verbose(`updateDeviceFirmware(firmware.length=${firmware?.length})`);
 
