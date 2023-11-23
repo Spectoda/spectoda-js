@@ -1,5 +1,7 @@
 // // @ts-nocheck
 
+// npm install @types/serialport --save-dev
+
 // add overlays=uart3 to /boot/orangepiEnv.txt
 // add overlays=uart0 to /boot/orangepiEnv.txt
 // stty -F /dev/ttyS3 1000000
@@ -19,6 +21,9 @@ if (typeof window === "undefined" && !process.env.NEXT_PUBLIC_VERSION) {
   SerialPort = serialport.SerialPort;
   ReadlineParser = serialport.ReadlineParser;
 }
+
+// import SerialPort from "serialport"
+// import ReadlineParser from "serialport"
 
 ///////////////////////////////////////////////////////////////////////////////////
 
@@ -58,11 +63,10 @@ const ends_with = function (buffer: number[], string: string, start_offset: numb
 export class SpectodaNodeSerialConnector {
   #runtimeReference;
 
-  #serialPort: any | undefined;
+  #serialPort: SerialPort | undefined;
   #criteria: { baudrate: number | undefined, baudRate: number | undefined, uart: string | undefined, port: string | undefined, path: string | undefined }[] | undefined;
 
   #connected: boolean;
-  #opened: boolean;
   #disconnecting: boolean;
 
   #timeoutMultiplier: number;
@@ -82,7 +86,6 @@ export class SpectodaNodeSerialConnector {
     this.#criteria = undefined;
 
     this.#connected = false;
-    this.#opened = false;
     this.#disconnecting = false;
 
     this.#timeoutMultiplier = 1.2;
@@ -134,20 +137,7 @@ export class SpectodaNodeSerialConnector {
   userSelect(criteria: { baudrate: number | undefined, baudRate: number | undefined, uart: string | undefined, port: string | undefined, path: string | undefined }[]): Promise<{ connector: string }> {
     logging.verbose("userSelect(criteria=" + JSON.stringify(criteria) + ")");
 
-    if (this.#connected) {
-      return this.disconnect().then(() => {
-        return this.userSelect(criteria);
-      });
-    }
-
-    if (this.#serialPort) {
-      this.#serialPort.removeAllListeners();
-      this.#serialPort = undefined;
-      this.#criteria = undefined;
-    }
-
-    return this.autoSelect(criteria, 1000, 1000);
-
+    return this.autoSelect(criteria, 1000, 10000);
   }
 
   // takes the criteria, scans for scan_period and automatically selects the device,
@@ -169,9 +159,9 @@ export class SpectodaNodeSerialConnector {
     }
 
     if (this.#serialPort) {
-      this.#serialPort.removeAllListeners();
-      this.#serialPort = undefined;
-      this.#criteria = undefined;
+      return this.unselect().then(() => {
+        return this.userSelect(criteria);
+      });
     }
 
     // step 1. for the scan_period scan the surroundings for BLE devices.
@@ -241,9 +231,16 @@ export class SpectodaNodeSerialConnector {
       });
     }
 
-    this.#serialPort.removeAllListeners();
-    this.#serialPort = undefined;
-    this.#criteria = undefined;
+    if (this.#serialPort) {
+
+      if (this.#serialPort.isOpen) {
+        this.#serialPort.close();
+      }
+
+      this.#serialPort.removeAllListeners();
+      this.#serialPort = undefined;
+      this.#criteria = undefined;
+    }
 
     return Promise.resolve();
   }
@@ -298,8 +295,6 @@ export class SpectodaNodeSerialConnector {
 
     return openSerialPromise
       .then(() => {
-        this.#opened = true;
-
         const parser = new ReadlineParser();
         this.#serialPort.pipe(parser);
 
@@ -499,7 +494,7 @@ export class SpectodaNodeSerialConnector {
       return Promise.resolve();
     }
 
-    if (!this.#opened) {
+    if (!this.#serialPort.isOpen) {
       logging.debug("Serial port already closed");
       return Promise.resolve();
     }
@@ -513,7 +508,6 @@ export class SpectodaNodeSerialConnector {
 
     try {
       await this.#serialPort.close();
-      this.#opened = false;
     }
     catch (error) {
       logging.error("Failed to close serial port. Error: " + error);
@@ -686,6 +680,7 @@ export class SpectodaNodeSerialConnector {
     logging.verbose(`request(payload=${payload})`);
 
     if (!this.#connected) {
+      logging.error(`ERROR request(payload=${payload})`);
       throw "DeviceDisconnected";
     }
 

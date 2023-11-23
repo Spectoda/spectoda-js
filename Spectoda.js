@@ -359,7 +359,7 @@ export class Spectoda {
     this.requestWakeLock(true);
 
     const setConnectionSocketData = async () => {
-      const peers = await this.getConnectedPeersInfo();
+      const peers = await this.getConnectedPeersInfo().catch(()=>{ return [] });
       logging.debug("peers", peers);
       this.socket.emit("set-connection-data", peers);
     };
@@ -633,9 +633,10 @@ export class Spectoda {
 
     this.#setConnectionState("connecting");
 
-    logging.debug("> Selecting device...");
+    logging.debug("> Selecting controller...");
     return (autoConnect ? this.runtime.autoSelect(this.#criteria, 1000, 10000) : this.runtime.userSelect(this.#criteria))
       .then(() => {
+        logging.debug("> Connecting controller...");
         return this.runtime.connect();
       })
       .then(connectedDeviceInfo => {

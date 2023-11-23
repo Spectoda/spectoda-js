@@ -142,9 +142,10 @@ export class SpectodaWebSerialConnector {
         }
 
         if (this.#serialPort) {
-            this.#serialPort = undefined;
-            this.#criteria = undefined;
-        }
+            return this.unselect().then(() => {
+              return this.userSelect(criteria);
+            });
+          }
 
         return navigator.serial.requestPort().then(port => {
             this.#serialPort = port;
@@ -189,6 +190,9 @@ export class SpectodaWebSerialConnector {
         }
 
         if (this.#serialPort) {
+
+            // ! TODO check if the serial port is still open and close it before setting it as undefined
+
             // this.#serialPort.removeEventListener("connect");
             // this.#serialPort.removeEventListener("disconnect");
             this.#serialPort = undefined;
