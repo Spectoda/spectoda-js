@@ -8,7 +8,10 @@ import { changeLanguage, t } from "./i18n.js";
 import { logging, setLoggingLevel } from "./logging";
 import { COMMAND_FLAGS } from "./src/Spectoda_JS.js";
 
-import { SpectodaRuntime } from "./src/SpectodaRuntime.js";
+import customParser from "socket.io-msgpack-parser";
+import { SpectodaRuntime, allEventsEmitter } from "./src/SpectodaRuntime.js";
+import { io } from "socket.io-client";
+import { WEBSOCKET_URL } from "./SpectodaWebSocketsConnector.js";
 
 let lastEvents = {};
 
@@ -250,7 +253,6 @@ export class Spectoda {
     }
 
     try {
-
       if (detectNode()) {
         // NOP
       } else if (detectSpectodaConnect()) {
@@ -356,13 +358,17 @@ export class Spectoda {
     this.socket.connect();
     this.requestWakeLock(true);
 
-    this.on("connect", async () => {
+    const setConnectionSocketData = async () => {
       const peers = await this.getConnectedPeersInfo();
-      console.log("peers", peers);
+      logging.debug("peers", peers);
       this.socket.emit("set-connection-data", peers);
+    };
+
+    this.on("connected", async () => {
+      setConnectionSocketData();
     });
 
-    this.on("disconnect", () => {
+    this.on("disconnected", () => {
       this.socket.emit("set-connection-data", null);
     });
 
@@ -375,34 +381,35 @@ export class Spectoda {
         if (sessionOnly) {
           // todo finish impl + UI
           const roomId = await this.socket.emitWithAck("join-session");
-          console.log("Remote control id for this session is", { roomId });
+          logging.debug("Remote control id for this session is", { roomId });
         } else {
           this.#setWebSocketConnectionState("connecting");
           await this.socket
             .emitWithAck("join", { signature, key })
             .then(e => {
               this.#setWebSocketConnectionState("connected");
+              setConnectionSocketData();
             })
             .catch(e => {
               this.#setWebSocketConnectionState("disconnected");
             });
         }
 
-        console.log("> Connected and joined network remotely");
+        logging.info("> Connected and joined network remotely");
 
         resolve({ status: "success" });
 
-        console.log("> Listening for events", allEventsEmitter);
-        window.allEventsEmitter = allEventsEmitter;
+        logging.info("> Listening for events", allEventsEmitter);
+        globalThis.allEventsEmitter = allEventsEmitter;
 
         allEventsEmitter.on("on", ({ name, args }) => {
-          console.log("on", name, args);
+          logging.debug("on", name, args);
           this.socket.emit("event", { name, args });
         });
 
         this.socket.on("func", async (payload, callback) => {
           if (!callback) {
-            console.error("No callback provided");
+            logging.error("No callback provided");
             return;
           }
 
@@ -412,19 +419,27 @@ export class Spectoda {
 
           // call internal class function
           try {
+            if (functionName === "debug") {
+              logging.debug(...args);
+              return callback({ status: "success", message: "debug", payload: args });
+            }
             if (functionName === "assignOwnerSignature" || functionName === "assignOwnerKey") {
               return callback({ status: "success", message: "assign key/signature is ignored on remote." });
             }
 
-            if (functionName === "updateDeviceFirmware" || (functionName === "updateNetworkFirmware" && typeof args?.[0] === "object")) {
-              const arr = Object.values(args[0]);
-              const uint8Array = new Uint8Array(arr);
-              args[0] = uint8Array;
+            if (functionName === "updateDeviceFirmware" || functionName === "updateNetworkFirmware") {
+              if (Array.isArray(args?.[0])) {
+                args[0] = new Uint8Array(args[0]);
+              } else if (typeof args?.[0] === "object") {
+                const arr = Object.values(args[0]);
+                const uint8Array = new Uint8Array(arr);
+                args[0] = uint8Array;
+              }
             }
             const result = await this[functionName](...args);
             callback({ status: "success", result });
           } catch (e) {
-            console.error(e);
+            logging.error(e);
             callback({ status: "error", error: e });
           }
         });
@@ -1524,7 +1539,7 @@ export class Spectoda {
       const removed_device_mac_bytes = reader.readBytes(6);
 
       return this.rebootDevice()
-        .catch(() => { })
+        .catch(() => {})
         .then(() => {
           let removed_device_mac = "00:00:00:00:00:00";
           if (removed_device_mac_bytes.length >= 6) {
@@ -2084,7 +2099,6 @@ export class Spectoda {
     return this.runtime.readVariableAddress(variable_address, device_id);
   }
 
-
   hideHomeButton() {
     logging.debug("> Hiding home button...");
 
@@ -2093,7 +2107,6 @@ export class Spectoda {
     }
 
     return window.flutter_inappwebview.callHandler("hideHomeButton");
-
   }
 
   // option:
@@ -2102,15 +2115,15 @@ export class Spectoda {
     logging.debug("> Setting orientation...");
 
     if (!detectSpectodaConnect()) {
-      return Promise.reject("PlatformNotSupported")
+      return Promise.reject("PlatformNotSupported");
     }
 
     if (typeof option !== "number") {
-      return Promise.reject("InvalidOption")
+      return Promise.reject("InvalidOption");
     }
 
     if (option < 0 || option > 2) {
-      return Promise.reject("InvalidOption")
+      return Promise.reject("InvalidOption");
     }
 
     return window.flutter_inappwebview.callHandler("setOrientation", option);
@@ -2185,7 +2198,6 @@ export class Spectoda {
       if (error_code !== 0) {
         throw "Fail";
       }
-
     });
   }
 
