@@ -866,9 +866,9 @@ criteria example:
       await sleep(100);
 
       logging.info("> Getting BLE device mac address");
-      const mac = await this.#bluetoothDevice.getAddress().catch(e => console.error(e));
+      const mac = await this.#bluetoothDevice.getAddress().catch(e => logging.error(e));
       logging.info("> Getting BLE device name");
-      const name = await this.#bluetoothDevice.getName().catch(e => console.error(e));
+      const name = await this.#bluetoothDevice.getName().catch(e => logging.error(e));
 
       // logging.verbose("stopping scanner");
       // await this.#bluetoothAdapter.stopDiscovery();
@@ -913,9 +913,9 @@ criteria example:
     }
 
     logging.info("> Getting BLE device mac address");
-    const mac = await this.#bluetoothDevice.getAddress().catch(e => console.error(e));
+    const mac = await this.#bluetoothDevice.getAddress().catch(e => logging.error(e));
     logging.info("> Getting BLE device name");
-    const name = await this.#bluetoothDevice.getName().catch(e => console.error(e));
+    const name = await this.#bluetoothDevice.getName().catch(e => logging.error(e));
 
     return {
       connector: this.type,
@@ -986,7 +986,7 @@ criteria example:
             });
           }
         } catch (e) {
-          console.error(e);
+          logging.error(e);
         }
       }
 

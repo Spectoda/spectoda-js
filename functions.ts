@@ -772,11 +772,3 @@ export function cssColorToHex(color: typeof barvy | typeof barvy_bez_hacku | str
     return null;
   }
 }
-
-//! ============================
-
-
-// // Usage:
-// console.log(cssColorToHex('red')); // Output: #ff0000
-// console.log(cssColorToHex('blue')); // Output: #0000ff
-// console.log(cssColorToHex('invalidColor')); // Output: null

@@ -143,21 +143,21 @@ export class Spectoda {
     switch (websocketConnectionState) {
       case "connecting":
         if (websocketConnectionState !== this.#websocketConnectionState) {
-          console.warn("> Spectoda connecting");
+          logging.warn("> Spectoda connecting");
           this.#websocketConnectionState = websocketConnectionState;
           this.runtime.emit("connecting-websockets");
         }
         break;
       case "connected":
         if (websocketConnectionState !== this.#websocketConnectionState) {
-          console.warn("> Spectoda connected");
+          logging.warn("> Spectoda connected");
           this.#websocketConnectionState = websocketConnectionState;
           this.runtime.emit("connected-websockets");
         }
         break;
       case "disconnecting":
         if (websocketConnectionState !== this.#websocketConnectionState) {
-          console.warn("> Spectoda disconnecting");
+          logging.warn("> Spectoda disconnecting");
           this.#connectionState = connectionState;
           this.runtime.emit("disconnecting-websockets");
         }
@@ -175,7 +175,7 @@ export class Spectoda {
           //   throw "DisconnectingInProgress";
           // }
 
-          console.warn("> Spectoda connecting");
+          logging.warn("> Spectoda connecting");
           this.#connectionState = connectionState;
           // TODO find out how to handle hacky instance return or other way so it will also work through websockets
           this.runtime.emit("connecting" /*{ target: this }*/);
@@ -187,7 +187,7 @@ export class Spectoda {
           //   throw "ConnectionFailed";
           // }
 
-          console.warn("> Spectoda connected");
+          logging.warn("> Spectoda connected");
           this.#connectionState = connectionState;
           // TODO find out how to handle hacky instance return or other way so it will also work through websockets
           this.runtime.emit("connected" /*{ target: this }*/);
@@ -199,7 +199,7 @@ export class Spectoda {
           //   throw "ConnectingInProgress";
           // }
 
-          console.warn("> Spectoda disconnecting");
+          logging.warn("> Spectoda disconnecting");
           this.#connectionState = connectionState;
           // TODO find out how to handle hacky instance return or other way so it will also work through websockets
           this.runtime.emit("disconnecting" /*{ target: this }*/);
@@ -211,7 +211,7 @@ export class Spectoda {
           //   throw "DisconnectFailed";
           // }
 
-          console.warn("> Spectoda disconnected");
+          logging.warn("> Spectoda disconnected");
           this.#connectionState = connectionState;
           // TODO find out how to handle hacky instance return or other way so it will also work through websockets
           this.runtime.emit("disconnected" /*{ target: this }*/);

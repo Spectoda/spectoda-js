@@ -27,12 +27,12 @@ function injectScript(src) {
 }
 
 function onWasmLoad() {
-  console.log("Webassembly loaded");
+  logging.info("Webassembly loaded");
 
   Module.onRuntimeInitialized = () => {
     moduleInitilized = true;
 
-    console.log("Webassembly runtime initilized");
+    logging.info("Webassembly runtime initilized");
 
     SpectodaWasm.Spectoda_WASM = Module.Spectoda_WASM;
     SpectodaWasm.Uint8Vector = Module.Uint8Vector;
@@ -84,7 +84,7 @@ function loadWasm(wasmVersion) {
 
   moduleInitilizing = true;
 
-  console.log("spectoda-js wasm version " + wasmVersion);
+  logging.info("spectoda-js wasm version " + wasmVersion);
 
   if (typeof window !== "undefined") {
 
@@ -94,12 +94,12 @@ function loadWasm(wasmVersion) {
     injectScript(`http://localhost:5555/builds/${wasmVersion}.js`)
       .then(onWasmLoad)
       .catch(error => {
-        console.error(error);
+        logging.error(error);
         // if local version fails, load public file
         injectScript(`https://updates.spectoda.com/subdom/updates/webassembly/daily/${wasmVersion}.js`)
           .then(onWasmLoad)
           .catch(error => {
-            console.error(error);
+            logging.error(error);
           });
       });
 

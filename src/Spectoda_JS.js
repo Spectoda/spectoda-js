@@ -241,7 +241,7 @@ export class Spectoda_JS {
         //     // dont know how to make Uint8Array in C++ yet. So I am forced to give data out in C++ std::vector
         //     const commands_bytecode = SpectodaWasm.convertNumberVectorToJSArray(commands_bytecode_vector);
 
-        //     console.log("commands_bytecode", commands_bytecode);
+        //     logging.verbose("commands_bytecode", commands_bytecode);
 
         //     // TODO IMPLEMENT SENDING TO OTHER INTERFACES
         //   } catch {
@@ -474,7 +474,7 @@ export class Spectoda_JS {
 //   window.test_wasm = function () {
 //     window.instance = new Spectoda_JS();
 //     window.instance.construct("con1", "ff:ff:ff:ff:ff:ff", 0).then(() => {
-//       console.log(window.instance.makePort("A", 144, 255, 255, true, false));
+//       logging.verbose(window.instance.makePort("A", 144, 255, 255, true, false));
 //       window.instance.execute([0x69, 0xaf, 0x06, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x10, 0x68, 0xaf, 0x06, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0xff], 0xffff);
 //       window.instance.execute([0x72, 0xff, 0xff, 0xff, 0x0f, 0x65, 0x76, 0x74, 0x00, 0x00, 0x6e, 0x40, 0x00, 0x00, 0x00, 0x00, 0xff], 0xffff);
 //       window.instance.compute();

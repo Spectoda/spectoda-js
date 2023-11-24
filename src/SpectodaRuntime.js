@@ -63,7 +63,7 @@ import { SpectodaNodeSerialConnector } from "./connector/SpectodaNodeSerialConne
 export const allEventsEmitter = createNanoEvents();
 
 function emitHandler(event, args) {
-  console.log("emitHandler", event, args);
+  logging.verbose("emitHandler", event, args);
   allEventsEmitter.emit("on", { name: event, args });
 }
 
@@ -1041,7 +1041,7 @@ export class SpectodaRuntime {
                     //   item.reject(error);
                     // });
                   } catch (error) {
-                    console.warn("Error while destroying connector:", error);
+                    logging.warn("Error while destroying connector:", error);
                   } finally {
                     this.connector = null;
                     item.resolve();
@@ -1173,7 +1173,7 @@ export class SpectodaRuntime {
     }
 
     const command_bytes = new Uint8Array(writer.bytes.buffer);
-    console.log("command_bytes=", command_bytes);
+    logging.verbose("command_bytes=", command_bytes);
 
     this.execute(command_bytes);
 

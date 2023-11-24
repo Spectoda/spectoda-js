@@ -128,7 +128,7 @@ export class WebBLEConnection {
       try {
         let bytes = new Uint8Array((await characteristic.readValue()).buffer);
 
-        // console.log(bytes);
+        // logging.verbose(bytes);
 
         let total_bytes = [...bytes];
 
@@ -137,7 +137,7 @@ export class WebBLEConnection {
           total_bytes = [...total_bytes, ...bytes];
         }
 
-        // console.log(total_bytes);
+        // logging.verbose(total_bytes);
 
         resolve(new DataView(new Uint8Array(total_bytes).buffer));
       } catch (e) {

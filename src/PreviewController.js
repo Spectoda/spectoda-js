@@ -134,7 +134,7 @@ export class PreviewController {
                 //     // dont know how to make Uint8Array in C++ yet. So I am forced to give data out in C++ std::vector
                 //     const commands_bytecode = SpectodaWasm.convertNumberVectorToJSArray(commands_bytecode_vector);
 
-                //     console.log("commands_bytecode", commands_bytecode);
+                //     logging.verbose("commands_bytecode", commands_bytecode);
 
                 //     // TODO IMPLEMENT SENDING TO OTHER INTERFACES
                 //   } catch {

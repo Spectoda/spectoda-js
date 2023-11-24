@@ -45,11 +45,11 @@ export function createSpectodaWebsocket() {
       socket
         .emitWithAck("join", networkJoinParams)
         .then(() => {
-          console.log("re/connected to websocket server", networkJoinParams);
+          logging.info("re/connected to websocket server", networkJoinParams);
           eventStream.emit("connected-websockets");
         })
         .catch(err => {
-          console.log("error connecting to websocket server", err);
+          logging.error("error connecting to websocket server", err);
         });
     }
   });

@@ -381,7 +381,7 @@ export class SpectodaWebSerialConnector {
 
                 // Handle received data (value) here
             } catch (error) {
-                console.error('Read error:', error);
+                logging.error('Read error:', error);
                 break;
             }
         }
