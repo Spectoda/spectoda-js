@@ -1,21 +1,35 @@
 import { SpectodaDummyConnector } from "../SpectodaDummyConnector.js";
 import { SpectodaWebBluetoothConnector } from "../SpectodaWebBluetoothConnector.js";
-import { SpectodaWebSerialConnector } from "./connector/SpectodaWebSerialConnector";
-import { createNanoEvents, detectAndroid, detectChrome, detectIPhone, detectLinux, detectMacintosh, detectNode, detectSpectodaConnect, detectWindows, numberToBytes, sleep, uint8ArrayToHexString } from "../functions";
+import {
+  createNanoEvents,
+  createNanoEventsWithWrappedEmit,
+  detectAndroid,
+  detectChrome,
+  detectIPhone,
+  detectLinux,
+  detectMacintosh,
+  detectNode,
+  detectSpectodaConnect,
+  detectWindows,
+  numberToBytes,
+  sleep,
+  uint8ArrayToHexString,
+} from "../functions";
 import { logging } from "../logging";
+import { SpectodaWebSerialConnector } from "./connector/SpectodaWebSerialConnector";
 // import { SpectodaConnectConnector } from "./SpectodaConnectConnector.js";
 import { FlutterConnector } from "../FlutterConnector.js";
 import { TimeTrack } from "../TimeTrack.js";
 import { t } from "../i18n.js";
 import { PreviewController } from "./PreviewController.js";
-import { COMMAND_FLAGS, Spectoda_JS } from "./Spectoda_JS.js";
 import { SpectodaWasm } from "./SpectodaWasm";
+import { COMMAND_FLAGS, Spectoda_JS } from "./Spectoda_JS.js";
 import { SimulationConnector } from "./connector/SimulationConnector.js";
 
+import { TnglReader } from "../TnglReader.js";
+import { TnglWriter } from "../TnglWriter.js";
 import { SpectodaNodeBluetoothConnector } from "./connector/SpectodaNodeBleConnector";
 import { SpectodaNodeSerialConnector } from "./connector/SpectodaNodeSerialConnector";
-import { TnglWriter } from "../TnglWriter.js";
-import { TnglReader } from "../TnglReader.js";
 
 // Spectoda.js -> SpectodaRuntime.js -> | SpectodaXXXConnector.js ->
 
@@ -49,6 +63,7 @@ import { TnglReader } from "../TnglReader.js";
 export const allEventsEmitter = createNanoEvents();
 
 function emitHandler(event, args) {
+  console.log("emitHandler", event, args);
   allEventsEmitter.emit("on", { name: event, args });
 }
 
@@ -115,8 +130,7 @@ export class SpectodaRuntime {
     // TODO implement a way of having more than one connector at the same time
     this.connector = /** @type {SpectodaDummyConnector | SpectodaWebBluetoothConnector | SpectodaWebSerialConnector | SpectodaConnectConnector | FlutterConnector | null} */ (null);
 
-    this.#eventEmitter = createNanoEvents();
-    emitHandler(this.#eventEmitter);
+    this.#eventEmitter = createNanoEventsWithWrappedEmit(emitHandler);
 
     this.#queue = /** @type {Query[]} */ ([]);
     this.#processing = false;

@@ -8,10 +8,10 @@ import { changeLanguage, t } from "./i18n.js";
 import { logging, setLoggingLevel } from "./logging";
 import { COMMAND_FLAGS } from "./src/Spectoda_JS.js";
 
-import customParser from "socket.io-msgpack-parser";
-import { SpectodaRuntime, allEventsEmitter } from "./src/SpectodaRuntime.js";
 import { io } from "socket.io-client";
+import customParser from "socket.io-msgpack-parser";
 import { WEBSOCKET_URL } from "./SpectodaWebSocketsConnector.js";
+import { SpectodaRuntime, allEventsEmitter } from "./src/SpectodaRuntime.js";
 
 let lastEvents = {};
 
@@ -177,7 +177,8 @@ export class Spectoda {
 
           console.warn("> Spectoda connecting");
           this.#connectionState = connectionState;
-          this.runtime.emit("connecting", { target: this });
+          // TODO find out how to handle hacky instance return or other way so it will also work through websockets
+          this.runtime.emit("connecting" /*{ target: this }*/);
         }
         break;
       case "connected":
@@ -188,7 +189,8 @@ export class Spectoda {
 
           console.warn("> Spectoda connected");
           this.#connectionState = connectionState;
-          this.runtime.emit("connected", { target: this });
+          // TODO find out how to handle hacky instance return or other way so it will also work through websockets
+          this.runtime.emit("connected" /*{ target: this }*/);
         }
         break;
       case "disconnecting":
@@ -199,7 +201,8 @@ export class Spectoda {
 
           console.warn("> Spectoda disconnecting");
           this.#connectionState = connectionState;
-          this.runtime.emit("disconnecting", { target: this });
+          // TODO find out how to handle hacky instance return or other way so it will also work through websockets
+          this.runtime.emit("disconnecting" /*{ target: this }*/);
         }
         break;
       case "disconnected":
@@ -210,7 +213,8 @@ export class Spectoda {
 
           console.warn("> Spectoda disconnected");
           this.#connectionState = connectionState;
-          this.runtime.emit("disconnected", { target: this });
+          // TODO find out how to handle hacky instance return or other way so it will also work through websockets
+          this.runtime.emit("disconnected" /*{ target: this }*/);
         }
         break;
       default:
@@ -359,7 +363,9 @@ export class Spectoda {
     this.requestWakeLock(true);
 
     const setConnectionSocketData = async () => {
-      const peers = await this.getConnectedPeersInfo().catch(()=>{ return [] });
+      const peers = await this.getConnectedPeersInfo().catch(() => {
+        return [];
+      });
       logging.debug("peers", peers);
       this.socket.emit("set-connection-data", peers);
     };
