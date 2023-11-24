@@ -66,7 +66,6 @@ export class SpectodaNodeSerialConnector {
   #serialPort: SerialPort | undefined;
   #criteria: { baudrate: number | undefined, baudRate: number | undefined, uart: string | undefined, port: string | undefined, path: string | undefined }[] | undefined;
 
-  #connected: boolean;
   #disconnecting: boolean;
 
   #timeoutMultiplier: number;
@@ -85,7 +84,6 @@ export class SpectodaNodeSerialConnector {
     this.#serialPort = undefined;
     this.#criteria = undefined;
 
-    this.#connected = false;
     this.#disconnecting = false;
 
     this.#timeoutMultiplier = 1.2;
@@ -152,7 +150,7 @@ export class SpectodaNodeSerialConnector {
   autoSelect(criteria: { baudrate: number | undefined, baudRate: number | undefined, uart: string | undefined, port: string | undefined, path: string | undefined }[], scan_period: number, timeout: number): Promise<{ connector: string }> {
     logging.debug("autoSelect(criteria=" + JSON.stringify(criteria) + ", scan_period=" + scan_period + ", timeout=" + timeout + ")");
 
-    if (this.#connected) {
+    if (this.#serialPort && this.#serialPort.isOpen) {
       return this.disconnect().then(() => {
         return this.autoSelect(criteria, scan_period, timeout);
       });
@@ -160,7 +158,7 @@ export class SpectodaNodeSerialConnector {
 
     if (this.#serialPort) {
       return this.unselect().then(() => {
-        return this.userSelect(criteria);
+        return this.autoSelect(criteria, scan_period, timeout);
       });
     }
 
@@ -225,22 +223,20 @@ export class SpectodaNodeSerialConnector {
   unselect(): Promise<void> {
     logging.verbose("unselect()");
 
-    if (this.#connected) {
+    if(!this.#serialPort) {
+      logging.debug("Already unseledted");
+      return Promise.resolve();
+    }
+
+    if (this.#serialPort && this.#serialPort.isOpen) {
       return this.disconnect().then(() => {
         return this.unselect();
       });
     }
 
-    if (this.#serialPort) {
-
-      if (this.#serialPort.isOpen) {
-        this.#serialPort.close();
-      }
-
-      this.#serialPort.removeAllListeners();
-      this.#serialPort = undefined;
-      this.#criteria = undefined;
-    }
+    this.#serialPort.removeAllListeners();
+    this.#serialPort = undefined;
+    this.#criteria = undefined;
 
     return Promise.resolve();
   }
@@ -276,7 +272,7 @@ export class SpectodaNodeSerialConnector {
       throw "NotSelected";
     }
 
-    if (this.#connected) {
+    if (this.#serialPort.isOpen) {
       logging.warn("Serial device already connected");
       return Promise.resolve();
     }
@@ -457,8 +453,6 @@ export class SpectodaNodeSerialConnector {
 
             if (result) {
               logging.info("Serial connection connected");
-              this.#connected = true;
-
               this.#runtimeReference.emit("#connected");
               resolve({ connector: this.type, criteria: this.#criteria });
             } else {
@@ -469,7 +463,11 @@ export class SpectodaNodeSerialConnector {
 
           };
 
-          this.#serialPort.write(">>>ENABLE_SERIAL<<<\n");
+          try {
+            this.#serialPort.write(">>>ENABLE_SERIAL<<<\n");
+          } catch (error) {
+            logging.error("ERROR asd0sd9f876");
+          }
         });
 
       })
@@ -482,7 +480,7 @@ export class SpectodaNodeSerialConnector {
   connected() {
     logging.verbose("connected()");
 
-    return Promise.resolve(this.#connected ? { connector: this.type, criteria: this.#criteria } : null);
+    return Promise.resolve((this.#serialPort && this.#serialPort.isOpen) ? { connector: this.type, criteria: this.#criteria } : null);
   }
 
   // disconnect Connector from the connected Spectoda Device. But keep it selected
@@ -494,32 +492,26 @@ export class SpectodaNodeSerialConnector {
       return Promise.resolve();
     }
 
-    if (!this.#serialPort.isOpen) {
-      logging.debug("Serial port already closed");
-      return Promise.resolve();
-    }
-
     if (this.#disconnecting) {
-      logging.debug("Serial port already disconnecting");
-      return Promise.resolve();
+      logging.error("Serial port already disconnecting");
+      throw "AlreadyDisconnecting";
     }
 
-    this.#disconnecting = true;
-
-    try {
-      await this.#serialPort.close();
-    }
-    catch (error) {
-      logging.error("Failed to close serial port. Error: " + error);
-    }
-    finally {
-      this.#disconnecting = false;
-      if (this.#connected) {
-        this.#connected = false;
+    if (this.#serialPort.isOpen) {
+      try {
+        this.#disconnecting = true;
+        await this.#serialPort.close();
+      }
+      catch (error) {
+        logging.error("ERROR asd0896fsda", error);
+      }
+      finally {
+        this.#disconnecting = false;
         this.#runtimeReference.emit("#disconnected");
       }
     }
 
+    return Promise.resolve();
   }
 
   // serial_connector_channel_type_t channel_type;
@@ -556,6 +548,10 @@ export class SpectodaNodeSerialConnector {
     if (!packet_timeout || packet_timeout < packet_timeout_min) {
       logging.warn("Packet Timeout is too small:", packet_timeout);
       packet_timeout = packet_timeout_min;
+    }
+
+    if (timeout < packet_timeout) {
+      timeout = packet_timeout;
     }
 
     logging.verbose(`initiate_code=${initiate_code}`);
@@ -604,11 +600,12 @@ export class SpectodaNodeSerialConnector {
       };
 
       try {
+
         await this.#serialPort.write(new Uint8Array(header_writer.bytes.buffer));
         await this.#serialPort.write(new Uint8Array(payload));
 
       } catch (e) {
-        logging.error(e);
+        logging.error("ERROR 0ads8F67", e);
         reject(e);
       }
 
@@ -647,7 +644,7 @@ export class SpectodaNodeSerialConnector {
   deliver(payload: number[], timeout: number) {
     logging.verbose(`deliver(payload=${payload})`);
 
-    if (!this.#connected) {
+    if (!!this.#serialPort || !this.#serialPort.isOpen) {
       throw "DeviceDisconnected";
     }
 
@@ -663,7 +660,7 @@ export class SpectodaNodeSerialConnector {
   transmit(payload: number[], timeout: number) {
     logging.verbose(`transmit(payload=${payload})`);
 
-    if (!this.#connected) {
+    if (!this.#serialPort || !this.#serialPort.isOpen) {
       throw "DeviceDisconnected";
     }
 
@@ -679,8 +676,7 @@ export class SpectodaNodeSerialConnector {
   request(payload: number[], read_response: boolean, timeout: number) {
     logging.verbose(`request(payload=${payload})`);
 
-    if (!this.#connected) {
-      logging.error(`ERROR request(payload=${payload})`);
+    if (!this.#serialPort || !this.#serialPort.isOpen) {
       throw "DeviceDisconnected";
     }
 
@@ -697,7 +693,7 @@ export class SpectodaNodeSerialConnector {
   setClock(clock: TimeTrack) {
     logging.verbose(`setClock(clock.millis()=${clock.millis()})`);
 
-    if (!this.#connected) {
+    if (!this.#serialPort || !this.#serialPort.isOpen) {
       throw "DeviceDisconnected";
     }
 
@@ -724,7 +720,7 @@ export class SpectodaNodeSerialConnector {
   getClock() {
     logging.verbose(`getClock()`);
 
-    if (!this.#connected) {
+    if (!this.#serialPort || !this.#serialPort.isOpen) {
       throw "DeviceDisconnected";
     }
 
