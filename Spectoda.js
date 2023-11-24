@@ -79,10 +79,10 @@ export class Spectoda {
     this.runtime.onDisconnected = event => {
       logging.debug("> Runtime disconnected");
 
-      const TIME = 2000;
+      const TIME = 5000;
 
       if (this.#getConnectionState() === "connected" && this.#reconnecting) {
-        logging.debug(`> Reconnecting in ${TIME}ms`);
+        logging.debug(`Reconnecting in ${TIME}ms..`);
         this.#setConnectionState("connecting");
 
         return sleep(TIME)
@@ -98,7 +98,6 @@ export class Spectoda {
             this.#setConnectionState("disconnected");
           });
       } else {
-        logging.debug(`> Spectoda disconnected`);
         this.#setConnectionState("disconnected");
       }
     };
@@ -409,7 +408,7 @@ export class Spectoda {
         globalThis.allEventsEmitter = allEventsEmitter;
 
         allEventsEmitter.on("on", ({ name, args }) => {
-          logging.debug("on", name, args);
+          logging.verbose("on", name, args);
           this.socket.emit("event", { name, args });
         });
 
