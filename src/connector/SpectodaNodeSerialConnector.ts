@@ -4,7 +4,7 @@
 
 // add overlays=uart3 to /boot/orangepiEnv.txt
 // add overlays=uart0 to /boot/orangepiEnv.txt
-// stty -F /dev/ttyS3 1000000
+// stty -F /dev/ttyS3 1500000
 
 import { logging } from "../../logging";
 import { sleep, toBytes, numberToBytes, crc8, crc32, hexStringToArray, rgbToHex, stringToBytes, convertToByteArray } from "../../functions";
@@ -67,6 +67,7 @@ export class SpectodaNodeSerialConnector {
   #serialPort: SerialPort | undefined;
   #criteria: { baudrate: number | undefined, baudRate: number | undefined, uart: string | undefined, port: string | undefined, path: string | undefined }[] | undefined;
 
+  #interfaceConnected: boolean;
   #disconnecting: boolean;
   #disconnectingResolve: ((value: unknown) => void) | undefined;
 
@@ -86,6 +87,7 @@ export class SpectodaNodeSerialConnector {
     this.#serialPort = undefined;
     this.#criteria = undefined;
 
+    this.#interfaceConnected = false;
     this.#disconnecting = false;
     this.#disconnectingResolve = undefined;
 
@@ -161,24 +163,24 @@ export class SpectodaNodeSerialConnector {
     }
 
     // ! to overcome [Error: Error Resource temporarily unavailable Cannot lock port] bug when trying to create new SerialPort object on the same path
-    if (criteria && Array.isArray(criteria) && criteria.length && this.#criteria && Array.isArray(this.#criteria) && this.#criteria.length) {
+    // // if (criteria && Array.isArray(criteria) && criteria.length && this.#criteria && Array.isArray(this.#criteria) && this.#criteria.length) {
 
-      let uart1 = undefined;
-      let uart2 = undefined;
+    // //   let uart1 = undefined;
+    // //   let uart2 = undefined;
 
-      if (criteria[0].uart || criteria[0].port || criteria[0].path) {
-        uart1 = criteria[0].uart || criteria[0].port || criteria[0].path || undefined;
-      }
+    // //   if (criteria[0].uart || criteria[0].port || criteria[0].path) {
+    // //     uart1 = criteria[0].uart || criteria[0].port || criteria[0].path || undefined;
+    // //   }
 
-      if (this.#criteria[0].uart || this.#criteria[0].port || this.#criteria[0].path) {
-        uart2 = this.#criteria[0].uart || this.#criteria[0].port || this.#criteria[0].path || undefined;
-      }
+    // //   if (this.#criteria[0].uart || this.#criteria[0].port || this.#criteria[0].path) {
+    // //     uart2 = this.#criteria[0].uart || this.#criteria[0].port || this.#criteria[0].path || undefined;
+    // //   }
 
-      if (uart1 != undefined && uart2 != undefined && uart1 == uart2) {
-        logging.debug("criteria is matching, keepin the last serial port object");
-        return Promise.resolve({ connector: this.type, criteria: this.#criteria });
-      }
-    }
+    // //   if (uart1 != undefined && uart2 != undefined && uart1 == uart2) {
+    // //     logging.debug("criteria is matching, keepin the last serial port object");
+    // //     return Promise.resolve({ connector: this.type, criteria: this.#criteria });
+    // //   }
+    // // }
 
     if (this.#serialPort) {
       logging.debug("unselecting from autoSelect()");
@@ -251,7 +253,7 @@ export class SpectodaNodeSerialConnector {
     logging.verbose("unselect()");
 
     if (!this.#serialPort) {
-      logging.debug("already unseledted");
+      logging.debug("already unselected");
       return Promise.resolve();
     }
 
@@ -300,7 +302,7 @@ export class SpectodaNodeSerialConnector {
       throw "NotSelected";
     }
 
-    if (this.#serialPort.isOpen) {
+    if (this.#interfaceConnected) {
       logging.warn("Serial device already connected");
       return Promise.resolve();
     }
@@ -343,6 +345,8 @@ export class SpectodaNodeSerialConnector {
         const NEWLINE_ASCII_CODE = 10;
 
         const decoder = new TextDecoder();
+
+        this.#serialPort.removeAllListeners();
 
         // this.#serialPort.on('open', function() {
         //   logging.debug('Port Opened');
@@ -472,39 +476,42 @@ export class SpectodaNodeSerialConnector {
 
               }
             }
-
-            if (this.#disconnecting) {
-              this.#disconnect();
-            }
-
           }
 
         });
 
         return new Promise((resolve, reject) => {
 
-          const timeout_handle = setTimeout(() => {
+          const timeout_handle = setTimeout(async () => {
             logging.warn("Connection begin timeouted");
             this.#beginCallback = undefined;
 
-            this.#disconnect().finally(() => {
+            await this.#disconnect().finally(() => {
               reject("ConnectTimeout");
             });
-
           }, timeout);
 
           this.#beginCallback = result => {
-            clearTimeout(timeout_handle);
             this.#beginCallback = undefined;
+
+            clearTimeout(timeout_handle);
 
             if (result) {
               logging.info("Serial connection connected");
-              this.#runtimeReference.emit("#connected");
+              if (!this.#interfaceConnected) {
+                this.#interfaceConnected = true;
+                this.#runtimeReference.emit("#connected");
+              }
               resolve({ connector: this.type, criteria: this.#criteria });
             } else {
-              logging.warn("Trying to connect again")
-              const passed = new Date().getTime() - start;
-              resolve(this.connect(timeout - passed));
+              // logging.warn("Trying to connect again")
+              // const passed = new Date().getTime() - start;
+              // resolve(this.connect(timeout - passed));
+
+              logging.info("Serial connection failed");
+              this.#disconnect().finally(() => {
+                reject("ConnectFailed");
+              });
             }
 
           };
@@ -557,21 +564,27 @@ export class SpectodaNodeSerialConnector {
             resolve(null);
           }
         });
-      }).then(() => {
-        return sleep(1000);
       }).finally(() => {
+        this.#disconnecting = false;
         if (this.#disconnectingResolve !== undefined) {
           this.#disconnectingResolve(null);
         }
-        this.#runtimeReference.emit("#disconnected");
+        if (this.#interfaceConnected) {
+          this.#interfaceConnected = false;
+          this.#runtimeReference.emit("#disconnected");
+        }
       });
     }
 
-    else {
-      logging.debug("> Serial Port already closed");
-
+    if (this.#disconnecting) {
+      logging.warn("Serial port already disconnecting");
+      // return Promise.reject("AlreadyDisconnecting");
       return Promise.resolve(null);
     }
+
+    logging.debug("> Serial Port already closed");
+    return Promise.resolve(null);
+
   }
 
   disconnect() {
@@ -583,7 +596,7 @@ export class SpectodaNodeSerialConnector {
     }
 
     if (!this.#serialPort.isOpen) {
-      logging.debug("No Serial Port connected");
+      logging.debug("Serial Port is not connected");
       return Promise.resolve(null);
     }
 
@@ -596,13 +609,30 @@ export class SpectodaNodeSerialConnector {
     this.#disconnecting = true;
 
     const disconnectingPromise = new Promise((resolve, reject) => {
-      this.#disconnectingResolve = resolve;
+
+      const timeout_handle = setTimeout(async () => {
+        logging.error("Finishing Serial TIMEOUT");
+
+        this.#disconnectingResolve = undefined;
+        await this.#disconnect().finally(() => {
+          reject("DisconnectTimeout");
+        });
+
+      }, 5000);
+
+      this.#disconnectingResolve = (value: unknown) => {
+        this.#disconnectingResolve = undefined;
+        clearTimeout(timeout_handle);
+        resolve(value);
+      };
 
       try {
+        logging.info("> Finishing Serial...");
         this.#serialPort.write(">>>FINISH_SERIAL<<<\n");
       } catch (error) {
         logging.error("ERROR 0a9s8d0asd8f", error);
       }
+
     });
 
     return disconnectingPromise;
@@ -675,7 +705,7 @@ export class SpectodaNodeSerialConnector {
         clearInterval(timeout_handle);
 
         if (success) {
-          logging.info("> SUCESS");
+          logging.debug("> SUCESS");
           resolve(null);
         }
 
@@ -738,7 +768,7 @@ export class SpectodaNodeSerialConnector {
   deliver(payload: number[], timeout: number) {
     logging.verbose(`deliver(payload=${payload})`);
 
-    if (!!this.#serialPort || !this.#serialPort.isOpen) {
+    if (!this.#serialPort || !this.#serialPort.isOpen) {
       throw "DeviceDisconnected";
     }
 

@@ -231,7 +231,6 @@ export class Spectoda_JS {
           // }
 
           return true;
-
         },
 
         // _onRequest: () => {

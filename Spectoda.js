@@ -79,7 +79,7 @@ export class Spectoda {
     this.runtime.onDisconnected = event => {
       logging.debug("> Runtime disconnected");
 
-      const TIME = 5000;
+      const TIME = 2000;
 
       if (this.#getConnectionState() === "connected" && this.#reconnecting) {
         logging.debug(`Reconnecting in ${TIME}ms..`);
