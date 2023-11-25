@@ -45,10 +45,6 @@ export class Spectoda {
   #reconnectRC;
 
   constructor(connectorType = "default", reconnecting = true) {
-    // // nextjs
-    // if (typeof window === "undefined") {
-    //   return;
-    // }
 
     this.#parser = new TnglCodeParser();
 
@@ -170,10 +166,6 @@ export class Spectoda {
     switch (connectionState) {
       case "connecting":
         if (connectionState !== this.#connectionState) {
-          // if (connectionState == "disconnecting") {
-          //   throw "DisconnectingInProgress";
-          // }
-
           logging.warn("> Spectoda connecting");
           this.#connectionState = connectionState;
           // TODO find out how to handle hacky instance return or other way so it will also work through websockets
@@ -182,10 +174,6 @@ export class Spectoda {
         break;
       case "connected":
         if (connectionState !== this.#connectionState) {
-          // if (connectionState != "connecting") {
-          //   throw "ConnectionFailed";
-          // }
-
           logging.warn("> Spectoda connected");
           this.#connectionState = connectionState;
           // TODO find out how to handle hacky instance return or other way so it will also work through websockets
@@ -194,10 +182,6 @@ export class Spectoda {
         break;
       case "disconnecting":
         if (connectionState !== this.#connectionState) {
-          // if (connectionState == "connecting") {
-          //   throw "ConnectingInProgress";
-          // }
-
           logging.warn("> Spectoda disconnecting");
           this.#connectionState = connectionState;
           // TODO find out how to handle hacky instance return or other way so it will also work through websockets
@@ -206,10 +190,6 @@ export class Spectoda {
         break;
       case "disconnected":
         if (connectionState !== this.#connectionState) {
-          // if (connectionState != "disconnecting") {
-          //   throw "DisconnectFailed";
-          // }
-
           logging.warn("> Spectoda disconnected");
           this.#connectionState = connectionState;
           // TODO find out how to handle hacky instance return or other way so it will also work through websockets
@@ -1676,14 +1656,7 @@ export class Spectoda {
       return new Uint8Array(fingerprint);
     });
   }
-
-  // setDeviceId(id) {
-  //   logging.debug("> Rebooting network...");
-
-  //   const payload = [COMMAND_FLAGS.FLAG_DEVICE_ID, id];
-  //   return this.connector.request(payload);
-  // }
-
+  
   // datarate in bits per second
   setNetworkDatarate(datarate) {
     logging.debug(`> Setting network datarate to ${datarate} bsp...`);
