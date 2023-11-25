@@ -428,6 +428,7 @@ export class SpectodaNodeSerialConnector {
                     const line = decoder.decode(new Uint8Array(line_bytes));
                     // TODO! process line
                     logging.info(line);
+                    this.#runtimeReference.emit("controller-log", line);
                     line_bytes.length = 0;
                   }
 
