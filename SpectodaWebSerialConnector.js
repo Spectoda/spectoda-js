@@ -8,7 +8,7 @@ import { TnglReader } from "./TnglReader.js";
 ///////////////////////////////////////////////////////////////////////////////////
 
 // const SERIAL_CLOCK_DRIFT = 228;
-const SERIAL_CLOCK_DRIFT = 0;
+const SERIAL_CLOCK_DRIFT = 10; // 
 
 /**
  * @name LineBreakTransformer
@@ -502,27 +502,27 @@ criteria example:
 
         if (success) {
           logging.verbose("this.#feedbackCallback SUCESS");
-          setTimeout(() => {
-            if (this.#transmitStreamWriter) {
-              this.#transmitStreamWriter.releaseLock();
-            }
-            resolve();
-          }, 100); // 50ms equals 5 RTOS ticks to pass to not cause problems
+          // setTimeout(() => {
+          if (this.#transmitStreamWriter) {
+            this.#transmitStreamWriter.releaseLock();
+          }
+          resolve();
+          // }, 100); // 50ms equals 5 RTOS ticks to pass to not cause problems
         }
 
         else {
           //try to write it once more
           logging.verbose("this.#feedbackCallback FAIL");
-          setTimeout(() => {
-            if (this.#transmitStreamWriter) {
-              this.#transmitStreamWriter.releaseLock();
-            }
-            try {
-              resolve(this.#initiate(initiate_code, payload, tries - 1, 0));
-            } catch (e) {
-              reject(e);
-            }
-          }, 250); // 100ms to be safe
+          // setTimeout(() => {
+          if (this.#transmitStreamWriter) {
+            this.#transmitStreamWriter.releaseLock();
+          }
+          try {
+            resolve(this.#initiate(initiate_code, payload, tries - 1, 0));
+          } catch (e) {
+            reject(e);
+          }
+          // }, 250); // 100ms to be safe
         }
 
       };
