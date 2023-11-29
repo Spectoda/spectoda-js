@@ -94,6 +94,14 @@ export function createSpectodaWebsocket() {
             };
           } else if (prop === "connectionState") {
             return websocketConnectionState;
+          } else if (prop === "listOnlineClientsWithMac") {
+            return param => {
+              return socket.emitWithAck("list-online-clients-with-mac", param);
+            };
+          } else if (prop === "emitCommand") {
+            return param => {
+              return socket.emitWithAck("send-command-prepay-laboring-detective", param);
+            };
           }
 
           // Always return an async function for any property
