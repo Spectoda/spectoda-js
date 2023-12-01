@@ -339,6 +339,7 @@ export class Spectoda {
     });
 
     this.socket.connect();
+
     this.requestWakeLock(true);
 
     const setConnectionSocketData = async () => {
@@ -357,79 +358,81 @@ export class Spectoda {
       this.socket.emit("set-connection-data", null);
     });
 
-    return await new Promise((resolve, reject) => {
-      this.socket.on("disconnect", () => {
-        this.#setWebSocketConnectionState("disconnected");
-      });
-
-      this.socket.on("connect", async () => {
-        if (sessionOnly) {
-          // todo finish impl + UI
-          const roomId = await this.socket.emitWithAck("join-session");
-          logging.debug("Remote control id for this session is", { roomId });
-        } else {
-          this.#setWebSocketConnectionState("connecting");
-          await this.socket
-            .emitWithAck("join", { signature, key })
-            .then(e => {
-              this.#setWebSocketConnectionState("connected");
-              setConnectionSocketData();
-            })
-            .catch(e => {
-              this.#setWebSocketConnectionState("disconnected");
-            });
-        }
-
-        logging.info("> Connected and joined network remotely");
-
-        resolve({ status: "success" });
-
-        logging.info("> Listening for events", allEventsEmitter);
-        globalThis.allEventsEmitter = allEventsEmitter;
-
-        allEventsEmitter.on("on", ({ name, args }) => {
-          logging.verbose("on", name, args);
-          this.socket.emit("event", { name, args });
+    if (signature) {
+      return await new Promise((resolve, reject) => {
+        this.socket.on("disconnect", () => {
+          this.#setWebSocketConnectionState("disconnected");
         });
 
-        this.socket.on("func", async (payload, callback) => {
-          if (!callback) {
-            logging.error("No callback provided");
-            return;
+        this.socket.on("connect", async () => {
+          if (sessionOnly) {
+            // todo finish impl + UI
+            const roomId = await this.socket.emitWithAck("join-session");
+            logging.debug("Remote control id for this session is", { roomId });
+          } else {
+            this.#setWebSocketConnectionState("connecting");
+            await this.socket
+              .emitWithAck("join", { signature, key })
+              .then(e => {
+                this.#setWebSocketConnectionState("connected");
+                setConnectionSocketData();
+              })
+              .catch(e => {
+                this.#setWebSocketConnectionState("disconnected");
+              });
           }
 
-          let { functionName, arguments: args } = payload;
+          logging.info("> Connected and joined network remotely");
 
-          // call internal class function await this[functionName](...args)
+          resolve({ status: "success" });
 
-          // call internal class function
-          try {
-            if (functionName === "debug") {
-              logging.debug(...args);
-              return callback({ status: "success", message: "debug", payload: args });
+          logging.info("> Listening for events", allEventsEmitter);
+          globalThis.allEventsEmitter = allEventsEmitter;
+
+          allEventsEmitter.on("on", ({ name, args }) => {
+            logging.verbose("on", name, args);
+            this.socket.emit("event", { name, args });
+          });
+
+          this.socket.on("func", async (payload, callback) => {
+            if (!callback) {
+              logging.error("No callback provided");
+              return;
             }
-            if (functionName === "assignOwnerSignature" || functionName === "assignOwnerKey") {
-              return callback({ status: "success", message: "assign key/signature is ignored on remote." });
-            }
 
-            if (functionName === "updateDeviceFirmware" || functionName === "updateNetworkFirmware") {
-              if (Array.isArray(args?.[0])) {
-                args[0] = new Uint8Array(args[0]);
-              } else if (typeof args?.[0] === "object") {
-                const arr = Object.values(args[0]);
-                const uint8Array = new Uint8Array(arr);
-                args[0] = uint8Array;
+            let { functionName, arguments: args } = payload;
+
+            // call internal class function await this[functionName](...args)
+
+            // call internal class function
+            try {
+              if (functionName === "debug") {
+                logging.debug(...args);
+                return callback({ status: "success", message: "debug", payload: args });
               }
+              if (functionName === "assignOwnerSignature" || functionName === "assignOwnerKey") {
+                return callback({ status: "success", message: "assign key/signature is ignored on remote." });
+              }
+
+              if (functionName === "updateDeviceFirmware" || functionName === "updateNetworkFirmware") {
+                if (Array.isArray(args?.[0])) {
+                  args[0] = new Uint8Array(args[0]);
+                } else if (typeof args?.[0] === "object") {
+                  const arr = Object.values(args[0]);
+                  const uint8Array = new Uint8Array(arr);
+                  args[0] = uint8Array;
+                }
+              }
+              const result = await this[functionName](...args);
+              callback({ status: "success", result });
+            } catch (e) {
+              logging.error(e);
+              callback({ status: "error", error: e });
             }
-            const result = await this[functionName](...args);
-            callback({ status: "success", result });
-          } catch (e) {
-            logging.error(e);
-            callback({ status: "error", error: e });
-          }
+          });
         });
       });
-    });
+    }
   }
 
   disableRemoteControl() {
@@ -1545,7 +1548,7 @@ export class Spectoda {
       const removed_device_mac_bytes = reader.readBytes(6);
 
       return this.rebootDevice()
-        .catch(() => {})
+        .catch(() => { })
         .then(() => {
           let removed_device_mac = "00:00:00:00:00:00";
           if (removed_device_mac_bytes.length >= 6) {
