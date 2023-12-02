@@ -3,7 +3,7 @@ import { TimeTrack } from "./TimeTrack.js";
 import "./TnglReader.js";
 import { TnglReader } from "./TnglReader.js";
 import "./TnglWriter.js";
-import { colorToBytes, computeTnglFingerprint, detectNode, detectSpectodaConnect, hexStringToUint8Array, labelToBytes, numberToBytes, percentageToBytes, sleep, strMacToBytes, stringToBytes, uint8ArrayToHexString } from "./functions";
+import { cssColorToHex, colorToBytes, computeTnglFingerprint, detectNode, detectSpectodaConnect, hexStringToUint8Array, labelToBytes, numberToBytes, percentageToBytes, sleep, strMacToBytes, stringToBytes, uint8ArrayToHexString } from "./functions";
 import { changeLanguage, t } from "./i18n.js";
 import { logging, setLoggingLevel } from "./logging";
 import { COMMAND_FLAGS } from "./src/Spectoda_JS.js";
@@ -972,6 +972,8 @@ export class Spectoda {
     // this.#saveStateTimeoutHandle = setTimeout(() => {
     //   this.saveState();
     // }, 5000);
+
+    event_value = cssColorToHex(event_value);
 
     if (!event_value || !event_value.match(/#[\dabcdefABCDEF]{6}/g)) {
       logging.error("Invalid event value. event_value=", event_value);
