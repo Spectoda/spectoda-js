@@ -143,9 +143,9 @@ export class SpectodaWebSerialConnector {
 
         if (this.#serialPort) {
             return this.unselect().then(() => {
-              return this.userSelect(criteria);
+                return this.userSelect(criteria);
             });
-          }
+        }
 
         return navigator.serial.requestPort().then(port => {
             this.#serialPort = port;
@@ -318,7 +318,7 @@ export class SpectodaWebSerialConnector {
                                     if (character === NEWLINE_ASCII_CODE) {
                                         const line = decoder.decode(new Uint8Array(line_bytes));
                                         // TODO! process line
-                                        logging.info(line);
+                                        console.log(line);
                                         line_bytes.length = 0;
                                     }
 
