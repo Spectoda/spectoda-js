@@ -1,5 +1,6 @@
-import { logging, setLoggingLevel } from "./logging";
 import { createNanoEvents } from "nanoevents";
+import { PERCENTAGE_MAX, PERCENTAGE_MIN } from "./constants";
+import { logging, setLoggingLevel } from "./logging";
 
 export const createNanoEventsWithWrappedEmit = emitHandler => ({
   emit(event, ...args) {
@@ -22,9 +23,8 @@ export const createNanoEventsWithWrappedEmit = emitHandler => ({
 export { createNanoEvents };
 
 export function toBytes(value: number, byteCount: number) {
-
-  if (typeof (value) !== "number") {
-    logging.error("Invalid value type: " + value + " (" + typeof (value) + ")");
+  if (typeof value !== "number") {
+    logging.error("Invalid value type: " + value + " (" + typeof value + ")");
     throw "InvalidValue";
   }
 
@@ -52,40 +52,14 @@ export function numberToBytes(number_value: number, byteCount: number) {
   return toBytes(number_value, byteCount);
 }
 
-// // timeline_index [0 - 15]
-// // timeline_paused [true/false]
-// function getTimelineFlags(timeline_index, timeline_paused) {
-//   // flags bits: [ Reserved,Reserved,Reserved,PausedFLag,IndexBit3,IndexBit2,IndexBit1,IndexBit0]
-//   timeline_index = timeline_index & 0b00001111;
-//   timeline_paused = (timeline_paused << 4) & 0b00010000;
-//   return timeline_paused | timeline_index;
-// }
-
-// function floatingByteToInt16(value) {
-//   if (value < 0.0) {
-//     value = 0.0;
-//   } else if (value > 255.0) {
-//     value = 255.0;
-//   }
-
-//   let value_whole = Math.floor(value);
-//   let value_rational = Math.round((value - value_whole) / (1 / 256));
-//   let value_int16 = (value_whole << 8) + value_rational;
-
-//   // console.info(value_whole);
-//   // console.info(value_rational);
-//   // console.info(value_int16);
-
-//   return value_int16;
-// }
-
 export const timeOffset = new Date().getTime() % 0x7fffffff;
+
 // must be positive int32 (4 bytes)
 export function getClockTimestamp() {
   return (new Date().getTime() % 0x7fffffff) - timeOffset;
 }
 
-export function sleep(ms) {
+export function sleep(ms: number) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
@@ -110,9 +84,7 @@ export function sleep(ms) {
 // IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 // CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-/////////////////////////////////////////////// == 0.7 == ///////////////////////////////////////////////////
-
-export const getSeconds = str => {
+export const getSeconds = (str: string) => {
   let seconds = 0;
   let months = str.match(/(\d+)\s*M/);
   let days = str.match(/(\d+)\s*D/);
@@ -137,15 +109,15 @@ export const getSeconds = str => {
   return seconds;
 };
 
-export function mapValue(x, in_min, in_max, out_min, out_max) {
-  logging.verbose("mapValue(x=" + x + ", in_min=" + in_min + ", in_max=" + in_max + ", out_min=" + out_min + ", out_max=" + out_max + ")");
+export function mapValue(x: number, inMin: number, inMax: number, outMin: number, outMax: number) {
+  logging.verbose("mapValue(x=" + x + ", in_min=" + inMin + ", in_max=" + inMax + ", out_min=" + outMin + ", out_max=" + outMax + ")");
 
-  if (in_max == in_min) {
-    return out_min / 2 + out_max / 2;
+  if (inMax == inMin) {
+    return outMin / 2 + outMax / 2;
   }
 
-  let minimum = Math.min(in_min, in_max);
-  let maximum = Math.max(in_min, in_max);
+  let minimum = Math.min(inMin, inMax);
+  let maximum = Math.max(inMin, inMax);
 
   if (x < minimum) {
     x = minimum;
@@ -153,10 +125,10 @@ export function mapValue(x, in_min, in_max, out_min, out_max) {
     x = maximum;
   }
 
-  let result = ((x - in_min) * (out_max - out_min)) / (in_max - in_min) + out_min;
+  let result = ((x - inMin) * (outMax - outMin)) / (inMax - inMin) + outMin;
 
-  minimum = Math.min(out_min, out_max);
-  maximum = Math.max(out_min, out_max);
+  minimum = Math.min(outMin, outMax);
+  maximum = Math.max(outMin, outMax);
 
   if (result < minimum) {
     result = minimum;
@@ -168,11 +140,11 @@ export function mapValue(x, in_min, in_max, out_min, out_max) {
 }
 
 // takes "label" and outputs ascii characters in a list of bytes
-export function labelToBytes(label_string) {
-  return stringToBytes(label_string, 5);
+export function labelToBytes(label: string) {
+  return stringToBytes(label, 5);
 }
 
-export function stringToBytes(string, length) {
+export function stringToBytes(string: string, length: number) {
   var byteArray: number[] = [];
 
   for (let index = 0; index < length; index++) {
@@ -185,14 +157,14 @@ export function stringToBytes(string, length) {
   return byteArray;
 }
 
-export function colorToBytes(color_hex_code) {
-  if (!color_hex_code) {
+export function colorToBytes(colorHex: string) {
+  if (!colorHex) {
     return [0, 0, 0];
   }
 
-  let reg = color_hex_code.match(/#([0-9a-f][0-9a-f])([0-9a-f][0-9a-f])([0-9a-f][0-9a-f])/i);
+  let reg = colorHex.match(/#([0-9a-f][0-9a-f])([0-9a-f][0-9a-f])([0-9a-f][0-9a-f])/i);
   if (!reg) {
-    logging.error('Wrong color code: "' + color_hex_code + '"');
+    logging.error('Wrong color code: "' + colorHex + '"');
     return [0, 0, 0];
   }
 
@@ -204,17 +176,15 @@ export function colorToBytes(color_hex_code) {
 }
 
 // TODO move constants to one file
-const PERCENTAGE_MAX = 268435455; // 2^28-1
-const PERCENTAGE_MIN = -268435455; // -(2^28)+1  (plus 1 is there for the percentage to be simetric)
 
-export function percentageToBytes(percentage_float) {
-  const value = mapValue(percentage_float, -100.0, 100.0, PERCENTAGE_MIN, PERCENTAGE_MAX);
+export function percentageToBytes(percentageFloat: number) {
+  const value = mapValue(percentageFloat, -100.0, 100.0, PERCENTAGE_MIN, PERCENTAGE_MAX);
   return numberToBytes(Math.floor(value), 4);
 }
 
-export function strMacToBytes(mac_str) {
+export function strMacToBytes(mac: string) {
   // Split the string into an array of hexadecimal values
-  var hexValues = mac_str.split(":");
+  var hexValues = mac.split(":");
 
   // Convert each hexadecimal value to a byte
   var bytes = hexValues.map(function (hex) {
@@ -234,7 +204,7 @@ export function strMacToBytes(mac_str) {
 // IPhone SE Spectoda Connect       Mozilla/5.0 (iPhone; CPU iPhone OS 15_6_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148
 // IPhone SE Safari                 Mozilla/5.0 (iPhone; CPU iPhone OS 15_6_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/15.6.1 Mobile/15E148 Safari/604.1
 
-const spectodaNodeDetected = typeof process !== 'undefined' && process.versions && process.versions.node;
+const spectodaNodeDetected = typeof process !== "undefined" && process.versions && process.versions.node;
 export function detectNode() {
   return spectodaNodeDetected;
 }
@@ -294,22 +264,20 @@ export function computeTnglFingerprint(tngl_bytes, tngl_label) {
       return crypto.subtle.sign(algorithm.name, key, body);
     })
     .then(signature => {
-      // let digest = btoa(String.fromCharCode(...new Uint8Array(signature)));
-      // console.info(digest);
       return new Uint8Array(signature);
     });
 }
 
-export function hexStringToUint8Array(hexString, arrayLength) {
-  if (hexString.length % 2 != 0) {
+export function hexStringToUint8Array(hex: string, length: number) {
+  if (hex.length % 2 != 0) {
     throw "Invalid hexString";
   }
-  if (!arrayLength) {
-    arrayLength = hexString.length / 2;
+  if (!length) {
+    length = hex.length / 2;
   }
-  let arrayBuffer = new Uint8Array(arrayLength);
-  for (let i = 0; i < arrayLength; i++) {
-    const byteValue = parseInt(hexString.substr(i * 2, 2), 16);
+  let arrayBuffer = new Uint8Array(length);
+  for (let i = 0; i < length; i++) {
+    const byteValue = parseInt(hex.substr(i * 2, 2), 16);
     if (Number.isNaN(byteValue)) {
       arrayBuffer[i] = 0;
     } else {
@@ -389,25 +357,6 @@ class NoSleep {
       this.noSleepTimer = null;
     } else {
       logging.error("NoSleep is not available");
-      // Set up no sleep video element
-      // this.noSleepVideo = document.createElement("video");
-      // this.noSleepVideo.setAttribute("title", "No Sleep");
-      // this.noSleepVideo.setAttribute("playsinline", "");
-      // this._addSourceToVideo(this.noSleepVideo, "webm", webm);
-      // this._addSourceToVideo(this.noSleepVideo, "mp4", mp4);
-      // this.noSleepVideo.addEventListener("loadedmetadata", () => {
-      //   if (this.noSleepVideo.duration <= 1) {
-      //     // webm source
-      //     this.noSleepVideo.setAttribute("loop", "");
-      //   } else {
-      //     // mp4 source
-      //     this.noSleepVideo.addEventListener("timeupdate", () => {
-      //       if (this.noSleepVideo.currentTime > 0.5) {
-      //         this.noSleepVideo.currentTime = Math.random();
-      //       }
-      //     });
-      //   }
-      // });
     }
   }
 
@@ -449,24 +398,9 @@ class NoSleep {
         active or long-running network requests from completing successfully.
         See https://github.com/richtr/NoSleep.js/issues/15 for more details.
       `);
-      // this.noSleepTimer = window.setInterval(() => {
-      //   if (!document.hidden) {
-      //     window.location.href = window.location.href.split("#")[0];
-      //     window.setTimeout(window.stop, 0);
-      //   }
-      // }, 15000);
+
       this.enabled = true;
       return Promise.resolve();
-    } else {
-      // return this.noSleepVideo.play()
-      //   .then(res => {
-      //     this.enabled = true;
-      //     // return res;
-      //   })
-      //   .catch(err => {
-      //     this.enabled = false;
-      //     throw err;
-      //   });
     }
   }
 
@@ -484,9 +418,8 @@ class NoSleep {
         window.clearInterval(this.noSleepTimer);
         this.noSleepTimer = null;
       }
-    } else {
-      // this.noSleepVideo.pause();
     }
+
     this.enabled = false;
   }
 }
@@ -508,17 +441,6 @@ export function deactivateDebugMode() {
   }
 }
 
-// let secret = "sec-demo"; // the secret key
-// let enc = new TextEncoder("utf-8");
-// let body = "GET\npub-demo\n/v2/auth/grant/sub-key/sub-demo\nauth=myAuthKey&g=1&target-uuid=user-1&timestamp=1595619509&ttl=300";
-// let algorithm = { name: "HMAC", hash: "SHA-256" };
-
-// let key = await crypto.subtle.importKey("raw", enc.encode(secret), algorithm, false, ["sign", "verify"]);
-// let signature = await crypto.subtle.sign(algorithm.name, key, enc.encode(body));
-// let digest = btoa(String.fromCharCode(...new Uint8Array(signature)));
-
-/////////////////////////////////////////////////////////////////
-
 const CRC32_TABLE =
   "00000000 77073096 EE0E612C 990951BA 076DC419 706AF48F E963A535 9E6495A3 0EDB8832 79DCB8A4 E0D5E91E 97D2D988 09B64C2B 7EB17CBD E7B82D07 90BF1D91 1DB71064 6AB020F2 F3B97148 84BE41DE 1ADAD47D 6DDDE4EB F4D4B551 83D385C7 136C9856 646BA8C0 FD62F97A 8A65C9EC 14015C4F 63066CD9 FA0F3D63 8D080DF5 3B6E20C8 4C69105E D56041E4 A2677172 3C03E4D1 4B04D447 D20D85FD A50AB56B 35B5A8FA 42B2986C DBBBC9D6 ACBCF940 32D86CE3 45DF5C75 DCD60DCF ABD13D59 26D930AC 51DE003A C8D75180 BFD06116 21B4F4B5 56B3C423 CFBA9599 B8BDA50F 2802B89E 5F058808 C60CD9B2 B10BE924 2F6F7C87 58684C11 C1611DAB B6662D3D 76DC4190 01DB7106 98D220BC EFD5102A 71B18589 06B6B51F 9FBFE4A5 E8B8D433 7807C9A2 0F00F934 9609A88E E10E9818 7F6A0DBB 086D3D2D 91646C97 E6635C01 6B6B51F4 1C6C6162 856530D8 F262004E 6C0695ED 1B01A57B 8208F4C1 F50FC457 65B0D9C6 12B7E950 8BBEB8EA FCB9887C 62DD1DDF 15DA2D49 8CD37CF3 FBD44C65 4DB26158 3AB551CE A3BC0074 D4BB30E2 4ADFA541 3DD895D7 A4D1C46D D3D6F4FB 4369E96A 346ED9FC AD678846 DA60B8D0 44042D73 33031DE5 AA0A4C5F DD0D7CC9 5005713C 270241AA BE0B1010 C90C2086 5768B525 206F85B3 B966D409 CE61E49F 5EDEF90E 29D9C998 B0D09822 C7D7A8B4 59B33D17 2EB40D81 B7BD5C3B C0BA6CAD EDB88320 9ABFB3B6 03B6E20C 74B1D29A EAD54739 9DD277AF 04DB2615 73DC1683 E3630B12 94643B84 0D6D6A3E 7A6A5AA8 E40ECF0B 9309FF9D 0A00AE27 7D079EB1 F00F9344 8708A3D2 1E01F268 6906C2FE F762575D 806567CB 196C3671 6E6B06E7 FED41B76 89D32BE0 10DA7A5A 67DD4ACC F9B9DF6F 8EBEEFF9 17B7BE43 60B08ED5 D6D6A3E8 A1D1937E 38D8C2C4 4FDFF252 D1BB67F1 A6BC5767 3FB506DD 48B2364B D80D2BDA AF0A1B4C 36034AF6 41047A60 DF60EFC3 A867DF55 316E8EEF 4669BE79 CB61B38C BC66831A 256FD2A0 5268E236 CC0C7795 BB0B4703 220216B9 5505262F C5BA3BBE B2BD0B28 2BB45A92 5CB36A04 C2D7FFA7 B5D0CF31 2CD99E8B 5BDEAE1D 9B64C2B0 EC63F226 756AA39C 026D930A 9C0906A9 EB0E363F 72076785 05005713 95BF4A82 E2B87A14 7BB12BAE 0CB61B38 92D28E9B E5D5BE0D 7CDCEFB7 0BDBDF21 86D3D2D4 F1D4E242 68DDB3F8 1FDA836E 81BE16CD F6B9265B 6FB077E1 18B74777 88085AE6 FF0F6A70 66063BCA 11010B5C 8F659EFF F862AE69 616BFFD3 166CCF45 A00AE278 D70DD2EE 4E048354 3903B3C2 A7672661 D06016F7 4969474D 3E6E77DB AED16A4A D9D65ADC 40DF0B66 37D83BF0 A9BCAE53 DEBB9EC5 47B2CF7F 30B5FFE9 BDBDF21C CABAC28A 53B39330 24B4A3A6 BAD03605 CDD70693 54DE5729 23D967BF B3667A2E C4614AB8 5D681B02 2A6F2B94 B40BBE37 C30C8EA1 5A05DF1B 2D02EF8D";
 
@@ -539,7 +461,7 @@ export function crc32(bytes) {
 const CRC8_TABLE =
   "005EBCE2613FDD83C29C7E20A3FD1F419DC3217FFCA2401E5F01E3BD3E6082DC237D9FC1421CFEA0E1BF5D0380DE3C62BEE0025CDF81633D7C22C09E1D43A1FF4618FAA427799BC584DA3866E5BB5907DB856739BAE406581947A5FB7826C49A653BD987045AB8E6A7F91B45C6987A24F8A6441A99C7257B3A6486D85B05E7B98CD2306EEDB3510F4E10F2AC2F7193CD114FADF3702ECC92D38D6F31B2EC0E50AFF1134DCE90722C6D33D18F0C52B0EE326C8ED0530DEFB1F0AE4C1291CF2D73CA947628ABF517490856B4EA6937D58B5709EBB536688AD495CB2977F4AA4816E9B7550B88D6346A2B7597C94A14F6A8742AC896154BA9F7B6E80A54D7896B35";
 
-export function hexStringToArray(str) {
+export function hexStringToArray(str: string) {
   if (!str.length) {
     return [];
   }
@@ -547,8 +469,6 @@ export function hexStringToArray(str) {
   arr = arr.map(x => parseInt(x, 16)); // convert hex pairs into ints (bytes)
   return new Uint8Array(arr);
 }
-
-// window.hexStringToArray = hexStringToArray;
 
 const CRC8_DATA = hexStringToArray(CRC8_TABLE);
 
@@ -563,22 +483,7 @@ export function crc8(bArr) {
   return b;
 }
 
-// window.crc8 = crc8;
-// window.crc32 = crc32;
-
 /////////////////////////////////////////////////////////////////
-
-// export function base64ToUint8Array(base64) {
-//   var binary_string = window.atob(base64);
-//   var len = binary_string.length;
-//   var bytes = new Uint8Array(len);
-//   for (var i = 0; i < len; i++) {
-//       bytes[i] = binary_string.charCodeAt(i);
-//   }
-//   return bytes;
-// }
-
-// window.base64ToUint8Array = base64ToUint8Array;
 
 function componentToHex(c) {
   var hex = c.toString(16);
