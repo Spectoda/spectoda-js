@@ -6,6 +6,7 @@
     "i18next-parser": "^6.0.0"
   },
   "dependencies": {
+    "@spectoda/spectoda-utils": "^1.0.0",
     "nanoevents": "^7.0.1",
     "nanoid": "^4.0.0"
   }

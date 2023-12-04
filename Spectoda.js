@@ -899,33 +899,31 @@ export class Spectoda {
     });
   }
 
-  writeTngl(tngl_code, tngl_bytes = null, memory_bank = 0) {
+  writeTngl(tnglCode, tnglBytes = null, memoryBank = 0) {
     logging.verbose("writeTngl()");
 
-    if (memory_bank === null || memory_bank === undefined) {
-      memory_bank = 0;
+    if (memoryBank === null || memoryBank === undefined) {
+      memoryBank = 0;
     }
 
-    if (tngl_code === null && tngl_bytes === null) {
+    if (tnglCode === null && tnglBytes === null) {
       return Promise.reject("InvalidParameters");
     }
 
-    if (tngl_bytes === null) {
+    if (tnglBytes === null) {
       const parser = new TnglCodeParser();
-      tngl_bytes = parser.parseTnglCode(tngl_code);
+
+      tnglBytes = parser.parseTnglCode(tnglCode);
     }
 
-    const timeline_flags = this.timeline.paused() ? 0b00010000 : 0b00000000; // flags: [reserved,reserved,reserved,timeline_paused,reserved,reserved,reserved,reserved]
+    const timeline_flags = this.timeline.paused() ? 0b00010000 : 0b00000000;
+
     const timeline_bytecode = [COMMAND_FLAGS.FLAG_SET_TIMELINE, ...numberToBytes(this.interface.clock.millis(), 6), ...numberToBytes(this.timeline.millis(), 4), timeline_flags];
 
-    const reinterpret_bytecode = [COMMAND_FLAGS.FLAG_REINTERPRET_TNGL, ...numberToBytes(this.interface.clock.millis(), 6), memory_bank, ...numberToBytes(tngl_bytes.length, 4), ...tngl_bytes];
-
-    // logging.info(reinterpret_bytecode);
+    const reinterpret_bytecode = [COMMAND_FLAGS.FLAG_REINTERPRET_TNGL, ...numberToBytes(this.interface.clock.millis(), 6), memoryBank, ...numberToBytes(tnglBytes.length, 4), ...tnglBytes];
 
     const payload = [...timeline_bytecode, ...reinterpret_bytecode];
-    return this.interface.execute(payload, "TNGL").then(() => {
-      // logging.debug("Written");
-    });
+    return this.interface.execute(payload, "TNGL");
   }
 
   #getEmitEventClockTimestamp() {
