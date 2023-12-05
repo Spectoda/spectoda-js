@@ -16,6 +16,24 @@ export let createNanoEvents = () => ({
   }
 })
 
+export const createNanoEventsWithWrappedEmit = emitHandler => ({
+  emit(event, ...args) {
+    emitHandler(event, args);
+
+    const callbacks = this.events[event] || [];
+    for (let i = 0, length = callbacks.length; i < length; i++) {
+      callbacks[i](...args);
+    }
+  },
+  events: {},
+  on(event, cb) {
+    this.events[event]?.push(cb) || (this.events[event] = [cb]);
+    return () => {
+      this.events[event] = this.events[event]?.filter(i => cb !== i);
+    };
+  },
+});
+
 export function toBytes(value: number, byteCount: number) {
 
   if (typeof (value) !== "number") {
@@ -605,6 +623,19 @@ export function hexStringToNumberArray(hexString) {
   return numberArray;
 }
 
+export async function fetchFirmware(url: string) {
+  return fetch(url)
+    .then(response => {
+      return response.arrayBuffer();
+    })
+    .then(buffer => {
+      return new Uint8Array(buffer);
+    })
+    .catch(e => {
+      logging.error("Failed to fetch firmware", e);
+    });
+}
+
 if (typeof window !== "undefined") {
   window.validateTimestamp = validateTimestamp;
 
@@ -615,47 +646,6 @@ if (typeof window !== "undefined") {
 
   window.mapValue = mapValue;
 }
-
-
-// export function cssColorToHex(color) {
-//   if (typeof color !== 'string' || color.trim() === '') {
-//     return null;
-//   }
-
-//   // Create a temporary HTML element
-//   const tempElement = document.createElement('div');
-
-//   // Apply the CSS color string as the element's style
-//   tempElement.style.color = color;
-
-//   // Append the element to the document (offscreen) to compute the style
-//   tempElement.style.display = 'none';
-//   document.body.appendChild(tempElement);
-
-//   // Get the computed RGB color code
-//   const computedColor = getComputedStyle(tempElement).color;
-
-//   // Remove the temporary element from the document
-//   document.body.removeChild(tempElement);
-
-//   // Validate the computed color
-//   if (computedColor === '' || !/^rgba?\(/.test(computedColor)) {
-//     return null;
-//   }
-
-//   // Parse the RGB color code and convert it to a hex color code
-//   const rgbMatch = computedColor.match(/^rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*\d*\.?\d*)?\)$/);
-//   if (rgbMatch) {
-//     const r = parseInt(rgbMatch[1]);
-//     const g = parseInt(rgbMatch[2]);
-//     const b = parseInt(rgbMatch[3]);
-
-//     const hexColor = ((r << 16) | (g << 8) | b).toString(16).padStart(6, '0');
-//     return `#${hexColor}`;
-//   }
-
-//   return null;
-// }
 
 //! ==== NODEJS version =====
 
@@ -741,11 +731,3 @@ export function cssColorToHex(color: typeof barvy | typeof barvy_bez_hacku | str
     return null;
   }
 }
-
-//! ============================
-
-
-// // Usage:
-// console.log(cssColorToHex('red')); // Output: #ff0000
-// console.log(cssColorToHex('blue')); // Output: #0000ff
-// console.log(cssColorToHex('invalidColor')); // Output: null

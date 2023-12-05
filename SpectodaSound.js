@@ -96,7 +96,7 @@ export class SpectodaSound {
               throw "MicAccessDenied";
             });
         });
-        console.log("Connected Mic");
+        logging.info("Connected Mic");
         // await new Promise((resolve, reject) => { navigator.mediaDevices.getUserMedia(constraints).then(resolve).catch(reject)) };
       } else {
         // TODO - check, tato chyba možná vzniká jinak. Navíc ta chyba nemusí být bluefy only
@@ -138,7 +138,7 @@ export class SpectodaSound {
       this.#stream = mediaStream;
       this.#source = this.#audioContext.createMediaStreamSource(mediaStream);
       logging.debug("SpectodaSound.connect", "Connected mediaStream");
-      console.log("Connected mediaStream");
+      logging.info("Connected mediaStream");
     }
   }
 
@@ -155,7 +155,7 @@ export class SpectodaSound {
       this.#script_processor_get_audio_samples = this.#audioContext.createScriptProcessor(this.BUFF_SIZE, 1, 1);
       this.#script_processor_get_audio_samples.connect(this.#gain_node);
 
-      console.log("Sample rate of soundcard: " + this.#audioContext.sampleRate);
+      logging.info("Sample rate of soundcard: " + this.#audioContext.sampleRate);
       this.#fft = new FFT(this.BUFF_SIZE, this.#audioContext.sampleRate);
 
       this.#source.connect(this.#script_processor_get_audio_samples);
@@ -164,7 +164,7 @@ export class SpectodaSound {
       this.running = true;
       // var bufferCount = 0;
 
-      console.log("running samples", this.BUFF_SIZE);
+      logging.debug("running samples", this.BUFF_SIZE);
 
       // Tato funkce se provede pokaždé když dojde k naplnění bufferu o velikosti 2048 vzorků.
       // Při vzorkovacím kmitočku 48 kHz se tedy zavolá jednou za cca 42 ms.
@@ -309,14 +309,14 @@ export class SpectodaSound {
     // Zde je zejmána nutné dobře nastavit mapovací prahy. Spodní pro odstranění šumu okolí a horní nám udává výslednou dynamiku.
     var out = mapValue(rms_loudness_spectrum, this.#rmsMin, this.#rmsMax, 0.0, 100.0);
 
-    // console.log(
+    // logging.debug(
     //   rms_loudness_spectrum.toFixed(5),
     //   this.#rmsMin.toFixed(5),
     //   this.#rmsMax.toFixed(5),
     //   out.toFixed(5)
     // );
 
-    // console.log("spectrum avarge loudnes: "+ out);
+    // logging.debug("spectrum avarge loudnes: "+ out);
     // this.#handleControlSend(out);
     //this.#events.emit("loudness", (out * this.#sensitivity) / 100);
     this.#events.emit("loudness", out);
@@ -345,8 +345,8 @@ export class SpectodaSound {
     //     avarage_loudness = avarage_loudness/(BUFF_SIZE*6);
     //     avarge_loudness_spectrum = avarge_loudness_spectrum/(BUFF_SIZE*3);
 
-    //     console.log("sample avarge loudnes: "+ mapValue(avarage_loudness,0.0005,0.05,0,255)); // This values set tresholds for noise and dynamics of signal.
-    //     console.log("spectrum avarge loudnes: "+ mapValue(avarge_loudness_spectrum, 0.00001, 0.0001, 0, 255));
+    //     logging.debug("sample avarge loudnes: "+ mapValue(avarage_loudness,0.0005,0.05,0,255)); // This values set tresholds for noise and dynamics of signal.
+    //     logging.debug("spectrum avarge loudnes: "+ mapValue(avarge_loudness_spectrum, 0.00001, 0.0001, 0, 255));
     //   } else {
     //     bufferCount++;
     // }

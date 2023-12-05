@@ -40,7 +40,7 @@ class FlutterConnection {
     //       if (el.tagName === "A" && el.getAttribute("target") === "_blank") {
     //         e.preventDefault();
     //         const url = el.getAttribute("href");
-    //         // console.log(url);
+    //         // logging.debug(url);
     //         // @ts-ignore
     //         window.flutterConnection.open(url);
     //         break;

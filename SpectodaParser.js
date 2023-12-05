@@ -459,11 +459,11 @@ export class TnglCompiler {
     let secs = value.match(/([+-]?[0-9]+[.]?[0-9]*|[.][0-9]+)\s*s/gi);
     let msecs = value.match(/([+-]?[0-9]+[.]?[0-9]*|[.][0-9]+)\s*(t|ms)/gi);
 
-    // console.log(days);
-    // console.log(hours);
-    // console.log(minutes);
-    // console.log(secs);
-    // console.log(msecs);
+    // logging.verbose(days);
+    // logging.verbose(hours);
+    // logging.verbose(minutes);
+    // logging.verbose(secs);
+    // logging.verbose(msecs);
 
     let total = 0;
 

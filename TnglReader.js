@@ -8,7 +8,7 @@ export class TnglReader {
   peekValue(byteCount, unsigned = true) {
 
     if (byteCount > 8) {
-      console.error("ByteCountOutOfRange");
+      logging.error("ByteCountOutOfRange");
       throw new RangeError("ByteCountOutOfRange");
     }
 
@@ -32,7 +32,7 @@ export class TnglReader {
     }
 
     if (result > BigInt(Number.MAX_SAFE_INTEGER) || result < BigInt(Number.MIN_SAFE_INTEGER)) {
-      console.error("Value is outside of safe integer range");
+      logging.error("Value is outside of safe integer range");
       // TODO handle this error better than loosing precision in conversion to Number
       throw new RangeError("ValueOutOfRange");
     }
