@@ -206,7 +206,7 @@ const ENUMS = Object.freeze({
         SonoffTXUltimate: 7,
         NetworkSync: 8,
         VEML7700: 9,
-        EVENT: 10
+        Event: 10
     })
 });
 
