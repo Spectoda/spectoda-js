@@ -6,6 +6,11 @@
 // add overlays=uart0 to /boot/orangepiEnv.txt
 // stty -F /dev/ttyS3 1500000
 
+/*
+echo 'overlays=uart3' | sudo tee -a /boot/orangepiEnv.txt
+cat /boot/orangepiEnv.txt
+*/
+
 import { logging } from "../../logging";
 import { sleep, toBytes, numberToBytes, crc8, crc32, hexStringToArray, rgbToHex, stringToBytes, convertToByteArray } from "../../functions";
 import { TimeTrack } from "../../TimeTrack.js";
