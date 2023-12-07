@@ -3,7 +3,21 @@ import { TimeTrack } from "./TimeTrack.js";
 import "./TnglReader.js";
 import { TnglReader } from "./TnglReader.js";
 import "./TnglWriter.js";
-import { cssColorToHex, colorToBytes, computeTnglFingerprint, detectNode, detectSpectodaConnect, hexStringToUint8Array, labelToBytes, numberToBytes, percentageToBytes, sleep, strMacToBytes, stringToBytes, uint8ArrayToHexString } from "./functions";
+import {
+  colorToBytes,
+  computeTnglFingerprint,
+  cssColorToHex,
+  detectNode,
+  detectSpectodaConnect,
+  hexStringToUint8Array,
+  labelToBytes,
+  numberToBytes,
+  percentageToBytes,
+  sleep,
+  strMacToBytes,
+  stringToBytes,
+  uint8ArrayToHexString,
+} from "./functions";
 import { changeLanguage, t } from "./i18n.js";
 import { logging, setLoggingLevel } from "./logging";
 import { COMMAND_FLAGS } from "./src/Spectoda_JS.js";
@@ -45,7 +59,6 @@ export class Spectoda {
   #reconnectRC;
 
   constructor(connectorType = "default", reconnecting = true) {
-
     this.#parser = new TnglCodeParser();
 
     this.timeline = new TimeTrack(0, true);
@@ -157,6 +170,12 @@ export class Spectoda {
           this.runtime.emit("disconnecting-websockets");
         }
         break;
+      case "disconnected":
+        if (websocketConnectionState !== this.#websocketConnectionState) {
+          logging.warn("> Spectoda disconnected");
+          this.#websocketConnectionState = websocketConnectionState;
+          this.runtime.emit("disconnected-websockets");
+        }
       default:
         throw "InvalidState";
     }
@@ -1550,7 +1569,7 @@ export class Spectoda {
       const removed_device_mac_bytes = reader.readBytes(6);
 
       return this.rebootDevice()
-        .catch(() => { })
+        .catch(() => {})
         .then(() => {
           let removed_device_mac = "00:00:00:00:00:00";
           if (removed_device_mac_bytes.length >= 6) {
@@ -1661,7 +1680,7 @@ export class Spectoda {
       return new Uint8Array(fingerprint);
     });
   }
-  
+
   // datarate in bits per second
   setNetworkDatarate(datarate) {
     logging.debug(`> Setting network datarate to ${datarate} bsp...`);
