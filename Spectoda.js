@@ -176,8 +176,9 @@ export class Spectoda {
           this.#websocketConnectionState = websocketConnectionState;
           this.runtime.emit("disconnected-websockets");
         }
+        break;
       default:
-        throw "InvalidState";
+        throw `InvalidState: ${websocketConnectionState}`;
     }
   }
 
