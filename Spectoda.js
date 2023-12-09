@@ -1220,7 +1220,7 @@ export class Spectoda {
           logging.info("OTA RESET");
 
           const command_bytes = [COMMAND_FLAGS.FLAG_OTA_RESET, 0x00, ...numberToBytes(0x00000000, 4)];
-          await this.interface.execute(command_bytes, null);
+          await this.interface.execute(command_bytes, null, 30000);
         }
 
         await sleep(100);
@@ -1230,13 +1230,13 @@ export class Spectoda {
           logging.info("OTA BEGIN");
 
           const command_bytes = [COMMAND_FLAGS.FLAG_OTA_BEGIN, 0x00, ...numberToBytes(firmware.length, 4)];
-          await this.interface.execute(command_bytes, null, 20000);
+          await this.interface.execute(command_bytes, null, 30000);
         }
 
         // TODO optimalize this begin by detecting when all controllers have erased its flash
         // TODO also, right now the gateway controller sends to other controlles to erase flash after it is done.
         // TODO that slows things down
-        await sleep(20000);
+        await sleep(10000);
 
         {
           //===========// WRITE //===========//
@@ -1248,7 +1248,7 @@ export class Spectoda {
             }
 
             const command_bytes = [COMMAND_FLAGS.FLAG_OTA_WRITE, 0x00, ...numberToBytes(written, 4), ...firmware.slice(index_from, index_to)];
-            await this.interface.execute(command_bytes, null);
+            await this.interface.execute(command_bytes, null, 30000);
 
             written += index_to - index_from;
 
@@ -1268,7 +1268,7 @@ export class Spectoda {
           logging.info("OTA END");
 
           const command_bytes = [COMMAND_FLAGS.FLAG_OTA_END, 0x00, ...numberToBytes(written, 4)];
-          await this.interface.execute(command_bytes, null);
+          await this.interface.execute(command_bytes, null, 30000);
         }
 
         await sleep(3000);
@@ -1276,7 +1276,7 @@ export class Spectoda {
         logging.debug("Rebooting whole network...");
 
         const command_bytes = [COMMAND_FLAGS.FLAG_DEVICE_REBOOT_REQUEST];
-        await this.interface.execute(command_bytes, null);
+        await this.interface.execute(command_bytes, null, 30000);
 
         logging.debug("Firmware written in " + (new Date().getTime() - start_timestamp) / 1000 + " seconds");
 
@@ -1576,7 +1576,7 @@ export class Spectoda {
       const removed_device_mac_bytes = reader.readBytes(6);
 
       return this.rebootDevice()
-        .catch(() => {})
+        .catch(() => { })
         .then(() => {
           let removed_device_mac = "00:00:00:00:00:00";
           if (removed_device_mac_bytes.length >= 6) {
