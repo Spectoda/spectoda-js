@@ -349,17 +349,21 @@ export class Spectoda {
    * @param {string} options.key - The network key.
    * @param {boolean} [options.sessionOnly] - Whether to enable remote control for the current session only.
    */
-  async enableRemoteControl({ signature, key, sessionOnly }) {
-    logging.debug("> Connecting to Remote Control");
+  async enableRemoteControl({ signature, key, sessionOnly, meta }) {
+    logging.debug("> Connecting to Remote Control", { signature, key, sessionOnly });
 
-    this.socket && this.socket.disconnect();
+    // Disconnect and clean up the previous socket if it exists
+    if (this.socket) {
+      this.socket.removeAllListeners(); // Removes all listeners attached to the socket
+      this.socket.disconnect();
+    }
 
+    // Initialize a new socket connection
     this.socket = io(WEBSOCKET_URL, {
       parser: customParser,
     });
 
     this.socket.connect();
-
     this.requestWakeLock(true);
 
     const setConnectionSocketData = async () => {
@@ -370,6 +374,7 @@ export class Spectoda {
       this.socket.emit("set-connection-data", peers);
     };
 
+    // Reset event listeners for 'connected' and 'disconnected'
     this.on("connected", async () => {
       setConnectionSocketData();
     });
@@ -403,6 +408,18 @@ export class Spectoda {
           }
 
           logging.info("> Connected and joined network remotely");
+
+          let deviceType = "browser";
+
+          if (detectNode()) {
+            deviceType = "gateway";
+          } else if (detectSpectodaConnect()) {
+            deviceType = "spectoda-connect";
+          }
+
+          this.socket.emit("set-device-info", { deviceType, userAgent: navigator.userAgent });
+
+          this.socket.emit("set-meta-data", meta);
 
           resolve({ status: "success" });
 
