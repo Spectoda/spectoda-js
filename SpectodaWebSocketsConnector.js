@@ -38,7 +38,6 @@ export function createSpectodaWebsocket() {
   if (typeof window !== "undefined") window.socket = socket;
 
   socket.on("r-event", data => {
-    console.log("r-event", data);
     eventStream.emit(data.name, ...data.args);
   });
 
@@ -109,6 +108,7 @@ export function createSpectodaWebsocket() {
             return websocketConnectionState;
           } else if (prop === "selectTarget") {
             return (signature, socketId) => {
+              logging.verbose("selectTarget", signature, socketId);
               const network = this.networks.get(signature);
 
               if (!network) {
@@ -152,7 +152,11 @@ export function createSpectodaWebsocket() {
               }
             }
 
-            const result = await this.sendThroughWebsocket(payload);
+            const results = await this.sendThroughWebsocket(payload);
+
+            let result = processResults(results);
+            logging.error("[WEBSOCKET]", result);
+            return result;
 
             logging.error("[WEBSOCKET]", result);
             if (result.status === "success") {
@@ -185,8 +189,10 @@ export function createSpectodaWebsocket() {
       // go through selected targets and send to each
       let results = [];
       for (let network of this.networks.values()) {
-        const result = await socket.emitWithAck("d-func", network.signature, network.socketId, data);
-        results.push(result);
+        if (network.socketId) {
+          const result = await socket.emitWithAck("d-func", network.signature, network.socketId, data);
+          results.push(result);
+        }
       }
 
       return await Promise.allSettled(results);
@@ -194,4 +200,32 @@ export function createSpectodaWebsocket() {
   }
 
   return new SpectodaVirtualProxy();
+}
+
+function processResults(data) {
+  let result;
+  let combinedResults = [];
+  let hasFailure = false;
+
+  logging.verbose("processResults", data);
+
+  for (let item of data) {
+    if (item.status === "fulfilled" && item.value.status === "success") {
+      result = item.value?.data?.[0]?.result;
+
+      // Collecting results from successful entries
+      // TODO handle error
+    } else {
+      hasFailure = true;
+    }
+  }
+
+  // TODO handle this
+  let response = {
+    status: hasFailure ? "partial_success" : "success",
+    message: hasFailure ? "Partial success: some requests had issues" : "All requests successful",
+    result: result,
+  };
+
+  return result;
 }
