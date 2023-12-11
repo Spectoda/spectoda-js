@@ -388,7 +388,7 @@ export class Spectoda {
         return [];
       });
       logging.debug("peers", peers);
-      this.socket.emit("set-connection-data", peers);
+      this.socket.emit("set-connectedMacs-data", peers);
     };
 
     // Reset event listeners for 'connected' and 'disconnected'
@@ -397,7 +397,7 @@ export class Spectoda {
     });
 
     this.on("disconnected", () => {
-      this.socket.emit("set-connection-data", null);
+      this.socket.emit("set-connectedMacs-data", null);
     });
 
     if (signature) {

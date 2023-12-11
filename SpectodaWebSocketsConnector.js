@@ -10,6 +10,7 @@ import { logging } from "./logging";
 // TODO rewrite this to initiate connect only when needed
 
 // const WEBSOCKET_URL = "https://tangle-remote-control.glitch.me/"
+// export const WEBSOCKET_URL = "http://localhost:4001";
 export const WEBSOCKET_URL = "https://ceet.cloud.host.spectoda.com/";
 
 const eventStream = createNanoEvents();
@@ -122,7 +123,7 @@ export function createSpectodaWebsocket() {
               return socket.emitWithAck("subscribe-event", signature, socketId);
             };
           } else if (prop === "removeTarget") {
-            return signature => {
+            return (signature, socketId) => {
               const network = this.networks.get(signature);
 
               if (!network) {
