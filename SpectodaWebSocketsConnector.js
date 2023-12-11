@@ -94,7 +94,7 @@ export function createSpectodaWebsocket() {
             };
           } else if (prop === "fetchClients") {
             return () => {
-              return socket.emitWithAck("list-clients");
+              return socket.emitWithAck("list-all-clients");
             };
           } else if (prop === "connectionState") {
             return websocketConnectionState;
@@ -150,3 +150,143 @@ export function createSpectodaWebsocket() {
 
   return new SpectodaVirtualProxy();
 }
+
+// class SpectodaMultiInstanceWebsocketProxy {
+//   // same but returns only the first result
+//   get legacyCall() {
+//     return new Proxy(
+//       {},
+//       {
+//         get: (_, prop) => {
+//           return async (...args) => {
+//             const promises = this.proxies.map(proxy => {
+//               if (typeof proxy[prop] === "function") {
+//                 return proxy[prop](...args);
+//               }
+//               return Promise.reject(new Error(`Function ${prop} does not exist on proxy`));
+//             });
+//             const results = await Promise.race(promises);
+//             return results?.[0];
+//           };
+//         },
+//       },
+//     );
+//   }
+
+//   get call() {
+//     return new Proxy(
+//       {},
+//       {
+//         get: (_, prop) => {
+//           return async (...args) => {
+//             console.log("calling", prop, args, this);
+
+//             const promises = this.proxies.map(proxy => {
+//               if (typeof proxy[prop] === "function") {
+//                 return proxy[prop](...args);
+//               }
+//               return Promise.reject(new Error(`Function ${prop} does not exist on proxy`));
+//             });
+//             return Promise.all(promises);
+//           };
+//         },
+//       },
+//     );
+//   }
+
+//   to(targetSocketId) {
+//     const targetProxy = this.proxies.find(proxy => proxy.socket.id === targetSocketId);
+//     if (!targetProxy) {
+//       throw new Error(`No proxy found for socket ID ${targetSocketId}`);
+//     }
+
+//     return new Proxy(
+//       {},
+//       {
+//         get: (_, prop) => {
+//           if (typeof targetProxy[prop] === "function") {
+//             return (...args) => targetProxy[prop](...args);
+//           }
+//           throw new Error(`Function ${prop} does not exist on target proxy`);
+//         },
+//       },
+//     );
+//   }
+
+//   constructor() {
+//     /**
+//      * @type {Proxy}
+//      */
+//     this.allProxies = []; // Stores all proxies
+//     this.proxies = []; // Currently active proxies
+
+//     this.command = new Proxy(
+//       {},
+//       {
+//         get: (_, prop) => {
+//           // Handle special cases if needed, e.g., 'init', 'createProxy'
+//           if (prop === "init" || prop === "createProxy") {
+//             // return this[prop].bind(this);
+//             console.warn("Using init and createProxy is not available on multi-instance proxy");
+//             return;
+//           }
+
+//           // For other properties, handle them as function calls
+//           return async (...args) => {
+//             const promises = this.proxies.map(proxy => {
+//               if (typeof proxy[prop] === "function") {
+//                 return proxy[prop](...args);
+//               }
+//               return Promise.reject(new Error(`Function ${prop} does not exist on proxy`));
+//             });
+
+//             return Promise.all(promises);
+//           };
+//         },
+//       },
+//     );
+//   }
+
+//   #addSpectoda(config) {
+//     const socket = io(WEBSOCKET_URL, {
+//       parser: customParser,
+//       ...config,
+//     });
+
+//     const proxy = new SpectodaVirtualProxy(socket);
+//     proxy.init(config);
+
+//     this.allProxies.push(proxy);
+//     return proxy;
+//   }
+
+//   #removeSpectoda(proxy) {
+//     this.proxies = this.proxies.filter(p => p !== proxy);
+//   }
+
+//   select(criteria) {
+//     this.proxies = this.allProxies;
+//     // this.proxies = this.allProxies.filter(({ config }) => {
+//     //   return criteria.some(criterion => {
+//     //     return Object.entries(criterion).every(([key, value]) => config[key] === value);
+//     //   });
+//     // });
+//   }
+
+//   /**
+//    *
+//    * @param {{signature: string, key: string}} configs
+//    * @returns
+//    */
+//   add(configs) {
+//     if (!Array.isArray(configs)) configs = [configs];
+//     return configs.map(config => this.#addSpectoda(config));
+//   }
+// }
+
+// export function createSpectodaMultiInstanceWebsocketProxy() {
+//   if (typeof window === "undefined") return;
+//   window.spectodaM = new SpectodaMultiInstanceWebsocketProxy();
+//   return spectodaM;
+// }
+// createSpectodaMultiInstanceWebsocketProxy();

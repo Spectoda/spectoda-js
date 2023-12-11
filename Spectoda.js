@@ -348,6 +348,20 @@ export class Spectoda {
    * @param {string} options.signature - The network signature.
    * @param {string} options.key - The network key.
    * @param {boolean} [options.sessionOnly] - Whether to enable remote control for the current session only.
+   * @param {{
+   *   user?: {
+   *     name?: string,
+   *     email?: string,
+   *     image?: string
+   *   },
+   *   app?: {
+   *     name?: string,
+   *     version?: string,
+   *     commitHash?: string,
+   *     url?: string
+   *   },
+   *   [key: string]: any
+   * }} [options.meta] - Optional metadata about the user and the app.
    */
   async enableRemoteControl({ signature, key, sessionOnly, meta }) {
     logging.debug("> Connecting to Remote Control", { signature, key, sessionOnly });
