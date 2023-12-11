@@ -343,6 +343,9 @@ export class Spectoda {
     return this.#ownerKey;
   }
 
+  fetchClients() {
+    return this.socket.emitWithAck("list-all-clients");
+  }
   /**
    * @param {Object} options
    * @param {string} options.signature - The network signature.
@@ -442,10 +445,10 @@ export class Spectoda {
 
           allEventsEmitter.on("on", ({ name, args }) => {
             logging.verbose("on", name, args);
-            this.socket.emit("event", { name, args });
+            this.socket.emit("d-event", { name, args });
           });
 
-          this.socket.on("func", async (payload, callback) => {
+          this.socket.on("r-func", async (payload, callback) => {
             if (!callback) {
               logging.error("No callback provided");
               return;
@@ -459,6 +462,7 @@ export class Spectoda {
             try {
               if (functionName === "debug") {
                 logging.debug(...args);
+
                 return callback({ status: "success", message: "debug", payload: args });
               }
               if (functionName === "assignOwnerSignature" || functionName === "assignOwnerKey") {

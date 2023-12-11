@@ -36,7 +36,8 @@ export function createSpectodaWebsocket() {
 
   if (typeof window !== "undefined") window.socket = socket;
 
-  socket.on("event", data => {
+  socket.on("r-event", data => {
+    console.log("r-event", data);
     eventStream.emit(data.name, ...data.args);
   });
 
@@ -63,7 +64,11 @@ export function createSpectodaWebsocket() {
   });
 
   class SpectodaVirtualProxy {
+    // public networks:{signature:string,key:string}[];
+
     constructor() {
+      this.networks = new Map();
+
       return new Proxy(this, {
         get: (_, prop) => {
           if (prop === "on") {
@@ -90,6 +95,9 @@ export function createSpectodaWebsocket() {
               }
 
               networkJoinParams = params;
+              for (let param of params) {
+                this.networks.set(param.signature, param);
+              }
               return socket.emitWithAck("join", params);
             };
           } else if (prop === "fetchClients") {
@@ -98,6 +106,36 @@ export function createSpectodaWebsocket() {
             };
           } else if (prop === "connectionState") {
             return websocketConnectionState;
+          } else if (prop === "selectTarget") {
+            return (signature, socketId) => {
+              const network = this.networks.get(signature);
+
+              if (!network) {
+                throw new Error(`No network found with signature ${signature}`);
+              }
+
+              this.networks.set(signature, {
+                ...network,
+                socketId,
+              });
+
+              return socket.emitWithAck("subscribe-event", signature, socketId);
+            };
+          } else if (prop === "removeTarget") {
+            return signature => {
+              const network = this.networks.get(signature);
+
+              if (!network) {
+                throw new Error(`No network found with signature ${signature}`);
+              }
+
+              this.networks.set(signature, {
+                ...network,
+                socketId: null,
+              });
+
+              return socket.emitWithAck("unsubscribe-event", signature, null);
+            };
           }
 
           // Always return an async function for any property
@@ -115,6 +153,7 @@ export function createSpectodaWebsocket() {
 
             const result = await this.sendThroughWebsocket(payload);
 
+            logging.error("[WEBSOCKET]", result);
             if (result.status === "success") {
               for (let res of result?.data) {
                 if (res.status === "error") {
@@ -142,151 +181,16 @@ export function createSpectodaWebsocket() {
     }
 
     async sendThroughWebsocket(data) {
-      const result = await socket.emitWithAck("func", data);
+      // go through selected targets and send to each
+      let results = [];
+      for (let network of this.networks.values()) {
+        const result = await socket.emitWithAck("d-func", network.signature, network.socketId, data);
+        results.push(result);
+      }
 
-      return result;
+      return await Promise.allSettled(results);
     }
   }
 
   return new SpectodaVirtualProxy();
 }
-
-// class SpectodaMultiInstanceWebsocketProxy {
-//   // same but returns only the first result
-//   get legacyCall() {
-//     return new Proxy(
-//       {},
-//       {
-//         get: (_, prop) => {
-//           return async (...args) => {
-//             const promises = this.proxies.map(proxy => {
-//               if (typeof proxy[prop] === "function") {
-//                 return proxy[prop](...args);
-//               }
-//               return Promise.reject(new Error(`Function ${prop} does not exist on proxy`));
-//             });
-//             const results = await Promise.race(promises);
-//             return results?.[0];
-//           };
-//         },
-//       },
-//     );
-//   }
-
-//   get call() {
-//     return new Proxy(
-//       {},
-//       {
-//         get: (_, prop) => {
-//           return async (...args) => {
-//             console.log("calling", prop, args, this);
-
-//             const promises = this.proxies.map(proxy => {
-//               if (typeof proxy[prop] === "function") {
-//                 return proxy[prop](...args);
-//               }
-//               return Promise.reject(new Error(`Function ${prop} does not exist on proxy`));
-//             });
-//             return Promise.all(promises);
-//           };
-//         },
-//       },
-//     );
-//   }
-
-//   to(targetSocketId) {
-//     const targetProxy = this.proxies.find(proxy => proxy.socket.id === targetSocketId);
-//     if (!targetProxy) {
-//       throw new Error(`No proxy found for socket ID ${targetSocketId}`);
-//     }
-
-//     return new Proxy(
-//       {},
-//       {
-//         get: (_, prop) => {
-//           if (typeof targetProxy[prop] === "function") {
-//             return (...args) => targetProxy[prop](...args);
-//           }
-//           throw new Error(`Function ${prop} does not exist on target proxy`);
-//         },
-//       },
-//     );
-//   }
-
-//   constructor() {
-//     /**
-//      * @type {Proxy}
-//      */
-//     this.allProxies = []; // Stores all proxies
-//     this.proxies = []; // Currently active proxies
-
-//     this.command = new Proxy(
-//       {},
-//       {
-//         get: (_, prop) => {
-//           // Handle special cases if needed, e.g., 'init', 'createProxy'
-//           if (prop === "init" || prop === "createProxy") {
-//             // return this[prop].bind(this);
-//             console.warn("Using init and createProxy is not available on multi-instance proxy");
-//             return;
-//           }
-
-//           // For other properties, handle them as function calls
-//           return async (...args) => {
-//             const promises = this.proxies.map(proxy => {
-//               if (typeof proxy[prop] === "function") {
-//                 return proxy[prop](...args);
-//               }
-//               return Promise.reject(new Error(`Function ${prop} does not exist on proxy`));
-//             });
-
-//             return Promise.all(promises);
-//           };
-//         },
-//       },
-//     );
-//   }
-
-//   #addSpectoda(config) {
-//     const socket = io(WEBSOCKET_URL, {
-//       parser: customParser,
-//       ...config,
-//     });
-
-//     const proxy = new SpectodaVirtualProxy(socket);
-//     proxy.init(config);
-
-//     this.allProxies.push(proxy);
-//     return proxy;
-//   }
-
-//   #removeSpectoda(proxy) {
-//     this.proxies = this.proxies.filter(p => p !== proxy);
-//   }
-
-//   select(criteria) {
-//     this.proxies = this.allProxies;
-//     // this.proxies = this.allProxies.filter(({ config }) => {
-//     //   return criteria.some(criterion => {
-//     //     return Object.entries(criterion).every(([key, value]) => config[key] === value);
-//     //   });
-//     // });
-//   }
-
-//   /**
-//    *
-//    * @param {{signature: string, key: string}} configs
-//    * @returns
-//    */
-//   add(configs) {
-//     if (!Array.isArray(configs)) configs = [configs];
-//     return configs.map(config => this.#addSpectoda(config));
-//   }
-// }
-
-// export function createSpectodaMultiInstanceWebsocketProxy() {
-//   if (typeof window === "undefined") return;
-//   window.spectodaM = new SpectodaMultiInstanceWebsocketProxy();
-//   return spectodaM;
-// }
-// createSpectodaMultiInstanceWebsocketProxy();
