@@ -55,6 +55,7 @@ export class Spectoda {
   #autonomousConnection;
   #wakeLock;
   #isPrioritizedWakelock;
+  #proxyEventsEmitterRefUnsub;
 
   #reconnectRC;
 
@@ -80,6 +81,8 @@ export class Spectoda {
     this.#reconnecting = reconnecting ? true : false;
     this.#connectionState = "disconnected";
     this.#websocketConnectionState = "disconnected";
+
+    this.#proxyEventsEmitterRefUnsub = null;
 
     this.runtime.onConnected = event => {
       logging.debug("> Runtime connected");
@@ -369,6 +372,8 @@ export class Spectoda {
   async enableRemoteControl({ signature, key, sessionOnly, meta }) {
     logging.debug("> Connecting to Remote Control", { signature, key, sessionOnly });
 
+    this.#proxyEventsEmitterRefUnsub && this.#proxyEventsEmitterRefUnsub();
+
     // Disconnect and clean up the previous socket if it exists
     if (this.socket) {
       this.socket.removeAllListeners(); // Removes all listeners attached to the socket
@@ -443,7 +448,7 @@ export class Spectoda {
           logging.info("> Listening for events", allEventsEmitter);
           globalThis.allEventsEmitter = allEventsEmitter;
 
-          allEventsEmitter.on("on", ({ name, args }) => {
+          this.#proxyEventsEmitterRefUnsub = allEventsEmitter.on("on", ({ name, args }) => {
             logging.verbose("on", name, args);
             this.socket.emit("d-event", { name, args });
           });
