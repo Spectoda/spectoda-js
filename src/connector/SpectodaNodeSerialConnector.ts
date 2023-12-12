@@ -380,11 +380,13 @@ export class SpectodaNodeSerialConnector {
                   if (ends_with(command_bytes, "<<<\n")) {
 
                     if (starts_with(command_bytes, "BEGIN", 3)) {
+                      logging.info("SERIAL >>>BEGIN<<<")
                       this.#beginCallback && this.#beginCallback(true);
                       command_bytes.length = 0;
                     }
 
                     else if (starts_with(command_bytes, "END", 3)) {
+                      logging.warn("SERIAL >>>END<<<")
                       this.#beginCallback && this.#beginCallback(false);
                       this.#feedbackCallback && this.#feedbackCallback(false);
                       command_bytes.length = 0;
@@ -392,6 +394,7 @@ export class SpectodaNodeSerialConnector {
                     }
 
                     else if (starts_with(command_bytes, "READY", 3)) {
+                      logging.warn("SERIAL >>>READY<<<")
                       this.#beginCallback && this.#beginCallback(false);
                       this.#feedbackCallback && this.#feedbackCallback(false);
                       command_bytes.length = 0;
@@ -399,16 +402,19 @@ export class SpectodaNodeSerialConnector {
                     }
 
                     else if (starts_with(command_bytes, "SUCCESS", 3)) {
+                      logging.verbose("SERIAL >>>SUCCESS<<<")
                       this.#feedbackCallback && this.#feedbackCallback(true);
                       command_bytes.length = 0;
                     }
 
                     else if (starts_with(command_bytes, "FAIL", 3)) {
+                      logging.warn("SERIAL >>>FAIL<<<")
                       this.#feedbackCallback && this.#feedbackCallback(false);
                       command_bytes.length = 0;
                     }
 
                     else if (starts_with(command_bytes, "DATA", 3)) {
+                      logging.verbose("SERIAL >>>DATA<<<")
                       this.#dataCallback && this.#dataCallback(new Uint8Array(data_bytes));
                       command_bytes.length = 0;
                     }
@@ -711,13 +717,11 @@ export class SpectodaNodeSerialConnector {
         clearInterval(timeout_handle);
 
         if (success) {
-          logging.debug("> SUCESS");
           resolve(null);
         }
 
         else {
           //try to write it once more
-          logging.warn("> FAIL");
           setTimeout(() => {
             try {
               resolve(this.#initiate(initiate_code, payload, tries - 1, timeout - packet_timeout));
