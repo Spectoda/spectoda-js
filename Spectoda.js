@@ -1231,7 +1231,7 @@ export class Spectoda {
         // TODO optimalize this begin by detecting when all controllers have erased its flash
         // TODO also, right now the gateway controller sends to other controlles to erase flash after it is done.
         // TODO that slows things down
-        await sleep(6000);
+        await sleep(10000);
 
         {
           //===========// WRITE //===========//
@@ -1256,7 +1256,7 @@ export class Spectoda {
           }
         }
 
-        await sleep(100);
+        await sleep(1000);
 
         {
           //===========// END //===========//
@@ -1266,7 +1266,7 @@ export class Spectoda {
           await this.runtime.execute(command_bytes, null, 20000);
         }
 
-        await sleep(2500);
+        await sleep(3000);
 
         await this.rebootNetwork();
 
