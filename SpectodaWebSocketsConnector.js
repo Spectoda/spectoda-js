@@ -124,17 +124,11 @@ export function createSpectodaWebsocket() {
               return socket.emitWithAck("unsubscribe-event", signature, null);
             };
           } else if (prop === "resetTargets") {
-            return () => {
-              for (let network of this.networks.values()) {
-                this.networks.set(network.signature, {
-                  ...network,
-                  socketId: null,
-                });
-                socket.emitWithAck("unsubscribe-event", signature, null);
-              }
-            };
+            return this.resetTargets;
           } else if (prop === "autoSelectTargetsInNetworks") {
             // TODO resolve with promise
+            this.resetTargets();
+
             return async networks => {
               const results = [];
               for (let network of networks) {
@@ -205,6 +199,7 @@ export function createSpectodaWebsocket() {
       let results = [];
       for (let network of this.networks.values()) {
         if (network.socketId) {
+          console.log("sending to", network.socketId, network.signature, data);
           const result = await socket.emitWithAck("d-func", network.signature, network.socketId, data);
           results.push(result);
         }
@@ -242,6 +237,17 @@ export function createSpectodaWebsocket() {
         .catch(err => {
           throw new Error(`Error subscribing to network ${signature} with socketId ${socketId}`);
         });
+    }
+
+    async resetTargets() {
+      for (let network of this.networks.values()) {
+        console.log("resetting", network);
+        this.networks.set(network.signature, {
+          ...network,
+          socketId: null,
+        });
+        socket.emitWithAck("unsubscribe-event", network.signature, null);
+      }
     }
   }
 
