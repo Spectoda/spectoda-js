@@ -107,21 +107,7 @@ export function createSpectodaWebsocket() {
           } else if (prop === "connectionState") {
             return websocketConnectionState;
           } else if (prop === "selectTarget") {
-            return (signature, socketId) => {
-              logging.verbose("selectTarget", signature, socketId);
-              const network = this.networks.get(signature);
-
-              if (!network) {
-                throw new Error(`No network found with signature ${signature}`);
-              }
-
-              this.networks.set(signature, {
-                ...network,
-                socketId,
-              });
-
-              return socket.emitWithAck("subscribe-event", signature, socketId);
-            };
+            return this.selectTarget;
           } else if (prop === "removeTarget") {
             return (signature, socketId) => {
               const network = this.networks.get(signature);
@@ -136,6 +122,28 @@ export function createSpectodaWebsocket() {
               });
 
               return socket.emitWithAck("unsubscribe-event", signature, null);
+            };
+          } else if (prop === "resetTargets") {
+            return () => {
+              for (let network of this.networks.values()) {
+                this.networks.set(network.signature, {
+                  ...network,
+                  socketId: null,
+                });
+                socket.emitWithAck("unsubscribe-event", signature, null);
+              }
+            };
+          } else if (prop === "autoSelectTargetsInNetworks") {
+            // TODO resolve with promise
+            return async networks => {
+              const results = [];
+              for (let network of networks) {
+                console.log("network", network);
+                const result = await this.selectTarget(network.signature, null);
+                console.log("result", result);
+                results.push(result);
+              }
+              return Promise.all(results);
             };
           }
 
@@ -154,9 +162,16 @@ export function createSpectodaWebsocket() {
 
             const results = await this.sendThroughWebsocket(payload);
 
-            let result = processResults(results);
+            // return result;
+
+            // find fist result with status success and set it as result
+            const result = results.find(r => r.status === "fulfilled")?.value;
+            console.trace(results, result);
+
+            if (!result) return null;
+
+            logging.verbose("[WEBSOCKET SEND]", payload);
             logging.error("[WEBSOCKET]", result);
-            return result;
 
             logging.error("[WEBSOCKET]", result);
             if (result.status === "success") {
@@ -197,35 +212,38 @@ export function createSpectodaWebsocket() {
 
       return await Promise.allSettled(results);
     }
-  }
 
-  return new SpectodaVirtualProxy();
-}
+    async selectTarget(signature, socketId) {
+      const network = this.networks.get(signature);
 
-function processResults(data) {
-  let result;
-  let combinedResults = [];
-  let hasFailure = false;
+      if (!socketId) {
+        const requestedSocketIdResponse = await socket.emitWithAck("get-socket-id-for-network", signature);
 
-  logging.verbose("processResults", data);
+        console.log("requestedSocketIdResponse", signature, socketId, requestedSocketIdResponse);
+        if (!requestedSocketIdResponse) throw new Error(`No socketId found for network ${signature}`);
 
-  for (let item of data) {
-    if (item.status === "fulfilled" && item.value.status === "success") {
-      result = item.value?.data?.[0]?.result;
+        socketId = requestedSocketIdResponse;
+      }
 
-      // Collecting results from successful entries
-      // TODO handle error
-    } else {
-      hasFailure = true;
+      if (!network) {
+        throw new Error(`No network found with signature ${signature}`);
+      }
+
+      this.networks.set(signature, {
+        ...network,
+        socketId,
+      });
+
+      return socket
+        .emitWithAck("subscribe-event", signature, socketId)
+        .then(() => {
+          return socketId;
+        })
+        .catch(err => {
+          throw new Error(`Error subscribing to network ${signature} with socketId ${socketId}`);
+        });
     }
   }
 
-  // TODO handle this
-  let response = {
-    status: hasFailure ? "partial_success" : "success",
-    message: hasFailure ? "Partial success: some requests had issues" : "All requests successful",
-    result: result,
-  };
-
-  return result;
+  return new SpectodaVirtualProxy();
 }
