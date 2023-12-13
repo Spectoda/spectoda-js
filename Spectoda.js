@@ -752,7 +752,8 @@ export class Spectoda {
       })
       .then(connectedDeviceInfo => {
         logging.info("> Synchronizing Network State...");
-        return (this.timeline.paused() ? this.requestTimeline() : this.syncTimeline())
+        // return (this.timeline.paused() ? this.requestTimeline() : this.syncTimeline())
+        return this.syncTimeline()
           .catch(e => {
             logging.error("Timeline sync after reconnection failed:", e);
           })
