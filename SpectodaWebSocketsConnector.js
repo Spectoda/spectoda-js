@@ -137,7 +137,7 @@ export function createSpectodaWebsocket() {
                 console.log("result", result);
                 results.push(result);
               }
-              return Promise.all(results);
+              return Promise.allSettled(results);
             };
           }
 
@@ -160,7 +160,6 @@ export function createSpectodaWebsocket() {
 
             // find fist result with status success and set it as result
             const result = results.find(r => r.status === "fulfilled")?.value;
-            console.trace(results, result);
 
             if (!result) return null;
 
@@ -218,6 +217,11 @@ export function createSpectodaWebsocket() {
         if (!requestedSocketIdResponse) throw new Error(`No socketId found for network ${signature}`);
 
         socketId = requestedSocketIdResponse;
+      }
+
+      if (!socketId) {
+        return null;
+        throw new Error(`Error subscribing to network ${signature} with socketId ${socketId}`);
       }
 
       if (!network) {
