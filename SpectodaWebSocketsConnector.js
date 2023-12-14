@@ -74,7 +74,7 @@ export function createSpectodaWebsocket() {
           if (prop === "on") {
             // Special handling for "on" method
             return (eventName, callback) => {
-              logging.verbose("Subscribing to event", eventName);
+              // logging.verbose("Subscribing to event", eventName);
 
               const unsub = eventStream.on(eventName, callback);
 
@@ -132,9 +132,7 @@ export function createSpectodaWebsocket() {
             return async networks => {
               const results = [];
               for (let network of networks) {
-                console.log("network", network);
                 const result = await this.selectTarget(network.signature, null);
-                console.log("result", result);
                 results.push(result);
               }
               return Promise.allSettled(results);
@@ -163,20 +161,18 @@ export function createSpectodaWebsocket() {
 
             if (!result) return null;
 
-            logging.verbose("[WEBSOCKET SEND]", payload);
-            logging.error("[WEBSOCKET]", result);
+            // logging.verbose("[WEBSOCKET]", result);
 
-            logging.error("[WEBSOCKET]", result);
             if (result.status === "success") {
               for (let res of result?.data) {
                 if (res.status === "error") {
-                  logging.error("[WEBSOCKET]", result);
+                  // logging.error("[WEBSOCKET]", result);
 
                   throw new Error(res.error);
                 }
               }
 
-              logging.verbose("[WEBSOCKET]", result);
+              // logging.verbose("[WEBSOCKET]", result);
 
               return result?.data?.[0].result;
             } else {
@@ -184,7 +180,7 @@ export function createSpectodaWebsocket() {
               if (Array.isArray(result)) {
                 error = new Error(result[0]);
               }
-              logging.error("[WEBSOCKET]", error);
+              // logging.error("[WEBSOCKET]", error);
 
               throw new Error(result?.error);
             }
@@ -198,7 +194,7 @@ export function createSpectodaWebsocket() {
       let results = [];
       for (let network of this.networks.values()) {
         if (network.socketId) {
-          console.log("sending to", network.socketId, network.signature, data);
+          // console.log("sending to", network.socketId, network.signature, data);
           const result = await socket.emitWithAck("d-func", network.signature, network.socketId, data);
           results.push(result);
         }
@@ -213,7 +209,6 @@ export function createSpectodaWebsocket() {
       if (!socketId) {
         const requestedSocketIdResponse = await socket.emitWithAck("get-socket-id-for-network", signature);
 
-        console.log("requestedSocketIdResponse", signature, socketId, requestedSocketIdResponse);
         if (!requestedSocketIdResponse) throw new Error(`No socketId found for network ${signature}`);
 
         socketId = requestedSocketIdResponse;
@@ -245,7 +240,7 @@ export function createSpectodaWebsocket() {
 
     async resetTargets() {
       for (let network of this.networks.values()) {
-        console.log("resetting", network);
+        // console.log("resetting", network);
         this.networks.set(network.signature, {
           ...network,
           socketId: null,
