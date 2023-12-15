@@ -85,6 +85,10 @@ export function createSpectodaWebsocket() {
             };
           } else if (prop === "timeline") {
             return timeline;
+          } else if (prop === "emit") {
+            return (eventName, ...args) => {
+              eventStream.emit(eventName, ...args);
+            };
           } else if (prop === "init") {
             // Expects [{key,sig}, ...] or {key,sig}
             return params => {
