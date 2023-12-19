@@ -83,14 +83,34 @@ export function createSpectodaWebsocket() {
           } else if (prop === "init") {
             // Expects [{key,sig}, ...] or {key,sig}
             return params => {
-              if (!Array.isArray(params)) params = [params];
-
-              for (let param of params) {
-                param.type = "sender";
+              if (!Array.isArray(params) && !params?.sessionOnly) {
+                params = [params];
+                for (let param of params) {
+                  param.type = "sender";
+                }
+              } else {
+                params.type = "sender";
               }
 
               networkJoinParams = params;
-              return socket.emitWithAck("join", params);
+
+              if (params?.sessionOnly) {
+                return socket.emitWithAck("join-session", params?.roomNumber).then(response => {
+                  if (response.status === "success") {
+                    logging.info("Remote joined session", response.roomNumber);
+                  } else {
+                    throw new Error(response.error);
+                  }
+                });
+              } else {
+                return socket.emitWithAck("join", params).then(response => {
+                  if (response.status === "success") {
+                    logging.info("Remote joined network", response.roomNumber);
+                  } else {
+                    throw new Error(response.error);
+                  }
+                });
+              }
             };
           } else if (prop === "fetchClients") {
             return () => {
