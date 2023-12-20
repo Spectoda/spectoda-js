@@ -1,9 +1,9 @@
-import { logging } from "./logging";
-import { sleep } from "./functions";
 import { TimeTrack } from "./TimeTrack.js";
-import { COMMAND_FLAGS } from "./src/Spectoda_JS.js";
 import { TnglReader } from "./TnglReader.js";
 import { TnglWriter } from "./TnglWriter.js";
+import { sleep } from "./functions";
+import { logging } from "./logging";
+import { COMMAND_FLAGS } from "./src/Spectoda_JS.js";
 
 /////////////////////////////////////////////////////////////////////////////////////
 
@@ -163,11 +163,8 @@ criteria example:
         reject("DeviceNotSelected");
         return;
       }
-      await sleep(Math.random() * 1000); // connecting logic
-      if (this.#fail(0.1)) {
-        reject("ConnectionFailed");
-        return;
-      }
+      // await sleep(Math.random() * 100); // connecting logic
+
       this.#connected = true;
       this.#interfaceReference.emit("#connected");
       resolve({ connector: this.type });
@@ -386,10 +383,7 @@ criteria example:
             writer.writeUint8(error_code);
 
             if (error_code == ERROR_CODE_SUCCESS) {
-              writer.writeBytes(
-                [0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00],
-                32,
-              );
+              writer.writeBytes([0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00], 32);
             }
 
             resolve(writer.bytes);
@@ -544,11 +538,11 @@ criteria example:
     logging.verbose(`destroy()`);
 
     return this.disconnect()
-      .catch(() => { })
+      .catch(() => {})
       .then(() => {
         return this.unselect();
       })
-      .catch(() => { });
+      .catch(() => {});
 
     return Promise.resolve();
   }

@@ -32,6 +32,8 @@ export function createSpectodaWebsocket() {
     parser: customParser,
   });
 
+  window.socket = socket;
+
   window.sockets.push(socket);
 
   if (typeof window !== "undefined") window.socket = socket;
@@ -59,6 +61,7 @@ export function createSpectodaWebsocket() {
   });
 
   socket.on("disconnect", () => {
+    console.log("disconnected from websocket server");
     eventStream.emit("disconnected-websockets");
   });
 
