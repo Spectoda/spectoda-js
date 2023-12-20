@@ -1019,6 +1019,11 @@ export class Spectoda {
     logging.verbose(`emitColorEvent(label=${event_label},value=${event_value},id=${device_ids},force=${force_delivery})`);
     lastEvents[event_label] = { value: event_value, type: "color" };
 
+    if (!event_value) {
+      logging.warn("Invalid event value. event_value=", event_value);
+      throw "InvalidEventValue";
+    }
+
     // clearTimeout(this.#saveStateTimeoutHandle);
     // this.#saveStateTimeoutHandle = setTimeout(() => {
     //   this.saveState();
@@ -1026,24 +1031,24 @@ export class Spectoda {
 
     event_value = cssColorToHex(event_value);
 
-    if (!event_value || !event_value.match(/#[\dabcdefABCDEF]{6}/g)) {
-      logging.error("Invalid event value. event_value=", event_value);
+    if (!event_value.match(/#[\dabcdefABCDEF]{6}/g)) {
+      logging.warn("Invalid event value. event_value=", event_value);
       event_value = "#000000";
     }
 
     const func = device_id => {
       const payload = [COMMAND_FLAGS.FLAG_EMIT_COLOR_EVENT, ...colorToBytes(event_value), ...labelToBytes(event_label), ...numberToBytes(this.runtime.clock.millis() + 10, 6), numberToBytes(device_id, 1)];
 
-      this.runtime.emit("emitted_events", [
-        {
-          label: event_label,
-          type: 26,
-          value: event_value,
-          timestamp: this.runtime.clock.millis(),
-          id: device_id,
-          timestamp_utc: Date.now(),
-        },
-      ]);
+      // this.runtime.emit("emitted_events", [
+      //   {
+      //     label: event_label,
+      //     type: 26,
+      //     value: event_value,
+      //     timestamp: this.runtime.clock.millis(),
+      //     id: device_id,
+      //     timestamp_utc: Date.now(),
+      //   },
+      // ]);
 
       return this.runtime.execute(payload, force_delivery ? null : "E" + event_label + device_id);
     };
@@ -1088,16 +1093,16 @@ export class Spectoda {
     const func = device_id => {
       const payload = [COMMAND_FLAGS.FLAG_EMIT_PERCENTAGE_EVENT, ...percentageToBytes(event_value), ...labelToBytes(event_label), ...numberToBytes(this.runtime.clock.millis() + 10, 6), numberToBytes(device_id, 1)];
 
-      this.runtime.emit("emitted_events", [
-        {
-          label: event_label,
-          type: 30,
-          value: event_value,
-          timestamp: this.runtime.clock.millis(),
-          id: device_id,
-          timestamp_utc: Date.now(),
-        },
-      ]);
+      // this.runtime.emit("emitted_events", [
+      //   {
+      //     label: event_label,
+      //     type: 30,
+      //     value: event_value,
+      //     timestamp: this.runtime.clock.millis(),
+      //     id: device_id,
+      //     timestamp_utc: Date.now(),
+      //   },
+      // ]);
 
       return this.runtime.execute(payload, force_delivery ? null : "E" + event_label + device_id);
     };
@@ -1625,7 +1630,7 @@ export class Spectoda {
       const removed_device_mac_bytes = reader.readBytes(6);
 
       return this.rebootDevice()
-        .catch(() => {})
+        .catch(() => { })
         .then(() => {
           let removed_device_mac = "00:00:00:00:00:00";
           if (removed_device_mac_bytes.length >= 6) {

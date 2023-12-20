@@ -643,8 +643,8 @@ if (typeof window !== "undefined") {
 const Color = detectNode()
   ? require("color")
   : (color: string) => {
-      return "#000000";
-    };
+    return "#000000";
+  };
 
 const barvy: { [key: string]: string } = {
   vypnuto: "#000000",
@@ -702,7 +702,7 @@ const barvy_bez_hacku: { [key: string]: string } = {
 
 export function cssColorToHex(color: typeof barvy | typeof barvy_bez_hacku | string) {
   if (typeof color !== "string" || color.trim() === "") {
-    return null;
+    return "#000000";
   }
 
   if (color.toLocaleLowerCase() in barvy) {
@@ -713,9 +713,9 @@ export function cssColorToHex(color: typeof barvy | typeof barvy_bez_hacku | str
     return barvy_bez_hacku[color];
   }
 
-  // Add a '#' symbol before the hexadecimal color code if it's missing
-  if (/^[\dA-Fa-f]{6}$/.test(color)) {
-    return `#${color}`.toLocaleLowerCase();
+  const reg = color.match(/^#?([\dA-Fa-f]{6})$/);
+  if (reg) {
+    return "#" + reg[1].toLocaleLowerCase();
   }
 
   try {
@@ -723,6 +723,6 @@ export function cssColorToHex(color: typeof barvy | typeof barvy_bez_hacku | str
     const hexColor = parsedColor.hex();
     return hexColor;
   } catch {
-    return null;
+    return "#000000";
   }
 }
