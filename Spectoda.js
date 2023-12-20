@@ -454,7 +454,28 @@ export class Spectoda {
                 args[0] = uint8Array;
               }
             }
+
+            console.log("args", functionName, args);
             const result = await this[functionName](...args);
+            // if (functionName === "emitPercentageEvent" || functionName === "emitTimestampEvent" || functionName === "emitColorEvent" || functionName === "emitLabelEvent") {
+
+            //   /*
+            //   FORMAT FOR RESULT
+            // [
+            //     {
+            //         "label": "brigh",
+            //         "indentifier": 38310344,
+            //         "debug": "214748364~80.0%",
+            //         "type": 30,
+            //         "value": 80,
+            //         "timestamp": 31658,
+            //         "id": 255,
+            //         "timestamp_utc": 1703067629005
+            //     },
+
+            // ]
+            //   */
+            // }
             callback({ status: "success", result });
           } catch (e) {
             logging.error(e);
@@ -1012,6 +1033,18 @@ export class Spectoda {
 
     const func = device_id => {
       const payload = [COMMAND_FLAGS.FLAG_EMIT_COLOR_EVENT, ...colorToBytes(event_value), ...labelToBytes(event_label), ...numberToBytes(this.runtime.clock.millis() + 10, 6), numberToBytes(device_id, 1)];
+
+      this.runtime.emit("emitted_events", [
+        {
+          label: event_label,
+          type: 26,
+          value: event_value,
+          timestamp: this.runtime.clock.millis(),
+          id: device_id,
+          timestamp_utc: Date.now(),
+        },
+      ]);
+
       return this.runtime.execute(payload, force_delivery ? null : "E" + event_label + device_id);
     };
 
@@ -1054,6 +1087,18 @@ export class Spectoda {
 
     const func = device_id => {
       const payload = [COMMAND_FLAGS.FLAG_EMIT_PERCENTAGE_EVENT, ...percentageToBytes(event_value), ...labelToBytes(event_label), ...numberToBytes(this.runtime.clock.millis() + 10, 6), numberToBytes(device_id, 1)];
+
+      this.runtime.emit("emitted_events", [
+        {
+          label: event_label,
+          type: 30,
+          value: event_value,
+          timestamp: this.runtime.clock.millis(),
+          id: device_id,
+          timestamp_utc: Date.now(),
+        },
+      ]);
+
       return this.runtime.execute(payload, force_delivery ? null : "E" + event_label + device_id);
     };
 
