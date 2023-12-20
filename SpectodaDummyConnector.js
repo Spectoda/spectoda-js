@@ -81,15 +81,15 @@ criteria example:
       if (this.#connected) {
         await this.disconnect();
       }
-      await sleep(Math.random() * 1000); // userSelect logic
-      if (this.#fail(0.25)) {
-        reject("UserCanceledSelection");
-        return;
-      }
-      if (this.#fail(0.1)) {
-        reject("SelectionFailed");
-        return;
-      }
+      // await sleep(Math.random() * 1000); // userSelect logic
+      // if (this.#fail(0.25)) {
+      //   reject("UserCanceledSelection");
+      //   return;
+      // }
+      // if (this.#fail(0.1)) {
+      //   reject("SelectionFailed");
+      //   return;
+      // }
       this.#selected = true;
       resolve({ connector: this.type });
     });
@@ -115,11 +115,11 @@ criteria example:
       if (this.#connected) {
         await this.disconnect();
       }
-      await sleep(Math.random() * 1000); // autoSelect logic
-      if (this.#fail(0.1)) {
-        reject("SelectionFailed");
-        return;
-      }
+      // await sleep(Math.random() * 1000); // autoSelect logic
+      // if (this.#fail(0.1)) {
+      //   reject("SelectionFailed");
+      //   return;
+      // }
       this.#selected = true;
       resolve({ connector: this.type });
     });
@@ -538,11 +538,11 @@ criteria example:
     logging.verbose(`destroy()`);
 
     return this.disconnect()
-      .catch(() => {})
+      .catch(() => { })
       .then(() => {
         return this.unselect();
       })
-      .catch(() => {});
+      .catch(() => { });
 
     return Promise.resolve();
   }
