@@ -158,10 +158,19 @@ export function createSpectodaWebsocket() {
 
             const results = await this.sendThroughWebsocket(payload);
 
-            // return result;
-
             // find fist result with status success and set it as result
             const result = results.find(r => r.status === "fulfilled")?.value;
+
+            const networksArray = Array.from(this.networks.values());
+
+            for (let networkIndex = 0; networkIndex < results.length; networkIndex++) {
+              this.networks.set(networksArray[networkIndex].signature, {
+                ...networksArray[networkIndex],
+                lastResult: results[networkIndex],
+              });
+            }
+
+            eventStream.emit("networks-statuses", networksArray);
 
             if (!result) return null;
 
