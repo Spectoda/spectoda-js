@@ -2305,4 +2305,8 @@ export class Spectoda {
       return { pcb_code: pcb_code, product_code: product_code };
     });
   }
+
+  execute(bytecode) {
+    return this.runtime.execute(bytecode, null, 60000);
+  }
 }
