@@ -347,8 +347,9 @@ export class Spectoda {
   }
 
   fetchClients() {
-    return this.socket.emitWithAck("list-all-clients");
+    if (this.socket) return this.socket.emitWithAck("list-all-clients");
   }
+
   /**
    * @param {Object} options
    * @param {string?} options.signature - The network signature.
@@ -444,33 +445,33 @@ export class Spectoda {
               this.#setWebSocketConnectionState("disconnected");
             });
         }
-            this.#setWebSocketConnectionState("connecting");
-            await this.socket
-              .emitWithAck("join", { signature, key })
-              .then(e => {
-                this.#setWebSocketConnectionState("connected");
-                setConnectionSocketData();
-              })
-              .catch(e => {
-                this.#setWebSocketConnectionState("disconnected");
-              });
-          }
 
-          logging.info("> Connected and joined network remotely");
+        this.#setWebSocketConnectionState("connecting");
+        await this.socket
+          .emitWithAck("join", { signature, key })
+          .then(e => {
+            this.#setWebSocketConnectionState("connected");
+            setConnectionSocketData();
+          })
+          .catch(e => {
+            this.#setWebSocketConnectionState("disconnected");
+          });
 
-          let deviceType = "browser";
+        logging.info("> Connected and joined network remotely");
 
-          if (detectNode()) {
-            deviceType = "gateway";
-          } else if (detectSpectodaConnect()) {
-            deviceType = "spectoda-connect";
-          }
+        let deviceType = "browser";
 
-          this.socket.emit("set-device-info", { deviceType });
+        if (detectNode()) {
+          deviceType = "gateway";
+        } else if (detectSpectodaConnect()) {
+          deviceType = "spectoda-connect";
+        }
 
-          this.socket.emit("set-meta-data", meta);
+        this.socket.emit("set-device-info", { deviceType });
 
-          resolve({ status: "success" });
+        this.socket.emit("set-meta-data", meta);
+
+        resolve({ status: "success" });
 
         logging.info("> Listening for events", allEventsEmitter);
         globalThis.allEventsEmitter = allEventsEmitter;
