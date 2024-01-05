@@ -10,7 +10,8 @@ import { logging } from "./logging";
 // TODO rewrite this to initiate connect only when needed
 
 // const WEBSOCKET_URL = "https://tangle-remote-control.glitch.me/"
-export const WEBSOCKET_URL = "https://cloud.host.spectoda.com/";
+// export const WEBSOCKET_URL = "http://localhost:4001";
+export const WEBSOCKET_URL = "https://ceet.cloud.host.spectoda.com/";
 
 const eventStream = createNanoEvents();
 
@@ -36,7 +37,7 @@ export function createSpectodaWebsocket() {
 
   if (typeof window !== "undefined") window.socket = socket;
 
-  socket.on("event", data => {
+  socket.on("r-event", data => {
     eventStream.emit(data.name, ...data.args);
   });
 
@@ -63,13 +64,17 @@ export function createSpectodaWebsocket() {
   });
 
   class SpectodaVirtualProxy {
+    // public networks:{signature:string,key:string}[];
+
     constructor() {
+      this.networks = new Map();
+
       return new Proxy(this, {
         get: (_, prop) => {
           if (prop === "on") {
             // Special handling for "on" method
             return (eventName, callback) => {
-              logging.verbose("Subscribing to event", eventName);
+              // logging.verbose("Subscribing to event", eventName);
 
               const unsub = eventStream.on(eventName, callback);
 
@@ -80,6 +85,10 @@ export function createSpectodaWebsocket() {
             };
           } else if (prop === "timeline") {
             return timeline;
+          } else if (prop === "emit") {
+            return (eventName, ...args) => {
+              eventStream.emit(eventName, ...args);
+            };
           } else if (prop === "init") {
             // Expects [{key,sig}, ...] or {key,sig}
             return params => {
@@ -93,31 +102,48 @@ export function createSpectodaWebsocket() {
               }
 
               networkJoinParams = params;
-
-              if (params?.sessionOnly) {
-                return socket.emitWithAck("join-session", params?.roomNumber).then(response => {
-                  if (response.status === "success") {
-                    logging.info("Remote joined session", response.roomNumber);
-                  } else {
-                    throw new Error(response.error);
-                  }
-                });
-              } else {
-                return socket.emitWithAck("join", params).then(response => {
-                  if (response.status === "success") {
-                    logging.info("Remote joined network", response.roomNumber);
-                  } else {
-                    throw new Error(response.error);
-                  }
-                });
+              for (let param of params) {
+                this.networks.set(param.signature, param);
               }
+              return socket.emitWithAck("join", params);
             };
           } else if (prop === "fetchClients") {
             return () => {
-              return socket.emitWithAck("list-clients");
+              return socket.emitWithAck("list-all-clients");
             };
           } else if (prop === "connectionState") {
             return websocketConnectionState;
+          } else if (prop === "selectTarget") {
+            return this.selectTarget;
+          } else if (prop === "removeTarget") {
+            return (signature, socketId) => {
+              const network = this.networks.get(signature);
+
+              if (!network) {
+                throw new Error(`No network found with signature ${signature}`);
+              }
+
+              this.networks.set(signature, {
+                ...network,
+                socketId: null,
+              });
+
+              return socket.emitWithAck("unsubscribe-event", signature, null);
+            };
+          } else if (prop === "resetTargets") {
+            return this.resetTargets;
+          } else if (prop === "autoSelectTargetsInNetworks") {
+            // TODO resolve with promise
+            this.resetTargets();
+
+            return async networks => {
+              const results = [];
+              for (let network of networks) {
+                const result = await this.selectTarget(network.signature, null);
+                results.push(result);
+              }
+              return Promise.allSettled(results);
+            };
           }
 
           // Always return an async function for any property
@@ -133,18 +159,36 @@ export function createSpectodaWebsocket() {
               }
             }
 
-            const result = await this.sendThroughWebsocket(payload);
+            const results = await this.sendThroughWebsocket(payload);
+
+            // find fist result with status success and set it as result
+            const result = results.find(r => r.status === "fulfilled")?.value;
+
+            const networksArray = Array.from(this.networks.values());
+
+            for (let networkIndex = 0; networkIndex < results.length; networkIndex++) {
+              this.networks.set(networksArray[networkIndex].signature, {
+                ...networksArray[networkIndex],
+                lastResult: results[networkIndex],
+              });
+            }
+
+            eventStream.emit("networks-statuses", networksArray);
+
+            if (!result) return null;
+
+            // logging.verbose("[WEBSOCKET]", result);
 
             if (result.status === "success") {
               for (let res of result?.data) {
                 if (res.status === "error") {
-                  logging.error("[WEBSOCKET]", result);
+                  // logging.error("[WEBSOCKET]", result);
 
                   throw new Error(res.error);
                 }
               }
 
-              logging.verbose("[WEBSOCKET]", result);
+              // logging.verbose("[WEBSOCKET]", result);
 
               return result?.data?.[0].result;
             } else {
@@ -152,7 +196,7 @@ export function createSpectodaWebsocket() {
               if (Array.isArray(result)) {
                 error = new Error(result[0]);
               }
-              logging.error("[WEBSOCKET]", error);
+              // logging.error("[WEBSOCKET]", error);
 
               throw new Error(result?.error);
             }
@@ -162,9 +206,63 @@ export function createSpectodaWebsocket() {
     }
 
     async sendThroughWebsocket(data) {
-      const result = await socket.emitWithAck("func", data);
+      // go through selected targets and send to each
+      let results = [];
+      for (let network of this.networks.values()) {
+        if (network.socketId) {
+          // console.log("sending to", network.socketId, network.signature, data);
+          const result = await socket.emitWithAck("d-func", network.signature, network.socketId, data);
+          results.push(result);
+        }
+      }
 
-      return result;
+      return await Promise.allSettled(results);
+    }
+
+    async selectTarget(signature, socketId) {
+      const network = this.networks.get(signature);
+
+      if (!socketId) {
+        const requestedSocketIdResponse = await socket.emitWithAck("get-socket-id-for-network", signature);
+
+        if (!requestedSocketIdResponse) throw new Error(`No socketId found for network ${signature}`);
+
+        socketId = requestedSocketIdResponse;
+      }
+
+      if (!socketId) {
+        return null;
+        throw new Error(`Error subscribing to network ${signature} with socketId ${socketId}`);
+      }
+
+      if (!network) {
+        throw new Error(`No network found with signature ${signature}`);
+      }
+
+      this.networks.set(signature, {
+        ...network,
+        socketId,
+      });
+
+      return socket
+        .emitWithAck("subscribe-event", signature, socketId)
+        .then(() => {
+          return socketId;
+        })
+        .catch(err => {
+          throw new Error(`Error subscribing to network ${signature} with socketId ${socketId}`);
+        });
+    }
+
+    async resetTargets() {
+      for (let network of this.networks.values()) {
+        // console.log("resetting", network);
+        this.networks.set(network.signature, {
+          ...network,
+          socketId: null,
+        });
+        socket.emitWithAck("unsubscribe-event", network.signature, null);
+      }
     }
   }
 

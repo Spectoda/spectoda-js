@@ -55,6 +55,7 @@ export class Spectoda {
   #autonomousConnection;
   #wakeLock;
   #isPrioritizedWakelock;
+  #proxyEventsEmitterRefUnsub;
 
   #reconnectRC;
 
@@ -80,6 +81,8 @@ export class Spectoda {
     this.#reconnecting = reconnecting ? true : false;
     this.#connectionState = "disconnected";
     this.#websocketConnectionState = "disconnected";
+
+    this.#proxyEventsEmitterRefUnsub = null;
 
     this.runtime.onConnected = event => {
       logging.debug("> Runtime connected");
@@ -343,23 +346,46 @@ export class Spectoda {
     return this.#ownerKey;
   }
 
+  fetchClients() {
+    return this.socket.emitWithAck("list-all-clients");
+  }
   /**
    * @param {Object} options
    * @param {string?} options.signature - The network signature.
    * @param {string?} options.key - The network key.
    * @param {boolean?} [options.sessionOnly] - Whether to enable remote control for the current session only.
+   * @param {{
+   *   user?: {
+   *     name?: string,
+   *     email?: string,
+   *     image?: string
+   *   },
+   *   app?: {
+   *     name?: string,
+   *     version?: string,
+   *     commitHash?: string,
+   *     url?: string
+   *   },
+   *   [key: string]: any
+   * }} [options.meta] - Optional metadata about the user and the app.
    */
-  async enableRemoteControl({ signature, key, sessionOnly }) {
-    logging.debug("> Connecting to Remote Control");
+  async enableRemoteControl({ signature, key, sessionOnly, meta }) {
+    logging.debug("> Connecting to Remote Control", { signature, key, sessionOnly });
 
-    this.socket && this.socket.disconnect();
+    this.#proxyEventsEmitterRefUnsub && this.#proxyEventsEmitterRefUnsub();
 
+    // Disconnect and clean up the previous socket if it exists
+    if (this.socket) {
+      this.socket.removeAllListeners(); // Removes all listeners attached to the socket
+      this.socket.disconnect();
+    }
+
+    // Initialize a new socket connection
     this.socket = io(WEBSOCKET_URL, {
       parser: customParser,
     });
 
     this.socket.connect();
-
     this.requestWakeLock(true);
 
     const setConnectionSocketData = async () => {
@@ -367,15 +393,16 @@ export class Spectoda {
         return [];
       });
       logging.debug("peers", peers);
-      this.socket.emit("set-connection-data", peers);
+      this.socket.emit("set-connectedMacs-data", peers);
     };
 
+    // Reset event listeners for 'connected' and 'disconnected'
     this.on("connected", async () => {
       setConnectionSocketData();
     });
 
     this.on("disconnected", () => {
-      this.socket.emit("set-connection-data", null);
+      this.socket.emit("set-connectedMacs-data", null);
     });
 
     return await new Promise((resolve, reject) => {
@@ -417,6 +444,33 @@ export class Spectoda {
               this.#setWebSocketConnectionState("disconnected");
             });
         }
+            this.#setWebSocketConnectionState("connecting");
+            await this.socket
+              .emitWithAck("join", { signature, key })
+              .then(e => {
+                this.#setWebSocketConnectionState("connected");
+                setConnectionSocketData();
+              })
+              .catch(e => {
+                this.#setWebSocketConnectionState("disconnected");
+              });
+          }
+
+          logging.info("> Connected and joined network remotely");
+
+          let deviceType = "browser";
+
+          if (detectNode()) {
+            deviceType = "gateway";
+          } else if (detectSpectodaConnect()) {
+            deviceType = "spectoda-connect";
+          }
+
+          this.socket.emit("set-device-info", { deviceType });
+
+          this.socket.emit("set-meta-data", meta);
+
+          resolve({ status: "success" });
 
         logging.info("> Listening for events", allEventsEmitter);
         globalThis.allEventsEmitter = allEventsEmitter;
@@ -425,6 +479,7 @@ export class Spectoda {
           logging.verbose("on", name, args);
           this.socket.emit("event", { name, args });
         });
+
         this.socket.on("func", async (payload, callback) => {
           if (!callback) {
             logging.error("No callback provided");
