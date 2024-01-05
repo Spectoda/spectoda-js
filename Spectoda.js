@@ -370,6 +370,9 @@ export class Spectoda {
    * }} [options.meta] - Optional metadata about the user and the app.
    */
   async enableRemoteControl({ signature, key, sessionOnly, meta }) {
+    if (!signature || (!key && !sessionOnly)) {
+      throw new Error("Missing signature or key");
+    }
     logging.debug("> Connecting to Remote Control", { signature, key, sessionOnly });
 
     this.#proxyEventsEmitterRefUnsub && this.#proxyEventsEmitterRefUnsub();
@@ -1610,7 +1613,7 @@ export class Spectoda {
       const removed_device_mac_bytes = reader.readBytes(6);
 
       return this.rebootDevice()
-        .catch(() => { })
+        .catch(() => {})
         .then(() => {
           let removed_device_mac = "00:00:00:00:00:00";
           if (removed_device_mac_bytes.length >= 6) {

@@ -63,11 +63,13 @@ export function createSpectodaWebsocket() {
     eventStream.emit("disconnected-websockets");
   });
 
+  let networks = new Map();
+
   class SpectodaVirtualProxy {
     // public networks:{signature:string,key:string}[];
 
     constructor() {
-      this.networks = new Map();
+      if (typeof window !== "undefined") window.networks = networks;
 
       return new Proxy(this, {
         get: (_, prop) => {
@@ -100,7 +102,7 @@ export function createSpectodaWebsocket() {
 
               networkJoinParams = params;
               for (let param of params) {
-                this.networks.set(param.signature, param);
+                networks.set(param.signature, param);
               }
               return socket.emitWithAck("join", params);
             };
@@ -114,18 +116,19 @@ export function createSpectodaWebsocket() {
             return this.selectTarget;
           } else if (prop === "removeTarget") {
             return (signature, socketId) => {
-              const network = this.networks.get(signature);
+              const network = networks.get(signature);
 
               if (!network) {
                 throw new Error(`No network found with signature ${signature}`);
               }
 
-              this.networks.set(signature, {
+              networks.set(signature, {
                 ...network,
                 socketId: null,
               });
 
-              return socket.emitWithAck("unsubscribe-event", signature, null);
+              console.log("Unsub Event", signature, socketId);
+              return socket.emitWithAck("unsubscribe-event", signature, socketId);
             };
           } else if (prop === "resetTargets") {
             return this.resetTargets;
@@ -161,10 +164,10 @@ export function createSpectodaWebsocket() {
             // find fist result with status success and set it as result
             const result = results.find(r => r.status === "fulfilled")?.value;
 
-            const networksArray = Array.from(this.networks.values());
+            const networksArray = Array.from(networks.values());
 
             for (let networkIndex = 0; networkIndex < results.length; networkIndex++) {
-              this.networks.set(networksArray[networkIndex].signature, {
+              networks.set(networksArray[networkIndex].signature, {
                 ...networksArray[networkIndex],
                 lastResult: results[networkIndex],
               });
@@ -205,7 +208,7 @@ export function createSpectodaWebsocket() {
     async sendThroughWebsocket(data) {
       // go through selected targets and send to each
       let results = [];
-      for (let network of this.networks.values()) {
+      for (let network of networks.values()) {
         if (network.socketId) {
           // console.log("sending to", network.socketId, network.signature, data);
           const result = await socket.emitWithAck("d-func", network.signature, network.socketId, data);
@@ -217,7 +220,9 @@ export function createSpectodaWebsocket() {
     }
 
     async selectTarget(signature, socketId) {
-      const network = this.networks.get(signature);
+      console.log("WUT", networks);
+
+      const network = networks.get(signature);
 
       if (!socketId) {
         const requestedSocketIdResponse = await socket.emitWithAck("get-socket-id-for-network", signature);
@@ -236,7 +241,7 @@ export function createSpectodaWebsocket() {
         throw new Error(`No network found with signature ${signature}`);
       }
 
-      this.networks.set(signature, {
+      networks.set(signature, {
         ...network,
         socketId,
       });
@@ -252,9 +257,9 @@ export function createSpectodaWebsocket() {
     }
 
     async resetTargets() {
-      for (let network of this.networks.values()) {
+      for (let network of networks.values()) {
         // console.log("resetting", network);
-        this.networks.set(network.signature, {
+        networks.set(network.signature, {
           ...network,
           socketId: null,
         });
