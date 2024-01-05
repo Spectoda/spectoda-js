@@ -177,26 +177,19 @@ export function createSpectodaWebsocket() {
 
             if (!result) return null;
 
-            // logging.verbose("[WEBSOCKET]", result);
-
             if (result.status === "success") {
               for (let res of result?.data) {
                 if (res.status === "error") {
-                  // logging.error("[WEBSOCKET]", result);
-
                   throw new Error(res.error);
                 }
               }
 
-              // logging.verbose("[WEBSOCKET]", result);
-
-              return result?.data?.[0].result;
+              return result?.data?.[0]?.result;
             } else {
               let error = new Error(result?.error);
               if (Array.isArray(result)) {
                 error = new Error(result[0]);
               }
-              // logging.error("[WEBSOCKET]", error);
 
               throw new Error(result?.error);
             }
