@@ -180,7 +180,7 @@ export function createSpectodaWebsocket() {
             if (result.status === "success") {
               for (let res of result?.data) {
                 if (res.status === "error") {
-                  throw new Error(res.error);
+                  console.error(res.error);
                 }
               }
 
@@ -191,7 +191,7 @@ export function createSpectodaWebsocket() {
                 error = new Error(result[0]);
               }
 
-              throw new Error(result?.error);
+              console.error(result?.error);
             }
           };
         },
