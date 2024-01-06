@@ -1,3 +1,8 @@
+/**
+ * @module SpectodaController
+ * @description SpectodaController is a class that represents a single Spectoda controller. It is used to control the controller and to communicate with it.
+ */
+
 import "./TnglReader";
 import { TnglReader } from "./TnglReader";
 import "./TnglWriter";
@@ -43,6 +48,11 @@ export class SpectodaController {
         this.#connection = controllerConnections;
     }
 
+    // TODO
+    setDebugLevel(level: number) {
+        setLoggingLevel(level);
+    }
+
     /**
      * @name addEventListener
      * @param {string} event
@@ -56,19 +66,22 @@ export class SpectodaController {
      * @returns {Function} unbind function
      */
 
-    addEventListener(event, callback) {
-        return this.runtime.addEventListener(event, callback);
+    addEventListener(event: string, callback: Function) {
+        logging.verbose(`SpectodaController::addEventListener(event=${event}, callback=${callback})`);
+
+        // TODO
+        logging.error("WIP - not implemented yet")
+        throw "WorkInProgress";
     }
     /**
      * @alias this.addEventListener
      */
-    on(event, callback) {
-        return this.runtime.on(event, callback);
-    }
+    on(event: string, callback: Function) {
+        logging.verbose(`SpectodaController::on(event=${event}, callback=${callback})`);
 
-    // TODO
-    setDebugLevel(level: number) {
-        setLoggingLevel(level);
+        // TODO
+        logging.error("WIP - not implemented yet")
+        throw "WorkInProgress";
     }
 
     /**
@@ -80,18 +93,11 @@ export class SpectodaController {
      * @returns {Criteria[]}
      */
     scan(connector: string, criteria = [{}], options = {}) {
-        logging.verbose(`SpectodaController::scan(connector=${connector}, criteria=${criteria}, options=${options})`);
         return this.#spectoda.scan(this.#connection, connector, criteria, options);
     }
 
     /**
-     * @name connect
-     * @param {string} connector
-     * @param {Criteria | Criteria[]} criteria
-     * @param {ConnectOptions} options
-     *
-     * TODO define Criteria and ConnectOptions type
-     * @returns {Criteria[]}
+     * Establishes a new connection to a controller based on given criteria
      */
     //! FUNCTION ROLE CHANGED
     //! PARAMETERS CHANGED
@@ -101,7 +107,6 @@ export class SpectodaController {
 
     /**
      * Disconnects the connection
-     * @name disconnect
      */
     disconnect() {
         return this.#spectoda.disconnect(this.#connection);
@@ -131,9 +136,9 @@ export class SpectodaController {
       * Parameters changed!
       * Writes TNGL to the network from the currently used controller.
       * Pass TNGL code by string or object: { code: string or bytecode: uint8Array }
-      * @param tngl
-      * @param tngl.code string or undefined. choose code or bytecode
-      * @param tngl.bytecode uint8Array or undefined
+      * @param tngl choose written code or compiled bytecode
+      * @param tngl.code
+      * @param tngl.bytecode
       */
     //! PARAMETERS CHANGED
     writeTngl(tngl: { code: string | undefined, bytecode: Uint8Array | undefined }) {
@@ -141,42 +146,42 @@ export class SpectodaController {
     }
 
     /**
-     * 
+     * Emits a event with no value to the network
      */
     emitEmptyEvent(eventLabel: string, eventId: number | number[] = 0xff, options = { forceDelivery: false }) {
         return this.#spectoda.emitEmptyEvent(this.#connection, eventLabel, eventId, options);
     }
 
     /**
-     *
+     * Emits a event with a timestamp value to the network
      */
     emitTimestampEvent(eventLabel: string, eventTimestampValue: number, eventId: number | number[] = 0xff, options = { forceDelivery: false }) {
         return this.#spectoda.emitTimestampEvent(this.#connection, eventLabel, eventTimestampValue, eventId, options);
     }
 
     /**
-     *
+     * Emits a event with a color value to the network
      */
     emitColorEvent(eventLabel: string, eventColorValue: string, eventId: number | number[] = 0xff, options = { forceDelivery: false }) {
-        return this.#spectoda.emitColorEvent(this.#connection, event_label, event_value, device_ids, force_delivery);
+        return this.#spectoda.emitColorEvent(this.#connection, eventLabel, eventColorValue, eventId, options);
     }
 
     /**
-     *
+     * Emits a event with a percentage value to the network
      */
     emitPercentageEvent(eventLabel: string, eventPercentageValue: number, eventId: number | number[] = 0xff, options = { forceDelivery: false }) {
         return this.#spectoda.emitPercentageEvent(this.#connection, eventLabel, eventPercentageValue, eventId, options);
     }
 
     /**
-     *  
+     * Emits a event with a label value to the network
      */
     emitLabelEvent(eventLabel: string, eventLabelValue: string, eventId: number | number[] = 0xff, options = { forceDelivery: false }) {
         return this.#spectoda.emitLabelEvent(this.#connection, eventLabel, eventLabelValue, eventId, options);
     }
 
     /**
-     * Forces timeline synchronization of the used controller to the network
+     * Synchronizes the timeline with another controller/s on the other side of the specified connection 
      */
     //! PARAMETERS UPDATED
     syncTimeline(connectionToSyncWith: string[] = ["*/ff:ff:ff:ff:ff:ff"]) {
@@ -184,7 +189,7 @@ export class SpectodaController {
     }
 
     /**
-     * Forces clock timestamp of the used controller to the network
+     * Sychronizes the clock timmestamp with another controller/s on the other side of the specified connection
      * @returns Promise<void>
      */
     //! PARAMETERS UPDATED
@@ -201,22 +206,19 @@ export class SpectodaController {
     }
 
     /**
-     * 
+     * Updates the firmware
      */
     writeFirmware(firmware: { path: string, url: string, bytes: Uint8Array }) {
         return this.#spectoda.writeFirmware(this.#connection, firmware);
     }
 
-
-
     /**
-     * Synchonizes firmware of the used controller to given connection
+     * Synchonizes firmware stored on the controller to given connection
      * @todo should return an information about the firmware update result
      */
     syncFirmware(connectionToSyncWith: string[]) {
         return this.#spectoda.syncFirmware(this.#connection, connectionToSyncWith);
     }
-
 
     /** 
      * Reads config of currently used controller.
@@ -225,7 +227,6 @@ export class SpectodaController {
         return this.#spectoda.readConfig(this.#connection);
     }
 
-
     /**
      * Writes spectoda config to the controller
      */
@@ -233,14 +234,12 @@ export class SpectodaController {
         return this.#spectoda.writeConfig(this.#connection, config);
     }
 
-
     /**
-     * Reads timeline
+     * Reads current timeline
      */
     readTimeline() {
         return this.#spectoda.readTimeline(this.#connection);
     }
-
 
     /**
      * This restarts the webassembly spectodas or reboots physical spectoda controllers
@@ -249,7 +248,6 @@ export class SpectodaController {
         return this.#spectoda.requestRestart(this.#connection);
     }
 
-
     /**
      * Removes spectoda network of the given controller
      */
@@ -257,9 +255,8 @@ export class SpectodaController {
         return this.#spectoda.eraseNetwork(this.#connection);
     }
 
-
     /**
-      * Gets a spectoda version of given controller
+      * Gets a spectoda version
       */
     //! PARAMETERS UPDATED - now it returns an object with version info
     readVersion() {
@@ -267,7 +264,7 @@ export class SpectodaController {
     }
 
     /**
-     * Reads TNGL fingerprint of given controller
+     * Reads TNGL fingerprint
      * @param connection 
      */
     readTnglFingerprint() {
@@ -275,7 +272,7 @@ export class SpectodaController {
     }
 
     /**
-     * 
+     * Reads available connections 
      */
     readConnections() {
         return this.#spectoda.readConnections(this.#connection);
@@ -292,13 +289,10 @@ export class SpectodaController {
 
     /**
      * Erases event history on given controller
-     * @returns 
      */
     eraseEventHistory() {
         return this.#spectoda.eraseEventHistory(this.#connection);
     }
-
-
 
     /**
      * Sleeps the used controller
@@ -308,13 +302,15 @@ export class SpectodaController {
     }
 
 
-
+    /**
+     * Saves the current variable state to the memory
+     */
     requestSaveState() {
         return this.#spectoda.requestSaveState(this.#connection);
     }
 
     /**
-     * 
+     * Writes spectoda network
      */
     writeNetwork(network: { key: number[], signature: number[] }) {
         return this.#spectoda.writeNetwork(this.#connection, network);
@@ -328,8 +324,8 @@ export class SpectodaController {
     }
 
     /**
-    * Writes spectoda name
-    */
+     * Writes spectoda name
+     */
     whiteName(name: string): Promise<void> {
         return this.#spectoda.whiteName(this.#connection, name);
     }
@@ -343,6 +339,7 @@ export class SpectodaController {
     }
 
     /**
+     * Reads a variable from the currently running TNGL code by its name
      * @todo specify returned variable value
      */
     readVariable(variableName: string, id: number) {
@@ -350,19 +347,22 @@ export class SpectodaController {
     }
 
     /**
-     * 
+     * Reads a variable from the currently running TNGL code by its address
      */
     readVariableAddress(variableAddress: number, id: number) {
         return this.#spectoda.readVariableAddress(this.#connection, variableAddress, id);
     }
 
-    // 0.9.4
-
+    /**
+     * Writes the controller properties into the controller
+     */
     writeProperties(properties: { pcbCode: number, productCode: number }) {
         return this.#spectoda.writeProperties(this.#connection, properties);
     }
 
-
+    /**
+     * Reads the controller properties from the controller
+     */
     readProperties() {
         return this.#spectoda.readProperties(this.#connection);
     }
