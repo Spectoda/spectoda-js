@@ -1,11 +1,11 @@
 // npm install --save-dev @types/web-bluetooth
 /// <reference types="web-bluetooth" />
 
-import { logging } from "../logging";
-import { detectAndroid, detectSafari, hexStringToUint8Array, numberToBytes, sleep, toBytes } from "../functions";
-import { COMMAND_FLAGS } from "../webassembly/Spectoda_JS.js";
 import { TimeTrack } from "../TimeTrack.js";
 import { TnglReader } from "../TnglReader.js";
+import { COMMAND_FLAGS } from "../constants.js";
+import { detectAndroid, hexStringToUint8Array, numberToBytes, sleep, toBytes } from "../functions";
+import { logging } from "../logging";
 
 // od 0.8.0 maji vsechny spectoda enabled BLE zarizeni jednotne SPECTODA_DEVICE_UUID.
 // kazdy typ (produkt) Spectoda Zarizeni ma svuj kod v manufacturer data
@@ -443,7 +443,7 @@ export class WebBLEConnection {
           //===========// RESET //===========//
           logging.debug("OTA RESET");
 
-          const bytes = [COMMAND_FLAGS.FLAG_OTA_RESET, 0x00, ...numberToBytes(0x00000000, 4)];
+          const bytes = [COMMAND_FLAGS.OTA_RESET, 0x00, ...numberToBytes(0x00000000, 4)];
           await this.#writeBytes(this.#deviceChar, bytes, true);
         }
 
@@ -453,7 +453,7 @@ export class WebBLEConnection {
           //===========// BEGIN //===========//
           logging.debug("OTA BEGIN");
 
-          const bytes = [COMMAND_FLAGS.FLAG_OTA_BEGIN, 0x00, ...numberToBytes(firmware.length, 4)];
+          const bytes = [COMMAND_FLAGS.OTA_BEGIN, 0x00, ...numberToBytes(firmware.length, 4)];
           await this.#writeBytes(this.#deviceChar, bytes, true);
         }
 
@@ -468,7 +468,7 @@ export class WebBLEConnection {
               index_to = firmware.length;
             }
 
-            const bytes = [COMMAND_FLAGS.FLAG_OTA_WRITE, 0x00, ...numberToBytes(written, 4), ...firmware.slice(index_from, index_to)];
+            const bytes = [COMMAND_FLAGS.OTA_WRITE, 0x00, ...numberToBytes(written, 4), ...firmware.slice(index_from, index_to)];
 
             await this.#writeBytes(this.#deviceChar, bytes, true);
             written += index_to - index_from;
@@ -489,7 +489,7 @@ export class WebBLEConnection {
           //===========// END //===========//
           logging.debug("OTA END");
 
-          const bytes = [COMMAND_FLAGS.FLAG_OTA_END, 0x00, ...numberToBytes(written, 4)];
+          const bytes = [COMMAND_FLAGS.OTA_END, 0x00, ...numberToBytes(written, 4)];
           await this.#writeBytes(this.#deviceChar, bytes, true);
         }
 
@@ -1086,10 +1086,10 @@ criteria example:
   destroy() {
     //this.#runtimeReference = null; // dont know if I need to destroy this reference.. But I guess I dont need to?
     return this.disconnect()
-      .catch(() => { })
+      .catch(() => {})
       .then(() => {
         return this.unselect();
       })
-      .catch(() => { });
+      .catch(() => {});
   }
 }

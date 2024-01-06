@@ -1,10 +1,10 @@
-import { logging } from "../logging";
-import { numberToBytes, sleep, toBytes, detectGW } from "../functions";
 import { TimeTrack } from "../TimeTrack.js";
 import { TnglReader } from "../TnglReader.js";
-import { COMMAND_FLAGS } from "../webassembly/Spectoda_JS.js";
+import { COMMAND_FLAGS } from "../constants.js";
+import { detectGW, numberToBytes, sleep, toBytes } from "../functions";
+import { logging } from "../logging";
 
-const requireBundlerWorkeround = (moduleName: string) => detectGW() ? require(moduleName) : () => { };
+const requireBundlerWorkeround = (moduleName: string) => (detectGW() ? require(moduleName) : () => {});
 // TODO node-ble on the same level as spectoda-js or node-ble in the spectoda-js repo ? nevíme
 const NodeBle = detectGW() ? requireBundlerWorkeround("../../../node-ble/src/index") : {};
 const { createBluetooth } = NodeBle;
@@ -610,7 +610,7 @@ export class NodeBLEConnection {
         //===========// RESET //===========//
         logging.debug("OTA RESET");
 
-        const bytes = new Uint8Array([COMMAND_FLAGS.FLAG_OTA_RESET, 0x00, ...numberToBytes(0x00000000, 4)]);
+        const bytes = new Uint8Array([COMMAND_FLAGS.OTA_RESET, 0x00, ...numberToBytes(0x00000000, 4)]);
         await this.#writeBytes(this.#deviceChar, bytes, true);
       }
 
@@ -620,7 +620,7 @@ export class NodeBLEConnection {
         //===========// BEGIN //===========//
         logging.debug("OTA BEGIN");
 
-        const bytes = new Uint8Array([COMMAND_FLAGS.FLAG_OTA_BEGIN, 0x00, ...numberToBytes(firmware.length, 4)]);
+        const bytes = new Uint8Array([COMMAND_FLAGS.OTA_BEGIN, 0x00, ...numberToBytes(firmware.length, 4)]);
         await this.#writeBytes(this.#deviceChar, bytes, true);
       }
 
@@ -635,7 +635,7 @@ export class NodeBLEConnection {
             index_to = firmware.length;
           }
 
-          const bytes = new Uint8Array([COMMAND_FLAGS.FLAG_OTA_WRITE, 0x00, ...numberToBytes(written, 4), ...firmware.slice(index_from, index_to)]);
+          const bytes = new Uint8Array([COMMAND_FLAGS.OTA_WRITE, 0x00, ...numberToBytes(written, 4), ...firmware.slice(index_from, index_to)]);
 
           await this.#writeBytes(this.#deviceChar, bytes, true);
           written += index_to - index_from;
@@ -656,7 +656,7 @@ export class NodeBLEConnection {
         //===========// END //===========//
         logging.debug("OTA END");
 
-        const bytes = new Uint8Array([COMMAND_FLAGS.FLAG_OTA_END, 0x00, ...numberToBytes(written, 4)]);
+        const bytes = new Uint8Array([COMMAND_FLAGS.OTA_END, 0x00, ...numberToBytes(written, 4)]);
         await this.#writeBytes(this.#deviceChar, bytes, true);
       }
 
@@ -1262,11 +1262,11 @@ criteria example:
 
     //this.#runtimeReference = null; // dont know if I need to destroy this reference.. But I guess I dont need to?
     return this.disconnect()
-      .catch(() => { })
+      .catch(() => {})
       .then(() => {
         return this.unselect();
       })
-      .catch(() => { })
+      .catch(() => {})
       .finally(() => {
         this.#bluetoothDestroy();
       });

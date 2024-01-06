@@ -1,29 +1,16 @@
 import { SpectodaDummyConnector } from "./connector/SpectodaDummyConnector";
 import { SpectodaWebBluetoothConnector } from "./connector/SpectodaWebBluetoothConnector";
-import {
-  createNanoEvents,
-  createNanoEventsWithWrappedEmit,
-  detectAndroid,
-  detectChrome,
-  detectIPhone,
-  detectLinux,
-  detectMacintosh,
-  detectNode,
-  detectSpectodaConnect,
-  detectWindows,
-  numberToBytes,
-  sleep,
-  uint8ArrayToHexString,
-} from "./functions";
-import { logging } from "./logging";
 import { SpectodaWebSerialConnector } from "./connector/SpectodaWebSerialConnector";
+import { createNanoEvents, createNanoEventsWithWrappedEmit, detectAndroid, detectChrome, detectLinux, detectMacintosh, detectNode, detectSpectodaConnect, detectWindows, numberToBytes, sleep, uint8ArrayToHexString } from "./functions";
+import { logging } from "./logging";
 // import { SpectodaConnectConnector } from "./SpectodaConnectConnector.js";
-import { FlutterConnector } from "./connector/FlutterConnector.js";
 import { TimeTrack } from "./TimeTrack.js";
+import { FlutterConnector } from "./connector/FlutterConnector.js";
+import { SimulationConnector } from "./connector/SimulationConnector.js";
+import { COMMAND_FLAGS } from "./constants";
 import { PreviewController } from "./webassembly/PreviewController.js";
 import { SpectodaWasm } from "./webassembly/SpectodaWasm.js";
-import { COMMAND_FLAGS, Spectoda_JS } from "./webassembly/Spectoda_JS.js";
-import { SimulationConnector } from "./connector/SimulationConnector.js";
+import { Spectoda_JS } from "./webassembly/Spectoda_JS.js";
 
 import { TnglReader } from "./TnglReader.js";
 import { TnglWriter } from "./TnglWriter.js";
@@ -143,8 +130,8 @@ export class SpectodaRuntime {
     this.#lastUpdateTime = new Date().getTime();
     this.#lastUpdatePercentage = 0;
 
-    this.onConnected = e => { };
-    this.onDisconnected = e => { };
+    this.onConnected = e => {};
+    this.onDisconnected = e => {};
 
     this.#eventEmitter.on("ota_progress", value => {
       const now = new Date().getTime();
@@ -180,42 +167,42 @@ export class SpectodaRuntime {
       // @ts-ignore
 
       /** @type {HTMLBodyElement} */ document.querySelector("body").addEventListener("click", function (e) {
-      e.preventDefault();
+        e.preventDefault();
 
-      (function (e, d, w) {
-        if (!e.composedPath) {
-          e.composedPath = function () {
-            if (this.path) {
+        (function (e, d, w) {
+          if (!e.composedPath) {
+            e.composedPath = function () {
+              if (this.path) {
+                return this.path;
+              }
+              var target = this.target;
+
+              this.path = [];
+              while (target.parentNode !== null) {
+                this.path.push(target);
+                target = target.parentNode;
+              }
+              this.path.push(d, w);
               return this.path;
-            }
-            var target = this.target;
+            };
+          }
+        })(Event.prototype, document, window);
+        // @ts-ignore
+        const path = e.path || (e.composedPath && e.composedPath());
 
-            this.path = [];
-            while (target.parentNode !== null) {
-              this.path.push(target);
-              target = target.parentNode;
-            }
-            this.path.push(d, w);
-            return this.path;
-          };
+        // @ts-ignore
+        for (let el of path) {
+          if (el.tagName === "A" && el.getAttribute("target") === "_blank") {
+            e.preventDefault();
+            const url = el.getAttribute("href");
+            logging.verbose(url);
+            // @ts-ignore
+            logging.debug("Openning external url", url);
+            window.flutter_inappwebview.callHandler("openExternalUrl", url);
+            break;
+          }
         }
-      })(Event.prototype, document, window);
-      // @ts-ignore
-      const path = e.path || (e.composedPath && e.composedPath());
-
-      // @ts-ignore
-      for (let el of path) {
-        if (el.tagName === "A" && el.getAttribute("target") === "_blank") {
-          e.preventDefault();
-          const url = el.getAttribute("href");
-          logging.verbose(url);
-          // @ts-ignore
-          logging.debug("Openning external url", url);
-          window.flutter_inappwebview.callHandler("openExternalUrl", url);
-          break;
-        }
-      }
-    });
+      });
     }
 
     if (typeof window !== "undefined") {
@@ -351,7 +338,7 @@ export class SpectodaRuntime {
     }
 
     return (this.connector ? this.destroyConnector() : Promise.resolve())
-      .catch(() => { })
+      .catch(() => {})
       .then(() => {
         switch (connector_type) {
           case "none":
@@ -959,7 +946,7 @@ export class SpectodaRuntime {
                 {
                   try {
                     await this.requestWakeLock();
-                  } catch { }
+                  } catch {}
 
                   try {
                     await this.connector.updateFW(item.a).then(response => {
@@ -971,7 +958,7 @@ export class SpectodaRuntime {
 
                   try {
                     this.releaseWakeLock();
-                  } catch { }
+                  } catch {}
                 }
                 break;
 
@@ -1084,7 +1071,7 @@ export class SpectodaRuntime {
 
       for (let portTag = A_ASCII_CODE; portTag <= D_ASCII_CODE; portTag++) {
         const request_uuid = uuidCounter++;
-        const request_bytes = [COMMAND_FLAGS.FLAG_READ_PORT_PIXELS_REQUEST, ...numberToBytes(request_uuid, 4), portTag, PIXEL_ENCODING_CODE];
+        const request_bytes = [COMMAND_FLAGS.READ_PORT_PIXELS_REQUEST, ...numberToBytes(request_uuid, 4), portTag, PIXEL_ENCODING_CODE];
 
         logging.debug("Sending request", uint8ArrayToHexString(request_bytes));
         const response = await previewController.request(new Uint8Array(request_bytes), 123456789);
@@ -1093,7 +1080,7 @@ export class SpectodaRuntime {
         const tempReader = new TnglReader(new DataView(response.buffer));
 
         const response_flag = tempReader.readFlag();
-        if (response_flag !== COMMAND_FLAGS.FLAG_READ_PORT_PIXELS_RESPONSE) {
+        if (response_flag !== COMMAND_FLAGS.READ_PORT_PIXELS_RESPONSE) {
           logging.error("InvalidResponse1");
           continue;
         }
@@ -1113,7 +1100,7 @@ export class SpectodaRuntime {
           const pixelData = tempReader.readBytes(pixelDataSize);
           logging.debug("pixelData=", pixelData);
 
-          tempWriter.writeBytes([COMMAND_FLAGS.FLAG_WRITE_PORT_PIXELS_REQUEST, ...numberToBytes(uuidCounter++, 4), portTag, PIXEL_ENCODING_CODE, ...numberToBytes(pixelDataSize, 2), ...pixelData]);
+          tempWriter.writeBytes([COMMAND_FLAGS.WRITE_PORT_PIXELS_REQUEST, ...numberToBytes(uuidCounter++, 4), portTag, PIXEL_ENCODING_CODE, ...numberToBytes(pixelDataSize, 2), ...pixelData]);
         }
       }
 
@@ -1123,7 +1110,7 @@ export class SpectodaRuntime {
       const tempWriterDataView = tempWriter.bytes;
       const tempWriterDataArray = new Uint8Array(tempWriterDataView.buffer);
 
-      writer.writeBytes([COMMAND_FLAGS.FLAG_EVALUATE_ON_CONTROLLER_REQUEST, ...numberToBytes(uuidCounter++, 4), ...numberToBytes(controllerIdentifier, 4), ...numberToBytes(tempWriter.written, 2), ...tempWriterDataArray]);
+      writer.writeBytes([COMMAND_FLAGS.EVALUATE_ON_CONTROLLER_REQUEST, ...numberToBytes(uuidCounter++, 4), ...numberToBytes(controllerIdentifier, 4), ...numberToBytes(tempWriter.written, 2), ...tempWriterDataArray]);
     }
 
     const command_bytes = new Uint8Array(writer.bytes.buffer);

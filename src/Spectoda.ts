@@ -3,6 +3,7 @@ import { TimeTrack } from "./TimeTrack";
 import "./TnglReader";
 import { TnglReader } from "./TnglReader";
 import "./TnglWriter";
+import { COMMAND_FLAGS } from "./constants";
 import {
   colorToBytes,
   computeTnglFingerprint,
@@ -19,7 +20,6 @@ import {
   uint8ArrayToHexString,
 } from "./functions";
 import { logging, setLoggingLevel } from "./logging";
-import { COMMAND_FLAGS } from "./webassembly/Spectoda_JS";
 
 import { io } from "socket.io-client";
 import customParser from "socket.io-msgpack-parser";
@@ -688,7 +688,7 @@ export class Spectoda {
       tngl_bytes = this.#parser.parseTnglCode(tngl_code);
     }
 
-    const reinterpret_bytecode = [COMMAND_FLAGS.FLAG_REINTERPRET_TNGL, ...numberToBytes(this.runtime.clock.millis(), 6), 0, ...numberToBytes(tngl_bytes.length, 4), ...tngl_bytes];
+    const reinterpret_bytecode = [COMMAND_FLAGS.REINTERPRET_TNGL, ...numberToBytes(this.runtime.clock.millis(), 6), 0, ...numberToBytes(tngl_bytes.length, 4), ...tngl_bytes];
     this.runtime.evaluate(reinterpret_bytecode);
 
     return this.getTnglFingerprint().then(device_fingerprint => {
@@ -727,9 +727,9 @@ export class Spectoda {
     }
 
     const timeline_flags = this.runtime.timeline.paused() ? 0b00010000 : 0b00000000; // flags: [reserved,reserved,reserved,timeline_paused,reserved,reserved,reserved,reserved]
-    const timeline_bytecode = [COMMAND_FLAGS.FLAG_SET_TIMELINE, ...numberToBytes(this.runtime.clock.millis(), 6), ...numberToBytes(this.runtime.timeline.millis(), 4), timeline_flags];
+    const timeline_bytecode = [COMMAND_FLAGS.SET_TIMELINE, ...numberToBytes(this.runtime.clock.millis(), 6), ...numberToBytes(this.runtime.timeline.millis(), 4), timeline_flags];
 
-    const reinterpret_bytecode = [COMMAND_FLAGS.FLAG_REINTERPRET_TNGL, ...numberToBytes(this.runtime.clock.millis(), 6), 0, ...numberToBytes(tngl.bytecode.length, 4), ...tngl.bytecode];
+    const reinterpret_bytecode = [COMMAND_FLAGS.REINTERPRET_TNGL, ...numberToBytes(this.runtime.clock.millis(), 6), 0, ...numberToBytes(tngl.bytecode.length, 4), ...tngl.bytecode];
 
     const payload = [...timeline_bytecode, ...reinterpret_bytecode];
     return this.runtime.execute(payload, "TNGL").then(() => {
@@ -748,7 +748,7 @@ export class Spectoda {
     // }, 5000);
 
     const func = device_id => {
-      const payload = [COMMAND_FLAGS.FLAG_EMIT_EVENT, ...labelToBytes(eventLabel), ...numberToBytes(this.runtime.clock.millis() + 10, 6), numberToBytes(device_id, 1)];
+      const payload = [COMMAND_FLAGS.EMIT_EVENT, ...labelToBytes(eventLabel), ...numberToBytes(this.runtime.clock.millis() + 10, 6), numberToBytes(device_id, 1)];
       return this.runtime.execute(payload, force_delivery ? null : "E" + eventLabel + device_id);
     };
 
@@ -780,7 +780,7 @@ export class Spectoda {
     }
 
     const func = device_id => {
-      const payload = [COMMAND_FLAGS.FLAG_EMIT_TIMESTAMP_EVENT, ...numberToBytes(eventValue, 4), ...labelToBytes(eventLabel), ...numberToBytes(this.runtime.clock.millis() + 10, 6), numberToBytes(device_id, 1)];
+      const payload = [COMMAND_FLAGS.EMIT_TIMESTAMP_EVENT, ...numberToBytes(eventValue, 4), ...labelToBytes(eventLabel), ...numberToBytes(this.runtime.clock.millis() + 10, 6), numberToBytes(device_id, 1)];
       return this.runtime.execute(payload, force_delivery ? null : "E" + eventLabel + device_id);
     };
 
@@ -810,7 +810,7 @@ export class Spectoda {
     }
 
     const func = device_id => {
-      const payload = [COMMAND_FLAGS.FLAG_EMIT_COLOR_EVENT, ...colorToBytes(eventValue), ...labelToBytes(eventLabel), ...numberToBytes(this.runtime.clock.millis() + 10, 6), numberToBytes(device_id, 1)];
+      const payload = [COMMAND_FLAGS.EMIT_COLOR_EVENT, ...colorToBytes(eventValue), ...labelToBytes(eventLabel), ...numberToBytes(this.runtime.clock.millis() + 10, 6), numberToBytes(device_id, 1)];
       return this.runtime.execute(payload, force_delivery ? null : "E" + eventLabel + device_id);
     };
 
@@ -843,7 +843,7 @@ export class Spectoda {
     }
 
     const func = device_id => {
-      const payload = [COMMAND_FLAGS.FLAG_EMIT_PERCENTAGE_EVENT, ...percentageToBytes(eventValue), ...labelToBytes(eventLabel), ...numberToBytes(this.runtime.clock.millis() + 10, 6), numberToBytes(device_id, 1)];
+      const payload = [COMMAND_FLAGS.EMIT_PERCENTAGE_EVENT, ...percentageToBytes(eventValue), ...labelToBytes(eventLabel), ...numberToBytes(this.runtime.clock.millis() + 10, 6), numberToBytes(device_id, 1)];
       return this.runtime.execute(payload, force_delivery ? null : "E" + eventLabel + device_id);
     };
 
@@ -876,7 +876,7 @@ export class Spectoda {
     }
 
     const func = device_id => {
-      const payload = [COMMAND_FLAGS.FLAG_EMIT_LABEL_EVENT, ...labelToBytes(eventValue), ...labelToBytes(eventLabel), ...numberToBytes(this.runtime.clock.millis() + 10, 6), numberToBytes(device_id, 1)];
+      const payload = [COMMAND_FLAGS.EMIT_LABEL_EVENT, ...labelToBytes(eventValue), ...labelToBytes(eventLabel), ...numberToBytes(this.runtime.clock.millis() + 10, 6), numberToBytes(device_id, 1)];
       return this.runtime.execute(payload, force_delivery ? null : "E" + eventLabel + device_id);
     };
 
@@ -899,7 +899,7 @@ export class Spectoda {
     logging.debug(`> Synchronizing timeline to device`);
 
     const flags = this.runtime.timeline.paused() ? 0b00010000 : 0b00000000; // flags: [reserved,reserved,reserved,timeline_paused,reserved,reserved,reserved,reserved]
-    const payload = [COMMAND_FLAGS.FLAG_SET_TIMELINE, ...numberToBytes(this.runtime.clock.millis(), 6), ...numberToBytes(this.runtime.timeline.millis(), 4), flags];
+    const payload = [COMMAND_FLAGS.SET_TIMELINE, ...numberToBytes(this.runtime.clock.millis(), 6), ...numberToBytes(this.runtime.timeline.millis(), 4), flags];
     return this.runtime.execute(payload, "TMLN");
   }
 
@@ -929,7 +929,7 @@ export class Spectoda {
     logging.debug("> Synchronizing state...");
 
     const request_uuid = this.#getUUID();
-    const device_request = [COMMAND_FLAGS.FLAG_SYNC_STATE_REQUEST, ...numberToBytes(request_uuid, 4), deviceId];
+    const device_request = [COMMAND_FLAGS.SYNC_STATE_REQUEST, ...numberToBytes(request_uuid, 4), deviceId];
     return this.runtime.request(device_request, false);
   }
 
@@ -982,7 +982,7 @@ export class Spectoda {
           //===========// RESET //===========//
           logging.info("OTA RESET");
 
-          const command_bytes = [COMMAND_FLAGS.FLAG_OTA_RESET, 0x00, ...numberToBytes(0x00000000, 4)];
+          const command_bytes = [COMMAND_FLAGS.OTA_RESET, 0x00, ...numberToBytes(0x00000000, 4)];
           await this.runtime.execute(command_bytes, null);
         }
 
@@ -992,7 +992,7 @@ export class Spectoda {
           //===========// BEGIN //===========//
           logging.info("OTA BEGIN");
 
-          const command_bytes = [COMMAND_FLAGS.FLAG_OTA_BEGIN, 0x00, ...numberToBytes(firmware.length, 4)];
+          const command_bytes = [COMMAND_FLAGS.OTA_BEGIN, 0x00, ...numberToBytes(firmware.length, 4)];
           await this.runtime.execute(command_bytes, null, 20000);
         }
 
@@ -1010,7 +1010,7 @@ export class Spectoda {
               index_to = firmware.length;
             }
 
-            const command_bytes = [COMMAND_FLAGS.FLAG_OTA_WRITE, 0x00, ...numberToBytes(written, 4), ...firmware.slice(index_from, index_to)];
+            const command_bytes = [COMMAND_FLAGS.OTA_WRITE, 0x00, ...numberToBytes(written, 4), ...firmware.slice(index_from, index_to)];
             await this.runtime.execute(command_bytes, null, 20000);
 
             written += index_to - index_from;
@@ -1030,7 +1030,7 @@ export class Spectoda {
           //===========// END //===========//
           logging.info("OTA END");
 
-          const command_bytes = [COMMAND_FLAGS.FLAG_OTA_END, 0x00, ...numberToBytes(written, 4)];
+          const command_bytes = [COMMAND_FLAGS.OTA_END, 0x00, ...numberToBytes(written, 4)];
           await this.runtime.execute(command_bytes, null, 20000);
         }
 
@@ -1086,14 +1086,14 @@ export class Spectoda {
     }
 
     const request_uuid = this.#getUUID();
-    const bytes = [COMMAND_FLAGS.FLAG_FW_UPDATE_PEER_REQUEST, ...numberToBytes(request_uuid, 4), ...strMacToBytes(peer)];
+    const bytes = [COMMAND_FLAGS.FW_UPDATE_PEER_REQUEST, ...numberToBytes(request_uuid, 4), ...strMacToBytes(peer)];
 
     return this.runtime.request(bytes, true).then(response => {
       let reader = new TnglReader(response);
 
       logging.verbose(`response.byteLength=${response.byteLength}`);
 
-      if (reader.readFlag() !== COMMAND_FLAGS.FLAG_FW_UPDATE_PEER_RESPONSE) {
+      if (reader.readFlag() !== COMMAND_FLAGS.FW_UPDATE_PEER_RESPONSE) {
         throw "InvalidResponseFlag";
       }
 
@@ -1125,14 +1125,14 @@ export class Spectoda {
     logging.debug("> Reading device config...");
 
     const request_uuid = this.#getUUID();
-    const bytes = [COMMAND_FLAGS.FLAG_DEVICE_CONFIG_REQUEST, ...numberToBytes(request_uuid, 4)];
+    const bytes = [COMMAND_FLAGS.DEVICE_CONFIG_REQUEST, ...numberToBytes(request_uuid, 4)];
 
     return this.runtime.request(bytes, true).then(response => {
       let reader = new TnglReader(response);
 
       logging.verbose(`response.byteLength=${response.byteLength}`);
 
-      if (reader.readFlag() !== COMMAND_FLAGS.FLAG_DEVICE_CONFIG_RESPONSE) {
+      if (reader.readFlag() !== COMMAND_FLAGS.DEVICE_CONFIG_RESPONSE) {
         throw "InvalidResponseFlag";
       }
 
@@ -1189,13 +1189,13 @@ export class Spectoda {
 
     // make config update request
     const request_uuid = this.#getUUID();
-    const bytes = [COMMAND_FLAGS.FLAG_CONFIG_UPDATE_REQUEST, ...numberToBytes(request_uuid, 4), ...numberToBytes(config_bytes_size, 4), ...config_bytes];
+    const bytes = [COMMAND_FLAGS.CONFIG_UPDATE_REQUEST, ...numberToBytes(request_uuid, 4), ...numberToBytes(config_bytes_size, 4), ...config_bytes];
     return this.runtime.request(bytes, true).then(response => {
       let reader = new TnglReader(response);
 
       logging.verbose(`response.byteLength=${response.byteLength}`);
 
-      if (reader.readFlag() !== COMMAND_FLAGS.FLAG_CONFIG_UPDATE_RESPONSE) {
+      if (reader.readFlag() !== COMMAND_FLAGS.CONFIG_UPDATE_RESPONSE) {
         throw "InvalidResponse";
       }
 
@@ -1212,7 +1212,7 @@ export class Spectoda {
       if (error_code === 0) {
         logging.info("Write Config Success");
         // reboot device
-        const payload = [COMMAND_FLAGS.FLAG_DEVICE_REBOOT_REQUEST];
+        const payload = [COMMAND_FLAGS.DEVICE_REBOOT_REQUEST];
         return this.runtime.request(payload, false);
       } else {
         throw "Fail";
@@ -1232,14 +1232,14 @@ export class Spectoda {
     logging.debug("> Requesting timeline...");
 
     const request_uuid = this.#getUUID();
-    const bytes = [COMMAND_FLAGS.FLAG_TIMELINE_REQUEST, ...numberToBytes(request_uuid, 4)];
+    const bytes = [COMMAND_FLAGS.TIMELINE_REQUEST, ...numberToBytes(request_uuid, 4)];
 
     return this.runtime.request(bytes, true).then(response => {
       logging.verbose(`response.byteLength=${response.byteLength}`);
 
       let reader = new TnglReader(response);
 
-      if (reader.readFlag() !== COMMAND_FLAGS.FLAG_TIMELINE_RESPONSE) {
+      if (reader.readFlag() !== COMMAND_FLAGS.TIMELINE_RESPONSE) {
         throw "InvalidResponseFlag";
       }
 
@@ -1278,7 +1278,7 @@ export class Spectoda {
     // TODO
     logging.debug("> Rebooting device...");
 
-    const payload = [COMMAND_FLAGS.FLAG_DEVICE_REBOOT_REQUEST];
+    const payload = [COMMAND_FLAGS.DEVICE_REBOOT_REQUEST];
     return this.runtime.request(payload, false);
   }
 
@@ -1292,14 +1292,14 @@ export class Spectoda {
     logging.debug("> Removing owner...");
 
     const request_uuid = this.#getUUID();
-    const bytes = [COMMAND_FLAGS.FLAG_ERASE_OWNER_REQUEST, ...numberToBytes(request_uuid, 4)];
+    const bytes = [COMMAND_FLAGS.ERASE_OWNER_REQUEST, ...numberToBytes(request_uuid, 4)];
 
     return this.runtime.request(bytes, true).then(response => {
       let reader = new TnglReader(response);
 
       logging.verbose(`response.byteLength=${response.byteLength}`);
 
-      if (reader.readFlag() !== COMMAND_FLAGS.FLAG_ERASE_OWNER_RESPONSE) {
+      if (reader.readFlag() !== COMMAND_FLAGS.ERASE_OWNER_RESPONSE) {
         throw "InvalidResponseFlag";
       }
 
@@ -1348,14 +1348,14 @@ export class Spectoda {
     logging.debug("> Requesting fw version...");
 
     const request_uuid = this.#getUUID();
-    const bytes = [COMMAND_FLAGS.FLAG_FW_VERSION_REQUEST, ...numberToBytes(request_uuid, 4)];
+    const bytes = [COMMAND_FLAGS.FW_VERSION_REQUEST, ...numberToBytes(request_uuid, 4)];
 
     return this.runtime.request(bytes, true).then(response => {
       let reader = new TnglReader(response);
 
       logging.verbose(`response.byteLength=${response.byteLength}`);
 
-      if (reader.readFlag() !== COMMAND_FLAGS.FLAG_FW_VERSION_RESPONSE) {
+      if (reader.readFlag() !== COMMAND_FLAGS.FW_VERSION_RESPONSE) {
         throw "InvalidResponseFlag";
       }
 
@@ -1396,14 +1396,14 @@ export class Spectoda {
     logging.debug("> Getting TNGL fingerprint...");
 
     const request_uuid = this.#getUUID();
-    const bytes = [COMMAND_FLAGS.FLAG_TNGL_FINGERPRINT_REQUEST, ...numberToBytes(request_uuid, 4), 0];
+    const bytes = [COMMAND_FLAGS.TNGL_FINGERPRINT_REQUEST, ...numberToBytes(request_uuid, 4), 0];
 
     return this.runtime.request(bytes, true).then(response => {
       let reader = new TnglReader(response);
 
       logging.verbose("response:", response);
 
-      if (reader.readFlag() !== COMMAND_FLAGS.FLAG_TNGL_FINGERPRINT_RESPONSE) {
+      if (reader.readFlag() !== COMMAND_FLAGS.TNGL_FINGERPRINT_RESPONSE) {
         throw "InvalidResponseFlag";
       }
 
@@ -1448,14 +1448,14 @@ export class Spectoda {
     logging.debug("> Requesting connected peers info...");
 
     const request_uuid = this.#getUUID();
-    const bytes = [COMMAND_FLAGS.FLAG_CONNECTED_PEERS_INFO_REQUEST, ...numberToBytes(request_uuid, 4)];
+    const bytes = [COMMAND_FLAGS.CONNECTED_PEERS_INFO_REQUEST, ...numberToBytes(request_uuid, 4)];
 
     return this.runtime.request(bytes, true).then(response => {
       let reader = new TnglReader(response);
 
       logging.verbose(`response.byteLength=${response.byteLength}`);
 
-      if (reader.readFlag() !== COMMAND_FLAGS.FLAG_CONNECTED_PEERS_INFO_RESPONSE) {
+      if (reader.readFlag() !== COMMAND_FLAGS.CONNECTED_PEERS_INFO_RESPONSE) {
         throw "InvalidResponseFlag";
       }
 
@@ -1509,14 +1509,14 @@ export class Spectoda {
     logging.debug("> Requesting event history bytecode...");
 
     const request_uuid = this.#getUUID();
-    const bytes = [COMMAND_FLAGS.FLAG_EVENT_HISTORY_BC_REQUEST, ...numberToBytes(request_uuid, 4)];
+    const bytes = [COMMAND_FLAGS.EVENT_HISTORY_BC_REQUEST, ...numberToBytes(request_uuid, 4)];
 
     return this.runtime.request(bytes, true).then(response => {
       let reader = new TnglReader(response);
 
       logging.info(`response.byteLength=${response.byteLength}`);
 
-      if (reader.readFlag() !== COMMAND_FLAGS.FLAG_EVENT_HISTORY_BC_RESPONSE) {
+      if (reader.readFlag() !== COMMAND_FLAGS.EVENT_HISTORY_BC_RESPONSE) {
         logging.error("InvalidResponseFlag");
         throw "InvalidResponseFlag";
       }
@@ -1557,7 +1557,7 @@ export class Spectoda {
     logging.debug("> Erasing event history...");
 
     const request_uuid = this.#getUUID();
-    const bytes = [COMMAND_FLAGS.FLAG_ERASE_EVENT_HISTORY_REQUEST, ...numberToBytes(request_uuid, 4)];
+    const bytes = [COMMAND_FLAGS.ERASE_EVENT_HISTORY_REQUEST, ...numberToBytes(request_uuid, 4)];
 
     return this.runtime.execute(bytes, true);
   }
@@ -1574,7 +1574,7 @@ export class Spectoda {
     logging.debug("> Sleep device...");
 
     const request_uuid = this.#getUUID();
-    const payload = [COMMAND_FLAGS.FLAG_SLEEP_REQUEST, ...numberToBytes(request_uuid, 4)];
+    const payload = [COMMAND_FLAGS.SLEEP_REQUEST, ...numberToBytes(request_uuid, 4)];
     return this.runtime.request(payload, false);
   }
 
@@ -1585,7 +1585,7 @@ export class Spectoda {
     logging.debug("> Saving state...");
 
     const request_uuid = this.#getUUID();
-    const payload = [COMMAND_FLAGS.FLAG_SAVE_STATE_REQUEST, ...numberToBytes(request_uuid, 4)];
+    const payload = [COMMAND_FLAGS.SAVE_STATE_REQUEST, ...numberToBytes(request_uuid, 4)];
     return this.runtime.execute(payload, null);
   }
 
@@ -1607,7 +1607,7 @@ export class Spectoda {
     logging.verbose("owner_key_bytes=", owner_key_bytes);
 
     const request_uuid = this.#getUUID();
-    const bytes = [COMMAND_FLAGS.FLAG_ADOPT_REQUEST, ...numberToBytes(request_uuid, 4), ...owner_signature_bytes, ...owner_key_bytes];
+    const bytes = [COMMAND_FLAGS.ADOPT_REQUEST, ...numberToBytes(request_uuid, 4), ...owner_signature_bytes, ...owner_key_bytes];
 
     logging.verbose(bytes);
 
@@ -1618,7 +1618,7 @@ export class Spectoda {
 
         logging.verbose("response=", response);
 
-        if (reader.readFlag() !== COMMAND_FLAGS.FLAG_ADOPT_RESPONSE) {
+        if (reader.readFlag() !== COMMAND_FLAGS.ADOPT_RESPONSE) {
           throw "InvalidResponse";
         }
 
@@ -1688,7 +1688,7 @@ export class Spectoda {
     logging.debug("> Writing Controller Name...");
 
     const request_uuid = this.#getUUID();
-    const payload = [COMMAND_FLAGS.FLAG_WRITE_CONTROLLER_NAME_REQUEST, ...numberToBytes(request_uuid, 4), ...stringToBytes(name, 16)];
+    const payload = [COMMAND_FLAGS.WRITE_CONTROLLER_NAME_REQUEST, ...numberToBytes(request_uuid, 4), ...stringToBytes(name, 16)];
     return this.runtime.request(payload, false);
   }
 
@@ -1702,14 +1702,14 @@ export class Spectoda {
     logging.debug("> Reading Controller Name...");
 
     const request_uuid = this.#getUUID();
-    const bytes = [COMMAND_FLAGS.FLAG_READ_CONTROLLER_NAME_REQUEST, ...numberToBytes(request_uuid, 4)];
+    const bytes = [COMMAND_FLAGS.READ_CONTROLLER_NAME_REQUEST, ...numberToBytes(request_uuid, 4)];
 
     return this.runtime.request(bytes, true).then(response => {
       let reader = new TnglReader(response);
 
       logging.verbose(`response.byteLength=${response.byteLength}`);
 
-      if (reader.readFlag() !== COMMAND_FLAGS.FLAG_READ_CONTROLLER_NAME_RESPONSE) {
+      if (reader.readFlag() !== COMMAND_FLAGS.READ_CONTROLLER_NAME_RESPONSE) {
         throw "InvalidResponseFlag";
       }
 
@@ -1799,14 +1799,14 @@ export class Spectoda {
     logging.debug("> Writing controller codes...");
 
     const request_uuid = this.#getUUID();
-    const bytes = [COMMAND_FLAGS.FLAG_WRITE_CONTROLLER_CODES_REQUEST, ...numberToBytes(request_uuid, 4), ...numberToBytes(pcb_code, 2), ...numberToBytes(product_code, 2)];
+    const bytes = [COMMAND_FLAGS.WRITE_CONTROLLER_CODES_REQUEST, ...numberToBytes(request_uuid, 4), ...numberToBytes(pcb_code, 2), ...numberToBytes(product_code, 2)];
 
     return this.runtime.request(bytes, true).then(response => {
       let reader = new TnglReader(response);
 
       logging.verbose(`response.byteLength=${response.byteLength}`);
 
-      if (reader.readFlag() !== COMMAND_FLAGS.FLAG_WRITE_CONTROLLER_CODES_RESPONSE) {
+      if (reader.readFlag() !== COMMAND_FLAGS.WRITE_CONTROLLER_CODES_RESPONSE) {
         throw "InvalidResponseFlag";
       }
 
@@ -1832,14 +1832,14 @@ export class Spectoda {
     logging.debug("> Requesting controller codes ...");
 
     const request_uuid = this.#getUUID();
-    const bytes = [COMMAND_FLAGS.FLAG_READ_CONTROLLER_CODES_REQUEST, ...numberToBytes(request_uuid, 4)];
+    const bytes = [COMMAND_FLAGS.READ_CONTROLLER_CODES_REQUEST, ...numberToBytes(request_uuid, 4)];
 
     return this.runtime.request(bytes, true).then(response => {
       let reader = new TnglReader(response);
 
       logging.verbose("response=", response);
 
-      if (reader.readFlag() !== COMMAND_FLAGS.FLAG_READ_CONTROLLER_CODES_RESPONSE) {
+      if (reader.readFlag() !== COMMAND_FLAGS.READ_CONTROLLER_CODES_RESPONSE) {
         throw "InvalidResponseFlag";
       }
 

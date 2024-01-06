@@ -1,9 +1,9 @@
-import { logging } from "../logging";
-import { sleep } from "../functions";
 import { TimeTrack } from "../TimeTrack.js";
-import { COMMAND_FLAGS } from "../webassembly/Spectoda_JS.js";
 import { TnglReader } from "../TnglReader.js";
 import { TnglWriter } from "../TnglWriter.js";
+import { COMMAND_FLAGS } from "../constants.js";
+import { sleep } from "../functions";
+import { logging } from "../logging";
 
 /////////////////////////////////////////////////////////////////////////////////////
 
@@ -273,7 +273,7 @@ criteria example:
       let reader = new TnglReader(new DataView(new Uint8Array(payload).buffer));
 
       switch (reader.peekFlag()) {
-        case COMMAND_FLAGS.FLAG_ADOPT_REQUEST:
+        case COMMAND_FLAGS.ADOPT_REQUEST:
           {
             reader.readFlag(); // COMMAND_FLAGS.FLAG_ADOPT_REQUEST
 
@@ -297,7 +297,7 @@ criteria example:
             // // log_d("error_code=%u", error_code);
 
             let writer = new TnglWriter(64);
-            writer.writeFlag(COMMAND_FLAGS.FLAG_ADOPT_RESPONSE);
+            writer.writeFlag(COMMAND_FLAGS.ADOPT_RESPONSE);
             writer.writeUint32(request_uuid);
             writer.writeUint8(error_code);
 
@@ -309,7 +309,7 @@ criteria example:
           }
           break;
 
-        case COMMAND_FLAGS.FLAG_CONFIG_UPDATE_REQUEST:
+        case COMMAND_FLAGS.CONFIG_UPDATE_REQUEST:
           {
             // log_d("FLAG_CONFIG_UPDATE_REQUEST");
             reader.readFlag(); // COMMAND_FLAGS.FLAG_CONFIG_UPDATE_REQUEST
@@ -329,7 +329,7 @@ criteria example:
             // log_d("error_code=%u", error_code);
 
             let writer = new TnglWriter(64);
-            writer.writeFlag(COMMAND_FLAGS.FLAG_CONFIG_UPDATE_RESPONSE);
+            writer.writeFlag(COMMAND_FLAGS.CONFIG_UPDATE_RESPONSE);
             writer.writeUint32(request_uuid);
             writer.writeUint8(error_code);
 
@@ -337,7 +337,7 @@ criteria example:
           }
           break;
 
-        case COMMAND_FLAGS.FLAG_TIMELINE_REQUEST:
+        case COMMAND_FLAGS.TIMELINE_REQUEST:
           {
             reader.readFlag(); // COMMAND_FLAGS.FLAG_TIMELINE_REQUEST
 
@@ -352,7 +352,7 @@ criteria example:
             // // log_d("timeline_paused = %s", timeline_paused ? "true" : "false");
 
             let writer = new TnglWriter(64);
-            writer.writeFlag(COMMAND_FLAGS.FLAG_TIMELINE_RESPONSE);
+            writer.writeFlag(COMMAND_FLAGS.TIMELINE_RESPONSE);
             writer.writeUint32(request_uuid);
             writer.writeInt32(0); // clock_timestamp
             writer.writeInt32(0); //timeline_timestamp
@@ -362,7 +362,7 @@ criteria example:
           }
           break;
 
-        case COMMAND_FLAGS.FLAG_TNGL_FINGERPRINT_REQUEST:
+        case COMMAND_FLAGS.TNGL_FINGERPRINT_REQUEST:
           {
             // log_d("FLAG_TNGL_FINGERPRINT_REQUEST");
 
@@ -381,22 +381,19 @@ criteria example:
             // log_d("error_code=%u", error_code);
 
             let writer = new TnglWriter(64);
-            writer.writeFlag(COMMAND_FLAGS.FLAG_TNGL_FINGERPRINT_RESPONSE);
+            writer.writeFlag(COMMAND_FLAGS.TNGL_FINGERPRINT_RESPONSE);
             writer.writeUint32(request_uuid);
             writer.writeUint8(error_code);
 
             if (error_code == ERROR_CODE_SUCCESS) {
-              writer.writeBytes(
-                [0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00],
-                32,
-              );
+              writer.writeBytes([0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00], 32);
             }
 
             resolve(writer.bytes);
           }
           break;
 
-        case COMMAND_FLAGS.FLAG_ERASE_OWNER_REQUEST:
+        case COMMAND_FLAGS.ERASE_OWNER_REQUEST:
           {
             // log_d("FLAG_ERASE_OWNER_REQUEST");
             reader.readFlag(); // FLAG_ERASE_OWNER_REQUEST
@@ -414,7 +411,7 @@ criteria example:
             // log_d("error_code=%u", error_code);
 
             let writer = new TnglWriter(64);
-            writer.writeFlag(COMMAND_FLAGS.FLAG_ERASE_OWNER_RESPONSE);
+            writer.writeFlag(COMMAND_FLAGS.ERASE_OWNER_RESPONSE);
             writer.writeUint32(request_uuid);
             writer.writeUint8(error_code);
 
@@ -427,7 +424,7 @@ criteria example:
           }
           break;
 
-        case COMMAND_FLAGS.FLAG_FW_VERSION_REQUEST:
+        case COMMAND_FLAGS.FW_VERSION_REQUEST:
           {
             // log_d("FLAG_FW_VERSION_REQUEST");
             reader.readFlag(); // FLAG_FW_VERSION_REQUEST
@@ -439,7 +436,7 @@ criteria example:
             // log_d("error_code=%u", error_code);
 
             let writer = new TnglWriter(64);
-            writer.writeFlag(COMMAND_FLAGS.FLAG_FW_VERSION_RESPONSE);
+            writer.writeFlag(COMMAND_FLAGS.FW_VERSION_RESPONSE);
             writer.writeUint32(request_uuid);
             writer.writeUint8(error_code);
 
@@ -544,11 +541,11 @@ criteria example:
     logging.verbose(`destroy()`);
 
     return this.disconnect()
-      .catch(() => { })
+      .catch(() => {})
       .then(() => {
         return this.unselect();
       })
-      .catch(() => { });
+      .catch(() => {});
 
     return Promise.resolve();
   }
