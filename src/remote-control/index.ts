@@ -75,8 +75,6 @@ export function createRemoteSpectoda() {
 
       return new Proxy(this, {
         get: (_, command) => {
-          // if (!isAllowedCommand(command)) throw new Error(`Command ${String(command)} is not allowed`);
-
           switch (command) {
             case "on": {
               return (eventName: string, callback: unknown) => {

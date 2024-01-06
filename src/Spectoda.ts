@@ -24,7 +24,8 @@ import { COMMAND_FLAGS } from "./webassembly/Spectoda_JS";
 import { io } from "socket.io-client";
 import customParser from "socket.io-msgpack-parser";
 import { SpectodaRuntime, allEventsEmitter } from "./SpectodaRuntime";
-import { WEBSOCKET_URL } from "./SpectodaWebSocketsConnector";
+import { BROADCAST_ID } from "./constants";
+import { WEBSOCKET_URL } from "./remote-control";
 
 // should not create more than one object!
 // the destruction of the Spectoda is not well implemented
@@ -36,11 +37,15 @@ import { WEBSOCKET_URL } from "./SpectodaWebSocketsConnector";
 export type ConnectorType = "default" | "bluetooth" | "serial" | "websockets" | "simulated" | "dummy";
 export type ConnectionState = "connected" | "connecting" | "disconnected" | "disconnecting";
 
-type SpectodaIds = number | number[];
 type SpectodaId = number;
+type SpectodaIds = SpectodaId | SpectodaId[];
 
-const DEFAULT_SIGNATURE = "00000000000000000000000000000000";
-const DEFAULT_KEY = "00000000000000000000000000000000";
+// Event label has maximally 5 chars
+// Example: evt1
+type EventLabel = string;
+
+export const DEFAULT_SIGNATURE = "00000000000000000000000000000000";
+export const DEFAULT_KEY = DEFAULT_SIGNATURE;
 const USE_ALL_CONNECTIONS = ["*/ff:ff:ff:ff:ff:ff"];
 
 type Tngl = { code: string | undefined; bytecode: Uint8Array | undefined };
@@ -732,7 +737,7 @@ export class Spectoda {
     });
   }
 
-  emitEmptyEvent(connection: string[], eventLabel: string, eventIds: SpectodaIds = 0xff, options = { forceDelivery: false }): Promise<void> {
+  emitEmptyEvent(connection: string[], eventLabel: EventLabel, eventIds: SpectodaIds = BROADCAST_ID, options = { forceDelivery: false }): Promise<void> {
     logging.verbose(`emitEmptyEvent(connection=${connection}, eventLabel=${eventLabel}, eventIds=${eventIds}, options=${options})`);
 
     // TODO
@@ -743,8 +748,8 @@ export class Spectoda {
     // }, 5000);
 
     const func = device_id => {
-      const payload = [COMMAND_FLAGS.FLAG_EMIT_EVENT, ...labelToBytes(event_label), ...numberToBytes(this.runtime.clock.millis() + 10, 6), numberToBytes(device_id, 1)];
-      return this.runtime.execute(payload, force_delivery ? null : "E" + event_label + device_id);
+      const payload = [COMMAND_FLAGS.FLAG_EMIT_EVENT, ...labelToBytes(eventLabel), ...numberToBytes(this.runtime.clock.millis() + 10, 6), numberToBytes(device_id, 1)];
+      return this.runtime.execute(payload, force_delivery ? null : "E" + eventLabel + device_id);
     };
 
     if (typeof device_ids === "object") {
@@ -755,9 +760,7 @@ export class Spectoda {
     }
   }
 
-  // event_label example: "evt1"
-  // event_value example: 1000
-  emitTimestampEvent(connection: string[], eventLabel: string, eventTimestampValue: number, eventIds: SpectodaIds = 0xff, options = { forceDelivery: false }): Promise<void> {
+  emitTimestampEvent(connection: string[], eventLabel: EventLabel, eventTimestampValue: number, eventIds: SpectodaIds = BROADCAST_ID, options = { forceDelivery: false }): Promise<void> {
     logging.verbose(`emitTimestampEvent(connection=${connection}, eventLabel=${eventLabel}, eventTimestampValue=${eventTimestampValue}, eventIds=${eventIds}, options=${options})`);
 
     // TODO
@@ -766,19 +769,19 @@ export class Spectoda {
     //   this.saveState();
     // }, 5000);
 
-    if (event_value > 2147483647) {
+    if (eventValue > 2147483647) {
       logging.error("Invalid event value");
-      event_value = 2147483647;
+      eventValue = 2147483647;
     }
 
-    if (event_value < -2147483648) {
+    if (eventValue < -2147483648) {
       logging.error("Invalid event value");
-      event_value = -2147483648;
+      eventValue = -2147483648;
     }
 
     const func = device_id => {
-      const payload = [COMMAND_FLAGS.FLAG_EMIT_TIMESTAMP_EVENT, ...numberToBytes(event_value, 4), ...labelToBytes(event_label), ...numberToBytes(this.runtime.clock.millis() + 10, 6), numberToBytes(device_id, 1)];
-      return this.runtime.execute(payload, force_delivery ? null : "E" + event_label + device_id);
+      const payload = [COMMAND_FLAGS.FLAG_EMIT_TIMESTAMP_EVENT, ...numberToBytes(eventValue, 4), ...labelToBytes(eventLabel), ...numberToBytes(this.runtime.clock.millis() + 10, 6), numberToBytes(device_id, 1)];
+      return this.runtime.execute(payload, force_delivery ? null : "E" + eventLabel + device_id);
     };
 
     if (typeof device_ids === "object") {
@@ -789,9 +792,7 @@ export class Spectoda {
     }
   }
 
-  // event_label example: "evt1"
-  // event_value example: "#00aaff"
-  emitColorEvent(connection: string[], eventLabel: string, eventColorValue: string, eventIds: SpectodaIds = 0xff, options = { forceDelivery: false }): Promise<void> {
+  emitColorEvent(connection: string[], eventLabel: EventLabel, eventColorValue: string, eventIds: SpectodaIds = BROADCAST_ID, options = { forceDelivery: false }): Promise<void> {
     logging.verbose(`emitColorEvent(connection=${connection}, eventLabel=${eventLabel}, eventColorValue=${eventColorValue}, eventIds=${eventIds}, options=${options})`);
 
     // TODO
@@ -801,16 +802,16 @@ export class Spectoda {
     //   this.saveState();
     // }, 5000);
 
-    event_value = cssColorToHex(event_value);
+    eventValue = cssColorToHex(eventValue);
 
-    if (!event_value || !event_value.match(/#[\dabcdefABCDEF]{6}/g)) {
-      logging.error("Invalid event value. event_value=", event_value);
-      event_value = "#000000";
+    if (!eventValue || !eventValue.match(/#[\dabcdefABCDEF]{6}/g)) {
+      logging.error("Invalid event value. eventValue=", eventValue);
+      eventValue = "#000000";
     }
 
     const func = device_id => {
-      const payload = [COMMAND_FLAGS.FLAG_EMIT_COLOR_EVENT, ...colorToBytes(event_value), ...labelToBytes(event_label), ...numberToBytes(this.runtime.clock.millis() + 10, 6), numberToBytes(device_id, 1)];
-      return this.runtime.execute(payload, force_delivery ? null : "E" + event_label + device_id);
+      const payload = [COMMAND_FLAGS.FLAG_EMIT_COLOR_EVENT, ...colorToBytes(eventValue), ...labelToBytes(eventLabel), ...numberToBytes(this.runtime.clock.millis() + 10, 6), numberToBytes(device_id, 1)];
+      return this.runtime.execute(payload, force_delivery ? null : "E" + eventLabel + device_id);
     };
 
     if (typeof device_ids === "object") {
@@ -821,9 +822,7 @@ export class Spectoda {
     }
   }
 
-  // event_label example: "evt1"
-  // event_value example: 100.0
-  emitPercentageEvent(connection: string[], eventLabel: string, eventPercentageValue: number, eventIds: SpectodaIds = 0xff, options = { forceDelivery: false }): Promise<void> {
+  emitPercentageEvent(connection: string[], eventLabel: EventLabel, eventPercentageValue: number, eventIds: SpectodaIds = BROADCAST_ID, options = { forceDelivery: false }): Promise<void> {
     logging.info(`emitPercentageEvent(connection=${connection}, eventLabel=${eventLabel}, eventPercentageValue=${eventPercentageValue}, eventIds=${eventIds}, options=${options})`);
 
     // TODO
@@ -833,19 +832,19 @@ export class Spectoda {
     //   this.saveState();
     // }, 5000);
 
-    if (event_value > 100.0) {
+    if (eventValue > 100.0) {
       logging.error("Invalid event value");
-      event_value = 100.0;
+      eventValue = 100.0;
     }
 
-    if (event_value < -100.0) {
+    if (eventValue < -100.0) {
       logging.error("Invalid event value");
-      event_value = -100.0;
+      eventValue = -100.0;
     }
 
     const func = device_id => {
-      const payload = [COMMAND_FLAGS.FLAG_EMIT_PERCENTAGE_EVENT, ...percentageToBytes(event_value), ...labelToBytes(event_label), ...numberToBytes(this.runtime.clock.millis() + 10, 6), numberToBytes(device_id, 1)];
-      return this.runtime.execute(payload, force_delivery ? null : "E" + event_label + device_id);
+      const payload = [COMMAND_FLAGS.FLAG_EMIT_PERCENTAGE_EVENT, ...percentageToBytes(eventValue), ...labelToBytes(eventLabel), ...numberToBytes(this.runtime.clock.millis() + 10, 6), numberToBytes(device_id, 1)];
+      return this.runtime.execute(payload, force_delivery ? null : "E" + eventLabel + device_id);
     };
 
     if (typeof device_ids === "object") {
@@ -856,9 +855,8 @@ export class Spectoda {
     }
   }
 
-  // event_label example: "evt1"
-  // event_value example: "label"
-  emitLabelEvent(connection: string[], eventLabel: string, eventLabelValue: string, eventIds: SpectodaIds = 0xff, options = { forceDelivery: false }): Promise<void> {
+  // eventValue example: "label"
+  emitLabelEvent(connection: string[], eventLabel: EventLabel, eventLabelValue: string, eventIds: SpectodaIds = BROADCAST_ID, options = { forceDelivery: false }): Promise<void> {
     logging.verbose(`emitLabelEvent(connection=${connection}, eventLabel=${eventLabel}, eventLabelValue=${eventLabelValue}, eventIds=${eventIds}, options=${options})`);
 
     // TODO
@@ -867,19 +865,19 @@ export class Spectoda {
     //   this.saveState();
     // }, 5000);
 
-    if (typeof event_value !== "string") {
+    if (typeof eventValue !== "string") {
       logging.error("Invalid event value");
-      event_value = "";
+      eventValue = "";
     }
 
-    if (event_value.length > 5) {
+    if (eventValue.length > 5) {
       logging.error("Invalid event value");
-      event_value = event_value.slice(0, 5);
+      eventValue = eventValue.slice(0, 5);
     }
 
     const func = device_id => {
-      const payload = [COMMAND_FLAGS.FLAG_EMIT_LABEL_EVENT, ...labelToBytes(event_value), ...labelToBytes(event_label), ...numberToBytes(this.runtime.clock.millis() + 10, 6), numberToBytes(device_id, 1)];
-      return this.runtime.execute(payload, force_delivery ? null : "E" + event_label + device_id);
+      const payload = [COMMAND_FLAGS.FLAG_EMIT_LABEL_EVENT, ...labelToBytes(eventValue), ...labelToBytes(eventLabel), ...numberToBytes(this.runtime.clock.millis() + 10, 6), numberToBytes(device_id, 1)];
+      return this.runtime.execute(payload, force_delivery ? null : "E" + eventLabel + device_id);
     };
 
     if (typeof device_ids === "object") {
@@ -924,7 +922,7 @@ export class Spectoda {
    * Forces a state of some source ID to target IDs on the whole network
    */
   //! PARAMETERS UPDATED
-  syncState(connection: string[], sourceId: SpectodaId, targetIds: SpectodaIds = 0xff, connectionToSyncWith: string[] = ["*/ff:ff:ff:ff:ff:ff"]): Promise<void> {
+  syncState(connection: string[], sourceId: SpectodaId, targetIds: SpectodaIds = BROADCAST_ID, connectionToSyncWith: string[] = ["*/ff:ff:ff:ff:ff:ff"]): Promise<void> {
     logging.error("syncState() is deprecated use applyState() instead");
 
     // TODO
@@ -1322,7 +1320,7 @@ export class Spectoda {
       const removed_device_mac_bytes = reader.readBytes(6);
 
       return this.rebootDevice()
-        .catch(() => { })
+        .catch(() => {})
         .then(() => {
           let removed_device_mac = "00:00:00:00:00:00";
           if (removed_device_mac_bytes.length >= 6) {
@@ -1966,7 +1964,7 @@ export class Spectoda {
 
   /**
      *
-     * @param {*} event_label
+     * @param {*} eventLabel
      * @param {number|number[]} device_ids
      * @param {*} force_delivery
   
@@ -1974,7 +1972,7 @@ export class Spectoda {
      * @deprecated use emitEmptyEvent() instead
      */
   //! DEPRECATED emitEvent() -> emitEmptyEvent()
-  emitEvent(event_label: any, device_ids = [0xff], force_delivery = true) {
+  emitEvent(eventLabel: EventLabel, device_ids = [0xff], force_delivery = true) {
     logging.error("emitEvent() is deprecated. Use emitEmptyEvent() instead");
     throw "Deprecated";
   }
