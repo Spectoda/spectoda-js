@@ -1,11 +1,11 @@
-import { TimeTrack } from "../TimeTrack.js";
-import { TnglReader } from "../TnglReader.js";
-import { TnglWriter } from "../TnglWriter.js";
-import { COMMAND_FLAGS } from "../constants.js";
+import { TimeTrack } from "../TimeTrack";
+import { TnglReader } from "../TnglReader";
+import { TnglWriter } from "../TnglWriter";
+import { COMMAND_FLAGS } from "../constants";
 import { sleep } from "../functions";
 import { logging } from "../logging";
 
-/////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
 
 // Connector connects the application with one Spectoda Device, that is then in a
 // position of a controller for other Spectoda Devices

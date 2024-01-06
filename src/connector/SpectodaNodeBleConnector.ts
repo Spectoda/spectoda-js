@@ -1,6 +1,6 @@
-import { TimeTrack } from "../TimeTrack.js";
-import { TnglReader } from "../TnglReader.js";
-import { COMMAND_FLAGS } from "../constants.js";
+import { TimeTrack } from "../TimeTrack";
+import { TnglReader } from "../TnglReader";
+import { COMMAND_FLAGS } from "../constants";
 import { detectGW, numberToBytes, sleep, toBytes } from "../functions";
 import { logging } from "../logging";
 
