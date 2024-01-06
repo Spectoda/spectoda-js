@@ -20,7 +20,6 @@ import { SpectodaWebSerialConnector } from "./connector/SpectodaWebSerialConnect
 // import { SpectodaConnectConnector } from "./SpectodaConnectConnector.js";
 import { FlutterConnector } from "./connector/FlutterConnector.js";
 import { TimeTrack } from "./TimeTrack.js";
-import { t } from "../lib/i18n.js";
 import { PreviewController } from "./webassembly/PreviewController.js";
 import { SpectodaWasm } from "./webassembly/SpectodaWasm.js";
 import { COMMAND_FLAGS, Spectoda_JS } from "./webassembly/Spectoda_JS.js";
@@ -387,51 +386,6 @@ export class SpectodaRuntime {
             if ((detectAndroid() && detectChrome()) || (detectMacintosh() && detectChrome()) || (detectWindows() && detectChrome()) || (detectLinux() && detectChrome())) {
               this.connector = new SpectodaWebBluetoothConnector(this);
             } else {
-              // iPhone outside Bluefy and SpectodaConnect
-              if (detectIPhone()) {
-                // @ts-ignore
-                window.confirm(t("Z tohoto webového prohlížeče bohužel není možné NARU ovládat. Prosím, stáhněte si aplikaci Spectoda Connect."), t("Prohlížeč není podporován")).then(result => {
-                  if (result) {
-                    // redirect na Bluefy v app store
-                    window.location.replace("https://apps.apple.com/us/app/id1635118423");
-                  }
-                });
-              }
-              // Macs outside Google Chrome
-              else if (detectMacintosh()) {
-                // @ts-ignore
-                window.confirm(t("Z tohoto webového prohlížeče bohužel není možné NARU ovládat. Prosím, otevřete aplikace v prohlížeči Google Chrome."), t("Prohlížeč není podporován")).then(result => {
-                  if (result) {
-                    // redirect na Google Chrome
-                    window.location.replace("https://www.google.com/intl/cs_CZ/chrome/");
-                  }
-                });
-              }
-              // Android outside Google Chrome
-              else if (detectAndroid()) {
-                // @ts-ignore
-                window.confirm(t("Z tohoto webového prohlížeče bohužel není možné NARU ovládat. Prosím, stáhněte si aplikaci Spectoda Connect."), t("Prohlížeč není podporován")).then(result => {
-                  if (result) {
-                    // redirect na Google Chrome
-                    window.location.replace("https://play.google.com/store/apps/details?id=com.spectoda.spectodaconnect");
-                  }
-                });
-              }
-              // Windows outside Google Chrome
-              else if (detectWindows()) {
-                // @ts-ignore
-                window.confirm(t("Z tohoto webového prohlížeče bohužel není možné NARU ovládat. Prosím, otevřete aplikace v prohlížeči Google Chrome."), t("Prohlížeč není podporován")).then(result => {
-                  if (result) {
-                    // redirect na Google Chrome
-                    window.location.replace("https://www.google.com/intl/cs_CZ/chrome/");
-                  }
-                });
-              }
-              // Linux ChromeBooks atd...
-              else {
-                window.confirm(t("Z tohoto webového prohlížeče bohužel nejspíš není možné NARU ovládat."));
-              }
-
               logging.error("Error: Assigning unsupported connector");
               this.connector = null;
             }

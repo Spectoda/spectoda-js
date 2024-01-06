@@ -18,7 +18,6 @@ import {
   stringToBytes,
   uint8ArrayToHexString,
 } from "./functions";
-import { changeLanguage, t } from "../lib/i18n";
 import { logging, setLoggingLevel } from "./logging";
 import { COMMAND_FLAGS } from "./webassembly/Spectoda_JS";
 
@@ -724,7 +723,6 @@ export class Spectoda {
 
             if (error_code !== 0) {
               logging.warn("Adoption refused.");
-              window.alert(t("Zkuste to, prosím, znovu."), t("Přidání se nezdařilo"), { confirm: t("OK") });
 
               throw "AdoptionRefused";
             }
@@ -2109,13 +2107,6 @@ export class Spectoda {
     });
   }
 
-  /**
-   * Change language for modals
-   * @param {"en"|"cs"} lng
-   */
-  setLanguage(lng) {
-    changeLanguage(lng);
-  }
 
   setDebugLevel(level) {
     setLoggingLevel(level);
