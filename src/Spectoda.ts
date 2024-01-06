@@ -33,14 +33,15 @@ import { WEBSOCKET_URL } from "./SpectodaWebSocketsConnector";
 // TODO - kdyz zavolam funkci connect a uz jsem pripojeny, tak vyslu event connected, pokud si myslim ze nejsem pripojeny.
 // TODO - "watchdog timer" pro resolve/reject z TC
 
-export type ConnectorType = "default" | "webbluetooth" | "webserial" | "dummy" | "websockets" | "flutter" | "tangleconnect" | "edummy" | "vdummy";
-
+export type ConnectorType = "default" | "bluetooth" | "serial" | "websockets" | "simulated" | "dummy";
 export type ConnectionState = "connected" | "connecting" | "disconnected" | "disconnecting";
 
-type EventId = number | number[];
+type SpectodaIds = number | number[];
+type SpectodaId = number;
 
-const EMPTY_SIGNATURE_AND_KEY = "00000000000000000000000000000000";
-const DEFAULT_CONNECTION = "*/ff:ff:ff:ff:ff:ff";
+const DEFAULT_SIGNATURE = "00000000000000000000000000000000";
+const DEFAULT_KEY = "00000000000000000000000000000000";
+const USE_ALL_CONNECTIONS = ["*/ff:ff:ff:ff:ff:ff"];
 
 type Tngl = { code: string | undefined; bytecode: Uint8Array | undefined };
 
@@ -66,6 +67,8 @@ export class Spectoda {
   #saveStateTimeoutHandle;
   #reconnectRC;
 
+  runtime: SpectodaRuntime;
+
   constructor(connectorType: ConnectorType = "default", reconnecting = true) {
     this.#parser = new TnglCodeParser();
 
@@ -73,8 +76,8 @@ export class Spectoda {
 
     this.#uuidCounter = Math.floor(Math.random() * 0xffffffff);
 
-    this.#ownerSignature = EMPTY_SIGNATURE_AND_KEY;
-    this.#ownerKey = EMPTY_SIGNATURE_AND_KEY;
+    this.#ownerSignature = DEFAULT_SIGNATURE;
+    this.#ownerKey = DEFAULT_KEY;
 
     this.runtime = new SpectodaRuntime(this);
 
@@ -240,7 +243,7 @@ export class Spectoda {
     return this.#connectionState;
   }
 
-  #setOwnerSignature(ownerSignature) {
+  #setOwnerSignature(ownerSignature: string) {
     const reg = ownerSignature.match(/([\dabcdefABCDEF]{32})/g);
 
     if (!reg[0]) {
@@ -251,7 +254,7 @@ export class Spectoda {
     return true;
   }
 
-  #setOwnerKey(ownerKey) {
+  #setOwnerKey(ownerKey: string) {
     const reg = ownerKey.match(/([\dabcdefABCDEF]{32})/g);
 
     if (!reg[0]) {
@@ -664,7 +667,7 @@ export class Spectoda {
    */
   //! FUNCTION ROLE CHANGED
   //! PARAMETERS CHANGED
-  syncTngl(connection: string[], connectionToSyncWith: string[] = [DEFAULT_CONNECTION]): Promise<void> {
+  syncTngl(connection: string[], connectionToSyncWith: string[] = USE_ALL_CONNECTIONS): Promise<void> {
     logging.verbose(`syncTngl(connection=${connection}, connectionToSyncWith=${connectionToSyncWith})`);
 
     // TODO
@@ -731,8 +734,8 @@ export class Spectoda {
     });
   }
 
-  emitEmptyEvent(connection: string[], eventLabel: string, eventId: EventId = 0xff, options = { forceDelivery: false }): Promise<void> {
-    logging.verbose(`emitEmptyEvent(connection=${connection}, eventLabel=${eventLabel}, eventId=${eventId}, options=${options})`);
+  emitEmptyEvent(connection: string[], eventLabel: string, eventIds: SpectodaIds = 0xff, options = { forceDelivery: false }): Promise<void> {
+    logging.verbose(`emitEmptyEvent(connection=${connection}, eventLabel=${eventLabel}, eventIds=${eventIds}, options=${options})`);
 
     // TODO
 
@@ -756,8 +759,8 @@ export class Spectoda {
 
   // event_label example: "evt1"
   // event_value example: 1000
-  emitTimestampEvent(connection: string[], eventLabel: string, eventTimestampValue: number, eventId: number | number[] = 0xff, options = { forceDelivery: false }): Promise<void> {
-    logging.verbose(`emitTimestampEvent(connection=${connection}, eventLabel=${eventLabel}, eventTimestampValue=${eventTimestampValue}, eventId=${eventId}, options=${options})`);
+  emitTimestampEvent(connection: string[], eventLabel: string, eventTimestampValue: number, eventIds: SpectodaIds = 0xff, options = { forceDelivery: false }): Promise<void> {
+    logging.verbose(`emitTimestampEvent(connection=${connection}, eventLabel=${eventLabel}, eventTimestampValue=${eventTimestampValue}, eventIds=${eventIds}, options=${options})`);
 
     // TODO
     // clearTimeout(this.#saveStateTimeoutHandle);
@@ -790,8 +793,8 @@ export class Spectoda {
 
   // event_label example: "evt1"
   // event_value example: "#00aaff"
-  emitColorEvent(connection: string[], eventLabel: string, eventColorValue: string, eventId: number | number[] = 0xff, options = { forceDelivery: false }): Promise<void> {
-    logging.verbose(`emitColorEvent(connection=${connection}, eventLabel=${eventLabel}, eventColorValue=${eventColorValue}, eventId=${eventId}, options=${options})`);
+  emitColorEvent(connection: string[], eventLabel: string, eventColorValue: string, eventIds: SpectodaIds = 0xff, options = { forceDelivery: false }): Promise<void> {
+    logging.verbose(`emitColorEvent(connection=${connection}, eventLabel=${eventLabel}, eventColorValue=${eventColorValue}, eventIds=${eventIds}, options=${options})`);
 
     // TODO
 
@@ -822,8 +825,8 @@ export class Spectoda {
 
   // event_label example: "evt1"
   // event_value example: 100.0
-  emitPercentageEvent(connection: string[], eventLabel: string, eventPercentageValue: number, eventId: number | number[] = 0xff, options = { forceDelivery: false }): Promise<void> {
-    logging.info(`emitPercentageEvent(connection=${connection}, eventLabel=${eventLabel}, eventPercentageValue=${eventPercentageValue}, eventId=${eventId}, options=${options})`);
+  emitPercentageEvent(connection: string[], eventLabel: string, eventPercentageValue: number, eventIds: SpectodaIds = 0xff, options = { forceDelivery: false }): Promise<void> {
+    logging.info(`emitPercentageEvent(connection=${connection}, eventLabel=${eventLabel}, eventPercentageValue=${eventPercentageValue}, eventIds=${eventIds}, options=${options})`);
 
     // TODO
 
@@ -857,8 +860,8 @@ export class Spectoda {
 
   // event_label example: "evt1"
   // event_value example: "label"
-  emitLabelEvent(connection: string[], eventLabel: string, eventLabelValue: string, eventId: number | number[] = 0xff, options = { forceDelivery: false }): Promise<void> {
-    logging.verbose(`emitLabelEvent(connection=${connection}, eventLabel=${eventLabel}, eventLabelValue=${eventLabelValue}, eventId=${eventId}, options=${options})`);
+  emitLabelEvent(connection: string[], eventLabel: string, eventLabelValue: string, eventIds: SpectodaIds = 0xff, options = { forceDelivery: false }): Promise<void> {
+    logging.verbose(`emitLabelEvent(connection=${connection}, eventLabel=${eventLabel}, eventLabelValue=${eventLabelValue}, eventIds=${eventIds}, options=${options})`);
 
     // TODO
     // clearTimeout(this.#saveStateTimeoutHandle);
@@ -923,7 +926,7 @@ export class Spectoda {
    * Forces a state of some source ID to target IDs on the whole network
    */
   //! PARAMETERS UPDATED
-  syncState(connection: string[], sourceId: number, targetId: number | number[] = 0xff, connectionToSyncWith: string[] = ["*/ff:ff:ff:ff:ff:ff"]): Promise<void> {
+  syncState(connection: string[], sourceId: SpectodaId, targetIds: SpectodaIds = 0xff, connectionToSyncWith: string[] = ["*/ff:ff:ff:ff:ff:ff"]): Promise<void> {
     logging.error("syncState() is deprecated use applyState() instead");
 
     // TODO
@@ -1317,7 +1320,7 @@ export class Spectoda {
       const removed_device_mac_bytes = reader.readBytes(6);
 
       return this.rebootDevice()
-        .catch(() => {})
+        .catch(() => { })
         .then(() => {
           let removed_device_mac = "00:00:00:00:00:00";
           if (removed_device_mac_bytes.length >= 6) {
