@@ -26,8 +26,6 @@ import customParser from "socket.io-msgpack-parser";
 import { WEBSOCKET_URL } from "./SpectodaWebSocketsConnector";
 import { SpectodaRuntime, allEventsEmitter } from "./SpectodaRuntime";
 
-let lastEvents = {};
-
 // should not create more than one object!
 // the destruction of the Spectoda is not well implemented
 
@@ -149,6 +147,10 @@ export class Spectoda {
     }, 60000);
   }
 
+  setDebugLevel(level: number) {
+    setLoggingLevel(level);
+  }
+
   #setWebSocketConnectionState(websocketConnectionState) {
     switch (websocketConnectionState) {
       case "connecting":
@@ -250,89 +252,6 @@ export class Spectoda {
     return true;
   }
 
-
-
-  /**
-   * @deprecated choose connector in the connect() function
-   */
-  //! DEPRECATED setConnector() -> connect(connectorType, ...)
-  setConnector(connector_type) {
-    logging.error("setConnector() is deprecated");
-
-    return this.runtime.assignConnector(connector_type);
-  }
-
-  /**
-   * @alias this.setConnector
-   * @deprecated choose connector in the connect() function
-   */
-  //! DEPRECATED assignConnector() -> connect(connectorType, ...)
-  assignConnector(connector_type) {
-    logging.error("assignConnector() is deprecated");
-
-    return this.setConnector(connector_type);
-  }
-
-  /**
-  * @deprecated use setNetwork() instead
-  */
-  //! DEPRECATED assignOwnerSignature() -> writeNetwork()
-  assignOwnerSignature(ownerSignature) {
-    logging.error("assignOwnerSignature() is deprecated");
-
-    return this.#setOwnerSignature(ownerSignature);
-  }
-
-  /**
-  * @deprecated use setNetwork() instead
-  */
-  //! DEPRECATED setOwnerSignature() -> writeNetwork()
-  setOwnerSignature(ownerSignature) {
-    logging.error("setOwnerSignature() is deprecated");
-
-    return this.#setOwnerSignature(ownerSignature);
-  }
-
-  /**
-   * @deprecated use getNetwork() instead
-   */
-  //! DEPRECATED getOwnerSignature() -> readNetwork()
-  getOwnerSignature() {
-    logging.error("setOwnerSignature() is deprecated");
-
-    return this.#ownerSignature;
-  }
-
-  /**
-  * @deprecated use setNetwork() instead
-  */
-  //! DEPRECATED assignOwnerKey() -> writeNetwork()
-  assignOwnerKey(ownerKey) {
-    logging.error("assignOwnerKey() is deprecated");
-
-    return this.#setOwnerKey(ownerKey);
-  }
-
-  /**
-  * @deprecated use setNetwork() instead
-  */
-  //! DEPRECATED assignOwnerKey() -> writeNetwork()
-  setOwnerKey(ownerKey) {
-    logging.error("setOwnerKey() is deprecated");
-
-    return this.#setOwnerKey(ownerKey);
-  }
-
-  /**
-  * @deprecated use getNetwork() instead
-  */
-  //! DEPRECATED getOwnerKey() -> readNetwork()
-  getOwnerKey() {
-    logging.error("getOwnerKey() is deprecated");
-
-    return this.#ownerKey;
-  }
-
   //! please move this function elsewhere 
   fetchClients() {
     if (this.socket) return this.socket.emitWithAck("list-all-clients");
@@ -358,6 +277,7 @@ export class Spectoda {
    *   [key: string]: any
    * }} [options.meta] - Optional metadata about the user and the app.
    */
+  // TODO
   async enableRemoteControl({ signature, key, sessionOnly, meta }) {
     logging.debug("> Connecting to Remote Control", { signature, key, sessionOnly });
 
@@ -509,12 +429,30 @@ export class Spectoda {
     });
   }
 
+  // TODO
   disableRemoteControl() {
     logging.debug("> Disonnecting from the Remote Control");
 
     this.releaseWakeLock(true);
     this.socket?.disconnect();
   }
+
+  /**
+   * 
+   */
+  requestWakeLock(prioritized = false) {
+    logging.error("requestWakeLock() is yet to be reimplemented");
+    // TODO call requestWakeLock() from wake-lock/index.ts
+  }
+
+  /**
+   * 
+   */
+  releaseWakeLock(prioritized = false) {
+    logging.error("releaseWakeLock() is yet to be reimplemented");
+    // TODO call releaseWakeLock() from wake-lock/index.ts
+  }
+
 
   // valid UUIDs are in range [1..4294967295] (32-bit unsigned number)
   #getUUID() {
@@ -537,161 +475,37 @@ export class Spectoda {
    *
    * @returns {Function} unbind function
    */
-
+  // TODO
   addEventListener(event, callback) {
     return this.runtime.addEventListener(event, callback);
   }
+
   /**
    * @alias this.addEventListener
    */
+  // TODO
   on(event, callback) {
     return this.runtime.on(event, callback);
   }
 
-  // každé spectoda zařízení může být spárováno pouze s jedním účtem. (jednim user_key)
-  // jakmile je sparovana, pak ji nelze prepsat novým učtem.
-  // filtr pro pripojovani k zarizeni je pak účet.
 
-  // adopt != pair
-  // adopt reprezentuje proces, kdy si webovka osvoji nove zarizeni. Tohle zarizeni, ale uz
-  // muze byt spárováno s telefonem / SpectodaConnectem
-
-  // pri adoptovani MUSI byt vsechny zarizeni ze skupiny zapnuty.
-  // vsechny zarizeni totiz MUSI vedet o vsech.
-  // adopt() {
-  // const BLE_OPTIONS = {
-  //   //acceptAllDevices: true,
-  //   filters: [
-  //     { services: [this.TRANSMITTER_SERVICE_UUID] },
-  //     // {services: ['c48e6067-5295-48d3-8d5c-0395f61792b1']},
-  //     // {name: 'ExampleName'},
-  //   ],
-  //   //optionalServices: [this.TRANSMITTER_SERVICE_UUID],
-  // };
-  // //
-  // return this.connector
-  //   .adopt(BLE_OPTIONS).then((device)=> {
-  //     // ulozit device do local storage jako json
-  //   })
-  //   .catch((error) => {
-  //     logging.warn(error);
-  //   });
-  // }
-
-  scan(scan_criteria = [{}], scan_period = 5000) {
-    logging.verbose(`scan(scan_criteria=${scan_criteria}, scan_period=${scan_period})`);
+  /**
+ * @name scan
+ * @param {string[]} connection
+ * @param {string} connector
+ * @param {Criteria | Criteria[]} criteria
+ * @param {ScanOptions} options
+ *
+ * TODO define Criteria and ScanOptions type
+ * @returns {Criteria[]}
+ */
+  scan(connection: string[], connector: string, criteria = {}, options = {}) {
+    logging.verbose(`scan(connector=${connector}, criteria=${criteria}, options=${options})`);
+    // TODO
 
     logging.debug("> Scanning Spectoda Controllers...");
     return this.runtime.scan(scan_criteria, scan_period);
   }
-
-  /**
-   * @deprecated
-   */
-  //! DEPRECATED - use scan() followed by connect() followed by setNetwork()
-  adopt(newDeviceName = null, newDeviceId = null, tnglCode = null, ownerSignature = null, ownerKey = null, autoSelect = false) {
-    logging.verbose(`adopt(newDeviceName=${newDeviceName}, newDeviceId=${newDeviceId}, tnglCode=${tnglCode}, ownerSignature=${ownerSignature}, ownerKey=${ownerKey}, autoSelect=${autoSelect})`);
-
-    logging.error("adopt() is deprecated");
-
-    if (this.#adopting) {
-      return Promise.reject("AdoptingInProgress");
-    }
-
-    this.#adopting = true;
-
-    this.#setConnectionState("connecting");
-
-    const criteria = /** @type {any} */ ([{ adoptionFlag: true }]);
-
-    return (autoSelect ? this.runtime.autoSelect(criteria, 4000) : this.runtime.userSelect(criteria, 60000))
-      .then(() => {
-        return this.runtime.connect(10000, true);
-      })
-      .then(() => {
-        const owner_signature_bytes = hexStringToUint8Array(this.#ownerSignature, 16);
-        const owner_key_bytes = hexStringToUint8Array(this.#ownerKey, 16);
-
-        logging.verbose("owner_signature_bytes", owner_signature_bytes);
-        logging.verbose("owner_key_bytes", owner_key_bytes);
-
-        const request_uuid = this.#getUUID();
-        const bytes = [COMMAND_FLAGS.FLAG_ADOPT_REQUEST, ...numberToBytes(request_uuid, 4), ...owner_signature_bytes, ...owner_key_bytes /*, ...device_name_bytes, ...numberToBytes(device_id, 1)*/];
-
-        logging.debug("> Adopting device...");
-        logging.verbose(bytes);
-
-        return this.runtime
-          .request(bytes, true)
-          .then(response => {
-            let reader = new TnglReader(response);
-
-            logging.verbose("response=", response);
-
-            if (reader.readFlag() !== COMMAND_FLAGS.FLAG_ADOPT_RESPONSE) {
-              throw "InvalidResponse";
-            }
-
-            const response_uuid = reader.readUint32();
-            if (response_uuid != request_uuid) {
-              throw "InvalidResponse";
-            }
-
-            const error_code = reader.readUint8();
-
-            let device_mac = "00:00:00:00:00:00";
-            if (error_code === 0) {
-              // error_code 0 is success
-              const device_mac_bytes = reader.readBytes(6);
-
-              device_mac = Array.from(device_mac_bytes, function (byte) {
-                return ("0" + (byte & 0xff).toString(16)).slice(-2);
-              }).join(":");
-            }
-
-            logging.verbose(`error_code=${error_code}, device_mac=${device_mac}`);
-
-            if (error_code === 0) {
-              logging.info(`Adopted ${device_mac} successfully`);
-
-              return {
-                mac: device_mac,
-                ownerSignature: this.#ownerSignature,
-                ownerKey: this.#ownerKey,
-                // name: newDeviceName,
-                // id: newDeviceId,
-              };
-            }
-
-            if (error_code !== 0) {
-              logging.warn("Adoption refused.");
-
-              throw "AdoptionRefused";
-            }
-          })
-          .catch(e => {
-            logging.error("Error during adopt():", e);
-            this.disconnect().finally(() => {
-              // @ts-ignore
-              throw "AdoptionFailed";
-            });
-          });
-      })
-      .catch(error => {
-        logging.warn("Error during adopt:", error);
-        if (error === "UserCanceledSelection") {
-          return this.connected().then(result => {
-            if (!result) throw "UserCanceledSelection";
-          });
-        }
-      })
-      .finally(() => {
-        this.#adopting = false;
-        this.#setConnectionState("disconnected");
-      });
-  }
-
-  // devices: [ {name:"Lampa 1", mac:"12:34:56:78:9a:bc"}, {name:"Lampa 2", mac:"12:34:56:78:9a:bc"} ]
 
   #connect(autoConnect) {
     logging.verbose(`#connect(autoConnect=${autoConnect})`);
@@ -742,13 +556,25 @@ export class Spectoda {
       });
   }
 
+
+
+
+  /**
+ * @name connect
+ * @param {string[]} connection
+ * @param {string} connector
+ * @param {Criteria | Criteria[]} criteria
+ * @param {ConnectOptions} options
+ *
+ * TODO define Criteria and ConnectOptions type
+ * @returns {Criteria[]}
+ */
   //! FUNCTION ROLE CHANGED
   //! PARAMETERS CHANGED
-  connect(criteria = null, autoConnect = true, ownerSignature = null, ownerKey = null, connectAny = false, fwVersion = "", autonomousConnection = false, overrideConnection = false) {
-    logging.verbose(
-      `connect(criteria=${criteria}, autoConnect=${autoConnect}, ownerSignature=${ownerSignature}, ownerKey=${ownerKey}, connectAny=${connectAny}, fwVersion=${fwVersion}, autonomousConnection=${autonomousConnection}, overrideConnection=${overrideConnection})`,
-    );
+  connect(connection: string[], connector: string, criteria = {}, options = {}) {
+    logging.verbose(`connect(connector=${connector}, criteria=${criteria}, options=${options})`);
 
+    // TODO
     this.#autonomousConnection = autonomousConnection;
 
     if (!overrideConnection && this.#getConnectionState() === "connecting") {
@@ -796,8 +622,12 @@ export class Spectoda {
 
     return this.#connect(autoConnect);
   }
-
-  disconnect() {
+  /**
+   * 
+   * @param connection Connection to disconnect
+   */
+  disconnect(connection: string[]) {
+    // TODO
     this.#autonomousConnection = false;
 
     if (this.#getConnectionState() === "disconnected") {
@@ -812,26 +642,27 @@ export class Spectoda {
     });
   }
 
-  connected() {
-    return this.#getConnectionState() === "connected" ? this.runtime.connected() : Promise.resolve(null);
+  /**
+   * 
+   * @param connection is this connection connected?
+   * @returns {boolean} true if connected, false if not connected
+   */
+  isConnected(connection: string[]) {
+    // TODO
   }
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-
   /**
    * Function role changed!
-    * Writes TNGL to the network from the currently used controller.
-    * Pass TNGL code by string or object: { code: string or bytecode: uint8Array }
-    * @param {object | string} tngl
-    * @param {string | undefined} tngl.code string or undefined. choose code or bytecode
-    * @param {uint8Array | undefined} tngl.bytecode uint8Array or undefined
+    * Writes controller's stored TNGL to another controller/s
     */
   //! FUNCTION ROLE CHANGED
   //! PARAMETERS CHANGED
-  syncTngl(connection = "*/ff:ff:ff:ff:ff:ff") {
-    logging.verbose(`syncTngl(tngl_code=${tngl_code}, tngl_bytes=${tngl_bytes})`);
+  syncTngl(connection: string[], connectionToSyncWith: string[] = ["*/ff:ff:ff:ff:ff:ff"]): Promise<void> {
+    logging.verbose(`syncTngl(connection=${connection}, connectionToSyncWith=${connectionToSyncWith})`);
 
+    // TODO
     if (typeof connection !== "string") {
       logging.error("syncTngl() changed! Did you mean to call writeTngl()?");
     }
@@ -864,14 +695,16 @@ export class Spectoda {
     * Parameters changed!
     * Writes TNGL to the network from the currently used controller.
     * Pass TNGL code by string or object: { code: string or bytecode: uint8Array }
-    * @param {object | string} tngl
-    * @param {string | undefined} tngl.code string or undefined. choose code or bytecode
-    * @param {uint8Array | undefined} tngl.bytecode uint8Array or undefined
+    * @param connection
+    * @param tngl
+    * @param tngl.code string or undefined. choose code or bytecode
+    * @param tngl.bytecode uint8Array or undefined
     */
   //! PARAMETERS CHANGED
-  writeTngl(tngl) {
-    logging.verbose(`writeTngl(tngl_code=${tngl_code}, tngl_bytes=${tngl_bytes})`);
+  writeTngl(connection: string[], tngl: { code: string | undefined, bytecode: Uint8Array | undefined }): Promise<void> {
+    logging.verbose(`writeTngl(connection=${connection}, tngl=${tngl})`);
 
+    // TODO
     logging.debug(`> Writing Tngl code...`);
 
     if (tngl_code === null && tngl_bytes === null) {
@@ -893,31 +726,11 @@ export class Spectoda {
     });
   }
 
-  // event_label example: "evt1"
-  // event_value example: 1000
-  /**
-   *
-   * @param {*} event_label
-   * @param {number|number[]} device_ids
-   * @param {*} force_delivery
 
-   * @returns
-   */
-  /**
-   *
-   * @param {*} event_label
-   * @param {number|number[]} device_ids
-   * @param {*} force_delivery
+  emitEmptyEvent(connection: string[], eventLabel: string, eventId: number | number[] = 0xff, options = { forceDelivery: false }): Promise<void> {
+    logging.verbose(`emitEmptyEvent(connection=${connection}, eventLabel=${eventLabel}, eventId=${eventId}, options=${options})`);
 
-   * @returns
-   * @deprecated use emitEmptyEvent() instead
-   */
-  //! DEPRECATED emitEvent() -> emitEmptyEvent()
-  emitEvent(event_label, device_ids = [0xff], force_delivery = true) {
-    logging.verbose(`emitEvent(label=${event_label},id=${device_ids},force=${force_delivery})`);
-    lastEvents[event_label] = { value: null, type: "none" };
-
-    logging.error("emitEvent() is deprecated. Use emitEmptyEvent() instead");
+    // TODO
 
     // clearTimeout(this.#saveStateTimeoutHandle);
     // this.#saveStateTimeoutHandle = setTimeout(() => {
@@ -937,57 +750,12 @@ export class Spectoda {
     }
   }
 
-  /**
-   * @param {string} event_label
-   * @param {number|number[]} event_id
-   * @returns {Promise<void>}
-   */
-  emitEmptyEvent(event_label, event_ids = [0xff]) {
-    // TODO
-  }
-
-  /**
-   * @deprecated - is replaced by history merging and scenes. This function will be removed in future versions
-   */
-  //! DEPRECATED - no equivalent. Replaced by history merging and scenes
-  resendAll() {
-    logging.error("resendAll() is deprecated");
-
-    Object.keys(lastEvents).forEach(key => {
-      switch (lastEvents[key].type) {
-        case "percentage":
-          this.emitPercentageEvent(key, lastEvents[key].value);
-          break;
-        case "timestamp":
-          this.emitTimestampEvent(key, lastEvents[key].value);
-          break;
-        case "color":
-          this.emitColorEvent(key, lastEvents[key].value);
-          break;
-        case "label":
-          this.emitLabelEvent(key, lastEvents[key].value);
-          break;
-        case "none":
-          this.emitEvent(key);
-          break;
-      }
-    });
-  }
-
   // event_label example: "evt1"
   // event_value example: 1000
-  /**
-   *
-   * @param {*} event_label
-   * @param {number|number[]} device_ids
-   * @param {*} force_delivery 
+  emitTimestampEvent(connection: string[], eventLabel: string, eventTimestampValue: number, eventId: number | number[] = 0xff, options = { forceDelivery: false }): Promise<void> {
+    logging.verbose(`emitTimestampEvent(connection=${connection}, eventLabel=${eventLabel}, eventTimestampValue=${eventTimestampValue}, eventId=${eventId}, options=${options})`);
 
-   * @returns
-   */
-  emitTimestampEvent(event_label, event_value, device_ids = [0xff], force_delivery = false) {
-    logging.verbose(`emitTimestampEvent(label=${event_label},value=${event_value},id=${device_ids},force=${force_delivery})`);
-    lastEvents[event_label] = { value: event_value, type: "timestamp" };
-
+    // TODO
     // clearTimeout(this.#saveStateTimeoutHandle);
     // this.#saveStateTimeoutHandle = setTimeout(() => {
     //   this.saveState();
@@ -1018,17 +786,10 @@ export class Spectoda {
 
   // event_label example: "evt1"
   // event_value example: "#00aaff"
-  /**
-   *
-   * @param {*} event_label
-   * @param {*} event_value
-   * @param {number|number[]} device_ids
-   * @param {*} force_delivery
-   * @returns
-   */
-  emitColorEvent(event_label, event_value, device_ids = [0xff], force_delivery = false) {
-    logging.verbose(`emitColorEvent(label=${event_label},value=${event_value},id=${device_ids},force=${force_delivery})`);
-    lastEvents[event_label] = { value: event_value, type: "color" };
+  emitColorEvent(connection: string[], eventLabel: string, eventColorValue: string, eventId: number | number[] = 0xff, options = { forceDelivery: false }): Promise<void> {
+    logging.verbose(`emitColorEvent(connection=${connection}, eventLabel=${eventLabel}, eventColorValue=${eventColorValue}, eventId=${eventId}, options=${options})`);
+
+    // TODO
 
     // clearTimeout(this.#saveStateTimeoutHandle);
     // this.#saveStateTimeoutHandle = setTimeout(() => {
@@ -1057,17 +818,10 @@ export class Spectoda {
 
   // event_label example: "evt1"
   // event_value example: 100.0
-  /**
-   *
-   * @param {*} event_label
-   * @param {*} event_value
-   * @param {number|number[]} device_ids
-   * @param {*} force_delivery
-   * @returns
-   */
-  emitPercentageEvent(event_label, event_value, device_ids = [0xff], force_delivery = false) {
-    logging.info(`emitPercentageEvent(label=${event_label},value=${event_value},id=${device_ids},force=${force_delivery})`);
-    lastEvents[event_label] = { value: event_value, type: "percentage" };
+  emitPercentageEvent(connection: string[], eventLabel: string, eventPercentageValue: number, eventId: number | number[] = 0xff, options = { forceDelivery: false }): Promise<void> {
+    logging.info(`emitPercentageEvent(connection=${connection}, eventLabel=${eventLabel}, eventPercentageValue=${eventPercentageValue}, eventId=${eventId}, options=${options})`);
+
+    // TODO
 
     // clearTimeout(this.#saveStateTimeoutHandle);
     // this.#saveStateTimeoutHandle = setTimeout(() => {
@@ -1099,18 +853,10 @@ export class Spectoda {
 
   // event_label example: "evt1"
   // event_value example: "label"
-  /**
-   *
-   * @param {*} event_label
-   * @param {*} event_value
-   * @param {number|number[]} device_ids
-   * @param {*} force_delivery
-   * @returns 
-   */
-  emitLabelEvent(event_label, event_value, device_ids = [0xff], force_delivery = false) {
-    logging.verbose(`emitLabelEvent(label=${event_label},value=${event_value},id=${device_ids},force=${force_delivery})`);
-    lastEvents[event_label] = { value: event_value, type: "label" };
+  emitLabelEvent(connection: string[], eventLabel: string, eventLabelValue: string, eventId: number | number[] = 0xff, options = { forceDelivery: false }): Promise<void> {
+    logging.verbose(`emitLabelEvent(connection=${connection}, eventLabel=${eventLabel}, eventLabelValue=${eventLabelValue}, eventId=${eventId}, options=${options})`);
 
+    // TODO
     // clearTimeout(this.#saveStateTimeoutHandle);
     // this.#saveStateTimeoutHandle = setTimeout(() => {
     //   this.saveState();
@@ -1141,12 +887,12 @@ export class Spectoda {
 
   /**
    * Forces timeline synchronization of the used controller to the network
-   * @returns Promise<void>
    */
   //! PARAMETERS UPDATED
-  syncTimeline(connection = "*/ff:ff:ff:ff:ff:ff") {
-    logging.verbose("syncTimeline()");
+  syncTimeline(connection: string[], connectionToSyncWith: string[] = ["*/ff:ff:ff:ff:ff:ff"]): Promise<void> {
+    logging.verbose(`syncTimeline(connection=${connection}, connectionToSyncWith=${connectionToSyncWith})`);
 
+    // TODO
     logging.debug(`> Synchronizing timeline to device`);
 
     const flags = this.timeline.paused() ? 0b00010000 : 0b00000000; // flags: [reserved,reserved,reserved,timeline_paused,reserved,reserved,reserved,reserved]
@@ -1156,10 +902,12 @@ export class Spectoda {
 
   /**
    * Forces clock timestamp of the used controller to the network
-   * @returns Promise<void>
    */
   //! PARAMETERS UPDATED
-  syncClock(connection = "*/ff:ff:ff:ff:ff:ff") {
+  syncClock(connection: string[], connectionToSyncWith: string[] = ["*/ff:ff:ff:ff:ff:ff"]): Promise<void> {
+    logging.verbose(`syncClock(connection=${connection}, connectionToSyncWith=${connectionToSyncWith})`);
+
+    // TODO
     logging.debug("> Syncing clock from device");
 
     return this.runtime.syncClock().then(() => {
@@ -1169,14 +917,12 @@ export class Spectoda {
 
   /**
    * Forces a state of some source ID to target IDs on the whole network
-   * @param {number} sourceId 
-   * @param {number|number[]} targetIds
-   * @returns 
    */
   //! PARAMETERS UPDATED
-  syncState(sourceId, targetIds = 0xff, connection = "*/ff:ff:ff:ff:ff:ff") {
+  syncState(connection: string[], sourceId: number, targetId: number | number[] = 0xff, connectionToSyncWith: string[] = ["*/ff:ff:ff:ff:ff:ff"]): Promise<void> {
     logging.error("syncState() is deprecated use applyState() instead");
 
+    // TODO
     logging.debug("> Synchronizing state...");
 
     const request_uuid = this.#getUUID();
@@ -1185,70 +931,16 @@ export class Spectoda {
   }
 
   /**
-   * Downloads firmware and calls updateDeviceFirmware()
-   * @param {string} url - whole URL of the firmware file
-   */
-  async fetchAndUpdateDeviceFirmware(url) {
-    const fw = fetchFirmware(url);
-
-    return this.updateDeviceFirmware(fw);
-  }
-
-  /**
-   * Downloads firmware and calls updateNetworkFirmware()
-   * @param {string} url - whole URL of the firmware file
-   */
-  async fetchAndUpdateNetworkFirmware(url) {
-    const fw = fetchFirmware(url);
-
-    return this.updateNetworkFirmware(fw);
-  }
-
-  /**
-   * @param {Uint8Array} firmware
-   * @returns {Promise<void>}
-   * @deprecated Use writeFirmware() instead
-   */
-  //! DEPRECATED updateDeviceFirmware() -> writeFirmware()
-  updateDeviceFirmware(firmware) {
-    logging.verbose(`updateDeviceFirmware(firmware.length=${firmware?.length})`);
-
-    logging.debug(`> Updating Controller FW...`);
-
-    if (!firmware || firmware.length < 10000) {
-      logging.error("Invalid firmware");
-      return Promise.reject("InvalidFirmware");
-    }
-
-    return Promise.resolve()
-      .then(() => {
-        return this.requestWakeLock().catch(e => {
-          logging.error("Failed to acquire wake lock", e);
-        });
-      })
-      .then(() => {
-        return this.runtime.updateFW(firmware).finally(() => {
-          return this.runtime.disconnect();
-        });
-      })
-      .finally(() => {
-        return this.releaseWakeLock().catch(e => {
-          logging.error("Failed to release wake lock", e);
-        });
-      });
-  }
-
-  /**
    * 
-   * @param {Uint8Array} firmware 
-   * @returns 
-   * @deprecated Use spectoda.useBroadcast().writeFirmware() instead
    */
-  //! DEPRECATED updateNetworkFirmware() -> writeFirmware()
-  updateNetworkFirmware(firmware) {
-    logging.verbose(`updateNetworkFirmware(firmware.length=${firmware?.length})`);
+  writeFirmware(connection: string[], firmware: { path: string, url: string, bytes: Uint8Array }): Promise<void> {
+    logging.verbose(`writeFirmware(connection=${connection}, firmware=${firmware})`);
 
+    // TODO
     logging.debug(`> Updating Network FW...`);
+
+    // const fw = fetchFirmware(url);
+    // return this.updateDeviceFirmware(fw);
 
     if (!firmware || firmware.length < 10000) {
       logging.error("Invalid firmware");
@@ -1369,28 +1061,17 @@ export class Spectoda {
       });
   }
 
+
+
+
   /**
-   * @param {object} object
-   * @param {string} object.path
-   * @param {string} object.url
-   * @param {Uint8Array} object.bytes
-   * @returns {Promise<void>}
+   * Synchonizes firmware of the used controller to given connection
+   * @todo should return an information about the firmware update result
    */
-  writeFirmware({ path, url, bytes }) {
+  syncFirmware(connection: string[], connectionToSyncWith: string[]): Promise<void> {
+    logging.verbose(`syncFirmware(connection=${connection}, connectionToSyncWith=${connectionToSyncWith})`);
+
     // TODO
-  }
-
-
-  /**
-   * 
-   * @param {string} peer 
-   * @returns {Promise<void>}
-   * @deprecated Use syncFirmware() instead 
-   */
-  //! DEPRECATED updatePeerFirmware() -> syncFirmware()
-  async updatePeerFirmware(peer) {
-    logging.verbose(`updatePeerFirmware(peer=${peer})`);
-
     logging.error("updatePeerFirmware() is deprecated. Use syncFirmware() instead");
 
     if (peer === null || peer === undefined) {
@@ -1434,25 +1115,14 @@ export class Spectoda {
     });
   }
 
-  /**
-   * Synchonizes firmware of the used controller to given connection
-   * @param {string} connection
-   * @returns {Promise<void>}
+
+  /** 
+   * Reads config of currently used controller.
    */
-  syncFirmware(connection) {
+  readConfig(connection: string[]): Promise<string> {
+    logging.verbose(`readConfig(connection=${connection})`);
+
     // TODO
-  }
-
-  /**
-   * @returns {Promise} config;
-   * @deprecated use readConfig() instead
-   */
-  //! DEPRECATED readNetworkConfig() -> readConfig()
-  readDeviceConfig(mac = "ee:33:fa:89:08:08") {
-    logging.verbose(`readDeviceConfig(mac=${mac})`);
-
-    logging.error("readDeviceConfig() is deprecated. Use readConfig() instead");
-
     logging.debug("> Reading device config...");
 
     const request_uuid = this.#getUUID();
@@ -1500,28 +1170,18 @@ export class Spectoda {
     });
   }
 
-  /** 
-   * Reads config of currently used controller.
-   * @returns {Promise<string>} config;
-   */
-  readConfig() {
-    // TODO
-  }
 
   /**
-   * @param {string} config;
-   * @deprecated use writeConfig() instead
+   * Writes spectoda config to the controller
    */
-  //! DEPRECATED updateDeviceConfig() -> writeConfig()
-  updateDeviceConfig(config_raw) {
-    logging.verbose(`updateDeviceConfig(config_raw=${config_raw})`);
+  writeConfig(connection: string[], config: JSON | string): Promise<void> {
+    logging.verbose(`writeConfig(connection=${connection}, config=${config})`);
 
-    logging.error("updateDeviceConfig() is deprecated. Use writeConfig() instead");
-
+    // TODO
     logging.debug("> Updating config...");
 
     const condif_object = JSON.parse(config_raw);
-    const config = JSON.stringify(condif_object);
+    config = JSON.stringify(condif_object);
 
     logging.verbose(`config=${config}`);
 
@@ -1562,52 +1222,13 @@ export class Spectoda {
     });
   }
 
-  // spectoda._writeConfig(["bluetooth/12:23:34:45:67:78", "*/ff:ff:ff:ff:ff:ff"], "{}");
-
   /**
-   * @param {string} config;
-   * @deprecated use spectoda.use(connection).useAllConnections().writeConfig() instead
+   * Reads timeline
    */
-  //! DEPRECATED updateNetworkConfig() -> writeConfig()
-  updateNetworkConfig(config) {
-    logging.verbose(`updateNetworkConfig(config=${config})`);
+  readTimeline(connection: string[]): Promise<TimeTrack> {
+    logging.verbose(`readTimeline(connection=${connection})`);
 
-    logging.error("updateNetworkConfig() is deprecated. Use writeConfig() instead");
-
-    logging.debug("> Updating config of whole network...");
-
-    const encoder = new TextEncoder();
-    const config_bytes = encoder.encode(config);
-    const config_bytes_size = config.length;
-
-    // make config update request
-    const request_uuid = this.#getUUID();
-    const request_bytes = [COMMAND_FLAGS.FLAG_CONFIG_UPDATE_REQUEST, ...numberToBytes(request_uuid, 4), ...numberToBytes(config_bytes_size, 4), ...config_bytes];
-
-    return this.runtime.execute(request_bytes, "CONF").then(() => {
-      logging.debug("> Rebooting network...");
-      const command_bytecode = [COMMAND_FLAGS.FLAG_DEVICE_REBOOT_REQUEST];
-      return this.runtime.execute(command_bytecode, null);
-    });
-  }
-
-  /**
-   * writes spectoda config to the controller
-   * @param {string} config
-   * @returns {Promise<void>}
-   */
-  writeConfig(config) {
     // TODO
-  }
-
-  /**
-   * @returns {Promise<TimeTrack>}
-   * @deprecated use readTimeline() instead 
-   */
-  //! DEPRECATED requestTimeline() -> readTimeline()
-  requestTimeline() {
-    logging.verbose(`requestTimeline()`);
-
     logging.error("requestTimeline() is deprecated. Use readTimeline() instead");
 
     logging.debug("> Requesting timeline...");
@@ -1646,31 +1267,14 @@ export class Spectoda {
     });
   }
 
+
   /**
-   * @returns {Promise<TimeTrack>}
+   * This restarts the webassembly spectodas or reboots physical spectoda controllers
    */
-  readTimeline() {
+  requestRestart(connection: string[]) {
+    logging.verbose(`requestRestart(connection=${connection})`);
+
     // TODO
-  }
-
-  /**
-   * @returns {Promise<void>}
-   * @deprecated use spectoda.use(connection).useAllConnections().restart() instead
-   */
-  //! DEPRECATED rebootNetwork() -> requestRestart()
-  rebootNetwork() {
-    logging.debug("> Rebooting network...");
-
-    const payload = [COMMAND_FLAGS.FLAG_DEVICE_REBOOT_REQUEST];
-    return this.runtime.execute(payload, null);
-  }
-
-  /**
-   * @returns {Promise<void>}
-   * @deprecated use spectoda.use(connection).requestRestart() instead
-   */
-  //! DEPRECATED rebootDevice() -> requestRestart()
-  rebootDevice() {
     logging.debug("> Rebooting device...");
 
     const payload = [COMMAND_FLAGS.FLAG_DEVICE_REBOOT_REQUEST];
@@ -1678,33 +1282,12 @@ export class Spectoda {
   }
 
   /**
-   * @returns {Promise<void>}
-   * @deprecated use spectoda.use(connection).requestRestart() instead
+   * Removes spectoda network of the given controller
    */
-  //! DEPRECATED rebootAndDisconnectDevice() -> requestRestart() then disconnect()
-  rebootAndDisconnectDevice() {
-    logging.debug("> Rebooting and disconnecting device...");
+  eraseNetwork(connection: string[]) {
+    logging.verbose(`eraseNetwork(connection=${connection})`);
 
-    const payload = [COMMAND_FLAGS.FLAG_DEVICE_REBOOT_REQUEST];
-    return this.runtime.request(payload, false).then(() => {
-      return this.disconnect();
-    });
-  }
-
-  /**
-   * This restarts the webassembly spectodas or reboots physical spectoda controllers
-   * @returns {Promise<void>}
-   */
-  requestRestart() {
     // TODO
-  }
-
-  /**
-   * @returns {Promise<void>}
-   * @deprecated use spectoda.use(connection).eraseNetwork() instead
-   */
-  //! DEPRECATED removeOwner() -> eraseNetwork()
-  removeOwner() {
     logging.debug("> Removing owner...");
 
     const request_uuid = this.#getUUID();
@@ -1752,38 +1335,13 @@ export class Spectoda {
   }
 
   /**
-   * 
-   * @returns {Promise<void>}
-   * @deprecated use spectoda.use(connection).useAllConnections().eraseNetwork() instead
+   * Gets a spectoda version of given controller
    */
-  //! DEPRECATED removeNetworkOwner() -> eraseNetwork()
-  removeNetworkOwner() {
-    logging.debug("> Removing network owner...");
+  //! PARAMETERS UPDATED - now it returns an object with version info
+  readVersion(connection: string[]): Promise<{ version: string, prefix: string, major: number, minor: number, patch: number, year: number, month: number, day: number }> {
+    logging.verbose(`getFwVersion(connection=${connection})`);
 
-    const request_uuid = this.#getUUID();
-    const bytes = [COMMAND_FLAGS.FLAG_ERASE_OWNER_REQUEST, ...numberToBytes(request_uuid, 4)];
-
-    return this.runtime.execute(bytes, true).then(() => {
-      return this.rebootNetwork();
-    });
-  }
-
-  /**
-   * Removes spectoda network of the given controller
-   * @returns {Promise<void>}
-   */
-  eraseNetwork() {
     // TODO
-  }
-
-  /** 
-   * @returns {Promise<string>}
-   * @deprecated Use spectoda.use(connection).readVersion() instead
-   */
-  //! DEPRECATED getFwVersion() -> readVersion()
-  getFwVersion() {
-    logging.verbose(`getFwVersion()`);
-
     logging.error("getFwVersion() is deprecated. Use readVersion() instead");
 
     logging.debug("> Requesting fw version...");
@@ -1826,19 +1384,14 @@ export class Spectoda {
   }
 
   /**
-   * Gets a spectoda version of given controller
-   * @returns {Promise<string>}
+   * Reads TNGL fingerprint from given connection
+   * @param connection 
    */
-  readVersion() {
-    // TODO
-  }
 
-  /**
-   * 
-   * @deprecated Use readTnglFingerprint() instead
-   */
-  //! DEPRECATED getTnglFingerprint() -> readTnglFingerprint()
-  getTnglFingerprint() {
+  readTnglFingerprint(connection: string[]): Promise<Uint8Array> {
+    logging.verbose(`readTnglFingerprint(connection=${connection})`);
+
+    // TODO
     logging.debug("> Getting TNGL fingerprint...");
 
     const request_uuid = this.#getUUID();
@@ -1884,125 +1437,13 @@ export class Spectoda {
     });
   }
 
-  readTnglFingerprint() {
+  /**
+   * 
+   */
+  readConnections(connection: string[]): Promise<string[][]> {
+    logging.verbose(`readConnections=${connection}`);
+
     // TODO
-  }
-
-  /**
-   * 
-   * @deprecated 
-   */
-  //! DEPRECATED - no equivalent
-  setNetworkDatarate(datarate) {
-    logging.debug(`> Setting network datarate to ${datarate} bsp...`);
-
-    const request_uuid = this.#getUUID();
-    const payload = [COMMAND_FLAGS.FLAG_CHANGE_DATARATE_REQUEST, ...numberToBytes(request_uuid, 4), ...numberToBytes(datarate, 4)];
-
-    return this.runtime.execute(payload, null);
-  }
-
-  /**
-   * 
-   * @deprecated 
-   */
-  //! DEPRECATED - no equivalent
-  readRomPhyVdd33() {
-    logging.debug("> Requesting rom_phy_vdd33...");
-
-    const request_uuid = this.#getUUID();
-    const bytes = [COMMAND_FLAGS.FLAG_ROM_PHY_VDD33_REQUEST, ...numberToBytes(request_uuid, 4)];
-
-    return this.runtime.request(bytes, true).then(response => {
-      let reader = new TnglReader(response);
-
-      logging.verbose(`response.byteLength=${response.byteLength}`);
-
-      if (reader.readFlag() !== COMMAND_FLAGS.FLAG_ROM_PHY_VDD33_RESPONSE) {
-        throw "InvalidResponseFlag";
-      }
-
-      const response_uuid = reader.readUint32();
-
-      if (response_uuid != request_uuid) {
-        throw "InvalidResponseUuid";
-      }
-
-      const error_code = reader.readUint8();
-
-      logging.verbose(`error_code=${error_code}`);
-
-      let vdd_reading = null;
-
-      if (error_code === 0) {
-        vdd_reading = reader.readInt32();
-      } else {
-        throw "Fail";
-      }
-      logging.info(`vdd_reading=${vdd_reading}`);
-
-      return vdd_reading;
-    });
-  }
-
-  /**
-   * 
-   * @deprecated 
-   */
-  //! DEPRECATED - no equivalent
-  readPinVoltage(pin) {
-    logging.debug(`> Requesting pin ${pin} voltage ...`);
-
-    const request_uuid = this.#getUUID();
-    const bytes = [COMMAND_FLAGS.FLAG_VOLTAGE_ON_PIN_REQUEST, ...numberToBytes(request_uuid, 4), pin];
-
-    return this.runtime.request(bytes, true).then(response => {
-      let reader = new TnglReader(response);
-
-      logging.verbose(`response.byteLength=${response.byteLength}`);
-
-      if (reader.readFlag() !== COMMAND_FLAGS.FLAG_VOLTAGE_ON_PIN_RESPONSE) {
-        throw "InvalidResponseFlag";
-      }
-
-      const response_uuid = reader.readUint32();
-
-      if (response_uuid != request_uuid) {
-        throw "InvalidResponseUuid";
-      }
-
-      const error_code = reader.readUint8();
-
-      logging.verbose(`error_code=${error_code}`);
-
-      let pin_reading = null;
-
-      if (error_code === 0) {
-        pin_reading = reader.readUint32();
-      } else {
-        throw "Fail";
-      }
-      logging.info(`pin_reading=${pin_reading}`);
-
-      return pin_reading;
-    });
-  }
-
-
-  setDebugLevel(level) {
-    setLoggingLevel(level);
-  }
-
-  /**
-   * 
-   * @deprecated Use readConnectedPeers() instead
-   */
-  //! DEPRECATED - getConnectedPeersInfo() -> readConnections()
-  getConnectedPeersInfo() {
-    logging.verbose(`getConnectedPeersInfo()`);
-
-    logging.error("getConnectedPeersInfo() is deprecated. Use readPeers() instead");
-
     logging.debug("> Requesting connected peers info...");
 
     const request_uuid = this.#getUUID();
@@ -2056,20 +1497,14 @@ export class Spectoda {
   }
 
   /**
-   * 
-   */
-  readConnections() {
-    // TODO
-  }
-
-  /**
    * Synchronizes event history of the used controller to the connection
    * @returns 
    */
   //! PARAMETERS UPDATED
-  syncEventHistory(connection = "*/ff:ff:ff:ff:ff:ff") {
-    logging.verbose(`syncEventHistory()`);
+  syncEventHistory(connection: string[], connectionToSyncWith: string[] = ["*/ff:ff:ff:ff:ff:ff"]): Promise<void> {
+    logging.verbose(`syncEventHistory(connection=${connection}, connectionToSyncWith=${connectionToSyncWith})`);
 
+    // TODO
     logging.debug("> Requesting event history bytecode...");
 
     const request_uuid = this.#getUUID();
@@ -2114,9 +1549,10 @@ export class Spectoda {
    * Erases event history on given controller
    * @returns 
    */
-  eraseEventHistory() {
-    logging.verbose(`eraseEventHistory()`);
+  eraseEventHistory(connection: string[]): Promise<void> {
+    logging.verbose(`eraseEventHistory(connection=${connection})`);
 
+    // TODO
     logging.debug("> Erasing event history...");
 
     const request_uuid = this.#getUUID();
@@ -2125,13 +1561,15 @@ export class Spectoda {
     return this.runtime.execute(bytes, true);
   }
 
-  /**
-   * @deprecated use requestSleep() instead
-   */
-  //! DEPRECATED networkSleep() -> requestSleep()
-  deviceSleep() {
-    logging.verbose(`deviceSleep()`);
 
+
+  /**
+   * Sleeps the used controller
+   */
+  requestSleep(connection: string[]): Promise<void> {
+    logging.verbose(`requestSleep(connection=${connection})`);
+
+    // TODO
     logging.error("deviceSleep() is deprecated. Use requestSleep() instead");
 
     logging.debug("> Sleep device...");
@@ -2141,30 +1579,12 @@ export class Spectoda {
     return this.runtime.request(payload, false);
   }
 
-  /**
-   * @deprecated use requestSleep() instead
-   */
-  //! DEPRECATED networkSleep() -> requestSleep()
-  networkSleep() {
-    logging.debug("> Sleep network...");
 
-    const request_uuid = this.#getUUID();
-    const payload = [COMMAND_FLAGS.FLAG_SLEEP_REQUEST, ...numberToBytes(request_uuid, 4)];
-    return this.runtime.execute(payload, null);
-  }
 
-  /**
-   * Sleeps the used controller
-   */
-  requestSleep() {
+  requestSaveState(connection: string[]): Promise<void> {
+    logging.verbose(`requestSaveState(connection=${connection})`);
+
     // TODO
-  }
-
-  /**
-   * 
-   */
-  //! DEPRECATED saveState() -> requestSaveState()
-  saveState() {
     logging.debug("> Saving state...");
 
     const request_uuid = this.#getUUID();
@@ -2172,67 +1592,13 @@ export class Spectoda {
     return this.runtime.execute(payload, null);
   }
 
-  requestSaveState() {
+  /**
+   * 
+   */
+  writeNetwork(connection: string[], network: { key: number[], signature: number[] }): Promise<void> {
+    logging.verbose(`writeNetwork(connection=${connection}, network=${network})`);
+
     // TODO
-  }
-
-  /**
-   * @deprecated use readProperties() instead
-   */
-  //! DEPRECATED getControllerInfo() -> readProperties()
-  getControllerInfo() {
-    logging.verbose(`getControllerInfo()`);
-
-    logging.error("getControllerInfo() is deprecated. Use readProperties() instead");
-
-    logging.debug("> Requesting controller info...");
-
-    const request_uuid = this.#getUUID();
-    const bytes = [DEVICE_FLAGS.FLAG_CONTROLLER_INFO_REQUEST, ...numberToBytes(request_uuid, 4)];
-
-    return this.runtime.request(bytes, true).then(response => {
-      let reader = new TnglReader(response);
-
-      logging.verbose("response=", response);
-
-      if (reader.readFlag() !== DEVICE_FLAGS.FLAG_CONTROLLER_INFO_RESPONSE) {
-        throw "InvalidResponseFlag";
-      }
-
-      const response_uuid = reader.readUint32();
-
-      if (response_uuid != request_uuid) {
-        throw "InvalidResponseUuid";
-      }
-
-      const error_code = reader.readUint8();
-
-      logging.verbose(`error_code=${error_code}`);
-
-      let pcb_code = null;
-      let product_code = null;
-
-      if (error_code === 0) {
-        pcb_code = reader.readUint16();
-        product_code = reader.readUint16();
-      } else {
-        throw "Fail";
-      }
-
-      logging.info(`pcb_code=${pcb_code}`);
-      logging.info(`product_code=${product_code}`);
-
-      return { pcb_code: pcb_code, product_code: product_code };
-    });
-  }
-
-  /**
-   * @deprecated use writeNetwork() instead
-   */
-  //! DEPRECATED writeOwner() -> writeNetwork()
-  writeOwner(ownerSignature = "00000000000000000000000000000000", ownerKey = "00000000000000000000000000000000") {
-    logging.verbose("writeOwner(ownerSignature=", ownerSignature, "ownerKey=", ownerKey, ")");
-
     logging.error("writeOwner() is deprecated. Use writeNetwork() instead");
 
     logging.debug("> Writing owner to device...");
@@ -2301,56 +1667,27 @@ export class Spectoda {
   }
 
   /**
-   * @deprecated use writeNetwork() instead
+   * Reads the spectoda network 
    */
-  //! DEPRECATED writeNetworkOwner() -> writeNetwork()
-  writeNetworkOwner(ownerSignature = "00000000000000000000000000000000", ownerKey = "00000000000000000000000000000000") {
-    logging.verbose("writeNetworkOwner(ownerSignature=", ownerSignature, "ownerKey=", ownerKey, ")");
+  readNetwork(connection: string[], options = { readSignature: true, readKey: false }): Promise<{ signature: number[] | null, key: number[] | null }> {
+    logging.verbose(`readNetwork(connection=${connection}, options=${options})`);
 
-    logging.error("writeNetworkOwner() is deprecated. Use writeNetwork() instead");
-
-    logging.debug("> Writing owner to network...");
-
-    const owner_signature_bytes = hexStringToUint8Array(ownerSignature, 16);
-    const owner_key_bytes = hexStringToUint8Array(ownerKey, 16);
-
-    logging.verbose("owner_signature_bytes", owner_signature_bytes);
-    logging.verbose("owner_key_bytes", owner_key_bytes);
-
-    const request_uuid = this.#getUUID();
-    const bytes = [COMMAND_FLAGS.FLAG_ADOPT_REQUEST, ...numberToBytes(request_uuid, 4), ...owner_signature_bytes, ...owner_key_bytes];
-
-    logging.verbose(bytes);
-
-    return this.runtime.execute(bytes, true);
-  }
-
-  /**
-   * 
-   */
-  writeNetwork({ key, signature }) {
     // TODO
+    const network = {
+      signature: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+      key: null
+    };
+
+    return Promise.resolve(network);
   }
 
   /**
-   * @returns { key, signature }
-   */
-  readNetwork() {
+  * Writes spectoda name
+  */
+  whiteName(connection: string[], name: string): Promise<void> {
+    logging.verbose(`whiteName(connection=${connection}, name=${name})`);
+
     // TODO
-  }
-
-  /**
-   * 
-   * @param {*} name 
-   * @returns 
-   * @deprecated use writeName() instead
-   */
-  //! DEPRECATED writeControllerName() -> writeName()
-  writeControllerName(name) {
-    logging.verbose(`writeControllerName(name=${name})`);
-
-    logging.error("writeControllerName() is deprecated. Use writeName() instead");
-
     logging.debug("> Writing Controller Name...");
 
     const request_uuid = this.#getUUID();
@@ -2358,21 +1695,14 @@ export class Spectoda {
     return this.runtime.request(payload, false);
   }
 
-  whiteName(name) {
-    // TODO
-  }
 
   /**
-   * 
-   * @returns 
-   * @deprecated use readName() instead
+   * Reads spectoda name
    */
-  //! DEPRECATED readControllerName() -> readName()
-  readControllerName() {
-    logging.verbose(`readControllerName()`);
+  readName(connection: string[]): Promise<string> {
+    logging.verbose(`readName(connection=${connection})`);
 
-    logging.error("readControllerName() is deprecated. Use readName() instead");
-
+    // TODO
     logging.debug("> Reading Controller Name...");
 
     const request_uuid = this.#getUUID();
@@ -2413,17 +1743,12 @@ export class Spectoda {
   }
 
   /**
-   * Reads spectoda name
+   * @todo specify returned variable value
    */
-  readName() {
+  readVariable(connection: string[], variableName: string, id: number): Promise<{ debug: string }> {
+    logging.verbose(`readVariable(connection=${connection}, variableName=${variableName}, id=${id})`);
 
-  }
-
-  /**
-   * @param {string} variable_name
-   * @param {number} device_id
-   */
-  readVariable(variable_name, device_id) {
+    // TODO
     logging.debug(`> Reading variable...`);
 
     const variable_declarations = this.#parser.getVariableDeclarations();
@@ -2452,10 +1777,12 @@ export class Spectoda {
   }
 
   /**
- * @param {string} variable_address
- * @param {number} device_id
- */
-  readVariableAddress(variable_address, device_id) {
+   * 
+   */
+  readVariableAddress(connection: string[], variableAddress: number, id: number): Promise<{ debug: string }> {
+    logging.verbose(`readVariableAddress(connection=${connection}, variableAddress=${variableAddress}, id=${id})`);
+
+    // TODO
     logging.debug("> Reading variable address...");
 
     if (this.#getConnectionState() !== "connected") {
@@ -2467,62 +1794,11 @@ export class Spectoda {
 
   // 0.9.4
 
-  /**
-   * 
-   * @returns 
-   */
-  readNetworkSignature() {
-    logging.debug("> Reading network signature...");
+  writeProperties(connection: string[], properties: { pcbCode: number, productCode: number }): Promise<void> {
+    logging.verbose(`writeProperties(connection=${connection}, properties=${properties})`);
 
-    const request_uuid = this.#getUUID();
-    const bytes = [COMMAND_FLAGS.FLAG_READ_OWNER_SIGNATURE_REQUEST, ...numberToBytes(request_uuid, 4)];
-
-    return this.runtime.request(bytes, true).then(response => {
-      let reader = new TnglReader(response);
-
-      logging.verbose(`response.byteLength=${response.byteLength}`);
-
-      if (reader.readFlag() !== COMMAND_FLAGS.FLAG_READ_OWNER_SIGNATURE_RESPONSE) {
-        throw "InvalidResponseFlag";
-      }
-
-      const response_uuid = reader.readUint32();
-
-      if (response_uuid != request_uuid) {
-        throw "InvalidResponseUuid";
-      }
-
-      const error_code = reader.readUint8();
-      logging.verbose(`error_code=${error_code}`);
-
-      if (error_code !== 0) {
-        throw "Fail";
-      }
-
-      const signature_bytes = reader.readBytes(16);
-      logging.debug(`signature_bytes=${signature_bytes}`);
-
-      const signature_string = uint8ArrayToHexString(signature_bytes);
-      logging.debug(`signature_string=${signature_string}`);
-
-      logging.info(`> Network Signature: ${signature_string}`);
-
-      return signature_string;
-    });
-  }
-
-  /**
-   * 
-   * @param {*} pcb_code 
-   * @param {*} product_code 
-   * @returns 
-   * @deprecated use writeProperties() instead
-   */
-  //! DEPRECATED writeControllerCodes() -> writeProperties()
-  writeControllerCodes(pcb_code, product_code) {
+    // TODO
     logging.verbose(`writeControllerCodes(pcb_code=${pcb_code}, product_code=${product_code})`);
-
-    logging.error("writeControllerCodes() is deprecated. Use writeProperties() instead");
 
     logging.debug("> Writing controller codes...");
 
@@ -2553,21 +1829,11 @@ export class Spectoda {
     });
   }
 
-  writeProperties({ pcbCode, productCode }) {
+
+  readProperties(connection: string[]): Promise<{ pcbCode: number, productCode: number }> {
+    logging.verbose(`readProperties(connection=${connection})`);
+
     // TODO
-  }
-
-  /**
-   * 
-   * @returns 
-   * @deprecated use readProperties() instead
-   */
-  //! DEPRECATED readControllerCodes() -> readProperties()
-  readControllerCodes() {
-    logging.verbose(`readControllerCodes()`);
-
-    logging.error("readControllerCodes() is deprecated. Use readProperties() instead");
-
     logging.debug("> Requesting controller codes ...");
 
     const request_uuid = this.#getUUID();
@@ -2608,8 +1874,424 @@ export class Spectoda {
     });
   }
 
-  readProperties() {
-    // TODO
+  // ======================================================================================================================
+
+  /**
+   * @deprecated choose connector in the connect() function
+   */
+  //! DEPRECATED setConnector() -> connect(connectorType, ...)
+  setConnector(connector_type: any) {
+    logging.error("setConnector() is deprecated. Use connect(connectorType, ...) instead");
+    throw "Deprecated";
+  }
+
+  /**
+   * @alias this.setConnector
+   * @deprecated choose connector in the connect() function
+   */
+  //! DEPRECATED assignConnector() -> connect(connectorType, ...)
+  assignConnector(connector_type: any) {
+    logging.error("assignConnector() is deprecated. Use connect(connectorType, ...) instead");
+    throw "Deprecated";
+  }
+
+  /**
+  * @deprecated use setNetwork() instead
+  */
+  //! DEPRECATED assignOwnerSignature() -> writeNetwork()
+  assignOwnerSignature(ownerSignature: any) {
+    logging.error("assignOwnerSignature() is deprecated. Use writeNetwork() instead");
+    throw "Deprecated";
+  }
+
+  /**
+  * @deprecated use setNetwork() instead
+  */
+  //! DEPRECATED setOwnerSignature() -> writeNetwork()
+  setOwnerSignature(ownerSignature: any) {
+    logging.error("setOwnerSignature() is deprecated. Use writeNetwork() instead");
+    throw "Deprecated";
+  }
+
+  /**
+   * @deprecated use getNetwork() instead
+   */
+  //! DEPRECATED getOwnerSignature() -> readNetwork()
+  getOwnerSignature() {
+    logging.error("getOwnerSignature() is deprecated. Use readNetwork() instead");
+    throw "Deprecated";
+  }
+
+  /**
+  * @deprecated use setNetwork() instead
+  */
+  //! DEPRECATED assignOwnerKey() -> writeNetwork()
+  assignOwnerKey(ownerKey: any) {
+    logging.error("assignOwnerKey() is deprecated. Use writeNetwork() instead");
+    throw "Deprecated";
+  }
+
+  /**
+  * @deprecated use setNetwork() instead
+  */
+  //! DEPRECATED assignOwnerKey() -> writeNetwork()
+  setOwnerKey(ownerKey: any) {
+    logging.error("setOwnerKey() is deprecated. Use writeNetwork() instead");
+    throw "Deprecated";
+  }
+
+  /**
+  * @deprecated use getNetwork() instead
+  */
+  //! DEPRECATED getOwnerKey() -> readNetwork()
+  getOwnerKey() {
+    logging.error("getOwnerKey() is deprecated. Use readNetwork() instead");
+    throw "Deprecated";
+  }
+
+  /**
+   * @deprecated use scan() followed by connect() followed by setNetwork()
+   */
+  //! DEPRECATED - use scan() followed by connect() followed by setNetwork()
+  adopt(newDeviceName = null, newDeviceId = null, tnglCode = null, ownerSignature = null, ownerKey = null, autoSelect = false) {
+    logging.error("adopt() is deprecated. Use scan() followed by connect() followed by setNetwork()");
+    throw "Deprecated";
+  }
+
+  /**
+   * @deprecated use isConnected()
+   */
+  //! DEPRECATED - use isConnected()
+  connected() {
+    logging.error("connected() is deprecated. Use isConnected()");
+    throw "Deprecated";
+  }
+
+  /**
+     *
+     * @param {*} event_label
+     * @param {number|number[]} device_ids
+     * @param {*} force_delivery
+  
+     * @returns
+     * @deprecated use emitEmptyEvent() instead
+     */
+  //! DEPRECATED emitEvent() -> emitEmptyEvent()
+  emitEvent(event_label: any, device_ids = [0xff], force_delivery = true) {
+    logging.error("emitEvent() is deprecated. Use emitEmptyEvent() instead");
+    throw "Deprecated";
+  }
+
+  /**
+  * @deprecated - is replaced by history merging and scenes
+  */
+  //! DEPRECATED - no equivalent. Replaced by history merging and scenes
+  resendAll() {
+    logging.error("resendAll() is deprecated");
+    throw "Deprecated";
+  }
+
+
+  /**
+    * Downloads firmware and calls updateDeviceFirmware()
+    * @param {string} url - whole URL of the firmware file
+    * @deprecated Use writeFirmware() instead
+    */
+  //! DEPRECATED fetchAndUpdateDeviceFirmware() -> writeFirmware()
+  async fetchAndUpdateDeviceFirmware(url: any) {
+    logging.error("fetchAndUpdateDeviceFirmware() is deprecated. Use writeFirmware() instead");
+    throw "Deprecated";
+  }
+
+  /**
+   * Downloads firmware and calls updateNetworkFirmware()
+   * @param {string} url - whole URL of the firmware file
+   * @deprecated Use writeFirmware() instead
+   */
+  //! DEPRECATED fetchAndUpdateNetworkFirmware() -> writeFirmware()
+  async fetchAndUpdateNetworkFirmware(url: any) {
+    logging.error("fetchAndUpdateNetworkFirmware() is deprecated. Use writeFirmware() instead");
+    throw "Deprecated";
+  }
+
+
+  /**
+   * @param {Uint8Array} firmware
+   * @returns {Promise<void>}
+   * @deprecated Use writeFirmware() instead
+   */
+  //! DEPRECATED updateDeviceFirmware() -> writeFirmware()
+  updateDeviceFirmware(firmware: any) {
+    logging.error("updateDeviceFirmware() is deprecated. Use writeFirmware() instead");
+    throw "Deprecated";
+  }
+
+  /**
+   * 
+   * @param {Uint8Array} firmware 
+   * @returns 
+   * @deprecated Use spectoda.useBroadcast().writeFirmware() instead
+   */
+  //! DEPRECATED updateNetworkFirmware() -> writeFirmware()
+  updateNetworkFirmware(firmware: any) {
+    logging.error("updateNetworkFirmware() is deprecated. Use writeFirmware() instead");
+    throw "Deprecated";
+  }
+
+  /**
+   * 
+   * @param {string} peer 
+   * @returns {Promise<void>}
+   * @deprecated Use syncFirmware() instead 
+   */
+  //! DEPRECATED updatePeerFirmware() -> syncFirmware()
+  async updatePeerFirmware(peer: any) {
+    logging.error("updatePeerFirmware() is deprecated. Use syncFirmware() instead");
+    throw "Deprecated";
+  }
+
+  /**
+   * @returns {Promise} config;
+   * @deprecated use readConfig() instead
+   */
+  //! DEPRECATED readNetworkConfig() -> readConfig()
+  readDeviceConfig(mac = "ee:33:fa:89:08:08") {
+    logging.error("readDeviceConfig() is deprecated. Use readConfig() instead");
+    throw "Deprecated";
+  }
+
+  /**
+   * @param {string} config;
+   * @deprecated use writeConfig() instead
+   */
+  //! DEPRECATED updateDeviceConfig() -> writeConfig()
+  updateDeviceConfig(config_raw: any) {
+    logging.error("updateDeviceConfig() is deprecated. Use writeConfig() instead");
+    throw "Deprecated";
+  }
+
+  /**
+   * @param {string} config;
+   * @deprecated use spectoda.use(connection).useAllConnections().writeConfig() instead
+   */
+  //! DEPRECATED updateNetworkConfig() -> writeConfig()
+  updateNetworkConfig(config: any) {
+    logging.error("updateNetworkConfig() is deprecated. Use writeConfig() instead");
+    throw "Deprecated";
+  }
+
+  /**
+ * @returns {Promise<TimeTrack>}
+ * @deprecated use readTimeline() instead 
+ */
+  //! DEPRECATED requestTimeline() -> readTimeline()
+  requestTimeline() {
+    logging.error("requestTimeline() is deprecated. Use readTimeline() instead");
+    throw "Deprecated";
+  }
+
+  /**
+   * @returns {Promise<void>}
+   * @deprecated use spectoda.use(connection).useAllConnections().restart() instead
+   */
+  //! DEPRECATED rebootNetwork() -> requestRestart()
+  rebootNetwork() {
+    logging.error("rebootNetwork() is deprecated. Use requestRestart() instead");
+    throw "Deprecated";
+  }
+
+  /**
+   * @returns {Promise<void>}
+   * @deprecated use spectoda.use(connection).requestRestart() instead
+   */
+  //! DEPRECATED rebootDevice() -> requestRestart()
+  rebootDevice() {
+    logging.error("rebootDevice() is deprecated. Use requestRestart() instead");
+    throw "Deprecated";
+  }
+
+  /**
+   * @returns {Promise<void>}
+   * @deprecated use spectoda.use(connection).requestRestart() instead
+   */
+  //! DEPRECATED rebootAndDisconnectDevice() -> requestRestart() then disconnect()
+  rebootAndDisconnectDevice() {
+    logging.error("rebootAndDisconnectDevice() is deprecated. Use requestRestart() then disconnect() instead");
+    throw "Deprecated";
+  }
+
+  /** 
+   * @returns {Promise<string>}
+   * @deprecated Use spectoda.use(connection).readVersion() instead
+   */
+  //! DEPRECATED getFwVersion() -> readVersion()
+  getFwVersion() {
+    logging.error("getFwVersion() is deprecated. Use readVersion() instead");
+    throw "Deprecated";
+  }
+
+  /**
+   * 
+   * @deprecated Use readTnglFingerprint() instead
+   */
+  //! DEPRECATED getTnglFingerprint() -> readTnglFingerprint()
+  getTnglFingerprint() {
+    logging.error("getTnglFingerprint() is deprecated. Use readTnglFingerprint() instead");
+    throw "Deprecated";
+  }
+
+  /**
+   * 
+   * @deprecated 
+   */
+  //! DEPRECATED - no equivalent
+  setNetworkDatarate(datarate: any) {
+    logging.error("setNetworkDatarate() is deprecated");
+    throw "Deprecated";
+  }
+
+  /**
+   * 
+   * @deprecated 
+   */
+  //! DEPRECATED - no equivalent
+  readRomPhyVdd33() {
+    logging.error("readRomPhyVdd33() is deprecated");
+    throw "Deprecated";
+  }
+
+  /**
+     * 
+     * @deprecated 
+     */
+  //! DEPRECATED - no equivalent
+  readPinVoltage(pin: any) {
+    logging.error("readPinVoltage() is deprecated");
+    throw "Deprecated";
+  }
+
+
+  /**
+   * 
+   * @deprecated Use readConnectedPeers() instead
+   */
+  //! DEPRECATED - getConnectedPeersInfo() -> readConnections()
+  getConnectedPeersInfo() {
+    logging.error("getConnectedPeersInfo() is deprecated. Use readConnections() instead");
+    throw "Deprecated";
+  }
+
+  /**
+    * @deprecated use requestSleep() instead
+    */
+  //! DEPRECATED networkSleep() -> requestSleep()
+  deviceSleep() {
+    logging.error("deviceSleep() is deprecated. Use requestSleep() instead");
+    throw "Deprecated";
+  }
+
+  /**
+   * @deprecated use requestSleep() instead
+   */
+  //! DEPRECATED networkSleep() -> requestSleep()
+  networkSleep() {
+    logging.error("networkSleep() is deprecated. Use requestSleep() instead");
+    throw "Deprecated";
+  }
+
+  /**
+   * 
+   */
+  //! DEPRECATED saveState() -> requestSaveState()
+  saveState() {
+    logging.error("saveState() is deprecated. Use requestSaveState() instead");
+    throw "Deprecated";
+  }
+
+  /**
+   * @deprecated use readProperties() instead
+   */
+  //! DEPRECATED getControllerInfo() -> readProperties()
+  getControllerInfo() {
+    logging.error("getControllerInfo() is deprecated. Use readProperties() instead");
+    throw "Deprecated";
+  }
+
+  /**
+     * @deprecated use writeNetwork() instead
+     */
+  //! DEPRECATED writeOwner() -> writeNetwork()
+  writeOwner(ownerSignature = "00000000000000000000000000000000", ownerKey = "00000000000000000000000000000000") {
+    logging.error("writeOwner() is deprecated. Use writeNetwork() instead");
+    throw "Deprecated";
+  }
+
+  /**
+   * @deprecated use writeNetwork() instead
+   */
+  //! DEPRECATED writeNetworkOwner() -> writeNetwork()
+  writeNetworkOwner(ownerSignature = "00000000000000000000000000000000", ownerKey = "00000000000000000000000000000000") {
+    logging.error("writeNetworkOwner() is deprecated. Use writeNetwork() instead");
+    throw "Deprecated";
+  }
+
+  /**
+    * 
+    * @param {*} name 
+    * @returns 
+    * @deprecated use writeName() instead
+    */
+  //! DEPRECATED writeControllerName() -> writeName()
+  writeControllerName(name: any) {
+    logging.error("writeControllerName() is deprecated. Use writeName() instead");
+    throw "Deprecated";
+  }
+
+  /**
+   *
+   * @returns
+   * @deprecated use readName() instead
+   */
+  //! DEPRECATED readControllerName() -> readName()
+  readControllerName() {
+    logging.error("readControllerName() is deprecated. Use readName() instead");
+    throw "Deprecated";
+  }
+
+  /**
+   * 
+   * @returns 
+   * @deprecated use readNetwork(options: { readSignature: true, readKey: false }) instead
+   */
+  //! DEPRECATED readNetworkSignature() -> readNetwork()
+  readNetworkSignature() {
+    logging.error("readNetworkSignature() is deprecated. Use readNetwork() instead");
+    throw "Deprecated";
+  }
+
+
+  /**
+  * 
+  * @param {*} pcb_code 
+  * @param {*} product_code 
+  * @returns 
+  * @deprecated use writeProperties() instead
+  */
+  //! DEPRECATED writeControllerCodes() -> writeProperties()
+  writeControllerCodes(pcb_code: any, product_code: any) {
+    logging.error("writeControllerCodes() is deprecated. Use writeProperties() instead");
+    throw "Deprecated";
+  }
+
+  /**
+    * 
+    * @returns 
+    * @deprecated use readProperties() instead
+    */
+  //! DEPRECATED readControllerCodes() -> readProperties()
+  readControllerCodes() {
+    logging.error("readControllerCodes() is deprecated. Use readProperties() instead");
+    throw "Deprecated";
   }
 
 }
