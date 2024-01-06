@@ -1,5 +1,6 @@
 Remote Control napojuje mezi sebou Spectoda.js
 
+Smazano setLanguage() z Spectoda.js
 
 Spectoda.js -> SpectodaController.js 
 
@@ -8,3 +9,5 @@ Funkce SpectodaConnectu presunuty do spectoda-connect/index.ts
 
 TODO
 hideHomeButton(), setOrientation(option) Presunuto to spectoda-connect/index.ts, kde je potreba tyto funkce ozivit aby fungovaly
+
+kod wakelocku presunut do wake-lock/index.ts je potreba ozivit funkce aby fungovaly
