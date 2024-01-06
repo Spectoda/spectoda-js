@@ -33,13 +33,14 @@ import { WEBSOCKET_URL } from "./SpectodaWebSocketsConnector";
 // TODO - kdyz zavolam funkci connect a uz jsem pripojeny, tak vyslu event connected, pokud si myslim ze nejsem pripojeny.
 // TODO - "watchdog timer" pro resolve/reject z TC
 
-type ConnectorType = "default" | "webbluetooth" | "webserial" | "dummy" | "websockets" | "flutter" | "tangleconnect" | "edummy" | "vdummy";
+export type ConnectorType = "default" | "webbluetooth" | "webserial" | "dummy" | "websockets" | "flutter" | "tangleconnect" | "edummy" | "vdummy";
+
+export type ConnectionState = "connected" | "connecting" | "disconnected" | "disconnecting";
+
 type EventId = number | number[];
 
 const EMPTY_SIGNATURE_AND_KEY = "00000000000000000000000000000000";
 const DEFAULT_CONNECTION = "*/ff:ff:ff:ff:ff:ff";
-
-type ConnectionState = "connected" | "connecting" | "disconnected" | "disconnecting";
 
 type Tngl = { code: string | undefined; bytecode: Uint8Array | undefined };
 
