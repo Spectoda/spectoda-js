@@ -7,6 +7,8 @@ Spectoda.js -> SpectodaController.js
 
 Funkce SpectodaConnectu presunuty do spectoda-connect/index.ts
 
+Spectoda.timeline odstraneno. Pokud je potreba pracovat s objektem timeline, je potreba si to vytvorit na strane appky a drzet ho synchronni s networkem
+
 TODO
 hideHomeButton(), setOrientation(option) Presunuto to spectoda-connect/index.ts, kde je potreba tyto funkce ozivit aby fungovaly
 

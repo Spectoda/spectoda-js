@@ -72,8 +72,6 @@ export class Spectoda {
   constructor(connectorType: ConnectorType = "default", reconnecting = true) {
     this.#parser = new TnglCodeParser();
 
-    this.timeline = new TimeTrack(0, true);
-
     this.#uuidCounter = Math.floor(Math.random() * 0xffffffff);
 
     this.#ownerSignature = DEFAULT_SIGNATURE;
@@ -723,8 +721,8 @@ export class Spectoda {
       tngl.bytecode = this.#parser.parseTnglCode(tngl.code);
     }
 
-    const timeline_flags = this.timeline.paused() ? 0b00010000 : 0b00000000; // flags: [reserved,reserved,reserved,timeline_paused,reserved,reserved,reserved,reserved]
-    const timeline_bytecode = [COMMAND_FLAGS.FLAG_SET_TIMELINE, ...numberToBytes(this.runtime.clock.millis(), 6), ...numberToBytes(this.timeline.millis(), 4), timeline_flags];
+    const timeline_flags = this.runtime.timeline.paused() ? 0b00010000 : 0b00000000; // flags: [reserved,reserved,reserved,timeline_paused,reserved,reserved,reserved,reserved]
+    const timeline_bytecode = [COMMAND_FLAGS.FLAG_SET_TIMELINE, ...numberToBytes(this.runtime.clock.millis(), 6), ...numberToBytes(this.runtime.timeline.millis(), 4), timeline_flags];
 
     const reinterpret_bytecode = [COMMAND_FLAGS.FLAG_REINTERPRET_TNGL, ...numberToBytes(this.runtime.clock.millis(), 6), 0, ...numberToBytes(tngl.bytecode.length, 4), ...tngl.bytecode];
 
@@ -902,8 +900,8 @@ export class Spectoda {
     // TODO
     logging.debug(`> Synchronizing timeline to device`);
 
-    const flags = this.timeline.paused() ? 0b00010000 : 0b00000000; // flags: [reserved,reserved,reserved,timeline_paused,reserved,reserved,reserved,reserved]
-    const payload = [COMMAND_FLAGS.FLAG_SET_TIMELINE, ...numberToBytes(this.runtime.clock.millis(), 6), ...numberToBytes(this.timeline.millis(), 4), flags];
+    const flags = this.runtime.timeline.paused() ? 0b00010000 : 0b00000000; // flags: [reserved,reserved,reserved,timeline_paused,reserved,reserved,reserved,reserved]
+    const payload = [COMMAND_FLAGS.FLAG_SET_TIMELINE, ...numberToBytes(this.runtime.clock.millis(), 6), ...numberToBytes(this.runtime.timeline.millis(), 4), flags];
     return this.runtime.execute(payload, "TMLN");
   }
 
@@ -1261,11 +1259,15 @@ export class Spectoda {
 
       logging.verbose(`clock_timestamp=${clock_timestamp}, timeline_timestamp=${timeline_timestamp}, timeline_paused=${timeline_paused}`);
 
+      let timeline = new TimeTrack();
+
       if (timeline_paused) {
-        this.timeline.setState(timeline_timestamp, true);
+        timeline.setState(timeline_timestamp, true);
       } else {
-        this.timeline.setState(timeline_timestamp + (this.runtime.clock.millis() - clock_timestamp), false);
+        timeline.setState(timeline_timestamp + (this.runtime.clock.millis() - clock_timestamp), false);
       }
+
+      return timeline;
     });
   }
 
