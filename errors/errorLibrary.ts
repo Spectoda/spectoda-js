@@ -27,7 +27,6 @@
  * - Generic information, ambiguity (e.g. "Something went wrong", "The item was moved, deleted, removed or archived")
  */
 
-import { t } from "../lib/i18n";
 export interface ErrorFormat {
   title: string;
   message: string;
@@ -36,18 +35,6 @@ export interface ErrorFormat {
 interface ErrorList {
   [key: string]: ErrorFormat;
 }
-
-// Errors specific for NARA
-export const app: ErrorList = {
-  MicAccessDenied: {
-    title: t("Mikrofon se nepodařilo spustit."),
-    message: t("Zkontrolujte, zda jste v Nastavení povolili aplikaci přístup k mikrofonu."),
-  },
-  UserCanceledSelection: {
-    title: t("Spárování nové lampy se nezdařilo"),
-    message: t("Pro připojení již spárované lampy prosím stiskněte jakýkoli symbol") + ' "🛑"',
-  },
-} as const;
 
 // Errors specific for STUDIO
 export const studio = {
