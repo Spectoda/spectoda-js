@@ -15,3 +15,5 @@ hideHomeButton(), setOrientation(option) Presunuto to spectoda-connect/index.ts,
 kod wakelocku presunut do wake-lock/index.ts je potreba ozivit funkce aby fungovaly
 
 preprocessTngl() moved to SpectodaParser.js. je potreba ozivit funkce aby fungovaly
+
+SpectodaWebSocketsConnector.js moved to remote-control/index.ts. Added types and renamed createSpectodaWebsocket() to createRemoteSpectoda()

@@ -10,9 +10,12 @@ declare global {
     DEBUG_LEVEL_VERBOSE: number;
     setLoggingLevel: (level: number) => void;
 
-    MSStream: any;
+    socket: unknown;
+    sockets: Array<unknown>;
+
+    MSStream: unknown;
     validateTimestamp: typeof validateTimestamp;
-    mapValue: (x: any, in_min: any, in_max: any, out_min: any, out_max: any) => any;
-    eruda: any;
+    mapValue: (x: unknown, in_min: unknown, in_max: unknown, out_min: unknown, out_max: unknown) => unknown;
+    eruda: unknown;
   }
 }
