@@ -1308,7 +1308,9 @@ export class Spectoda {
     /**
      * Downloads firmware and calls updateDeviceFirmware()
      * @param {string} url - whole URL of the firmware file
+     * @deprecated Use writeFirmware() instead
      */
+    //! DEPRECATED fetchAndUpdateDeviceFirmware() -> writeFirmware()
     async fetchAndUpdateDeviceFirmware(url) {
         const fw = fetchFirmware(url);
 
@@ -1318,7 +1320,9 @@ export class Spectoda {
     /**
      * Downloads firmware and calls updateNetworkFirmware()
      * @param {string} url - whole URL of the firmware file
+     * @deprecated Use writeFirmware() instead
      */
+    //! DEPRECATED fetchAndUpdateNetworkFirmware() -> writeFirmware()
     async fetchAndUpdateNetworkFirmware(url) {
         const fw = fetchFirmware(url);
 
@@ -1363,7 +1367,7 @@ export class Spectoda {
      * 
      * @param {Uint8Array} firmware 
      * @returns 
-     * @deprecated Use spectoda.useBroadcast().writeFirmware() instead
+     * @deprecated Use writeFirmware() instead
      */
     //! DEPRECATED updateNetworkFirmware() -> writeFirmware()
     updateNetworkFirmware(firmware) {
