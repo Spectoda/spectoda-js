@@ -11,3 +11,5 @@ TODO
 hideHomeButton(), setOrientation(option) Presunuto to spectoda-connect/index.ts, kde je potreba tyto funkce ozivit aby fungovaly
 
 kod wakelocku presunut do wake-lock/index.ts je potreba ozivit funkce aby fungovaly
+
+preprocessTngl() moved to SpectodaParser.js. je potreba ozivit funkce aby fungovaly
