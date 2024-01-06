@@ -1,6 +1,6 @@
 import { createNanoEvents } from "../functions";
 import { logging } from "../logging";
-import { LogEntry, RingLogBuffer } from "./LogBuffer";
+import { LogEntry, RingLogBuffer } from "../LogBuffer";
 import { SpectodaWasm } from "./SpectodaWasm.js";
 
 export class PreviewController {

@@ -1,12 +1,12 @@
 // npm install --save @types/w3c-web-serial
 /// <reference types="w3c-web-serial" />
 
-import { logging } from "../../logging";
-import { sleep, toBytes, numberToBytes, crc8, crc32, hexStringToArray, rgbToHex, stringToBytes, convertToByteArray } from "../../functions";
-import { TimeTrack } from "../../TimeTrack.js";
-import { COMMAND_FLAGS } from "../Spectoda_JS.js";
-import { TnglWriter } from "../../TnglWriter.js";
-import { TnglReader } from "../../TnglReader.js";
+import { logging } from "../logging";
+import { sleep, toBytes, numberToBytes, crc8, crc32, hexStringToArray, rgbToHex, stringToBytes, convertToByteArray } from "../functions";
+import { TimeTrack } from "../TimeTrack.js";
+import { COMMAND_FLAGS } from "../webassembly/Spectoda_JS.js";
+import { TnglWriter } from "../TnglWriter.js";
+import { TnglReader } from "../TnglReader.js";
 import { SpectodaRuntime } from "../SpectodaRuntime";
 
 let { SerialPort, ReadlineParser }: { SerialPort: any; ReadlineParser: any } = { SerialPort: null, ReadlineParser: null };

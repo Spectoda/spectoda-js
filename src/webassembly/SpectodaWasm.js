@@ -106,7 +106,7 @@ function loadWasm(wasmVersion) {
   } else {
 
     // NODE enviroment
-    
+
     if (!process.env.NEXT_PUBLIC_VERSION) {
       globalThis.Module = require(`./webassembly/${wasmVersion}.js`);
       onWasmLoad();

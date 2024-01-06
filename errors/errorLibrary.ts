@@ -27,7 +27,7 @@
  * - Generic information, ambiguity (e.g. "Something went wrong", "The item was moved, deleted, removed or archived")
  */
 
-import { t } from "../i18n";
+import { t } from "../lib/i18n";
 export interface ErrorFormat {
   title: string;
   message: string;

@@ -1,8 +1,8 @@
-import { TnglCodeParser } from "./SpectodaParser.js";
-import { TimeTrack } from "./TimeTrack.js";
-import "./TnglReader.js";
-import { TnglReader } from "./TnglReader.js";
-import "./TnglWriter.js";
+import { TnglCodeParser } from "./SpectodaParser";
+import { TimeTrack } from "./TimeTrack";
+import "./TnglReader";
+import { TnglReader } from "./TnglReader";
+import "./TnglWriter";
 import {
   colorToBytes,
   computeTnglFingerprint,
@@ -18,14 +18,14 @@ import {
   stringToBytes,
   uint8ArrayToHexString,
 } from "./functions";
-import { changeLanguage, t } from "./i18n.js";
+import { changeLanguage, t } from "../lib/i18n";
 import { logging, setLoggingLevel } from "./logging";
-import { COMMAND_FLAGS } from "./src/Spectoda_JS.js";
+import { COMMAND_FLAGS } from "./webassembly/Spectoda_JS";
 
 import { io } from "socket.io-client";
 import customParser from "socket.io-msgpack-parser";
-import { WEBSOCKET_URL } from "./SpectodaWebSocketsConnector.js";
-import { SpectodaRuntime, allEventsEmitter } from "./src/SpectodaRuntime.js";
+import { WEBSOCKET_URL } from "./SpectodaWebSocketsConnector";
+import { SpectodaRuntime, allEventsEmitter } from "./SpectodaRuntime";
 
 let lastEvents = {};
 
@@ -345,7 +345,7 @@ export class Spectoda {
   /**
   * @deprecated use setNetwork() instead
   */
-  //! DEPRECATED  setOwnerSignature() -> writeNetwork()
+  //! DEPRECATED setOwnerSignature() -> writeNetwork()
   setOwnerSignature(ownerSignature) {
     logging.error("setOwnerSignature() is deprecated");
 

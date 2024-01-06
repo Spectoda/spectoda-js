@@ -643,8 +643,8 @@ if (typeof window !== "undefined") {
 const Color = detectNode()
   ? require("color")
   : (color: string) => {
-      return "#000000";
-    };
+    return "#000000";
+  };
 
 const barvy: { [key: string]: string } = {
   vypnuto: "#000000",

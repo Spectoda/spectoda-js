@@ -1,4 +1,4 @@
-import { TnglWriter } from "./TnglWriter.js";
+import { TnglWriter } from "./TnglWriter";
 import { mapValue } from "./functions";
 import { logging } from "./logging";
 

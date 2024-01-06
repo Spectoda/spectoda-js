@@ -1,4 +1,4 @@
-import { validateTimestamp } from "./functions";
+import { validateTimestamp } from "./src/functions";
 
 declare global {
   interface Window {

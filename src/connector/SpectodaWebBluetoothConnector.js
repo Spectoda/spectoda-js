@@ -1,11 +1,11 @@
 // npm install --save-dev @types/web-bluetooth
 /// <reference types="web-bluetooth" />
 
-import { logging } from "./logging";
-import { detectAndroid, detectSafari, hexStringToUint8Array, numberToBytes, sleep, toBytes } from "./functions";
-import { COMMAND_FLAGS } from "./src/Spectoda_JS.js";
-import { TimeTrack } from "./TimeTrack.js";
-import { TnglReader } from "./TnglReader.js";
+import { logging } from "../logging";
+import { detectAndroid, detectSafari, hexStringToUint8Array, numberToBytes, sleep, toBytes } from "../functions";
+import { COMMAND_FLAGS } from "../webassembly/Spectoda_JS.js";
+import { TimeTrack } from "../TimeTrack.js";
+import { TnglReader } from "../TnglReader.js";
 
 // od 0.8.0 maji vsechny spectoda enabled BLE zarizeni jednotne SPECTODA_DEVICE_UUID.
 // kazdy typ (produkt) Spectoda Zarizeni ma svuj kod v manufacturer data

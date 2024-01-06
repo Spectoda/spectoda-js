@@ -11,12 +11,12 @@ echo 'overlays=uart3' | sudo tee -a /boot/orangepiEnv.txt
 cat /boot/orangepiEnv.txt
 */
 
-import { logging } from "../../logging";
-import { sleep, toBytes, numberToBytes, crc8, crc32, hexStringToArray, rgbToHex, stringToBytes, convertToByteArray } from "../../functions";
-import { TimeTrack } from "../../TimeTrack.js";
-import { COMMAND_FLAGS } from "../Spectoda_JS.js";
-import { TnglWriter } from "../../TnglWriter.js";
-import { TnglReader } from "../../TnglReader.js";
+import { logging } from "../logging";
+import { sleep, toBytes, numberToBytes, crc8, crc32, hexStringToArray, rgbToHex, stringToBytes, convertToByteArray } from "../functions";
+import { TimeTrack } from "../TimeTrack.js";
+import { COMMAND_FLAGS } from "../webassembly/Spectoda_JS.js";
+import { TnglWriter } from "../TnglWriter.js";
+import { TnglReader } from "../TnglReader.js";
 import { SpectodaRuntime } from "../SpectodaRuntime";
 import { promises } from "dns";
 
