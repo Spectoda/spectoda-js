@@ -2772,6 +2772,4 @@ export class Spectoda {
     // TODO
   }
 
-  readConnections
-
 }
