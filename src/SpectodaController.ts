@@ -1,5 +1,3 @@
-import { TnglCodeParser } from "./SpectodaParser";
-import { TimeTrack } from "./TimeTrack";
 import "./TnglReader";
 import { TnglReader } from "./TnglReader";
 import "./TnglWriter";
@@ -18,16 +16,8 @@ import {
     stringToBytes,
     uint8ArrayToHexString,
 } from "./functions";
-import { changeLanguage, t } from "../lib/i18n";
 import { logging, setLoggingLevel } from "./logging";
 import { COMMAND_FLAGS } from "./webassembly/Spectoda_JS";
-
-import { io } from "socket.io-client";
-import customParser from "socket.io-msgpack-parser";
-import { WEBSOCKET_URL } from "./SpectodaWebSocketsConnector";
-import { SpectodaRuntime, allEventsEmitter } from "./SpectodaRuntime";
-
-let lastEvents = {};
 
 // should not create more than one object!
 // the destruction of the Spectoda is not well implemented
@@ -39,216 +29,15 @@ let lastEvents = {};
 export class Spectoda {
     #parser;
 
-    #uuidCounter;
     #ownerSignature;
     #ownerKey;
     #adopting;
-    #updating;
 
-    #saveStateTimeoutHandle;
-
-    #connectionState;
-    #websocketConnectionState;
-
-    #criteria;
-    #reconnecting;
-    #autonomousConnection;
     #wakeLock;
     #isPrioritizedWakelock;
-    #proxyEventsEmitterRefUnsub;
 
-    #reconnectRC;
+    constructor() {
 
-    constructor(connectorType = "default", reconnecting = true) {
-        this.#parser = new TnglCodeParser();
-
-        this.timeline = new TimeTrack(0, true);
-
-        this.#uuidCounter = Math.floor(Math.random() * 0xffffffff);
-
-        this.#ownerSignature = "00000000000000000000000000000000";
-        this.#ownerKey = "00000000000000000000000000000000";
-
-        this.runtime = new SpectodaRuntime(this);
-
-        if (connectorType) {
-            this.runtime.assignConnector(connectorType);
-        }
-
-        this.#adopting = false;
-        this.#updating = false;
-
-        this.#reconnecting = reconnecting ? true : false;
-        this.#connectionState = "disconnected";
-        this.#websocketConnectionState = "disconnected";
-
-        this.#proxyEventsEmitterRefUnsub = null;
-
-        this.runtime.onConnected = event => {
-            logging.debug("> Runtime connected");
-        };
-
-        this.runtime.onDisconnected = event => {
-            logging.debug("> Runtime disconnected");
-
-            const TIME = 2500;
-
-            if (this.#getConnectionState() === "connected" && this.#reconnecting) {
-                logging.debug(`Reconnecting in ${TIME}ms..`);
-                this.#setConnectionState("connecting");
-
-                return sleep(TIME)
-                    .then(() => {
-                        return this.#connect(true);
-                    })
-                    .then(() => {
-                        logging.info("Reconnection successful.");
-                        this.#setConnectionState("connected");
-                    })
-                    .catch(error => {
-                        logging.warn("Reconnection failed:", error);
-                        this.#setConnectionState("disconnected");
-                    });
-            } else {
-                this.#setConnectionState("disconnected");
-            }
-        };
-
-        // auto clock sync loop
-        setInterval(() => {
-            // TODO move this to runtime
-            if (!this.#updating && this.runtime.connector) {
-                // this.connected().then(connected => {
-                //   if (connected) {
-                //     this.syncClock().then(() => {
-                //       return this.syncTimeline();
-                //     }).catch(error => {
-                //       logging.warn("Catched error:", error);
-                //     });
-                //   }
-                // });
-
-                if (this.#getConnectionState() === "connected") {
-                    return (
-                        this.syncClock()
-                            // .then(() => {
-                            //   return this.syncTimeline();
-                            // })
-                            // .then(() => {
-                            //   return this.syncEventHistory(); //! this might slow down stuff for Bukanyr
-                            // })
-                            .catch(error => {
-                                logging.warn(error);
-                            })
-                    );
-                } else if (this.#getConnectionState() === "disconnected" && this.#autonomousConnection) {
-                    return this.#connect(true).catch(error => {
-                        logging.warn(error);
-                    });
-                }
-            }
-        }, 60000);
-    }
-
-    #setWebSocketConnectionState(websocketConnectionState) {
-        switch (websocketConnectionState) {
-            case "connecting":
-                if (websocketConnectionState !== this.#websocketConnectionState) {
-                    logging.warn("> Spectoda connecting");
-                    this.#websocketConnectionState = websocketConnectionState;
-                    this.runtime.emit("connecting-websockets");
-                }
-                break;
-            case "connected":
-                if (websocketConnectionState !== this.#websocketConnectionState) {
-                    logging.warn("> Spectoda connected");
-                    this.#websocketConnectionState = websocketConnectionState;
-                    this.runtime.emit("connected-websockets");
-                }
-                break;
-            case "disconnecting":
-                if (websocketConnectionState !== this.#websocketConnectionState) {
-                    logging.warn("> Spectoda disconnecting");
-                    this.#connectionState = connectionState;
-                    this.runtime.emit("disconnecting-websockets");
-                }
-                break;
-            case "disconnected":
-                if (websocketConnectionState !== this.#websocketConnectionState) {
-                    logging.warn("> Spectoda disconnected");
-                    this.#websocketConnectionState = websocketConnectionState;
-                    this.runtime.emit("disconnected-websockets");
-                }
-                break;
-            default:
-                throw `InvalidState: ${websocketConnectionState}`;
-        }
-    }
-
-    #setConnectionState(connectionState) {
-        switch (connectionState) {
-            case "connecting":
-                if (connectionState !== this.#connectionState) {
-                    logging.warn("> Spectoda connecting");
-                    this.#connectionState = connectionState;
-                    // TODO find out how to handle hacky instance return or other way so it will also work through websockets
-                    this.runtime.emit("connecting" /*{ target: this }*/);
-                }
-                break;
-            case "connected":
-                if (connectionState !== this.#connectionState) {
-                    logging.warn("> Spectoda connected");
-                    this.#connectionState = connectionState;
-                    // TODO find out how to handle hacky instance return or other way so it will also work through websockets
-                    this.runtime.emit("connected" /*{ target: this }*/);
-                }
-                break;
-            case "disconnecting":
-                if (connectionState !== this.#connectionState) {
-                    logging.warn("> Spectoda disconnecting");
-                    this.#connectionState = connectionState;
-                    // TODO find out how to handle hacky instance return or other way so it will also work through websockets
-                    this.runtime.emit("disconnecting" /*{ target: this }*/);
-                }
-                break;
-            case "disconnected":
-                if (connectionState !== this.#connectionState) {
-                    logging.warn("> Spectoda disconnected");
-                    this.#connectionState = connectionState;
-                    // TODO find out how to handle hacky instance return or other way so it will also work through websockets
-                    this.runtime.emit("disconnected" /*{ target: this }*/);
-                }
-                break;
-            default:
-                logging.error("#setConnectionState(): InvalidState");
-                throw "InvalidState";
-        }
-    }
-
-    #getConnectionState() {
-        return this.#connectionState;
-    }
-
-    #setOwnerSignature(ownerSignature) {
-        const reg = ownerSignature.match(/([\dabcdefABCDEF]{32})/g);
-
-        if (!reg[0]) {
-            throw "InvalidSignature";
-        }
-
-        this.#ownerSignature = reg[0];
-        return true;
-    }
-
-    #setOwnerKey(ownerKey) {
-        const reg = ownerKey.match(/([\dabcdefABCDEF]{32})/g);
-
-        if (!reg[0]) {
-            throw "InvalidKey";
-        }
-
-        this.#ownerKey = reg[0];
-        return true;
     }
 
     requestWakeLock(prioritized = false) {
@@ -392,198 +181,6 @@ export class Spectoda {
         return this.#ownerKey;
     }
 
-    //! please move this function elsewhere 
-    fetchClients() {
-        if (this.socket) return this.socket.emitWithAck("list-all-clients");
-    }
-
-    /**
-     * @param {Object} options
-     * @param {string?} options.signature - The network signature.
-     * @param {string?} options.key - The network key.
-     * @param {boolean?} [options.sessionOnly] - Whether to enable remote control for the current session only.
-     * @param {{
-     *   user?: {
-     *     name?: string,
-     *     email?: string,
-     *     image?: string
-     *   },
-     *   app?: {
-     *     name?: string,
-     *     version?: string,
-     *     commitHash?: string,
-     *     url?: string
-     *   },
-     *   [key: string]: any
-     * }} [options.meta] - Optional metadata about the user and the app.
-     */
-    async enableRemoteControl({ signature, key, sessionOnly, meta }) {
-        logging.debug("> Connecting to Remote Control", { signature, key, sessionOnly });
-
-        this.#proxyEventsEmitterRefUnsub && this.#proxyEventsEmitterRefUnsub();
-
-        // Disconnect and clean up the previous socket if it exists
-        if (this.socket) {
-            this.socket.removeAllListeners(); // Removes all listeners attached to the socket
-            this.socket.disconnect();
-        }
-
-        // Initialize a new socket connection
-        this.socket = io(WEBSOCKET_URL, {
-            parser: customParser,
-        });
-
-        this.socket.connect();
-        this.requestWakeLock(true);
-
-        const setConnectionSocketData = async () => {
-            const peers = await this.getConnectedPeersInfo().catch(() => {
-                return [];
-            });
-            logging.debug("peers", peers);
-            this.socket.emit("set-connectedMacs-data", peers);
-        };
-
-        // Reset event listeners for 'connected' and 'disconnected'
-        this.on("connected", async () => {
-            setConnectionSocketData();
-        });
-
-        this.on("disconnected", () => {
-            this.socket.emit("set-connectedMacs-data", null);
-        });
-
-        return await new Promise((resolve, reject) => {
-            this.socket.on("disconnect", () => {
-                this.#setWebSocketConnectionState("disconnected");
-            });
-
-            this.socket.on("connect", async () => {
-                if (sessionOnly) {
-                    // Handle session-only logic
-                    const response = await this.socket.emitWithAck("join-session", null);
-                    const roomNumber = response?.roomNumber;
-
-                    if (response?.status === "success") {
-                        this.#setWebSocketConnectionState("connected");
-                        setConnectionSocketData();
-
-                        logging.debug("Remote control session joined successfully", roomNumber);
-
-                        resolve({ status: "success", roomNumber });
-                    } else {
-                        this.#setWebSocketConnectionState("disconnected");
-                        logging.debug("Remote control session join failed, does not exist");
-                    }
-                } else if (signature) {
-                    // Handle signature-based logic
-                    this.#setWebSocketConnectionState("connecting");
-                    await this.socket
-                        .emitWithAck("join", { signature, key })
-                        .then(e => {
-                            this.#setWebSocketConnectionState("connected");
-                            setConnectionSocketData();
-
-                            logging.info("> Connected and joined network remotely");
-
-                            resolve({ status: "success" });
-                        })
-                        .catch(e => {
-                            this.#setWebSocketConnectionState("disconnected");
-                        });
-                }
-
-                this.#setWebSocketConnectionState("connecting");
-                await this.socket
-                    .emitWithAck("join", { signature, key })
-                    .then(e => {
-                        this.#setWebSocketConnectionState("connected");
-                        setConnectionSocketData();
-                    })
-                    .catch(e => {
-                        this.#setWebSocketConnectionState("disconnected");
-                    });
-
-                logging.info("> Connected and joined network remotely");
-
-                let deviceType = "browser";
-
-                if (detectNode()) {
-                    deviceType = "gateway";
-                } else if (detectSpectodaConnect()) {
-                    deviceType = "spectoda-connect";
-                }
-
-                this.socket.emit("set-device-info", { deviceType });
-
-                this.socket.emit("set-meta-data", meta);
-
-                resolve({ status: "success" });
-
-                logging.info("> Listening for events", allEventsEmitter);
-                globalThis.allEventsEmitter = allEventsEmitter;
-
-                allEventsEmitter.on("on", ({ name, args }) => {
-                    logging.verbose("on", name, args);
-                    this.socket.emit("event", { name, args });
-                });
-
-                this.socket.on("func", async (payload, callback) => {
-                    if (!callback) {
-                        logging.error("No callback provided");
-                        return;
-                    }
-
-                    let { functionName, arguments: args } = payload;
-
-                    // call internal class function await this[functionName](...args)
-
-                    // call internal class function
-                    try {
-                        if (functionName === "debug") {
-                            logging.debug(...args);
-                            return callback({ status: "success", message: "debug", payload: args });
-                        }
-                        if (functionName === "assignOwnerSignature" || functionName === "assignOwnerKey") {
-                            return callback({ status: "success", message: "assign key/signature is ignored on remote." });
-                        }
-
-                        if (functionName === "updateDeviceFirmware" || functionName === "updateNetworkFirmware") {
-                            if (Array.isArray(args?.[0])) {
-                                args[0] = new Uint8Array(args[0]);
-                            } else if (typeof args?.[0] === "object") {
-                                const arr = Object.values(args[0]);
-                                const uint8Array = new Uint8Array(arr);
-                                args[0] = uint8Array;
-                            }
-                        }
-                        const result = await this[functionName](...args);
-                        callback({ status: "success", result });
-                    } catch (e) {
-                        logging.error(e);
-                        callback({ status: "error", error: e });
-                    }
-                });
-            });
-        });
-    }
-
-    disableRemoteControl() {
-        logging.debug("> Disonnecting from the Remote Control");
-
-        this.releaseWakeLock(true);
-        this.socket?.disconnect();
-    }
-
-    // valid UUIDs are in range [1..4294967295] (32-bit unsigned number)
-    #getUUID() {
-        if (this.#uuidCounter >= 4294967295) {
-            this.#uuidCounter = 0;
-        }
-
-        return ++this.#uuidCounter;
-    }
-
     /**
      * @name addEventListener
      * @param {string} event
@@ -607,35 +204,6 @@ export class Spectoda {
         return this.runtime.on(event, callback);
     }
 
-    // každé spectoda zařízení může být spárováno pouze s jedním účtem. (jednim user_key)
-    // jakmile je sparovana, pak ji nelze prepsat novým učtem.
-    // filtr pro pripojovani k zarizeni je pak účet.
-
-    // adopt != pair
-    // adopt reprezentuje proces, kdy si webovka osvoji nove zarizeni. Tohle zarizeni, ale uz
-    // muze byt spárováno s telefonem / SpectodaConnectem
-
-    // pri adoptovani MUSI byt vsechny zarizeni ze skupiny zapnuty.
-    // vsechny zarizeni totiz MUSI vedet o vsech.
-    // adopt() {
-    // const BLE_OPTIONS = {
-    //   //acceptAllDevices: true,
-    //   filters: [
-    //     { services: [this.TRANSMITTER_SERVICE_UUID] },
-    //     // {services: ['c48e6067-5295-48d3-8d5c-0395f61792b1']},
-    //     // {name: 'ExampleName'},
-    //   ],
-    //   //optionalServices: [this.TRANSMITTER_SERVICE_UUID],
-    // };
-    // //
-    // return this.connector
-    //   .adopt(BLE_OPTIONS).then((device)=> {
-    //     // ulozit device do local storage jako json
-    //   })
-    //   .catch((error) => {
-    //     logging.warn(error);
-    //   });
-    // }
 
     scan(scan_criteria = [{}], scan_period = 5000) {
         logging.verbose(`scan(scan_criteria=${scan_criteria}, scan_period=${scan_period})`);
@@ -724,7 +292,6 @@ export class Spectoda {
 
                         if (error_code !== 0) {
                             logging.warn("Adoption refused.");
-                            window.alert(t("Zkuste to, prosím, znovu."), t("Přidání se nezdařilo"), { confirm: t("OK") });
 
                             throw "AdoptionRefused";
                         }
@@ -748,57 +315,6 @@ export class Spectoda {
             .finally(() => {
                 this.#adopting = false;
                 this.#setConnectionState("disconnected");
-            });
-    }
-
-    // devices: [ {name:"Lampa 1", mac:"12:34:56:78:9a:bc"}, {name:"Lampa 2", mac:"12:34:56:78:9a:bc"} ]
-
-    #connect(autoConnect) {
-        logging.verbose(`#connect(autoConnect=${autoConnect})`);
-
-        logging.debug("> Connecting Spectoda Controller");
-
-        this.#setConnectionState("connecting");
-
-        logging.debug("> Selecting controller...");
-        return (autoConnect ? this.runtime.autoSelect(this.#criteria, 1000, 10000) : this.runtime.userSelect(this.#criteria))
-            .then(() => {
-                logging.debug("> Connecting controller...");
-                return this.runtime.connect();
-            })
-            .then(connectedDeviceInfo => {
-                logging.debug("> Synchronizing Network State...");
-                return (this.timeline.paused() ? this.requestTimeline() : this.syncTimeline())
-                    .catch(e => {
-                        logging.error("Timeline sync after reconnection failed:", e);
-                    })
-                    .then(() => {
-                        return this.syncEventHistory();
-                    })
-                    .catch(e => {
-                        logging.error("History sync after reconnection failed:", e);
-                    })
-                    .then(() => {
-                        return this.runtime.connected();
-                    })
-                    .then(connected => {
-                        if (!connected) {
-                            throw "ConnectionFailed";
-                        }
-                        this.#setConnectionState("connected");
-                        return connectedDeviceInfo;
-                    });
-            })
-            .catch(error => {
-                logging.error("Error during connect():", error);
-
-                this.#setConnectionState("disconnected");
-
-                if (typeof error != "string") {
-                    throw "ConnectionFailed";
-                } else {
-                    throw error;
-                }
             });
     }
 
@@ -877,68 +393,6 @@ export class Spectoda {
     }
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-    //! this should be moved to a parser class
-    async preprocessTngl(tngl_code) {
-        logging.verbose(`preprocessTngl(tngl_code=${tngl_code})`);
-
-        // 1st stage: preprocess the code
-
-        let processed_tngl_code = tngl_code;
-
-        const regexPUBLISH_TNGL_TO_API = /PUBLISH_TNGL_TO_API\s*\(\s*"([^"]*)"\s*,\s*`([^`]*)`\s*\);?/ms;
-        const regexINJECT_TNGL_FROM_API = /INJECT_TNGL_FROM_API\s*\(\s*"([^"]*)"\s*\);?/ms;
-
-        for (let requests = 0; requests < 64; requests++) {
-            const match = regexPUBLISH_TNGL_TO_API.exec(processed_tngl_code);
-            if (!match) {
-                break;
-            }
-
-            logging.verbose(match);
-
-            const name = match[1];
-            const id = encodeURIComponent(name);
-            const tngl = match[2];
-
-            try {
-                logging.verbose(`sendTnglToApi({ id=${id}, name=${name}, tngl=${tngl} })`);
-                await sendTnglToApi({ id, name, tngl });
-                processed_tngl_code = processed_tngl_code.replace(match[0], "");
-            } catch (e) {
-                logging.error(`Failed to send "${name}" to TNGL API`);
-                throw "SendTnglToApiFailed";
-            }
-        }
-
-        for (let requests = 0; requests < 64; requests++) {
-            const match = regexINJECT_TNGL_FROM_API.exec(processed_tngl_code);
-            if (!match) {
-                break;
-            }
-
-            logging.verbose(match);
-
-            const name = match[1];
-            const id = encodeURIComponent(name);
-
-            try {
-                logging.verbose(`fetchTnglFromApiById({ id=${id} })`);
-                const response = await fetchTnglFromApiById(id);
-                processed_tngl_code = processed_tngl_code.replace(match[0], response.tngl);
-            } catch (e) {
-                logging.error(`Failed to fetch "${name}" from TNGL API`);
-                throw "FetchTnglFromApiFailed";
-            }
-        }
-
-        // var code = `// Publishing TNGL as "${text_tngl_api_name}":\n/*\n${statements_body}*/\n`;
-        // var code = `// Loaded TNGL "${text_tngl_api_name}": \n ${tnglCodeToInject}\n`;
-
-        logging.debug(processed_tngl_code);
-
-        return processed_tngl_code;
-    }
 
     /**
      * Function role changed!
@@ -1072,27 +526,8 @@ export class Spectoda {
      */
     //! DEPRECATED - no equivalent. Replaced by history merging and scenes
     resendAll() {
-        logging.error("resendAll() is deprecated");
-
-        Object.keys(lastEvents).forEach(key => {
-            switch (lastEvents[key].type) {
-                case "percentage":
-                    this.emitPercentageEvent(key, lastEvents[key].value);
-                    break;
-                case "timestamp":
-                    this.emitTimestampEvent(key, lastEvents[key].value);
-                    break;
-                case "color":
-                    this.emitColorEvent(key, lastEvents[key].value);
-                    break;
-                case "label":
-                    this.emitLabelEvent(key, lastEvents[key].value);
-                    break;
-                case "none":
-                    this.emitEvent(key);
-                    break;
-            }
-        });
+        logging.error("resendAll() is deprecated. Replaced by history merging and scenes mechanisms");
+        throw "Deprecated";
     }
 
     // event_label example: "evt1"
@@ -2019,12 +1454,8 @@ export class Spectoda {
      */
     //! DEPRECATED - no equivalent
     setNetworkDatarate(datarate) {
-        logging.debug(`> Setting network datarate to ${datarate} bsp...`);
-
-        const request_uuid = this.#getUUID();
-        const payload = [COMMAND_FLAGS.FLAG_CHANGE_DATARATE_REQUEST, ...numberToBytes(request_uuid, 4), ...numberToBytes(datarate, 4)];
-
-        return this.runtime.execute(payload, null);
+        logging.error("setNetworkDatarate() is deprecated");
+        throw "Deprecated";
     }
 
     /**
@@ -2033,41 +1464,8 @@ export class Spectoda {
      */
     //! DEPRECATED - no equivalent
     readRomPhyVdd33() {
-        logging.debug("> Requesting rom_phy_vdd33...");
-
-        const request_uuid = this.#getUUID();
-        const bytes = [COMMAND_FLAGS.FLAG_ROM_PHY_VDD33_REQUEST, ...numberToBytes(request_uuid, 4)];
-
-        return this.runtime.request(bytes, true).then(response => {
-            let reader = new TnglReader(response);
-
-            logging.verbose(`response.byteLength=${response.byteLength}`);
-
-            if (reader.readFlag() !== COMMAND_FLAGS.FLAG_ROM_PHY_VDD33_RESPONSE) {
-                throw "InvalidResponseFlag";
-            }
-
-            const response_uuid = reader.readUint32();
-
-            if (response_uuid != request_uuid) {
-                throw "InvalidResponseUuid";
-            }
-
-            const error_code = reader.readUint8();
-
-            logging.verbose(`error_code=${error_code}`);
-
-            let vdd_reading = null;
-
-            if (error_code === 0) {
-                vdd_reading = reader.readInt32();
-            } else {
-                throw "Fail";
-            }
-            logging.info(`vdd_reading=${vdd_reading}`);
-
-            return vdd_reading;
-        });
+        logging.error("readRomPhyVdd33() is deprecated");
+        throw "Deprecated";
     }
 
     /**
@@ -2076,49 +1474,8 @@ export class Spectoda {
      */
     //! DEPRECATED - no equivalent
     readPinVoltage(pin) {
-        logging.debug(`> Requesting pin ${pin} voltage ...`);
-
-        const request_uuid = this.#getUUID();
-        const bytes = [COMMAND_FLAGS.FLAG_VOLTAGE_ON_PIN_REQUEST, ...numberToBytes(request_uuid, 4), pin];
-
-        return this.runtime.request(bytes, true).then(response => {
-            let reader = new TnglReader(response);
-
-            logging.verbose(`response.byteLength=${response.byteLength}`);
-
-            if (reader.readFlag() !== COMMAND_FLAGS.FLAG_VOLTAGE_ON_PIN_RESPONSE) {
-                throw "InvalidResponseFlag";
-            }
-
-            const response_uuid = reader.readUint32();
-
-            if (response_uuid != request_uuid) {
-                throw "InvalidResponseUuid";
-            }
-
-            const error_code = reader.readUint8();
-
-            logging.verbose(`error_code=${error_code}`);
-
-            let pin_reading = null;
-
-            if (error_code === 0) {
-                pin_reading = reader.readUint32();
-            } else {
-                throw "Fail";
-            }
-            logging.info(`pin_reading=${pin_reading}`);
-
-            return pin_reading;
-        });
-    }
-
-    /**
-     * Change language for modals
-     * @param {"en"|"cs"} lng
-     */
-    setLanguage(lng) {
-        changeLanguage(lng);
+        logging.error("readPinVoltage() is deprecated");
+        throw "Deprecated";
     }
 
     setDebugLevel(level) {
@@ -2595,38 +1952,6 @@ export class Spectoda {
         }
 
         return this.runtime.readVariableAddress(variable_address, device_id);
-    }
-
-    //! Move this function to SpectodaConnect functions
-    hideHomeButton() {
-        logging.debug("> Hiding home button...");
-
-        if (!detectSpectodaConnect()) {
-            return Promise.reject("PlatformNotSupported");
-        }
-
-        return window.flutter_inappwebview.callHandler("hideHomeButton");
-    }
-
-    // option:
-    //  0 = no restriction, 1 = portrait, 2 = landscape
-    //! Move this function to SpectodaConnect functions
-    setOrientation(option) {
-        logging.debug("> Setting orientation...");
-
-        if (!detectSpectodaConnect()) {
-            return Promise.reject("PlatformNotSupported");
-        }
-
-        if (typeof option !== "number") {
-            return Promise.reject("InvalidOption");
-        }
-
-        if (option < 0 || option > 2) {
-            return Promise.reject("InvalidOption");
-        }
-
-        return window.flutter_inappwebview.callHandler("setOrientation", option);
     }
 
     // 0.9.4
