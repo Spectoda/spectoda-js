@@ -41,6 +41,17 @@ export type ConnectionState = "connected" | "connecting" | "disconnected" | "dis
 type SpectodaId = number;
 type SpectodaIds = SpectodaId | SpectodaId[];
 
+type ConnectionStateJSEvent = ConnectionState;
+type WebsocketConnectionJSEvent = "connecting-websockets" | "connected-websockets" | "disconnecting-websockets" | "disconnected-websockets";
+type OtaJSEvent = "ota_status" | "ota_progress";
+type OtaStatus = "begin" | "success" | "fail";
+
+export type JSEvent = ConnectionStateJSEvent | WebsocketConnectionJSEvent | OtaJSEvent;
+
+// Todo implement function overloads for emit function
+// emit(event: "ota_progress", percentage: number): void;
+// emit(event: "ota_status", status: OTAStatus): void;
+
 // Event label has maximally 5 chars
 // Example: evt1
 type EventLabel = string;
@@ -513,7 +524,7 @@ export class Spectoda {
    * @returns {Function} unbind function
    */
   // TODO
-  addEventListener(event, callback) {
+  addEventListener(event: JSEvent, callback: unknown) {
     return this.runtime.addEventListener(event, callback);
   }
 
@@ -521,7 +532,7 @@ export class Spectoda {
    * @alias this.addEventListener
    */
   // TODO
-  on(event, callback) {
+  on(event: JSEvent, callback: unknown) {
     return this.runtime.on(event, callback);
   }
 
