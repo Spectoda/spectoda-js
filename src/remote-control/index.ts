@@ -5,8 +5,10 @@ import { createNanoEvents } from "../functions";
 import { logging } from "../logging";
 
 export const WEBSOCKET_URL = "https://ceet.cloud.host.spectoda.com/";
+// export const WEBSOCKET_URL = "http://localhost:4000";
 
 type NetworkJoinParams = Array<unknown>;
+type SocketId = string | null;
 
 const eventStream = createNanoEvents();
 
@@ -20,7 +22,7 @@ if (typeof window !== "undefined") {
 
 interface Network {
   signature: string;
-  socketId?: string | null;
+  socketId?: SocketId;
   lastResult?: unknown;
 }
 
@@ -125,16 +127,12 @@ export function createRemoteSpectoda() {
               return () => socket.emitWithAck("list-all-clients");
             }
 
-            case "connectionState": {
-              return websocketConnectionState;
-            }
-
             case "selectTarget": {
               return this.selectTarget;
             }
 
             case "removeTarget": {
-              return (signature, socketId) => {
+              return (signature: string, socketId: SocketId) => {
                 const network = this.networks.get(signature);
 
                 if (!network) {
@@ -156,7 +154,7 @@ export function createRemoteSpectoda() {
 
             case "autoSelectTargetsInNetworks": {
               this.resetTargets();
-              return async networks => {
+              return async (networks: Network[]) => {
                 const results = [];
                 for (let network of networks) {
                   const result = await this.selectTarget(network.signature, null);
@@ -231,7 +229,7 @@ export function createRemoteSpectoda() {
       return await Promise.allSettled(results);
     }
 
-    async selectTarget(signature: string, socketId: string) {
+    async selectTarget(signature: string, socketId: SocketId) {
       const network = this.networks.get(signature);
 
       if (!socketId) {
