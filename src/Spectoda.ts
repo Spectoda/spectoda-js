@@ -23,6 +23,7 @@ import { logging, setLoggingLevel } from "./logging";
 
 import { io } from "socket.io-client";
 import customParser from "socket.io-msgpack-parser";
+import { Socket } from "../lib/socketio";
 import { SpectodaRuntime, allEventsEmitter } from "./SpectodaRuntime";
 import { BROADCAST_ID } from "./constants";
 import { WEBSOCKET_URL } from "./remote-control";
@@ -57,6 +58,8 @@ export class Spectoda {
   #ownerSignature;
   #ownerKey;
   #updating;
+
+  socket: Socket;
 
   #connectionState: ConnectionState;
   #websocketConnectionState;
@@ -293,8 +296,31 @@ export class Spectoda {
    *   [key: string]: any
    * }} [options.meta] - Optional metadata about the user and the app.
    */
+
   // TODO
-  async enableRemoteControl({ signature, key, sessionOnly, meta }) {
+  async enableRemoteControl({
+    signature,
+    key,
+    sessionOnly,
+    meta,
+  }: {
+    signature?: string;
+    key?: string;
+    sessionOnly?: boolean;
+    meta: {
+      user?: {
+        name?: string;
+        email?: string;
+        image?: string;
+      };
+      app?: {
+        name?: string;
+        version?: string;
+        commitHash?: string;
+        url?: string;
+      };
+    };
+  }) {
     logging.debug("> Connecting to Remote Control", { signature, key, sessionOnly });
 
     this.#proxyEventsEmitterRefUnsub && this.#proxyEventsEmitterRefUnsub();
@@ -322,13 +348,9 @@ export class Spectoda {
     };
 
     // Reset event listeners for 'connected' and 'disconnected'
-    this.on("connected", async () => {
-      setConnectionSocketData();
-    });
+    this.on("connected", async () => setConnectionSocketData());
 
-    this.on("disconnected", () => {
-      this.socket.emit("set-connectedMacs-data", null);
-    });
+    this.on("disconnected", () => this.socket.emit("set-connectedMacs-data", null));
 
     return await new Promise((resolve, reject) => {
       this.socket.on("disconnect", () => {
