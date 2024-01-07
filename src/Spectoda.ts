@@ -45,12 +45,15 @@ type ConnectionStateJSEvent = ConnectionState;
 type WebsocketConnectionJSEvent = "connecting-websockets" | "connected-websockets" | "disconnecting-websockets" | "disconnected-websockets";
 type OtaJSEvent = "ota_status" | "ota_progress";
 type OtaStatus = "begin" | "success" | "fail";
+type OtherEvent = "emitted_global_events" | "emitted_events" | "peer_connected" | "peer_disconnected";
 
-export type JSEvent = ConnectionStateJSEvent | WebsocketConnectionJSEvent | OtaJSEvent;
+export type JSEvent = ConnectionStateJSEvent | WebsocketConnectionJSEvent | OtaJSEvent | OtherEvent;
 
-// Todo implement function overloads for emit function
+// Todo implement function overloads for emit callback functions
 // emit(event: "ota_progress", percentage: number): void;
 // emit(event: "ota_status", status: OTAStatus): void;
+// emit(event: "peer_connected", peer: string): void;
+// emit(event: "peer_disconnected", peer: string): void;
 
 // Event label has maximally 5 chars
 // Example: evt1
