@@ -1,21 +1,20 @@
 import { TimeTrack } from "../TimeTrack";
 import { logging } from "../logging";
 import Module from "./DEBUG_0.11.0_20240109";
+import { MainModule, Spectoda_WASM } from "./wasm";
 
 let moduleInitilizing = false;
 let moduleInitilized = false;
 let waitingQueue: WaitingItem[] = [];
 
 class WaitingItem {
-
   promise: Promise<unknown>;
   resolve: (value: unknown) => void; // type from the typescript tooltip
   reject: (reason?: any) => void; // type from the typescript tooltip
 
   constructor() {
-
-    this.resolve = () => { };
-    this.reject = (error: any) => { };
+    this.resolve = () => {};
+    this.reject = (error: any) => {};
 
     this.promise = new Promise((resolve, reject) => {
       this.reject = reject;
@@ -52,9 +51,9 @@ function onWasmLoad() {
     //? Filesystem mounting
     if (typeof window !== "undefined") {
       // Make a directory other than '/'
-      FS.mkdir('/littlefs');
+      FS.mkdir("/littlefs");
       // Then mount with IDBFS type
-      FS.mount(IDBFS, {}, '/littlefs');
+      FS.mount(IDBFS, {}, "/littlefs");
 
       // Then sync
       FS.syncfs(true, function (err: any) {
@@ -62,22 +61,18 @@ function onWasmLoad() {
           logging.error("FS.syncfs error:", err);
         }
       });
-
     } else {
       // TODO! implement FS pro NODE
-
       //   // Make a directory other than '/'
       //   Module.FS.mkdir('/littlefs');
       //   // Then mount with IDBFS type
       //   Module.FS.mount(Module.FS.filesystems.NODEFS, {}, '/littlefs');
-
       //   // Then sync
       //   Module.FS.syncfs(true, function (err) {
       //       if (err) {
       //           logging.error("FS.syncfs error:", err);
       //       }
       //   });
-
     }
 
     waitingQueue.forEach(wait => {
@@ -89,7 +84,6 @@ function onWasmLoad() {
 }
 
 function loadWasm(wasmVersion: string) {
-
   if (moduleInitilizing || moduleInitilized) {
     return;
   }
@@ -99,7 +93,6 @@ function loadWasm(wasmVersion: string) {
   logging.info("spectoda-js wasm version " + wasmVersion);
 
   if (typeof window !== "undefined") {
-
     // BROWSER enviroment
 
     // First try to load local version
@@ -114,22 +107,18 @@ function loadWasm(wasmVersion: string) {
             logging.error(error);
           });
       });
-
   } else {
-
     // NODE enviroment
 
     if (!process.env.NEXT_PUBLIC_VERSION) {
       globalThis.Module = require(`./webassembly/${wasmVersion}.js`);
       onWasmLoad();
     }
-
   }
-
 }
 
 // This class binds the JS world with the webassembly's C
-export const SpectodaWasm = {
+export const SpectodaWasm: MainModule = {
   // const std::vector<uint8_t>&  makePort(const char port_char, const uint32_t port_size, const uint8_t port_brightness, const uint8_t port_power, bool port_visible, bool port_reversed)
   // void                         begin(const std::string& name_string, const std::string& mac_string, const deviceID_t device_id_offset)
   // void                         end()
@@ -144,7 +133,6 @@ export const SpectodaWasm = {
   //? tohle je virtualni C++ class prohnana pres emscripten, coz zpusobuje ze ji muzu naimplementovat v JS
   //? Ktery je prvne jako undefined, ale ve chvili kdy se nacte WASM, dostane implementaci z Module
   IConnector_WASM: undefined,
-
 
   //? tohle je virtualni C++ class prohnana pres emscripten, coz zpusobuje ze ji muzu naimplementovat v JS
   //? Ktery je prvne jako undefined, ale ve chvili kdy se nacte WASM, dostane implementaci z Module
@@ -191,7 +179,6 @@ export const SpectodaWasm = {
    * @return {Promise<null>}
    */
   waitForInitilize() {
-
     if (moduleInitilized) {
       return Promise.resolve();
     }
@@ -223,21 +210,18 @@ export const SpectodaWasm = {
         logging.error("FS.syncfs error:", err);
       }
     });
-  }
+  },
 };
 
 if (typeof window !== "undefined") {
   window.SpectodaWasm = SpectodaWasm;
 }
 
-
 export class Synchronization {
-
   constructor() {
     this.clock = new TimeTrack();
     this.timeline = new TimeTrack();
     this.tnglFingerprint = null;
     this.historyFingerprint = null;
   }
-
 }
