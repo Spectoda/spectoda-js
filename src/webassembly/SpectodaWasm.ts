@@ -3,7 +3,7 @@ import { logging } from "../logging";
 import * as UntypedModule from "./DEBUG_0.11.0_20240109";
 import { MainModule } from "./wasm";
 
-const Module = UntypedModule as MainModule;
+const Module: MainModule = UntypedModule;
 
 let moduleInitilizing = false;
 let moduleInitilized = false;
@@ -134,11 +134,11 @@ export const SpectodaWasm = {
 
   //? tohle je virtualni C++ class prohnana pres emscripten, coz zpusobuje ze ji muzu naimplementovat v JS
   //? Ktery je prvne jako undefined, ale ve chvili kdy se nacte WASM, dostane implementaci z Module
-  IConnector_WASM: undefined,
+  IConnector_WASM: undefined as MainModule["IConnector_WASM"] | undefined,
 
   //? tohle je virtualni C++ class prohnana pres emscripten, coz zpusobuje ze ji muzu naimplementovat v JS
   //? Ktery je prvne jako undefined, ale ve chvili kdy se nacte WASM, dostane implementaci z Module
-  Spectoda_WASM: undefined,
+  Spectoda_WASM: undefined as MainModule["Spectoda_WASM"] | undefined,
 
   // get(arg0)
   // push_back(arg0)
@@ -150,7 +150,7 @@ export const SpectodaWasm = {
 
   //? tohle je C++ typ prohnany pres emscripten, coz zpusobuje ze ji muzu naimplementovat v JS
   //? Ktery je prvne jako undefined, ale ve chvili kdy se nacte WASM, dostane implementaci z Module
-  Uint8Vector: undefined,
+  Uint8Vector: undefined as MainModule["Uint8Vector"] | undefined,
 
   // evaluate_result_t: null,
   // send_result_t: null,
@@ -220,6 +220,11 @@ if (typeof window !== "undefined") {
 }
 
 export class Synchronization {
+  clock: TimeTrack;
+  timeline: TimeTrack;
+  tnglFingerprint: null;
+  historyFingerprint: null;
+
   constructor() {
     this.clock = new TimeTrack();
     this.timeline = new TimeTrack();

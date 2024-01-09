@@ -1,4 +1,5 @@
 import { validateTimestamp } from "./src/functions";
+import { SpectodaWasm } from "./src/webassembly/SpectodaWasm";
 
 declare global {
   interface Window {
@@ -17,5 +18,7 @@ declare global {
     validateTimestamp: typeof validateTimestamp;
     mapValue: (x: unknown, in_min: unknown, in_max: unknown, out_min: unknown, out_max: unknown) => unknown;
     eruda: unknown;
+
+    SpectodaWasm: typeof SpectodaWasm;
   }
 }
