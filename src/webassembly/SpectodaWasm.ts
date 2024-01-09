@@ -1,7 +1,9 @@
 import { TimeTrack } from "../TimeTrack";
 import { logging } from "../logging";
-import Module from "./DEBUG_0.11.0_20240109";
-import { MainModule, Spectoda_WASM } from "./wasm";
+import * as UntypedModule from "./DEBUG_0.11.0_20240109";
+import { MainModule } from "./wasm";
+
+const Module = UntypedModule as MainModule;
 
 let moduleInitilizing = false;
 let moduleInitilized = false;
@@ -118,7 +120,7 @@ function loadWasm(wasmVersion: string) {
 }
 
 // This class binds the JS world with the webassembly's C
-export const SpectodaWasm: MainModule = {
+export const SpectodaWasm = {
   // const std::vector<uint8_t>&  makePort(const char port_char, const uint32_t port_size, const uint8_t port_brightness, const uint8_t port_power, bool port_visible, bool port_reversed)
   // void                         begin(const std::string& name_string, const std::string& mac_string, const deviceID_t device_id_offset)
   // void                         end()
