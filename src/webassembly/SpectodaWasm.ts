@@ -1,5 +1,6 @@
 import { TimeTrack } from "../TimeTrack";
 import { logging } from "../logging";
+import Module from "./DEBUG_0.11.0_20240109";
 
 let moduleInitilizing = false;
 let moduleInitilized = false;
