@@ -3,10 +3,19 @@ import { logging } from "../logging";
 
 let moduleInitilizing = false;
 let moduleInitilized = false;
-let waitingQueue = [];
+let waitingQueue: WaitingItem[] = [];
 
-class Wait {
+class WaitingItem {
+
+  promise: Promise<unknown>;
+  resolve: (value: unknown) => void; // type from the typescript tooltip
+  reject: (reason?: any) => void; // type from the typescript tooltip
+
   constructor() {
+
+    this.resolve = () => { };
+    this.reject = (error: any) => { };
+
     this.promise = new Promise((resolve, reject) => {
       this.reject = reject;
       this.resolve = resolve;
@@ -14,7 +23,7 @@ class Wait {
   }
 }
 
-function injectScript(src) {
+function injectScript(src: string) {
   return new Promise((resolve, reject) => {
     if (typeof window !== "undefined" && document) {
       const script = document.createElement("script");
@@ -34,10 +43,12 @@ function onWasmLoad() {
 
     logging.info("Webassembly runtime initilized");
 
+    //? inicialize objects
+    SpectodaWasm.IConnector_WASM = Module.IConnector_WASM;
     SpectodaWasm.Spectoda_WASM = Module.Spectoda_WASM;
     SpectodaWasm.Uint8Vector = Module.Uint8Vector;
-    // SpectodaWasm.send_result_t = Module.send_result_t;
 
+    //? Filesystem mounting
     if (typeof window !== "undefined") {
       // Make a directory other than '/'
       FS.mkdir('/littlefs');
@@ -45,7 +56,7 @@ function onWasmLoad() {
       FS.mount(IDBFS, {}, '/littlefs');
 
       // Then sync
-      FS.syncfs(true, function (err) {
+      FS.syncfs(true, function (err: any) {
         if (err) {
           logging.error("FS.syncfs error:", err);
         }
@@ -69,14 +80,14 @@ function onWasmLoad() {
     }
 
     waitingQueue.forEach(wait => {
-      wait.resolve();
+      wait.resolve(null);
     });
 
     Module.onRuntimeInitialized = null;
   };
 }
 
-function loadWasm(wasmVersion) {
+function loadWasm(wasmVersion: string) {
 
   if (moduleInitilizing || moduleInitilized) {
     return;
@@ -129,13 +140,14 @@ export const SpectodaWasm = {
   // clone()
   // delete()
 
-  /**
-   * @type { {
-   *   begin: () => void,
-   *   end: () => void
-   * } }
-   */
-  Spectoda_WASM: null,
+  //? tohle je virtualni C++ class prohnana pres emscripten, coz zpusobuje ze ji muzu naimplementovat v JS
+  //? Ktery je prvne jako undefined, ale ve chvili kdy se nacte WASM, dostane implementaci z Module
+  IConnector_WASM: undefined,
+
+
+  //? tohle je virtualni C++ class prohnana pres emscripten, coz zpusobuje ze ji muzu naimplementovat v JS
+  //? Ktery je prvne jako undefined, ale ve chvili kdy se nacte WASM, dostane implementaci z Module
+  Spectoda_WASM: undefined,
 
   // get(arg0)
   // push_back(arg0)
@@ -145,13 +157,15 @@ export const SpectodaWasm = {
   // clone()
   // delete()
 
-  Uint8Vector: null,
+  //? tohle je C++ typ prohnany pres emscripten, coz zpusobuje ze ji muzu naimplementovat v JS
+  //? Ktery je prvne jako undefined, ale ve chvili kdy se nacte WASM, dostane implementaci z Module
+  Uint8Vector: undefined,
 
   // evaluate_result_t: null,
   // send_result_t: null,
 
   // oposite of convertJSArrayToNumberVector() in https://emscripten.org/docs/api_reference/val.h.html
-  convertNumberVectorToJSArray(vector) {
+  convertNumberVectorToJSArray(vector: any) {
     let array = new Uint8Array(vector.size());
     for (let i = 0; i < array.length; i++) {
       array[i] = vector.get(i);
@@ -160,7 +174,7 @@ export const SpectodaWasm = {
   },
 
   // wasmVersion might be DEBUG_0.9.2_20230814
-  initilize(wasmVersion) {
+  initilize(wasmVersion: string) {
     loadWasm(wasmVersion);
   },
 
@@ -181,21 +195,21 @@ export const SpectodaWasm = {
       return Promise.resolve();
     }
 
-    const wait = new Wait();
+    const wait = new WaitingItem();
     waitingQueue.push(wait);
     return wait.promise;
   },
 
-  toHandle(value) {
+  toHandle(value: any) {
     return Module.Emval.toHandle(value);
   },
 
-  toValue(value) {
-    return Module.Emval.toValue(value);
+  toValue(handle: number) {
+    return Module.Emval.toValue(handle);
   },
 
   loadFS() {
-    return Module.FS.syncfs(true, (err) => {
+    return Module.FS.syncfs(true, (err: any) => {
       if (err) {
         logging.error("FS.syncfs error:", err);
       }
@@ -203,7 +217,7 @@ export const SpectodaWasm = {
   },
 
   saveFS() {
-    return Module.FS.syncfs(false, (err) => {
+    return Module.FS.syncfs(false, (err: any) => {
       if (err) {
         logging.error("FS.syncfs error:", err);
       }
@@ -216,7 +230,7 @@ if (typeof window !== "undefined") {
 }
 
 
-export class synchronization_t {
+export class Synchronization {
 
   constructor() {
     this.clock = new TimeTrack();
