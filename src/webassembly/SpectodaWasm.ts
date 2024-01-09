@@ -1,9 +1,8 @@
 import { TimeTrack } from "../TimeTrack";
 import { logging } from "../logging";
-import * as UntypedModule from "./DEBUG_0.11.0_20240109";
 import { MainModule } from "./wasm";
 
-const Module: MainModule = UntypedModule;
+const Module = null as unknown as MainModule;
 
 let moduleInitilizing = false;
 let moduleInitilized = false;
