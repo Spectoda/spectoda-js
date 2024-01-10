@@ -1,5 +1,5 @@
 import { logging } from "../logging";
-import { SpectodaWasm } from "./SpectodaWasm.js";
+import { SpectodaWasm } from "./SpectodaWasm";
 
 const WASM_VERSION = "DEBUG_0.10.0_20231123";
 

@@ -95,7 +95,7 @@ export class SpectodaVirtualProxy implements ISpectodaVirtualProxy {
     this.on("disconnecting-websockets", () => (this.wsConnectionState = "connected"));
     this.on("disconnected-websockets", () => (this.wsConnectionState = "connected"));
 
-    const networkJoinParams: NetworkJoinParams = [];
+    let networkJoinParams: NetworkJoinParams = [];
 
     this.#socket = io(WEBSOCKET_URL, {
       parser: customParser,

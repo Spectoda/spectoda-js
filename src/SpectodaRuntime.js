@@ -4,16 +4,16 @@ import { SpectodaWebSerialConnector } from "./connector/SpectodaWebSerialConnect
 import { createNanoEvents, createNanoEventsWithWrappedEmit, detectAndroid, detectChrome, detectLinux, detectMacintosh, detectNode, detectSpectodaConnect, detectWindows, numberToBytes, sleep, uint8ArrayToHexString } from "./functions";
 import { logging } from "./logging";
 // import { SpectodaConnectConnector } from "./SpectodaConnectConnector.js";
-import { TimeTrack } from "./TimeTrack.js";
-import { FlutterConnector } from "./connector/FlutterConnector.js";
-import { SimulationConnector } from "./connector/SimulationConnector.js";
+import { TimeTrack } from "./TimeTrack";
+import { FlutterConnector } from "./connector/FlutterConnector";
+import { SimulationConnector } from "./connector/SimulationConnector";
 import { COMMAND_FLAGS } from "./constants";
-import { PreviewController } from "./webassembly/PreviewController.js";
-import { SpectodaWasm } from "./webassembly/SpectodaWasm.js";
-import { Spectoda_JS } from "./webassembly/Spectoda_JS.js";
+import { PreviewController } from "./webassembly/PreviewController";
+import { SpectodaWasm } from "./webassembly/SpectodaWasm";
+import { Spectoda_JS } from "./webassembly/Spectoda_JS";
 
-import { TnglReader } from "./TnglReader.js";
-import { TnglWriter } from "./TnglWriter.js";
+import { TnglReader } from "./TnglReader";
+import { TnglWriter } from "./TnglWriter";
 import { SpectodaNodeBluetoothConnector } from "./connector/SpectodaNodeBleConnector";
 import { SpectodaNodeSerialConnector } from "./connector/SpectodaNodeSerialConnector";
 
