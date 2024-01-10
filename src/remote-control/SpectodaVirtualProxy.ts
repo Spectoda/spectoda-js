@@ -2,7 +2,7 @@ import { io, Socket } from "socket.io-client";
 import customParser from "socket.io-msgpack-parser";
 import { createNanoEvents } from "../functions";
 import { logging } from "../logging";
-import { ConnectionState } from "../Spectoda";
+import { ConnectionState, SpectodaObjectDummyPropertyList } from "../Spectoda";
 import { TimeTrack } from "../TimeTrack";
 
 export const WEBSOCKET_URL = "https://ceet.cloud.host.spectoda.com/";
@@ -72,20 +72,15 @@ type RemoteType = "sender" | "receiver";
 type InitParams = { key: string; signature: string; sessionOnly?: boolean; type: RemoteType };
 type InitArgs = Array<InitParams> | InitParams;
 
-interface ISpectodaVirtualProxy {
-  on(eventName: string, callback: unknown): () => void;
-  emit(eventName: string, ...args: Array<unknown>): void;
-  init(params: InitArgs): void;
-  fetchClients(): void;
-}
-
-export class SpectodaVirtualProxy implements ISpectodaVirtualProxy {
+export class SpectodaVirtualProxy extends SpectodaObjectDummyPropertyList {
   networks: Map<string, Network>;
   #socket: Socket;
 
   wsConnectionState: ConnectionState;
 
   constructor(timeline: TimeTrack) {
+    super();
+
     this.networks = new Map();
 
     // ? How does websocket connection work?
@@ -270,26 +265,6 @@ export class SpectodaVirtualProxy implements ISpectodaVirtualProxy {
       },
     });
   }
-
-  // Function types
-
-  on(eventName: string, callback: unknown): () => void {
-    throw new Error("Method `on` not implemented.");
-  }
-
-  emit(eventName: string, ...args: Array<unknown>): void {
-    throw new Error("Method `emit` not implemented.");
-  }
-
-  init(params: InitArgs): void {
-    throw new Error("Method `init` not implemented.");
-  }
-
-  fetchClients(): void {
-    throw new Error("Method `fetchClients` not implemented.");
-  }
-
-  //
 
   async sendThroughWebsocket(data: unknown) {
     // todo specify type

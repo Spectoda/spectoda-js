@@ -1,10 +1,8 @@
-import { ConnectionState, Spectoda } from "./Spectoda";
+import { ConnectionState, Spectoda, SpectodaObjectDummyPropertyList } from "./Spectoda";
 import { TimeTrack } from "./TimeTrack";
 import { SpectodaVirtualProxy } from "./remote-control/SpectodaVirtualProxy";
 
-// This object saves the current state of Spectoda instance
-
-export class SpectodaWrapper {
+export class SpectodaWrapper extends SpectodaObjectDummyPropertyList {
   #spectoda: Spectoda | SpectodaVirtualProxy;
   timeline: TimeTrack;
 
@@ -13,15 +11,11 @@ export class SpectodaWrapper {
   connectedMacs: string[];
   disconnectedMacs: string[];
 
-  get spectoda() {
-    return this.#spectoda;
-  }
-
   constructor(isRemote = false) {
-    this.timeline = new TimeTrack();
-    const payload = this.timeline;
+    super();
 
-    this.#spectoda = isRemote ? new SpectodaVirtualProxy(payload) : new Spectoda(payload);
+    this.timeline = new TimeTrack();
+    this.#spectoda = isRemote ? new SpectodaVirtualProxy(this.timeline) : new Spectoda(this.timeline);
 
     // Connection states
     this.connectionState = "disconnected";
@@ -45,5 +39,17 @@ export class SpectodaWrapper {
         this.disconnectedMacs = [...this.disconnectedMacs, peer];
       }
     });
+
+    const proxy = new Proxy(this, {
+      get: (target, prop, receiver) => {
+        if (Reflect.has(target, prop)) {
+          return Reflect.get(target, prop, receiver);
+        } else {
+          return Reflect.get(this.#spectoda, prop, receiver);
+        }
+      },
+    });
+
+    return proxy;
   }
 }
