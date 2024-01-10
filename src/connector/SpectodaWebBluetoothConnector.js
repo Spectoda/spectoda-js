@@ -3,7 +3,7 @@
 
 import { TimeTrack } from "../TimeTrack";
 import { TnglReader } from "../TnglReader";
-import { COMMAND_FLAGS } from "../constants";
+import { COMMAND_FLAGS, MAX_UNSIGNED_NUMBER } from "../constants";
 import { detectAndroid, hexStringToUint8Array, numberToBytes, sleep, toBytes } from "../functions";
 import { logging } from "../logging";
 
@@ -66,12 +66,11 @@ export class WebBLEConnection {
     */
     this.#writing = false;
 
-    this.#uuidCounter = Math.floor(Math.random() * 4294967295);
+    this.#uuidCounter = Math.floor(Math.random() * MAX_UNSIGNED_NUMBER);
   }
 
   #getUUID() {
-    // valid UUIDs are in range [1..4294967295] (32 bit number)
-    if (this.#uuidCounter >= 4294967295) {
+    if (this.#uuidCounter >= MAX_UNSIGNED_NUMBER) {
       this.#uuidCounter = 0;
     }
 

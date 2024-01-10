@@ -25,7 +25,7 @@ import { io } from "socket.io-client";
 import customParser from "socket.io-msgpack-parser";
 import { Socket } from "../lib/socketio";
 import { SpectodaRuntime, allEventsEmitter } from "./SpectodaRuntime";
-import { BROADCAST_ID } from "./constants";
+import { BROADCAST_ID, MAX_UNSIGNED_NUMBER } from "./constants";
 import { WEBSOCKET_URL } from "./remote-control";
 
 // should not create more than one object!
@@ -65,7 +65,31 @@ const USE_ALL_CONNECTIONS = ["*/ff:ff:ff:ff:ff:ff"];
 
 type Tngl = { code: string | undefined; bytecode: Uint8Array | undefined };
 
-export class Spectoda {
+// Added so that SpectodaVirtualProxy and SpectodaWrapper can have type autocompletion
+export class SpectodaObjectDummyPropertyList {
+  on: Spectoda["on"];
+  addEventListener: Spectoda["addEventListener"];
+  setDebugLevel: Spectoda["setDebugLevel"];
+  // ...
+
+  constructor() {
+    this.on = () => {
+      throw new Error("Unimplemented function `on`");
+    };
+
+    this.addEventListener = () => {
+      throw new Error("Unimplemented function `addEventListener`");
+    };
+
+    this.setDebugLevel = () => {
+      throw new Error("Unimplemented function `setDebugLevel`");
+    };
+
+    // ...
+  }
+}
+
+export class Spectoda implements ISpectoda {
   #parser;
 
   #uuidCounter;
@@ -506,9 +530,8 @@ export class Spectoda {
     // TODO call releaseWakeLock() from wake-lock/index.ts
   }
 
-  // valid UUIDs are in range [1..4294967295] (32-bit unsigned number)
   #getUUID() {
-    if (this.#uuidCounter >= 4294967295) {
+    if (this.#uuidCounter >= MAX_UNSIGNED_NUMBER) {
       this.#uuidCounter = 0;
     }
 
