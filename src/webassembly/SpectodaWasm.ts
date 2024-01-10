@@ -1,216 +1,232 @@
 import { TimeTrack } from "../TimeTrack";
 import { logging } from "../logging";
-import { MainModule } from "./wasm";
+import { MainModule, Uint8Vector } from "./wasm";
 
-const Module = null as unknown as MainModule;
+const WASM_VERSION = "DEBUG_0.11.0_20240109";
 
-let moduleInitilizing = false;
-let moduleInitilized = false;
-let waitingQueue: WaitingItem[] = [];
+let __isWasmLoadCalled = false;
 
-class WaitingItem {
-  promise: Promise<unknown>;
-  resolve: (value: unknown) => void; // type from the typescript tooltip
-  reject: (reason?: any) => void; // type from the typescript tooltip
+function __onWasmLoad(): Promise<void> {
+  logging.info("Webassembly loaded");
 
-  constructor() {
-    this.resolve = () => {};
-    this.reject = (error: any) => {};
+  return new Promise((resolve, reject) => {
+    const timeoutHandle = setTimeout(() => {
+      logging.error("Webassembly initialization timeout");
+      reject(new Error("InitializationTimeout"));
+    }, 60000);
 
-    this.promise = new Promise((resolve, reject) => {
-      this.reject = reject;
-      this.resolve = resolve;
-    });
-  }
+    Module.onRuntimeInitialized = () => {
+      logging.info("Webassembly runtime initilized");
+
+      clearTimeout(timeoutHandle);
+      Module.onRuntimeInitialized = null;
+
+      //? Filesystem mounting
+      // BROWSER enviroment
+      if (typeof window !== "undefined") {
+        // Make a directory other than '/'
+        FS.mkdir("/littlefs");
+        // Then mount with IDBFS type
+        FS.mount(IDBFS, {}, "/littlefs");
+
+        // Then sync
+        FS.syncfs(true, function (err: any) {
+          if (err) {
+            logging.error("FS.syncfs error:", err);
+          }
+        });
+      }
+      // NODE enviroment
+      else {
+        // TODO - implement mounting for node
+        //   // Make a directory other than '/'
+        //   Module.FS.mkdir('/littlefs');
+        //   // Then mount with IDBFS type
+        //   Module.FS.mount(Module.FS.filesystems.NODEFS, {}, '/littlefs');
+        //   // Then sync
+        //   Module.FS.syncfs(true, function (err) {
+        //       if (err) {
+        //           logging.error("FS.syncfs error:", err);
+        //       }
+        //   });
+      }
+
+      resolve();
+    };
+  });
 }
 
-function injectScript(src: string) {
-  return new Promise((resolve, reject) => {
-    if (typeof window !== "undefined" && document) {
+function __loadWasm(wasmVersion: string): Promise<void> {
+  function injectScript(src: string) {
+    return new Promise((resolve, reject) => {
+      if (!document) {
+        logging.error("document is not defined");
+        reject(new Error("DocumentNotDefined"));
+      }
       const script = document.createElement("script");
       script.src = src;
       script.addEventListener("load", resolve);
       script.addEventListener("error", e => reject(e.error));
       document.head.appendChild(script);
-    }
-  });
-}
-
-function onWasmLoad() {
-  logging.info("Webassembly loaded");
-
-  Module.onRuntimeInitialized = () => {
-    moduleInitilized = true;
-
-    logging.info("Webassembly runtime initilized");
-
-    //? inicialize objects
-    SpectodaWasm.IConnector_WASM = Module.IConnector_WASM;
-    SpectodaWasm.Spectoda_WASM = Module.Spectoda_WASM;
-    SpectodaWasm.Uint8Vector = Module.Uint8Vector;
-
-    //? Filesystem mounting
-    if (typeof window !== "undefined") {
-      // Make a directory other than '/'
-      FS.mkdir("/littlefs");
-      // Then mount with IDBFS type
-      FS.mount(IDBFS, {}, "/littlefs");
-
-      // Then sync
-      FS.syncfs(true, function (err: any) {
-        if (err) {
-          logging.error("FS.syncfs error:", err);
-        }
-      });
-    } else {
-      // TODO! implement FS pro NODE
-      //   // Make a directory other than '/'
-      //   Module.FS.mkdir('/littlefs');
-      //   // Then mount with IDBFS type
-      //   Module.FS.mount(Module.FS.filesystems.NODEFS, {}, '/littlefs');
-      //   // Then sync
-      //   Module.FS.syncfs(true, function (err) {
-      //       if (err) {
-      //           logging.error("FS.syncfs error:", err);
-      //       }
-      //   });
-    }
-
-    waitingQueue.forEach(wait => {
-      wait.resolve(null);
     });
-
-    Module.onRuntimeInitialized = null;
-  };
-}
-
-function loadWasm(wasmVersion: string) {
-  if (moduleInitilizing || moduleInitilized) {
-    return;
   }
 
-  moduleInitilizing = true;
+  if (!__isWasmLoadCalled) {
+    __isWasmLoadCalled = true;
+  } else {
+    logging.error("__loadWasm() already called");
+    throw new Error("WasmLoadAlreadyCalled");
+  }
 
-  logging.info("spectoda-js wasm version " + wasmVersion);
+  logging.info(`Loading webassembly version ${wasmVersion}...`);
 
+  // BROWSER enviroment
   if (typeof window !== "undefined") {
-    // BROWSER enviroment
-
     // First try to load local version
     injectScript(`http://localhost:5555/builds/${wasmVersion}.js`)
-      .then(onWasmLoad)
+      .then(() => {
+        return __onWasmLoad();
+      })
       .catch(error => {
         logging.error(error);
         // if local version fails, load public file
         injectScript(`https://updates.spectoda.com/subdom/updates/webassembly/daily/${wasmVersion}.js`)
-          .then(onWasmLoad)
+          .then(() => {
+            return __onWasmLoad();
+          })
           .catch(error => {
             logging.error(error);
           });
       });
-  } else {
-    // NODE enviroment
+  }
+  // NEXT.JS enviroment
+  else if (process && process.env && process.env.NEXT_PUBLIC_VERSION) {
+    return Promise.resolve();
+  }
+  // NODE enviroment
+  else if (!process.env.NEXT_PUBLIC_VERSION) {
+    globalThis.Module = require(`./webassembly/${wasmVersion}.js`);
+    return __onWasmLoad();
+  }
+  // UNKNOWN enviroment
 
-    if (!process.env.NEXT_PUBLIC_VERSION) {
-      globalThis.Module = require(`./webassembly/${wasmVersion}.js`);
-      onWasmLoad();
-    }
+  logging.error("Unknown enviroment for webassembly loading");
+  return Promise.reject("UnknownEnviroment");
+}
+
+// This class creates the Module object, which is the main object for the webassembly on its construction
+
+class SpectodaWasmRuntime {
+  #version: string;
+
+  //? tohle je virtualni C++ class prohnana pres emscripten, coz zpusobuje ze ji muzu naimplementovat v JS
+  //? Ktery je prvne jako undefined, ale ve chvili kdy se nacte WASM, dostane implementaci z Module
+  IConnector_WASM: MainModule["IConnector_WASM"];
+
+  //? tohle je virtualni C++ class prohnana pres emscripten, coz zpusobuje ze ji muzu naimplementovat v JS
+  //? Ktery je prvne jako undefined, ale ve chvili kdy se nacte WASM, dostane implementaci z Module
+  Spectoda_WASM: MainModule["Spectoda_WASM"];
+
+  //? tohle je C++ typ prohnany pres emscripten, coz zpusobuje ze ji muzu naimplementovat v JS
+  //? Ktery je prvne jako undefined, ale ve chvili kdy se nacte WASM, dostane implementaci z Module
+  Uint8Vector: MainModule["Uint8Vector"];
+
+  constructor(version: string) {
+    this.#version = version;
+
+    //? inicialize objects
+    this.IConnector_WASM = Module.IConnector_WASM;
+    this.Spectoda_WASM = Module.Spectoda_WASM;
+    this.Uint8Vector = Module.Uint8Vector;
+  }
+
+  toHandle(value: any) {
+    return Module.Emval.toHandle(value);
+  }
+
+  toValue(handle: any) {
+    return Module.Emval.toValue(handle);
+  }
+
+  loadFS() {
+    return FS.syncfs(true, (err: any) => {
+      if (err) {
+        logging.error("FS.syncfs error:", err);
+      }
+    });
+  }
+
+  saveFS() {
+    return FS.syncfs(false, (err: any) => {
+      if (err) {
+        logging.error("FS.syncfs error:", err);
+      }
+    });
+  }
+
+  getVersion() {
+    return this.#version;
+  }
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+class WaitingAccess {
+  promise: Promise<SpectodaWasmRuntime>;
+  resolve: ((value: SpectodaWasmRuntime) => void) | undefined; // type from the typescript tooltip
+  reject: ((reason?: any) => void) | undefined; // type from the typescript tooltip
+
+  constructor() {
+    this.promise = new Promise((resolve, reject) => {
+      this.resolve = resolve;
+      this.reject = reject;
+    });
   }
 }
 
 // This class binds the JS world with the webassembly's C
 export const SpectodaWasm = {
-  // const std::vector<uint8_t>&  makePort(const char port_char, const uint32_t port_size, const uint8_t port_brightness, const uint8_t port_power, bool port_visible, bool port_reversed)
-  // void                         begin(const std::string& name_string, const std::string& mac_string, const deviceID_t device_id_offset)
-  // void                         end()
-  // void                         setClockTimestamp(const clock_ms timestamp)
-  // clock_ms                     getClockTimestamp()
-  // evaluate_result_t            execute(const std::vector<uint8_t>& commands_bytecode_vector, const connection_t source_connection)
-  // evaluate_result_t            request(const std::vector<uint8_t>& request_bytecode_vector, std::vector<uint8_t>& response_bytecode_vector_out, const tngl::connection_t source_connection)
+  _initializing: false,
+  _version: WASM_VERSION as string,
+  _runtime: undefined as SpectodaWasmRuntime | undefined,
+  _waiting: [] as WaitingAccess[],
 
-  // clone()
-  // delete()
+  // version might be DEBUG_0.9.2_20230814
+  setVersion(version: string): void {
+    if (this._initializing || this._runtime) {
+      throw new Error("SpectodaWasm version cant be changed after access() is called");
+    }
 
-  //? tohle je virtualni C++ class prohnana pres emscripten, coz zpusobuje ze ji muzu naimplementovat v JS
-  //? Ktery je prvne jako undefined, ale ve chvili kdy se nacte WASM, dostane implementaci z Module
-  IConnector_WASM: undefined as MainModule["IConnector_WASM"] | undefined,
+    this._version = version;
+  },
 
-  //? tohle je virtualni C++ class prohnana pres emscripten, coz zpusobuje ze ji muzu naimplementovat v JS
-  //? Ktery je prvne jako undefined, ale ve chvili kdy se nacte WASM, dostane implementaci z Module
-  Spectoda_WASM: undefined as MainModule["Spectoda_WASM"] | undefined,
+  access(): Promise<SpectodaWasmRuntime> {
+    if (this._runtime) {
+      return Promise.resolve(this._runtime);
+    }
 
-  // get(arg0)
-  // push_back(arg0)
-  // resize(arg0, arg1)
-  // set(arg0, arg1)
-  // size()
-  // clone()
-  // delete()
+    if (!this._initializing) {
+      __loadWasm(this._version).then(() => {
+        this._runtime = new SpectodaWasmRuntime(this._version);
+        for (const w of this._waiting) {
+          w.resolve(this._runtime);
+        }
+        this._waiting.length = 0;
+      });
+    }
 
-  //? tohle je C++ typ prohnany pres emscripten, coz zpusobuje ze ji muzu naimplementovat v JS
-  //? Ktery je prvne jako undefined, ale ve chvili kdy se nacte WASM, dostane implementaci z Module
-  Uint8Vector: undefined as MainModule["Uint8Vector"] | undefined,
-
-  // evaluate_result_t: null,
-  // send_result_t: null,
+    const wait = new WaitingAccess();
+    this._waiting.push(wait);
+    return wait.promise;
+  },
 
   // oposite of convertJSArrayToNumberVector() in https://emscripten.org/docs/api_reference/val.h.html
-  convertNumberVectorToJSArray(vector: any) {
+  convertNumberVectorToJSArray(vector: Uint8Vector) {
     let array = new Uint8Array(vector.size());
     for (let i = 0; i < array.length; i++) {
       array[i] = vector.get(i);
     }
     return array;
-  },
-
-  // wasmVersion might be DEBUG_0.9.2_20230814
-  initilize(wasmVersion: string) {
-    loadWasm(wasmVersion);
-  },
-
-  // TODO make it a getter?
-  /**
-   * @return {boolean}
-   */
-  initilized() {
-    return moduleInitilized;
-  },
-
-  /**
-   * @return {Promise<null>}
-   */
-  waitForInitilize() {
-    if (moduleInitilized) {
-      return Promise.resolve();
-    }
-
-    const wait = new WaitingItem();
-    waitingQueue.push(wait);
-    return wait.promise;
-  },
-
-  toHandle(value: any) {
-    return Module.Emval.toHandle(value);
-  },
-
-  toValue(handle: number) {
-    return Module.Emval.toValue(handle);
-  },
-
-  loadFS() {
-    return Module.FS.syncfs(true, (err: any) => {
-      if (err) {
-        logging.error("FS.syncfs error:", err);
-      }
-    });
-  },
-
-  saveFS() {
-    return Module.FS.syncfs(false, (err: any) => {
-      if (err) {
-        logging.error("FS.syncfs error:", err);
-      }
-    });
   },
 };
 
