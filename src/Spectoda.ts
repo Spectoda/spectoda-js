@@ -74,7 +74,8 @@ export class Spectoda {
 
   runtime: SpectodaRuntime;
 
-  constructor(connectorType: ConnectorType = "default", reconnecting = true) {
+  // todo implement timeline
+  constructor(timeline = new TimeTrack(), connectorType: ConnectorType = "default", reconnecting = true) {
     this.#parser = new TnglCodeParser();
 
     this.#uuidCounter = Math.floor(Math.random() * 0xffffffff);
