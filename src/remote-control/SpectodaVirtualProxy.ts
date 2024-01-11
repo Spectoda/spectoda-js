@@ -2,7 +2,7 @@ import { io, Socket } from "socket.io-client";
 import customParser from "socket.io-msgpack-parser";
 import { createNanoEvents } from "../functions";
 import { logging } from "../logging";
-import { ConnectionState, SpectodaObjectDummyPropertyList } from "../Spectoda";
+import { ConnectionState } from "../Spectoda";
 import { TimeTrack } from "../TimeTrack";
 
 export const WEBSOCKET_URL = "https://ceet.cloud.host.spectoda.com/";
@@ -72,15 +72,13 @@ type RemoteType = "sender" | "receiver";
 type InitParams = { key: string; signature: string; sessionOnly?: boolean; type: RemoteType };
 type InitArgs = Array<InitParams> | InitParams;
 
-export class SpectodaVirtualProxy extends SpectodaObjectDummyPropertyList {
+export class SpectodaVirtualProxy {
   networks: Map<string, Network>;
   #socket: Socket;
 
   wsConnectionState: ConnectionState;
 
   constructor(timeline: TimeTrack) {
-    super();
-
     this.networks = new Map();
 
     // ? How does websocket connection work?

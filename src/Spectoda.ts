@@ -65,31 +65,7 @@ const USE_ALL_CONNECTIONS = ["*/ff:ff:ff:ff:ff:ff"];
 
 type Tngl = { code: string | undefined; bytecode: Uint8Array | undefined };
 
-// Added so that SpectodaVirtualProxy and SpectodaWrapper can have type autocompletion
-export class SpectodaObjectDummyPropertyList {
-  on: Spectoda["on"];
-  addEventListener: Spectoda["addEventListener"];
-  setDebugLevel: Spectoda["setDebugLevel"];
-  // ...
-
-  constructor() {
-    this.on = () => {
-      throw new Error("Unimplemented function `on`");
-    };
-
-    this.addEventListener = () => {
-      throw new Error("Unimplemented function `addEventListener`");
-    };
-
-    this.setDebugLevel = () => {
-      throw new Error("Unimplemented function `setDebugLevel`");
-    };
-
-    // ...
-  }
-}
-
-export class Spectoda implements ISpectoda {
+export class Spectoda {
   #parser;
 
   #uuidCounter;
