@@ -10,38 +10,21 @@ import { logging } from "./logging";
 // TODO rewrite this to initiate connect only when needed
 
 // const WEBSOCKET_URL = "https://tangle-remote-control.glitch.me/"
-// export const WEBSOCKET_URL = "http://localhost:4001";
-export const WEBSOCKET_URL = "https://ceet.cloud.host.spectoda.com/";
+export const WEBSOCKET_URL = "http://localhost:4001";
+// export const WEBSOCKET_URL = "https://ceet.cloud.host.spectoda.com/";
 
-const eventStream = createNanoEvents();
-
-eventStream.on("controller-log", line => {
-  logging.info(line);
-});
-
-if (typeof window !== "undefined") {
-  window.sockets = [];
-}
 /////////////////////////////////////////////////////////////////////////////////////
 
 export function createSpectodaWebsocket() {
-  const timeline = new TimeTrack();
+  const eventStream = createNanoEvents();
 
-  // todo sync timeline
+  const timeline = new TimeTrack();
 
   const socket = io(WEBSOCKET_URL, {
     parser: customParser,
   });
 
-  window.sockets.push(socket);
-
   if (typeof window !== "undefined") window.socket = socket;
-
-  socket.on("r-event", data => {
-    eventStream.emit(data.name, ...data.args);
-  });
-
-  let networkJoinParams = [];
 
   socket.on("connect", () => {
     if (networkJoinParams) {
@@ -63,26 +46,17 @@ export function createSpectodaWebsocket() {
     eventStream.emit("disconnected-websockets");
   });
 
-  let networks = new Map();
-
   class SpectodaVirtualProxy {
     // public networks:{signature:string,key:string}[];
 
     constructor() {
-      if (typeof window !== "undefined") window.networks = networks;
-
       return new Proxy(this, {
         get: (_, prop) => {
           if (prop === "on") {
             // Special handling for "on" method
             return (eventName, callback) => {
-              // logging.verbose("Subscribing to event", eventName);
-
               const unsub = eventStream.on(eventName, callback);
 
-              // nanoid subscribe to event stream
-
-              // unsubscribe from previous event
               return unsub;
             };
           } else if (prop === "timeline") {
@@ -91,59 +65,12 @@ export function createSpectodaWebsocket() {
             return (eventName, ...args) => {
               eventStream.emit(eventName, ...args);
             };
-          } else if (prop === "init") {
-            // Expects [{key,sig}, ...] or {key,sig}
-            return params => {
-              if (!Array.isArray(params)) params = [params];
-
-              for (let param of params) {
-                param.type = "sender";
-              }
-
-              networkJoinParams = params;
-              for (let param of params) {
-                networks.set(param.signature, param);
-              }
-              return socket.emitWithAck("join", params);
-            };
           } else if (prop === "fetchClients") {
             return () => {
               return socket.emitWithAck("list-all-clients");
             };
           } else if (prop === "connectionState") {
             return websocketConnectionState;
-          } else if (prop === "selectTarget") {
-            return this.selectTarget;
-          } else if (prop === "removeTarget") {
-            return (signature, socketId) => {
-              const network = networks.get(signature);
-
-              if (!network) {
-                throw new Error(`No network found with signature ${signature}`);
-              }
-
-              networks.set(signature, {
-                ...network,
-                socketId: null,
-              });
-
-              console.log("Unsub Event", signature, socketId);
-              return socket.emitWithAck("unsubscribe-event", signature, socketId);
-            };
-          } else if (prop === "resetTargets") {
-            return this.resetTargets;
-          } else if (prop === "autoSelectTargetsInNetworks") {
-            // TODO resolve with promise
-            this.resetTargets();
-
-            return async networks => {
-              const results = [];
-              for (let network of networks) {
-                const result = await this.selectTarget(network.signature, null);
-                results.push(result);
-              }
-              return Promise.allSettled(results);
-            };
           }
 
           // Always return an async function for any property
@@ -160,113 +87,15 @@ export function createSpectodaWebsocket() {
             }
 
             const results = await this.sendThroughWebsocket(payload);
-
-            // find fist result with status success and set it as result
-            const result = results.find(r => r.status === "fulfilled")?.value;
-
-            const networksArray = Array.from(networks.values());
-
-            for (let networkIndex = 0; networkIndex < results.length; networkIndex++) {
-              networks.set(networksArray[networkIndex].signature, {
-                ...networksArray[networkIndex],
-                lastResult: results[networkIndex],
-              });
-            }
-
-            eventStream.emit("networks-statuses", networksArray);
-
-            if (!result) return null;
-
-            // logging.verbose("[WEBSOCKET]", result);
-
-            if (result.status === "success") {
-              for (let res of result?.data) {
-                if (res.status === "error") {
-                  // logging.error("[WEBSOCKET]", result);
-
-                  throw new Error(res.error);
-                }
-              }
-
-              // logging.verbose("[WEBSOCKET]", result);
-
-              return result?.data?.[0].result;
-            } else {
-              let error = new Error(result?.error);
-              if (Array.isArray(result)) {
-                error = new Error(result[0]);
-              }
-              // logging.error("[WEBSOCKET]", error);
-
-              throw new Error(result?.error);
-            }
           };
         },
       });
     }
-
-    async sendThroughWebsocket(data) {
-      // go through selected targets and send to each
-      let results = [];
-      for (let network of networks.values()) {
-        if (network.socketId) {
-          // console.log("sending to", network.socketId, network.signature, data);
-          const result = await socket.emitWithAck("d-func", network.signature, network.socketId, data);
-          results.push(result);
-        }
-      }
-
-      return await Promise.allSettled(results);
-    }
-
-    async selectTarget(signature, socketId) {
-      console.log("WUT", networks);
-
-      const network = networks.get(signature);
-
-      if (!socketId) {
-        const requestedSocketIdResponse = await socket.emitWithAck("get-socket-id-for-network", signature);
-
-        if (!requestedSocketIdResponse) throw new Error(`No socketId found for network ${signature}`);
-
-        socketId = requestedSocketIdResponse;
-      }
-
-      if (!socketId) {
-        return null;
-        throw new Error(`Error subscribing to network ${signature} with socketId ${socketId}`);
-      }
-
-      if (!network) {
-        throw new Error(`No network found with signature ${signature}`);
-      }
-
-      networks.set(signature, {
-        ...network,
-        socketId,
-      });
-
-      return socket
-        .emitWithAck("subscribe-event", signature, socketId)
-        .then(() => {
-          return socketId;
-        })
-        .catch(err => {
-          throw new Error(`Error subscribing to network ${signature} with socketId ${socketId}`);
-        });
-    }
-
-    async resetTargets() {
-      for (let network of networks.values()) {
-        // console.log("resetting", network);
-        networks.set(network.signature, {
-          ...network,
-          socketId: null,
-        });
-        socket.emitWithAck("unsubscribe-event", network.signature, null);
-      }
-    }
   }
+
+  // eventStream.on("controller-log", line => {
+  //   logging.info(line);
+  // });
 
   return new SpectodaVirtualProxy();
 }
