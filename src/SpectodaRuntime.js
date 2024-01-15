@@ -63,8 +63,10 @@ import { SpectodaNodeSerialConnector } from "./connector/SpectodaNodeSerialConne
 export const allEventsEmitter = createNanoEvents();
 
 function emitHandler(event, args) {
-  logging.verbose("emitHandler", event, args);
-  allEventsEmitter.emit("on", { name: event, args });
+  if (!event.startsWith("wasm_")) {
+    logging.verbose("emitHandler", event, args);
+    allEventsEmitter.emit("on", { name: event, args });
+  }
 }
 
 // Deffered object
