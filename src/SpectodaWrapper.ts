@@ -2,6 +2,10 @@ import { ConnectionState, Spectoda } from "./Spectoda";
 import { TimeTrack } from "./TimeTrack";
 import { createRemoteSpectodaInstance } from "./remote-control";
 
+const isRemoteSpectodaInstance = (instance: Spectoda | SpectodaWrapper): instance is SpectodaWrapper => {
+  return instance instanceof SpectodaWrapper;
+};
+
 export class SpectodaWrapper {
   #spectoda: Spectoda | ReturnType<typeof createRemoteSpectodaInstance>;
   timeline: TimeTrack;
@@ -13,7 +17,12 @@ export class SpectodaWrapper {
 
   constructor({ isRemote = false, signature }: { isRemote?: boolean; signature: string }) {
     this.timeline = new TimeTrack();
-    this.#spectoda = isRemote ? createRemoteSpectodaInstance({ signature }) : new Spectoda(this.timeline);
+    this.#spectoda = isRemote
+      ? createRemoteSpectodaInstance({ signature })
+      : new Spectoda({
+          timeline: this.timeline,
+          signature,
+        });
 
     // Connection states
     this.connectionState = "disconnected";

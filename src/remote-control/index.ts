@@ -28,9 +28,7 @@ interface Network {
 
 export function createRemoteSpectodaInstance({ signature }: { signature: string }) {
   const timeline = new TimeTrack();
-  let networkJoinParams: NetworkJoinParams = [];
 
-  console.log("> lets create something");
   const socket = io(WEBSOCKET_URL + `/network-${signature}`, {
     parser: customParser,
   });
@@ -70,209 +68,150 @@ export function createRemoteSpectodaInstance({ signature }: { signature: string 
   //   return typeof command === "string" && allowedCommands.includes(command as Command);
   // };
 
-  // class SpectodaVirtualProxy {
-  //   networks: Map<string, Network>;
+  async function scanRemote(...args: unknown[]) {
+    console.log("> scanRemote", args);
+    const res = await socket.emitWithAck("scan", ...args);
+    console.log(res);
+  }
 
-  //   constructor() {
-  //     this.networks = new Map();
+  function sendCommandToRemoteReceiver(...data) {
+    // todo handle
+    console.log("> Hey this functino is not remote specific", data);
+  }
 
-  //     return new Proxy(this, {
-  //       get: (_, command) => {
-  //         switch (command) {
-  //           case "on": {
-  //             return (eventName: string, callback: unknown) => {
-  //               const unsub = eventStream.on(eventName, callback);
-  //               return unsub;
-  //             };
-  //           }
+  function handleRemoteOnlyCommands(command: string | symbol) {
+    console.log("command", command);
 
-  //           case "timeline": {
-  //             return timeline;
-  //           }
+    switch (command) {
+      case "scanRemote": {
+        return scanRemote;
+      }
+    }
 
-  //           case "emit": {
-  //             type EventName = string;
-  //             type EventArgs = Array<unknown>;
-  //             return (eventName: EventName, ...args: EventArgs) => {
-  //               eventStream.emit(eventName, ...args);
-  //             };
-  //           }
+    return null;
+  }
 
-  //           case "init": {
-  //             type RemoteType = "sender" | "receiver";
-  //             type InitParams = { key: string; signature: string; sessionOnly?: boolean; type: RemoteType };
-  //             type InitArgs = Array<InitParams> | InitParams;
+  class SpectodaVirtualProxy {
+    networks: Map<string, Network>;
 
-  //             const isInitArray = (params: InitArgs): params is Array<InitParams> => {
-  //               return Array.isArray(params) || !params?.sessionOnly;
-  //             };
+    constructor() {
+      this.networks = new Map();
 
-  //             return (params: InitArgs) => {
-  //               if (isInitArray(params)) {
-  //                 if (!Array.isArray(params)) params = [params];
-  //                 for (let param of params) {
-  //                   param.type = "sender";
-  //                   this.networks.set(param.signature, param);
-  //                 }
-  //               } else {
-  //                 params.type = "sender";
-  //               }
+      return new Proxy(this, {
+        get: (_, command) => {
+          const remoteCommandHandler = handleRemoteOnlyCommands(command);
+          const isCommandRemoteOnly = remoteCommandHandler !== null;
 
-  //               networkJoinParams = [params];
+          if (isCommandRemoteOnly) return remoteCommandHandler;
+          else return sendCommandToRemoteReceiver;
 
-  //               return socket.emitWithAck("join", params);
-  //             };
-  //           }
+          return async (...args: Array<unknown>) => {
+            const payload = {
+              functionName: command,
+              arguments: args,
+            };
 
-  //           case "fetchClients": {
-  //             return () => socket.emitWithAck("list-all-clients");
-  //           }
+            if (command === "updateDeviceFirmware" || command === "updateNetworkFirmware") {
+              if (Array.isArray(args?.[0])) {
+                args[0] = Uint8Array.from(args[0]).buffer;
+              }
+            }
 
-  //           case "selectTarget": {
-  //             return this.selectTarget;
-  //           }
+            const results = (await this.sendThroughWebsocket(payload)) || [];
 
-  //           case "removeTarget": {
-  //             return (signature: string, socketId: SocketId) => {
-  //               const network = this.networks.get(signature);
+            const fulfilledResult = results.find(r => r.status === "fulfilled")?.value;
 
-  //               if (!network) {
-  //                 throw new Error(`No network found with signature ${signature}`);
-  //               }
+            const networksArray = Array.from(this.networks.values());
 
-  //               this.networks.set(signature, {
-  //                 ...network,
-  //                 socketId: null,
-  //               });
+            for (let networkIndex = 0; networkIndex < results.length; networkIndex++) {
+              this.networks.set(networksArray[networkIndex].signature, {
+                ...networksArray[networkIndex],
+                lastResult: results[networkIndex],
+              });
+            }
 
-  //               return socket.emitWithAck("unsubscribe-event", signature, null);
-  //             };
-  //           }
+            eventStream.emit("networks-statuses", networksArray);
 
-  //           case "resetTargets": {
-  //             return this.resetTargets;
-  //           }
+            if (!fulfilledResult) return null;
 
-  //           case "autoSelectTargetsInNetworks": {
-  //             this.resetTargets();
-  //             return async (networks: Network[]) => {
-  //               const results = [];
-  //               for (let network of networks) {
-  //                 const result = await this.selectTarget(network.signature, null);
-  //                 results.push(result);
-  //               }
-  //               return Promise.allSettled(results);
-  //             };
-  //           }
-  //         }
+            if (fulfilledResult.status === "success") {
+              for (let res of fulfilledResult?.data) {
+                if (res.status === "error") {
+                  console.error(res.error);
+                }
+              }
 
-  //         return async (...args: Array<unknown>) => {
-  //           const payload = {
-  //             functionName: command,
-  //             arguments: args,
-  //           };
+              return fulfilledResult?.data?.[0]?.result;
+            } else {
+              if (Array.isArray(fulfilledResult)) {
+                console.error(fulfilledResult[0]?.error);
+              } else {
+                console.error(fulfilledResult?.error);
+              }
+            }
+          };
+        },
+      });
+    }
 
-  //           if (command === "updateDeviceFirmware" || command === "updateNetworkFirmware") {
-  //             if (Array.isArray(args?.[0])) {
-  //               args[0] = Uint8Array.from(args[0]).buffer;
-  //             }
-  //           }
+    async sendThroughWebsocket(data: unknown) {
+      type DFuncResponse = unknown; // {value?: unknown};
 
-  //           const results = (await this.sendThroughWebsocket(payload)) || [];
+      let results = [];
+      for (let network of this.networks.values()) {
+        if (!network.socketId) return;
 
-  //           const fulfilledResult = results.find(r => r.status === "fulfilled")?.value;
+        const result: DFuncResponse = await socket.emitWithAck("d-func", network.signature, network.socketId, data);
 
-  //           const networksArray = Array.from(this.networks.values());
+        results.push(result);
+      }
 
-  //           for (let networkIndex = 0; networkIndex < results.length; networkIndex++) {
-  //             this.networks.set(networksArray[networkIndex].signature, {
-  //               ...networksArray[networkIndex],
-  //               lastResult: results[networkIndex],
-  //             });
-  //           }
+      return await Promise.allSettled(results);
+    }
 
-  //           eventStream.emit("networks-statuses", networksArray);
+    // async selectTarget(signature: string, socketId: SocketId) {
+    //   const network = this.networks.get(signature);
 
-  //           if (!fulfilledResult) return null;
+    //   if (!socketId) {
+    //     const requestedSocketIdResponse = await socket.emitWithAck("get-socket-id-for-network", signature);
 
-  //           if (fulfilledResult.status === "success") {
-  //             for (let res of fulfilledResult?.data) {
-  //               if (res.status === "error") {
-  //                 console.error(res.error);
-  //               }
-  //             }
+    //     if (!requestedSocketIdResponse) throw new Error(`No socketId found for network ${signature}`);
 
-  //             return fulfilledResult?.data?.[0]?.result;
-  //           } else {
-  //             if (Array.isArray(fulfilledResult)) {
-  //               console.error(fulfilledResult[0]?.error);
-  //             } else {
-  //               console.error(fulfilledResult?.error);
-  //             }
-  //           }
-  //         };
-  //       },
-  //     });
-  //   }
+    //     socketId = requestedSocketIdResponse;
+    //   }
 
-  //   async sendThroughWebsocket(data: unknown) {
-  //     type DFuncResponse = unknown; // {value?: unknown};
+    //   if (!socketId) {
+    //     return null;
+    //   }
 
-  //     let results = [];
-  //     for (let network of this.networks.values()) {
-  //       if (!network.socketId) return;
+    //   if (!network) {
+    //     throw new Error(`No network found with signature ${signature}`);
+    //   }
 
-  //       const result: DFuncResponse = await socket.emitWithAck("d-func", network.signature, network.socketId, data);
+    //   this.networks.set(signature, {
+    //     ...network,
+    //     socketId,
+    //   });
 
-  //       results.push(result);
-  //     }
+    //   try {
+    //     await socket.emitWithAck("subscribe-event", signature, socketId);
+    //     return socketId;
+    //   } catch (error) {
+    //     throw new Error(`Error subscribing to network ${signature} with socketId ${socketId}`);
+    //   }
+    // }
 
-  //     return await Promise.allSettled(results);
-  //   }
+    // async resetTargets() {
+    //   for (let network of this.networks.values()) {
+    //     // console.log("resetting", network);
+    //     this.networks.set(network.signature, {
+    //       ...network,
+    //       socketId: null,
+    //     });
+    //     socket.emitWithAck("unsubscribe-event", network.signature, null);
+    //   }
+    // }
+  }
 
-  //   async selectTarget(signature: string, socketId: SocketId) {
-  //     const network = this.networks.get(signature);
-
-  //     if (!socketId) {
-  //       const requestedSocketIdResponse = await socket.emitWithAck("get-socket-id-for-network", signature);
-
-  //       if (!requestedSocketIdResponse) throw new Error(`No socketId found for network ${signature}`);
-
-  //       socketId = requestedSocketIdResponse;
-  //     }
-
-  //     if (!socketId) {
-  //       return null;
-  //     }
-
-  //     if (!network) {
-  //       throw new Error(`No network found with signature ${signature}`);
-  //     }
-
-  //     this.networks.set(signature, {
-  //       ...network,
-  //       socketId,
-  //     });
-
-  //     try {
-  //       await socket.emitWithAck("subscribe-event", signature, socketId);
-  //       return socketId;
-  //     } catch (error) {
-  //       throw new Error(`Error subscribing to network ${signature} with socketId ${socketId}`);
-  //     }
-  //   }
-
-  //   async resetTargets() {
-  //     for (let network of this.networks.values()) {
-  //       // console.log("resetting", network);
-  //       this.networks.set(network.signature, {
-  //         ...network,
-  //         socketId: null,
-  //       });
-  //       socket.emitWithAck("unsubscribe-event", network.signature, null);
-  //     }
-  //   }
-  // }
-
-  // return new SpectodaVirtualProxy();
+  return new SpectodaVirtualProxy();
 }

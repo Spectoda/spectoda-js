@@ -65,6 +65,13 @@ const USE_ALL_CONNECTIONS = ["*/ff:ff:ff:ff:ff:ff"];
 
 type Tngl = { code: string | undefined; bytecode: Uint8Array | undefined };
 
+interface SpectodaI {
+  connectorType?: ConnectorType;
+  timeline: TimeTrack;
+  reconnecting?: boolean;
+  signature: string;
+}
+
 export class Spectoda {
   #parser;
 
@@ -92,7 +99,8 @@ export class Spectoda {
   runtime: SpectodaRuntime;
 
   // todo implement timeline
-  constructor(timeline = new TimeTrack(), connectorType: ConnectorType = "default", reconnecting = true) {
+  // todo implement signature assign
+  constructor({ timeline = new TimeTrack(), signature, connectorType = "default", reconnecting = true }: SpectodaI) {
     this.#parser = new TnglCodeParser();
 
     this.#uuidCounter = Math.floor(Math.random() * 0xffffffff);
