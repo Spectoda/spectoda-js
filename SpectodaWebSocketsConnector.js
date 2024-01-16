@@ -5,7 +5,6 @@ import { io } from "socket.io-client";
 import customParser from "socket.io-msgpack-parser";
 import { TimeTrack } from "./TimeTrack";
 import { createNanoEvents } from "./functions";
-import { logging } from "./logging";
 
 // TODO rewrite this to initiate connect only when needed
 
@@ -15,31 +14,42 @@ export const WEBSOCKET_URL = "http://localhost:4001";
 
 /////////////////////////////////////////////////////////////////////////////////////
 
-export function createSpectodaWebsocket() {
+export function createSpectodaWebsocket({ signature, key }) {
   const eventStream = createNanoEvents();
 
   const timeline = new TimeTrack();
 
-  const socket = io(WEBSOCKET_URL, {
+  const url = WEBSOCKET_URL + "/network-" + signature;
+  console.log("connecting to", url);
+
+  const socket = io(url, {
     parser: customParser,
+    auth: {
+      key: key,
+      type: "sender",
+    },
   });
 
   if (typeof window !== "undefined") window.socket = socket;
 
-  socket.on("connect", () => {
-    if (networkJoinParams) {
-      eventStream.emit("connecting-websockets");
+  // socket.on("connect", () => {
+  //   if (networkJoinParams) {
+  //     eventStream.emit("connecting-websockets");
 
-      socket
-        .emitWithAck("join", networkJoinParams)
-        .then(() => {
-          logging.info("re/connected to websocket server", networkJoinParams);
-          eventStream.emit("connected-websockets");
-        })
-        .catch(err => {
-          logging.error("error connecting to websocket server", err);
-        });
-    }
+  //     socket
+  //       .emitWithAck("join", networkJoinParams)
+  //       .then(() => {
+  //         logging.info("re/connected to websocket server", networkJoinParams);
+  //         eventStream.emit("connected-websockets");
+  //       })
+  //       .catch(err => {
+  //         logging.error("error connecting to websocket server", err);
+  //       });
+  //   }
+  // });
+
+  socket.on("connect", () => {
+    console.log("connected socket", socket.id);
   });
 
   socket.on("disconnect", () => {
@@ -67,7 +77,7 @@ export function createSpectodaWebsocket() {
             };
           } else if (prop === "fetchClients") {
             return () => {
-              return socket.emitWithAck("list-all-clients");
+              // return socket.emitWithAck("list-all-clients");
             };
           } else if (prop === "connectionState") {
             return websocketConnectionState;
@@ -99,3 +109,5 @@ export function createSpectodaWebsocket() {
 
   return new SpectodaVirtualProxy();
 }
+
+if (typeof window !== "undefined") window.createSpectodaWebsocket = createSpectodaWebsocket;
