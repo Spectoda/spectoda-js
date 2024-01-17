@@ -1,20 +1,20 @@
 import { logging, setLoggingLevel } from "./logging";
 
-export let createNanoEvents = () => ({
+export const createNanoEvents = () => ({
   emit(event, ...args) {
-    let callbacks = this.events[event] || []
+    const callbacks = this.events[event] || [];
     for (let i = 0, length = callbacks.length; i < length; i++) {
-      callbacks[i](...args)
+      callbacks[i](...args);
     }
   },
   events: {},
   on(event, cb) {
-    this.events[event]?.push(cb) || (this.events[event] = [cb])
+    this.events[event]?.push(cb) || (this.events[event] = [cb]);
     return () => {
-      this.events[event] = this.events[event]?.filter(i => cb !== i)
-    }
-  }
-})
+      this.events[event] = this.events[event]?.filter(i => cb !== i);
+    };
+  },
+});
 
 export const createNanoEventsWithWrappedEmit = emitHandler => ({
   emit(event, ...args) {
@@ -35,9 +35,8 @@ export const createNanoEventsWithWrappedEmit = emitHandler => ({
 });
 
 export function toBytes(value: number, byteCount: number) {
-
-  if (typeof (value) !== "number") {
-    logging.error("Invalid value type: " + value + " (" + typeof (value) + ")");
+  if (typeof value !== "number") {
+    logging.error("Invalid value type: " + value + " (" + typeof value + ")");
     throw "InvalidValue";
   }
 
@@ -52,7 +51,7 @@ export function toBytes(value: number, byteCount: number) {
   }
 
   let number = BigInt(Math.round(value));
-  var byteArray: number[] = [];
+  const byteArray: number[] = [];
   for (let index = 0; index < byteCount; index++) {
     const byte = number & 0xffn;
     byteArray.push(Number(byte));
@@ -92,10 +91,10 @@ export function numberToBytes(number_value: number, byteCount: number) {
 //   return value_int16;
 // }
 
-export const timeOffset = new Date().getTime() % 0x7fffffff;
+export const timeOffset = Date.now() % 0x7fffffff;
 // must be positive int32 (4 bytes)
 export function getClockTimestamp() {
-  return (new Date().getTime() % 0x7fffffff) - timeOffset;
+  return (Date.now() % 0x7fffffff) - timeOffset;
 }
 
 export function sleep(ms) {
@@ -127,11 +126,11 @@ export function sleep(ms) {
 
 export const getSeconds = str => {
   let seconds = 0;
-  let months = str.match(/(\d+)\s*M/);
-  let days = str.match(/(\d+)\s*D/);
-  let hours = str.match(/(\d+)\s*h/);
-  let minutes = str.match(/(\d+)\s*m/);
-  let secs = str.match(/(\d+)\s*s/);
+  const months = str.match(/(\d+)\s*M/);
+  const days = str.match(/(\d+)\s*D/);
+  const hours = str.match(/(\d+)\s*h/);
+  const minutes = str.match(/(\d+)\s*m/);
+  const secs = str.match(/(\d+)\s*s/);
   if (months) {
     seconds += parseInt(months[1]) * 86400 * 30;
   }
@@ -186,7 +185,7 @@ export function labelToBytes(label_string) {
 }
 
 export function stringToBytes(string, length) {
-  var byteArray: number[] = [];
+  const byteArray: number[] = [];
 
   for (let index = 0; index < length; index++) {
     if (index < string.length) {
@@ -203,15 +202,15 @@ export function colorToBytes(color_hex_code) {
     return [0, 0, 0];
   }
 
-  let reg = color_hex_code.match(/#?([0-9a-f][0-9a-f])([0-9a-f][0-9a-f])([0-9a-f][0-9a-f])/i);
+  const reg = color_hex_code.match(/#?([\da-f]{2})([\da-f]{2})([\da-f]{2})/i);
   if (!reg) {
     logging.error('Wrong color code: "' + color_hex_code + '"');
     return [0, 0, 0];
   }
 
-  let r = parseInt(reg[1], 16);
-  let g = parseInt(reg[2], 16);
-  let b = parseInt(reg[3], 16);
+  const r = parseInt(reg[1], 16);
+  const g = parseInt(reg[2], 16);
+  const b = parseInt(reg[3], 16);
 
   return [r, g, b];
 }
@@ -221,16 +220,16 @@ const PERCENTAGE_MAX = 268435455; // 2^28-1
 const PERCENTAGE_MIN = -268435455; // -(2^28)+1  (plus 1 is there for the percentage to be simetric)
 
 export function percentageToBytes(percentage_float) {
-  const value = mapValue(percentage_float, -100.0, 100.0, PERCENTAGE_MIN, PERCENTAGE_MAX);
+  const value = mapValue(percentage_float, -100, 100, PERCENTAGE_MIN, PERCENTAGE_MAX);
   return numberToBytes(Math.floor(value), 4);
 }
 
 export function strMacToBytes(mac_str) {
   // Split the string into an array of hexadecimal values
-  var hexValues = mac_str.split(":");
+  const hexValues = mac_str.split(":");
 
   // Convert each hexadecimal value to a byte
-  var bytes = hexValues.map(function (hex) {
+  const bytes = hexValues.map(function (hex) {
     return parseInt(hex, 16);
   });
 
@@ -247,7 +246,7 @@ export function strMacToBytes(mac_str) {
 // IPhone SE Spectoda Connect       Mozilla/5.0 (iPhone; CPU iPhone OS 15_6_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148
 // IPhone SE Safari                 Mozilla/5.0 (iPhone; CPU iPhone OS 15_6_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/15.6.1 Mobile/15E148 Safari/604.1
 
-const spectodaNodeDetected = typeof process !== 'undefined' && process.versions && process.versions.node;
+const spectodaNodeDetected = typeof process !== "undefined" && process.versions && process.versions.node;
 export function detectNode() {
   return spectodaNodeDetected;
 }
@@ -267,37 +266,37 @@ export function detectSpectodaConnect() {
 
 const navigatorUserAgent = typeof navigator === "undefined" ? "" : navigator.userAgent.toLowerCase();
 
-const androidDetected = navigatorUserAgent.indexOf("android") > -1;
+const androidDetected = navigatorUserAgent.includes("android");
 export function detectAndroid() {
   return androidDetected;
 }
 
-const iphoneDetected = navigatorUserAgent.indexOf("iphone") > -1;
+const iphoneDetected = navigatorUserAgent.includes("iphone");
 export function detectIPhone() {
   return iphoneDetected;
 }
 
-const macintoshDetected = navigatorUserAgent.indexOf("macintosh") > -1;
+const macintoshDetected = navigatorUserAgent.includes("macintosh");
 export function detectMacintosh() {
   return macintoshDetected;
 }
 
-const windowsDetected = navigatorUserAgent.indexOf("windows") > -1;
+const windowsDetected = navigatorUserAgent.includes("windows");
 export function detectWindows() {
   return windowsDetected;
 }
 
-const linuxDetected = navigatorUserAgent.indexOf("linux") > -1;
+const linuxDetected = navigatorUserAgent.includes("linux");
 export function detectLinux() {
   return linuxDetected;
 }
 
-const chromeDetected = navigatorUserAgent.indexOf("chrome") > -1;
+const chromeDetected = navigatorUserAgent.includes("chrome");
 export function detectChrome() {
   return chromeDetected && !spectodaConnectDetected;
 }
 
-const safariDetected = navigatorUserAgent.indexOf("safari") > -1 && navigatorUserAgent.indexOf("chrome") == -1;
+const safariDetected = navigatorUserAgent.includes("safari") && !navigatorUserAgent.includes("chrome");
 export function detectSafari() {
   return safariDetected && !spectodaConnectDetected;
 }
@@ -305,15 +304,14 @@ export function detectSafari() {
 //////////////////////////////////////////////////////
 
 export function computeTnglFingerprint(tngl_bytes, tngl_label) {
-
   if (detectNode()) {
+    const hackyRequire = require;
 
-    const crypto = require('crypto');
+    const crypto = hackyRequire("crypto");
 
     return new Promise((resolve, reject) => {
-
       try {
-        const hash = crypto.createHmac('sha256', tngl_label);
+        const hash = crypto.createHmac("sha256", tngl_label);
         hash.update(tngl_bytes);
         const fingerprint = hash.digest();
 
@@ -322,9 +320,7 @@ export function computeTnglFingerprint(tngl_bytes, tngl_label) {
         // If you want the result as Uint8Array like your browser example:
         resolve(new Uint8Array(fingerprint));
         return;
-
       } catch (error) {
-
         reject(error);
         return;
       }
@@ -332,12 +328,10 @@ export function computeTnglFingerprint(tngl_bytes, tngl_label) {
       // If you want the result as a base64 string (like the commented out line in your example):
       // resolve(signature.toString('base64'));
     });
-
   } else {
-
-    let enc = new TextEncoder();
-    let algorithm = { name: "HMAC", hash: "SHA-256" };
-    let body = new Uint8Array(tngl_bytes);
+    const enc = new TextEncoder();
+    const algorithm = { name: "HMAC", hash: "SHA-256" };
+    const body = new Uint8Array(tngl_bytes);
 
     return crypto.subtle
       .importKey("raw", enc.encode(tngl_label), algorithm, false, ["sign", "verify"])
@@ -352,7 +346,6 @@ export function computeTnglFingerprint(tngl_bytes, tngl_label) {
 
         return new Uint8Array(signature);
       });
-
   }
 }
 
@@ -363,9 +356,9 @@ export function hexStringToUint8Array(hexString, arrayLength) {
   if (!arrayLength) {
     arrayLength = hexString.length / 2;
   }
-  let arrayBuffer = new Uint8Array(arrayLength);
+  const arrayBuffer = new Uint8Array(arrayLength);
   for (let i = 0; i < arrayLength; i++) {
-    const byteValue = parseInt(hexString.substr(i * 2, 2), 16);
+    const byteValue = parseInt(hexString.slice(i * 2, i * 2 + 2), 16);
     if (Number.isNaN(byteValue)) {
       arrayBuffer[i] = 0;
     } else {
@@ -419,10 +412,8 @@ export function enableDebugMode() {
 }
 
 export function deactivateDebugMode() {
-  if (typeof window !== "undefined" && "eruda" in window) {
-    if (window.eruda.hasOwnProperty("destroy")) {
-      window.eruda.destroy();
-    }
+  if (typeof window !== "undefined" && "eruda" in window && window.eruda.hasOwnProperty("destroy")) {
+    window.eruda.destroy();
   }
 }
 
@@ -445,8 +436,8 @@ const CRC32_DATA = CRC32_TABLE.split(" ").map(function (s) {
 });
 
 export function crc32(bytes) {
-  var crc = -1;
-  for (var i = 0, iTop = bytes.length; i < iTop; i++) {
+  let crc = -1;
+  for (let i = 0, iTop = bytes.length; i < iTop; i++) {
     crc = (crc >>> 8) ^ CRC32_DATA[(crc ^ bytes[i]) & 0xff];
   }
   return (crc ^ -1) >>> 0;
@@ -457,11 +448,11 @@ export function crc32(bytes) {
 const CRC8_TABLE =
   "005EBCE2613FDD83C29C7E20A3FD1F419DC3217FFCA2401E5F01E3BD3E6082DC237D9FC1421CFEA0E1BF5D0380DE3C62BEE0025CDF81633D7C22C09E1D43A1FF4618FAA427799BC584DA3866E5BB5907DB856739BAE406581947A5FB7826C49A653BD987045AB8E6A7F91B45C6987A24F8A6441A99C7257B3A6486D85B05E7B98CD2306EEDB3510F4E10F2AC2F7193CD114FADF3702ECC92D38D6F31B2EC0E50AFF1134DCE90722C6D33D18F0C52B0EE326C8ED0530DEFB1F0AE4C1291CF2D73CA947628ABF517490856B4EA6937D58B5709EBB536688AD495CB2977F4AA4816E9B7550B88D6346A2B7597C94A14F6A8742AC896154BA9F7B6E80A54D7896B35";
 
-export function hexStringToArray(str : string) {
-  if (!str.length) {
+export function hexStringToArray(str: string) {
+  if (str.length === 0) {
     return [];
   }
-  var arr = str.match(/[0-9a-f]{2}/gi); // convert into array of hex pairs
+  let arr = str.match(/[\da-f]{2}/gi); // convert into array of hex pairs
   arr = arr.map(x => parseInt(x, 16)); // convert hex pairs into ints (bytes)
   return new Uint8Array(arr);
 }
@@ -471,9 +462,9 @@ export function hexStringToArray(str : string) {
 const CRC8_DATA = hexStringToArray(CRC8_TABLE);
 
 export function crc8(bArr) {
-  var i = 1;
-  var i2 = bArr.length - 1;
-  var b = 0;
+  let i = 1;
+  const i2 = bArr.length - 1;
+  let b = 0;
   while (i <= i2) {
     b = CRC8_DATA[(b ^ bArr[i]) & 255];
     i++;
@@ -481,7 +472,7 @@ export function crc8(bArr) {
   return b;
 }
 
-export function convertToByteArray(str : string) {
+export function convertToByteArray(str: string) {
   const byteArray = [];
   for (let i = 0; i < str.length; i++) {
     byteArray.push(str.charCodeAt(i));
@@ -507,7 +498,7 @@ export function convertToByteArray(str : string) {
 // window.base64ToUint8Array = base64ToUint8Array;
 
 function componentToHex(c) {
-  var hex = c.toString(16);
+  const hex = c.toString(16);
   return hex.length == 1 ? "0" + hex : hex;
 }
 
@@ -539,11 +530,11 @@ export function validateTimestamp(value) {
     value += "s";
   }
 
-  let days = value.match(/([+-]? *[0-9]+[.]?[0-9]*|[.][0-9]+)\s*d/gi);
-  let hours = value.match(/([+-]? *[0-9]+[.]?[0-9]*|[.][0-9]+)\s*h/gi);
-  let minutes = value.match(/([+-]? *[0-9]+[.]?[0-9]*|[.][0-9]+)\s*m(?!s)/gi);
-  let secs = value.match(/([+-]? *[0-9]+[.]?[0-9]*|[.][0-9]+)\s*s/gi);
-  let msecs = value.match(/([+-]? *[0-9]+[.]?[0-9]*|[.][0-9]+)\s*(t|ms)/gi);
+  const days = value.match(/([+-]? *\d+\.?\d*|\.\d+)\s*d/gi);
+  const hours = value.match(/([+-]? *\d+\.?\d*|\.\d+)\s*h/gi);
+  const minutes = value.match(/([+-]? *\d+\.?\d*|\.\d+)\s*m(?!s)/gi);
+  const secs = value.match(/([+-]? *\d+\.?\d*|\.\d+)\s*s/gi);
+  const msecs = value.match(/([+-]? *\d+\.?\d*|\.\d+)\s*(t|ms)/gi);
 
   let result = "";
   let total = 0;
@@ -554,36 +545,36 @@ export function validateTimestamp(value) {
   logging.verbose(secs);
   logging.verbose(msecs);
 
-  while (days && days.length) {
-    let d = parseFloat(days[0].replace(/\s/, ""));
+  while (days && days.length > 0) {
+    const d = parseFloat(days[0].replace(/\s/, ""));
     result += d + "d ";
     total += d * 86400000;
     days.shift();
   }
 
-  while (hours && hours.length) {
-    let h = parseFloat(hours[0].replace(/\s/, ""));
+  while (hours && hours.length > 0) {
+    const h = parseFloat(hours[0].replace(/\s/, ""));
     result += h + "h ";
     total += h * 3600000;
     hours.shift();
   }
 
-  while (minutes && minutes.length) {
-    let m = parseFloat(minutes[0].replace(/\s/, ""));
+  while (minutes && minutes.length > 0) {
+    const m = parseFloat(minutes[0].replace(/\s/, ""));
     result += m + "m ";
     total += m * 60000;
     minutes.shift();
   }
 
-  while (secs && secs.length) {
-    let s = parseFloat(secs[0].replace(/\s/, ""));
+  while (secs && secs.length > 0) {
+    const s = parseFloat(secs[0].replace(/\s/, ""));
     result += s + "s ";
     total += s * 1000;
     secs.shift();
   }
 
-  while (msecs && msecs.length) {
-    let ms = parseFloat(msecs[0].replace(/\s/, ""));
+  while (msecs && msecs.length > 0) {
+    const ms = parseFloat(msecs[0].replace(/\s/, ""));
     result += ms + "ms ";
     total += ms;
     msecs.shift();
@@ -607,17 +598,17 @@ export function getColorString(r, g, b) {
 export function toUint8Array(numbers) {
   const arrayBuffer = new ArrayBuffer(numbers.length);
   const uint8Array = new Uint8Array(arrayBuffer);
-  for (let i = 0; i < numbers.length; i++) {
-    uint8Array[i] = numbers[i];
+  for (const [i, number_] of numbers.entries()) {
+    uint8Array[i] = number_;
   }
   return uint8Array;
 }
 
 export function hexStringToNumberArray(hexString) {
-  var numberArray = [];
-  for (var i = 0; i < hexString.length; i += 2) {
-    var hexPair = hexString.substr(i, 2);
-    var number = parseInt(hexPair, 16);
+  const numberArray = [];
+  for (let i = 0; i < hexString.length; i += 2) {
+    const hexPair = hexString.substr(i, 2);
+    const number = parseInt(hexPair, 16);
     numberArray.push(number);
   }
   return numberArray;
@@ -639,74 +630,78 @@ export async function fetchFirmware(url: string) {
 if (typeof window !== "undefined") {
   window.validateTimestamp = validateTimestamp;
 
-  var script = document.createElement("script");
+  const script = document.createElement("script");
   script.src = "//cdn.jsdelivr.net/npm/eruda";
   script.setAttribute("defer", true);
-  document.body.appendChild(script);
+  document.body.append(script);
 
   window.mapValue = mapValue;
 }
 
 //! ==== NODEJS version =====
 
-const Color = detectNode() ? require('color') : (color: string) => { return "#000000"; };
+const Color = detectNode()
+  ? require("color")
+  : (color: string) => {
+      return "#000000";
+    };
 
 const barvy: { [key: string]: string } = {
-  "vypnuto": "#000000",
-  "černá": "#000000",
-  "bílá": "#ffffff",
-  "červená": "#ff0000",
-  "rudá": "#ff0000",
-  "modrá": "#0000ff",
-  "zelená": "#00ff00",
-  "žlutá": "#ffff00",
-  "růžová": "#ffc0cb",
-  "fialová": "#ff00ff",
-  "oranžová": "#ff7700",
-  "šedá": "#808080",
-  "hnědá": "#a52a2a",
-  "azurová": "#b0ffff",
-  "limetková": "#00ff00",
-  "mandlová": "#ff6b5d",
-  "purpurová": "#800080",
-  "stříbrná": "#c0c0c0",
-  "tyrkysová": "#40e0d0",
-  "zlatá": "#ffd700",
-  "indigo": "#4b0082",
-  "khaki": "#f0e68c",
-  "lavendulová": "#e6e6fa",
-  "měď": "#b87333",
+  vypnuto: "#000000",
+  černá: "#000000",
+  bílá: "#ffffff",
+  červená: "#ff0000",
+  rudá: "#ff0000",
+  modrá: "#0000ff",
+  zelená: "#00ff00",
+  žlutá: "#ffff00",
+  růžová: "#ffc0cb",
+  fialová: "#ff00ff",
+  oranžová: "#ff7700",
+  šedá: "#808080",
+  hnědá: "#a52a2a",
+  azurová: "#b0ffff",
+  limetková: "#00ff00",
+  mandlová: "#ff6b5d",
+  purpurová: "#800080",
+  stříbrná: "#c0c0c0",
+  tyrkysová: "#40e0d0",
+  zlatá: "#ffd700",
+  indigo: "#4b0082",
+  khaki: "#f0e68c",
+  lavendulová: "#e6e6fa",
+  měď: "#b87333",
 };
 
 const barvy_bez_hacku: { [key: string]: string } = {
-  "vypnuto": "#000000",
-  "cerna": "#000000",
-  "bila": "#ffffff",
-  "cervena": "#ff0000",
-  "ruda": "#ff0000",
-  "modra": "#0000ff",
-  "zelena": "#00ff00",
-  "zluta": "#ffff00",
-  "ruzova": "#ffc0cb",
-  "fialova": "#ff00ff",
-  "oranzova": "#ff7700",
-  "seda": "#808080",
-  "hneda": "#a52a2a",
-  "azurova": "#b0ffff",
-  "limetkova": "#00ff00",
-  "mandlova": "#ff6b5d",
-  "purpurova": "#800080",
-  "stribrna": "#c0c0c0",
-  "tyrkysova": "#40e0d0",
-  "zlata": "#ffd700",
-  "indigo": "#4b0082",
-  "khaki": "#f0e68c",
-  "lavendulova": "#e6e6fa",
-  "med": "#b87333"
+  vypnuto: "#000000",
+  cerna: "#000000",
+  bila: "#ffffff",
+  cervena: "#ff0000",
+  ruda: "#ff0000",
+  modra: "#0000ff",
+  zelena: "#00ff00",
+  zluta: "#ffff00",
+  ruzova: "#ffc0cb",
+  fialova: "#ff00ff",
+  oranzova: "#ff7700",
+  seda: "#808080",
+  hneda: "#a52a2a",
+  azurova: "#b0ffff",
+  limetkova: "#00ff00",
+  mandlova: "#ff6b5d",
+  purpurova: "#800080",
+  stribrna: "#c0c0c0",
+  tyrkysova: "#40e0d0",
+  zlata: "#ffd700",
+  indigo: "#4b0082",
+  khaki: "#f0e68c",
+  lavendulova: "#e6e6fa",
+  med: "#b87333",
 };
 
 export function cssColorToHex(color: typeof barvy | typeof barvy_bez_hacku | string) {
-  if (typeof color !== 'string' || color.trim() === '') {
+  if (typeof color !== "string" || color.trim() === "") {
     return null;
   }
 
@@ -719,7 +714,7 @@ export function cssColorToHex(color: typeof barvy | typeof barvy_bez_hacku | str
   }
 
   // Add a '#' symbol before the hexadecimal color code if it's missing
-  if (/^[0-9a-fA-F]{6}$/.test(color)) {
+  if (/^[\dA-Fa-f]{6}$/.test(color)) {
     return `#${color}`.toLocaleLowerCase();
   }
 
@@ -727,7 +722,7 @@ export function cssColorToHex(color: typeof barvy | typeof barvy_bez_hacku | str
     const parsedColor = Color(color);
     const hexColor = parsedColor.hex();
     return hexColor;
-  } catch (error) {
+  } catch {
     return null;
   }
 }

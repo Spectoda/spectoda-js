@@ -3,7 +3,21 @@ import { TimeTrack } from "./TimeTrack.js";
 import "./TnglReader.js";
 import { TnglReader } from "./TnglReader.js";
 import "./TnglWriter.js";
-import { cssColorToHex, colorToBytes, computeTnglFingerprint, detectNode, detectSpectodaConnect, hexStringToUint8Array, labelToBytes, numberToBytes, percentageToBytes, sleep, strMacToBytes, stringToBytes, uint8ArrayToHexString } from "./functions";
+import {
+  colorToBytes,
+  computeTnglFingerprint,
+  cssColorToHex,
+  detectNode,
+  detectSpectodaConnect,
+  hexStringToUint8Array,
+  labelToBytes,
+  numberToBytes,
+  percentageToBytes,
+  sleep,
+  strMacToBytes,
+  stringToBytes,
+  uint8ArrayToHexString,
+} from "./functions";
 import { changeLanguage, t } from "./i18n.js";
 import { logging, setLoggingLevel } from "./logging";
 import { COMMAND_FLAGS } from "./src/Spectoda_JS.js";
@@ -45,7 +59,6 @@ export class Spectoda {
   #reconnectRC;
 
   constructor(connectorType = "default", reconnecting = true) {
-
     this.#parser = new TnglCodeParser();
 
     this.timeline = new TimeTrack(0, true);
@@ -75,7 +88,7 @@ export class Spectoda {
     this.runtime.onDisconnected = event => {
       logging.debug("> Runtime disconnected");
 
-      const TIME = 2000;
+      const TIME = 2500;
 
       if (this.#getConnectionState() === "connected" && this.#reconnecting) {
         logging.debug(`Reconnecting in ${TIME}ms..`);
@@ -157,8 +170,15 @@ export class Spectoda {
           this.runtime.emit("disconnecting-websockets");
         }
         break;
+      case "disconnected":
+        if (websocketConnectionState !== this.#websocketConnectionState) {
+          logging.warn("> Spectoda disconnected");
+          this.#websocketConnectionState = websocketConnectionState;
+          this.runtime.emit("disconnected-websockets");
+        }
+        break;
       default:
-        throw "InvalidState";
+        throw `InvalidState: ${websocketConnectionState}`;
     }
   }
 
@@ -325,9 +345,9 @@ export class Spectoda {
 
   /**
    * @param {Object} options
-   * @param {string} options.signature - The network signature.
-   * @param {string} options.key - The network key.
-   * @param {boolean} [options.sessionOnly] - Whether to enable remote control for the current session only.
+   * @param {string?} options.signature - The network signature.
+   * @param {string?} options.key - The network key.
+   * @param {boolean?} [options.sessionOnly] - Whether to enable remote control for the current session only.
    */
   async enableRemoteControl({ signature, key, sessionOnly }) {
     logging.debug("> Connecting to Remote Control");
@@ -358,81 +378,91 @@ export class Spectoda {
       this.socket.emit("set-connection-data", null);
     });
 
-    if (signature) {
-      return await new Promise((resolve, reject) => {
-        this.socket.on("disconnect", () => {
-          this.#setWebSocketConnectionState("disconnected");
-        });
+    return await new Promise((resolve, reject) => {
+      this.socket.on("disconnect", () => {
+        this.#setWebSocketConnectionState("disconnected");
+      });
 
-        this.socket.on("connect", async () => {
-          if (sessionOnly) {
-            // todo finish impl + UI
-            const roomId = await this.socket.emitWithAck("join-session");
-            logging.debug("Remote control id for this session is", { roomId });
+      this.socket.on("connect", async () => {
+        if (sessionOnly) {
+          // Handle session-only logic
+          const response = await this.socket.emitWithAck("join-session", null);
+          const roomNumber = response?.roomNumber;
+
+          if (response?.status === "success") {
+            this.#setWebSocketConnectionState("connected");
+            setConnectionSocketData();
+
+            logging.debug("Remote control session joined successfully", roomNumber);
+
+            resolve({ status: "success", roomNumber });
           } else {
-            this.#setWebSocketConnectionState("connecting");
-            await this.socket
-              .emitWithAck("join", { signature, key })
-              .then(e => {
-                this.#setWebSocketConnectionState("connected");
-                setConnectionSocketData();
-              })
-              .catch(e => {
-                this.#setWebSocketConnectionState("disconnected");
-              });
+            this.#setWebSocketConnectionState("disconnected");
+            logging.debug("Remote control session join failed, does not exist");
+          }
+        } else if (signature) {
+          // Handle signature-based logic
+          this.#setWebSocketConnectionState("connecting");
+          await this.socket
+            .emitWithAck("join", { signature, key })
+            .then(e => {
+              this.#setWebSocketConnectionState("connected");
+              setConnectionSocketData();
+
+              logging.info("> Connected and joined network remotely");
+
+              resolve({ status: "success" });
+            })
+            .catch(e => {
+              this.#setWebSocketConnectionState("disconnected");
+            });
+        }
+
+        logging.info("> Listening for events", allEventsEmitter);
+        globalThis.allEventsEmitter = allEventsEmitter;
+
+        allEventsEmitter.on("on", ({ name, args }) => {
+          logging.verbose("on", name, args);
+          this.socket.emit("event", { name, args });
+        });
+        this.socket.on("func", async (payload, callback) => {
+          if (!callback) {
+            logging.error("No callback provided");
+            return;
           }
 
-          logging.info("> Connected and joined network remotely");
+          let { functionName, arguments: args } = payload;
 
-          resolve({ status: "success" });
+          // call internal class function await this[functionName](...args)
 
-          logging.info("> Listening for events", allEventsEmitter);
-          globalThis.allEventsEmitter = allEventsEmitter;
-
-          allEventsEmitter.on("on", ({ name, args }) => {
-            logging.verbose("on", name, args);
-            this.socket.emit("event", { name, args });
-          });
-
-          this.socket.on("func", async (payload, callback) => {
-            if (!callback) {
-              logging.error("No callback provided");
-              return;
+          // call internal class function
+          try {
+            if (functionName === "debug") {
+              logging.debug(...args);
+              return callback({ status: "success", message: "debug", payload: args });
+            }
+            if (functionName === "assignOwnerSignature" || functionName === "assignOwnerKey") {
+              return callback({ status: "success", message: "assign key/signature is ignored on remote." });
             }
 
-            let { functionName, arguments: args } = payload;
-
-            // call internal class function await this[functionName](...args)
-
-            // call internal class function
-            try {
-              if (functionName === "debug") {
-                logging.debug(...args);
-                return callback({ status: "success", message: "debug", payload: args });
+            if (functionName === "updateDeviceFirmware" || functionName === "updateNetworkFirmware") {
+              if (Array.isArray(args?.[0])) {
+                args[0] = new Uint8Array(args[0]);
+              } else if (typeof args?.[0] === "object") {
+                const arr = Object.values(args[0]);
+                const uint8Array = new Uint8Array(arr);
+                args[0] = uint8Array;
               }
-              if (functionName === "assignOwnerSignature" || functionName === "assignOwnerKey") {
-                return callback({ status: "success", message: "assign key/signature is ignored on remote." });
-              }
-
-              if (functionName === "updateDeviceFirmware" || functionName === "updateNetworkFirmware") {
-                if (Array.isArray(args?.[0])) {
-                  args[0] = new Uint8Array(args[0]);
-                } else if (typeof args?.[0] === "object") {
-                  const arr = Object.values(args[0]);
-                  const uint8Array = new Uint8Array(arr);
-                  args[0] = uint8Array;
-                }
-              }
-              const result = await this[functionName](...args);
-              callback({ status: "success", result });
-            } catch (e) {
-              logging.error(e);
-              callback({ status: "error", error: e });
             }
-          });
+            const result = await this[functionName](...args);
+            callback({ status: "success", result });
+          } catch (e) {
+            logging.error(e);
+            callback({ status: "error", error: e });
+          }
         });
       });
-    }
+    });
   }
 
   disableRemoteControl() {
@@ -1251,7 +1281,7 @@ export class Spectoda {
         // TODO optimalize this begin by detecting when all controllers have erased its flash
         // TODO also, right now the gateway controller sends to other controlles to erase flash after it is done.
         // TODO that slows things down
-        await sleep(6000);
+        await sleep(10000);
 
         {
           //===========// WRITE //===========//
@@ -1276,7 +1306,7 @@ export class Spectoda {
           }
         }
 
-        await sleep(100);
+        await sleep(1000);
 
         {
           //===========// END //===========//
@@ -1286,7 +1316,7 @@ export class Spectoda {
           await this.runtime.execute(command_bytes, null, 20000);
         }
 
-        await sleep(2500);
+        await sleep(3000);
 
         await this.rebootNetwork();
 
@@ -1590,7 +1620,7 @@ export class Spectoda {
       const removed_device_mac_bytes = reader.readBytes(6);
 
       return this.rebootDevice()
-        .catch(() => { })
+        .catch(() => {})
         .then(() => {
           let removed_device_mac = "00:00:00:00:00:00";
           if (removed_device_mac_bytes.length >= 6) {
@@ -1701,7 +1731,7 @@ export class Spectoda {
       return new Uint8Array(fingerprint);
     });
   }
-  
+
   // datarate in bits per second
   setNetworkDatarate(datarate) {
     logging.debug(`> Setting network datarate to ${datarate} bsp...`);
@@ -2284,5 +2314,9 @@ export class Spectoda {
 
       return { pcb_code: pcb_code, product_code: product_code };
     });
+  }
+
+  execute(bytecode) {
+    return this.runtime.execute(bytecode, null, 60000);
   }
 }
