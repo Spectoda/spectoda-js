@@ -1194,6 +1194,16 @@ export class TnglCompiler {
     bytes.forEach((byte) => { this.#tnglWriter.writeUint8(byte); });
   }
 
+  compileId(id) {
+    if (id > 255 || id < 0) {
+        logging.error("Id must be between 0 and 255!");
+        id = 0;
+    }
+
+    this.#tnglWriter.writeFlag(TNGL_FLAGS.ID);
+    this.#tnglWriter.writeUint8(id);
+  }
+
   get tnglBytes() {
     return new Uint8Array(this.#tnglWriter.bytes.buffer, 0, this.#tnglWriter.written);
   }
@@ -1308,6 +1318,10 @@ export class TnglCodeParser {
           this.#compiler.compilePunctuation(element.token);
           break;
 
+        case "id":
+          this.#compiler.compileId(parseInt(element.token.slice(1)));
+          break;
+
         default:
           logging.warn("Unknown token type >", element.type, "<");
           break;
@@ -1345,7 +1359,8 @@ export class TnglCodeParser {
     number: /([+-]?[0-9]+)/,
     word: /[a-z_][\w]*/i,
     whitespace: /\s+/,
-    punctuation: /[^\w\s]/,
+    id: /@\b\d+\b/,
+    punctuation: /[^\w\s]/
   };
 
   getVariableDeclarations() {
