@@ -12,6 +12,8 @@ import "./TnglReader.js";
 import { TnglReader } from "./TnglReader.js";
 import "./TnglWriter.js";
 
+const DEFAULT_TNGL_BANK = 0;
+
 // should not create more than one object!
 // the destruction of the Spectoda is not well implemented
 
@@ -873,6 +875,29 @@ export class Spectoda {
     return processed_tngl_code;
   }
 
+  async checkTnglMatch(tnglCode) {
+    const MISSING_TNGL_FINGERPRINT_ARRAY = ["93570a4c43f638e562c662def4cb8f821702ac742dd736c4681186e9306be618"];
+    const EMPTY_TNGL_FINGERPRINT_ARRAY = ["e29e9b7fbf67ef94b42bcef9aecd29345fbb1c6c126c788b65d48b045f79827a" | "ba5a56fbe0fc8c3e2b545130e43499a6d2e8debb11bf09a280dce1623a0a7039"];
+
+    const newTnglBytecode = new TnglCodeParser().parseTnglCode(tnglCode);
+    const newTnglFingerprint = await computeTnglFingerprint(newTnglBytecode, "fingerprint");
+    const newTnglFingerprintHex = uint8ArrayToHexString(newTnglFingerprint);
+
+    const currentTnglFingerprint = await this.getTnglFingerprint(DEFAULT_TNGL_BANK);
+    const currentTnglFingerprintHex = uint8ArrayToHexString(currentTnglFingerprint);
+
+    console.log({
+      currentTnglFingerprintHex,
+      newTnglFingerprintHex,
+    });
+
+    return {
+      isMatch: newTnglFingerprintHex === currentTnglFingerprintHex,
+      isEmpty: EMPTY_TNGL_FINGERPRINT_ARRAY.includes(currentTnglFingerprintHex),
+      isMissing: MISSING_TNGL_FINGERPRINT_ARRAY.includes(currentTnglFingerprintHex),
+    };
+  }
+
   // writes Tngl only if fingerprints does not match
   syncTngl(tngl_code, tngl_bytes = null, tngl_bank = 0) {
     logging.verbose("syncTngl()");
@@ -1576,7 +1601,7 @@ export class Spectoda {
       const removed_device_mac_bytes = reader.readBytes(6);
 
       return this.rebootDevice()
-        .catch(() => { })
+        .catch(() => {})
         .then(() => {
           let removed_device_mac = "00:00:00:00:00:00";
           if (removed_device_mac_bytes.length >= 6) {
