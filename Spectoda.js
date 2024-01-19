@@ -886,11 +886,6 @@ export class Spectoda {
     const currentTnglFingerprint = await this.getTnglFingerprint(DEFAULT_TNGL_BANK);
     const currentTnglFingerprintHex = uint8ArrayToHexString(currentTnglFingerprint);
 
-    console.log({
-      currentTnglFingerprintHex,
-      newTnglFingerprintHex,
-    });
-
     return {
       isMatch: newTnglFingerprintHex === currentTnglFingerprintHex,
       isEmpty: EMPTY_TNGL_FINGERPRINT_ARRAY.includes(currentTnglFingerprintHex),
