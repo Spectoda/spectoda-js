@@ -3,17 +3,17 @@ import { SpectodaWebBluetoothConnector } from "./connector/SpectodaWebBluetoothC
 import { SpectodaWebSerialConnector } from "./connector/SpectodaWebSerialConnector";
 import { createNanoEvents, createNanoEventsWithWrappedEmit, detectAndroid, detectChrome, detectLinux, detectMacintosh, detectNode, detectSpectodaConnect, detectWindows, numberToBytes, sleep, uint8ArrayToHexString } from "./functions";
 import { logging } from "./logging";
-// import { SpectodaConnectConnector } from "./SpectodaConnectConnector.js";
-import { TimeTrack } from "./TimeTrack.js";
-import { FlutterConnector } from "./connector/FlutterConnector.js";
-import { SimulationConnector } from "./connector/SimulationConnector.js";
+// import { SpectodaConnectConnector } from "./SpectodaConnectConnector";
+import { TimeTrack } from "./TimeTrack";
+import { FlutterConnector } from "./connector/FlutterConnector";
+import { SimulationConnector } from "./connector/SimulationConnector";
 import { COMMAND_FLAGS } from "./constants";
-import { PreviewController } from "./webassembly/PreviewController.js";
-import { SpectodaWasm } from "./webassembly/SpectodaWasm.js";
-import { Spectoda_JS } from "./webassembly/Spectoda_JS.js";
+import { PreviewController } from "./webassembly/PreviewController";
+// import { SpectodaWasm } from "./webassembly/SpectodaWasm";
+import { Spectoda_JS } from "./webassembly/Spectoda_JS";
 
-import { TnglReader } from "./TnglReader.js";
-import { TnglWriter } from "./TnglWriter.js";
+import { TnglReader } from "./TnglReader";
+import { TnglWriter } from "./TnglWriter";
 import { SpectodaNodeBluetoothConnector } from "./connector/SpectodaNodeBleConnector";
 import { SpectodaNodeSerialConnector } from "./connector/SpectodaNodeSerialConnector";
 
@@ -130,8 +130,8 @@ export class SpectodaRuntime {
     this.#lastUpdateTime = new Date().getTime();
     this.#lastUpdatePercentage = 0;
 
-    this.onConnected = e => {};
-    this.onDisconnected = e => {};
+    this.onConnected = e => { };
+    this.onDisconnected = e => { };
 
     this.#eventEmitter.on("ota_progress", value => {
       const now = new Date().getTime();
@@ -161,49 +161,49 @@ export class SpectodaRuntime {
       this.#onDisconnected(e);
     });
 
-    // open external links in Flutter SC
-    if (detectSpectodaConnect()) {
-      // target="_blank" global handler
-      // @ts-ignore
+    // // open external links in Flutter SC
+    // if (detectSpectodaConnect()) {
+    //   // target="_blank" global handler
+    //   // @ts-ignore
 
-      /** @type {HTMLBodyElement} */ document.querySelector("body").addEventListener("click", function (e) {
-        e.preventDefault();
+    //   /** @type {HTMLBodyElement} */ document.querySelector("body").addEventListener("click", function (e) {
+    //     e.preventDefault();
 
-        (function (e, d, w) {
-          if (!e.composedPath) {
-            e.composedPath = function () {
-              if (this.path) {
-                return this.path;
-              }
-              var target = this.target;
+    //     (function (e, d, w) {
+    //       if (!e.composedPath) {
+    //         e.composedPath = function () {
+    //           if (this.path) {
+    //             return this.path;
+    //           }
+    //           var target = this.target;
 
-              this.path = [];
-              while (target.parentNode !== null) {
-                this.path.push(target);
-                target = target.parentNode;
-              }
-              this.path.push(d, w);
-              return this.path;
-            };
-          }
-        })(Event.prototype, document, window);
-        // @ts-ignore
-        const path = e.path || (e.composedPath && e.composedPath());
+    //           this.path = [];
+    //           while (target.parentNode !== null) {
+    //             this.path.push(target);
+    //             target = target.parentNode;
+    //           }
+    //           this.path.push(d, w);
+    //           return this.path;
+    //         };
+    //       }
+    //     })(Event.prototype, document, window);
+    //     // @ts-ignore
+    //     const path = e.path || (e.composedPath && e.composedPath());
 
-        // @ts-ignore
-        for (let el of path) {
-          if (el.tagName === "A" && el.getAttribute("target") === "_blank") {
-            e.preventDefault();
-            const url = el.getAttribute("href");
-            logging.verbose(url);
-            // @ts-ignore
-            logging.debug("Openning external url", url);
-            window.flutter_inappwebview.callHandler("openExternalUrl", url);
-            break;
-          }
-        }
-      });
-    }
+    //     // @ts-ignore
+    //     for (let el of path) {
+    //       if (el.tagName === "A" && el.getAttribute("target") === "_blank") {
+    //         e.preventDefault();
+    //         const url = el.getAttribute("href");
+    //         logging.verbose(url);
+    //         // @ts-ignore
+    //         logging.debug("Openning external url", url);
+    //         window.flutter_inappwebview.callHandler("openExternalUrl", url);
+    //         break;
+    //       }
+    //     }
+    //   });
+    // }
 
     if (typeof window !== "undefined") {
       window.addEventListener("beforeunload", e => {
@@ -224,17 +224,17 @@ export class SpectodaRuntime {
       });
     }
 
-    this.previewControllers = {};
+    // this.previewControllers = {};
 
-    this.#eventEmitter.on("wasm_execute", command => {
-      for (const previewController of Object.values(this.previewControllers)) {
-        try {
-          previewController.execute(command, 123456789);
-        } catch (error) {
-          logging.error(error);
-        }
-      }
-    });
+    // this.#eventEmitter.on("wasm_execute", command => {
+    //   for (const previewController of Object.values(this.previewControllers)) {
+    //     try {
+    //       previewController.execute(command, 123456789);
+    //     } catch (error) {
+    //       logging.error(error);
+    //     }
+    //   }
+    // });
 
     // this.#eventEmitter.on("wasm_request", command => {
     //   for (const previewController of Object.values(this.previewControllers)) {
@@ -242,44 +242,44 @@ export class SpectodaRuntime {
     //   }
     // });
 
-    this.#eventEmitter.on("wasm_clock", timestamp => {
-      for (const previewController of Object.values(this.previewControllers)) {
-        try {
-          previewController.setClock(timestamp, 123456789);
-        } catch (error) {
-          logging.error(error);
-        }
-      }
-    });
+    // this.#eventEmitter.on("wasm_clock", timestamp => {
+    //   for (const previewController of Object.values(this.previewControllers)) {
+    //     try {
+    //       previewController.setClock(timestamp, 123456789);
+    //     } catch (error) {
+    //       logging.error(error);
+    //     }
+    //   }
+    // });
   }
 
-  #runtimeTask = async () => {
-    const UPS = 2; // updates per second
+  // #runtimeTask = async () => {
+  //   const UPS = 2; // updates per second
 
-    try {
-      await this.spectoda.construct("spectoda", "01:23:45:67:89:ab", 0, 255);
+  //   try {
+  //     await this.spectoda.construct("spectoda", "01:23:45:67:89:ab", 0, 255);
 
-      await sleep(0.1); // short delay to let fill up the queue to merge the execute items if possible
+  //     await sleep(0.1); // short delay to let fill up the queue to merge the execute items if possible
 
-      const f = async () => {
-        await this.spectoda.compute(); // for non visual mode compute is sufficient
-        setTimeout(f, 1000 / UPS);
-      };
+  //     const f = async () => {
+  //       await this.spectoda.compute(); // for non visual mode compute is sufficient
+  //       setTimeout(f, 1000 / UPS);
+  //     };
 
-      f();
-    } catch (e) {
-      logging.error(e);
-    }
-  };
+  //     f();
+  //   } catch (e) {
+  //     logging.error(e);
+  //   }
+  // };
 
-  #inicilize() {
-    if (!this.#inicilized) {
-      this.#runtimeTask();
-      this.#inicilized = true;
-    }
+  // #inicilize() {
+  //   if (!this.#inicilized) {
+  //     this.#runtimeTask();
+  //     this.#inicilized = true;
+  //   }
 
-    return this.spectoda.waitForInitilize();
-  }
+  //   return this.spectoda.waitForInitilize();
+  // }
 
   /**
    * @name addEventListener
@@ -305,6 +305,7 @@ export class SpectodaRuntime {
   }
 
   emit(event, ...arg) {
+    
     this.#eventEmitter.emit(event, ...arg);
   }
 
@@ -338,7 +339,7 @@ export class SpectodaRuntime {
     }
 
     return (this.connector ? this.destroyConnector() : Promise.resolve())
-      .catch(() => {})
+      .catch(() => { })
       .then(() => {
         switch (connector_type) {
           case "none":
@@ -695,315 +696,6 @@ export class SpectodaRuntime {
 
   // starts a "thread" that is processing the commands from queue
   #process(item) {
-    if (item) {
-      this.#queue.push(item);
-    }
-
-    if (!this.#processing) {
-      this.#processing = true;
-
-      // spawn async function to handle the transmittion one item at the time
-      (async () => {
-        await this.#inicilize();
-
-        await sleep(0.001); // short delay to let fill up the queue to merge the execute items if possible
-
-        let item = undefined;
-
-        try {
-          while (this.#queue.length > 0) {
-            item = this.#queue.shift();
-
-            if (this.connector === null || this.connector === undefined) {
-              item.reject("ConnectorNotAssigned");
-              continue;
-            }
-
-            switch (item.type) {
-              case Query.TYPE_USERSELECT:
-                {
-                  try {
-                    await this.connector
-                      .userSelect(item.a, item.b) // criteria, timeout
-                      .then(device => {
-                        item.resolve(device);
-                      });
-                  } catch (error) {
-                    item.reject(error);
-                  }
-                }
-                break;
-
-              case Query.TYPE_AUTOSELECT:
-                {
-                  try {
-                    await this.connector
-                      .autoSelect(item.a, item.b, item.c) // criteria, scan_period, timeout
-                      .then(device => {
-                        item.resolve(device);
-                      });
-                  } catch (error) {
-                    item.reject(error);
-                  }
-                }
-                break;
-
-              case Query.TYPE_SELECTED:
-                {
-                  try {
-                    await this.connector.selected().then(device => {
-                      item.resolve(device);
-                    });
-                  } catch (error) {
-                    item.reject(error);
-                  }
-                }
-                break;
-
-              case Query.TYPE_UNSELECT:
-                {
-                  try {
-                    await this.connector.unselect().then(() => {
-                      item.resolve();
-                    });
-                  } catch (error) {
-                    item.reject(error);
-                  }
-                }
-                break;
-
-              case Query.TYPE_SCAN:
-                {
-                  try {
-                    await this.connector
-                      .scan(item.a, item.b) // criteria, scan_period
-                      .then(device => {
-                        item.resolve(device);
-                      });
-                  } catch (error) {
-                    //logging.warn(error);
-                    item.reject(error);
-                  }
-                }
-                break;
-
-              case Query.TYPE_CONNECT:
-                {
-                  try {
-                    await this.connector
-                      .connect(item.a) // a = timeout
-                      .then(async device => {
-                        if (!this.#connectGuard) {
-                          logging.error("Connection logic error. #connected not called during successful connect()?");
-                          logging.warn("Emitting #connected");
-                          this.#eventEmitter.emit("#connected");
-                        }
-
-                        try {
-                          this.clock = await this.connector.getClock();
-                          this.spectoda.setClock(this.clock.millis());
-                          this.emit("wasm_clock", this.clock.millis());
-                          item.resolve(device);
-                        } catch (error) {
-                          logging.error(error);
-                          this.clock = new TimeTrack(0);
-                          item.resolve(device);
-                        }
-                      });
-                  } catch (error) {
-                    await this.connector.disconnect();
-                    item.reject(error);
-                  }
-                }
-                break;
-
-              case Query.TYPE_CONNECTED:
-                {
-                  try {
-                    await this.connector.connected().then(device => {
-                      item.resolve(device);
-                    });
-                  } catch (error) {
-                    item.reject(error);
-                  }
-                }
-                break;
-
-              case Query.TYPE_DISCONNECT:
-                {
-                  this.#disconnectQuery = new Query();
-
-                  try {
-                    await this.connector
-                      .disconnect()
-                      .then(this.#disconnectQuery.promise)
-                      .then(() => {
-                        this.#disconnectQuery = null;
-                        item.resolve();
-                      });
-                  } catch (error) {
-                    item.reject(error);
-                  }
-                }
-                break;
-
-              case Query.TYPE_EXECUTE:
-                {
-                  let payload = new Uint8Array(0xffff);
-                  let index = 0;
-
-                  payload.set(item.a, index);
-                  index += item.a.length;
-
-                  let executesInPayload = [item];
-
-                  // while there are items in the queue, and the next item is also TYPE_EXECUTE
-                  while (this.#queue.length && this.#queue[0].type == Query.TYPE_EXECUTE) {
-                    const next_item = this.#queue.shift();
-
-                    // then check if I have room to merge other payload bytes
-                    if (index + next_item.a.length <= this.#chunkSize) {
-                      payload.set(next_item.a, index);
-                      index += next_item.a.length;
-                      executesInPayload.push(next_item);
-                    }
-
-                    // if not, then return the item back into the queue
-                    else {
-                      this.#queue.unshift(next_item);
-                      break;
-                    }
-                  }
-
-                  const data = payload.slice(0, index);
-                  const timeout = item.c;
-
-                  logging.debug("EXECUTE", uint8ArrayToHexString(data));
-
-                  this.emit("wasm_execute", data);
-                  this.spectoda.execute(data, 0x00);
-
-                  try {
-                    await this.connector.deliver(data, timeout).then(() => {
-                      executesInPayload.forEach(element => element.resolve());
-                    });
-                  } catch (error) {
-                    executesInPayload.forEach(element => element.reject(error));
-                  }
-                }
-                break;
-
-              case Query.TYPE_REQUEST:
-                {
-                  // TODO process in internal Interface
-
-                  logging.debug("REQUEST", uint8ArrayToHexString(item.a));
-
-                  this.emit("wasm_request", item.a);
-                  this.spectoda.request(item.a, 0x00);
-
-                  try {
-                    await this.connector.request(item.a, item.b, item.c).then(response => {
-                      item.resolve(response);
-                    });
-                  } catch (error) {
-                    item.reject(error);
-                  }
-                }
-                break;
-
-              case Query.TYPE_SET_CLOCK:
-                {
-                  this.emit("wasm_clock", item.a.millis());
-                  this.spectoda.setClock(item.a.millis());
-
-                  try {
-                    await this.connector.setClock(item.a).then(response => {
-                      item.resolve(response);
-                    });
-                  } catch (error) {
-                    item.reject(error);
-                  }
-                }
-                break;
-
-              case Query.TYPE_GET_CLOCK:
-                {
-                  try {
-                    await this.connector.getClock().then(clock => {
-                      // this.emit("wasm_clock", clock.millis());
-                      // this.spectoda.setClock(clock.millis());
-
-                      item.resolve(clock);
-                    });
-                  } catch (error) {
-                    item.reject(error);
-                  }
-                }
-                break;
-
-              case Query.TYPE_FIRMWARE_UPDATE:
-                {
-                  try {
-                    await this.requestWakeLock();
-                  } catch {}
-
-                  try {
-                    await this.connector.updateFW(item.a).then(response => {
-                      item.resolve(response);
-                    });
-                  } catch (error) {
-                    item.reject(error);
-                  }
-
-                  try {
-                    this.releaseWakeLock();
-                  } catch {}
-                }
-                break;
-
-              case Query.TYPE_DESTROY:
-                {
-                  // this.#reconection = false;
-                  try {
-                    // await this.connector
-                    //   .request([COMMAND_FLAGS.FLAG_DEVICE_DISCONNECT_REQUEST], false)
-                    //   .catch(() => { })
-                    //   .then(() => {
-                    await this.connector.disconnect();
-                    // })
-                    // .then(() => {
-                    await this.connector.destroy();
-                    // })
-
-                    // .catch(error => {
-                    //   //logging.warn(error);
-                    //   this.connector = null;
-                    //   item.reject(error);
-                    // });
-                  } catch (error) {
-                    logging.warn("Error while destroying connector:", error);
-                  } finally {
-                    this.connector = null;
-                    item.resolve();
-                  }
-                }
-                break;
-
-              default:
-                {
-                  logging.error("ERROR");
-                }
-                break;
-            }
-          }
-        } catch (e) {
-          logging.error("Runtime::#process() ERROR", item, ":", e);
-        } finally {
-          this.#processing = false;
-        }
-      })();
-    }
   }
 
   readVariableAddress(variable_address, device_id) {

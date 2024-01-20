@@ -1,6 +1,6 @@
 import { TimeTrack } from "../TimeTrack";
 import { logging } from "../logging";
-import { MainModule, Uint8Vector } from "./wasm";
+import { MainModule, Uint8Vector } from "./webassembly";
 
 const WASM_VERSION = "DEBUG_0.11.0_20240109";
 

@@ -24,9 +24,10 @@ import { logging, setLoggingLevel } from "./logging";
 import { io } from "socket.io-client";
 import customParser from "socket.io-msgpack-parser";
 import { Socket } from "../lib/socketio";
-import { SpectodaRuntime, allEventsEmitter } from "./SpectodaRuntime";
+import { allEventsEmitter } from "./SpectodaRuntime";
 import { BROADCAST_ID } from "./constants";
 import { WEBSOCKET_URL } from "./remote-control";
+import { Spectoda_JS } from "./webassembly/Spectoda_JS";
 
 // should not create more than one object!
 // the destruction of the Spectoda is not well implemented
@@ -89,9 +90,10 @@ export class Spectoda {
   #saveStateTimeoutHandle;
   #reconnectRC;
 
-  runtime: SpectodaRuntime;
+  #spectoda: Spectoda_JS;
 
-  constructor(connectorType: ConnectorType = "default", reconnecting = true) {
+  // TODO pass mac address of the Spectoda Node
+  constructor() {
     this.#parser = new TnglCodeParser();
 
     this.#uuidCounter = Math.floor(Math.random() * 0xffffffff);
@@ -99,26 +101,22 @@ export class Spectoda {
     this.#ownerSignature = DEFAULT_SIGNATURE;
     this.#ownerKey = DEFAULT_KEY;
 
-    this.runtime = new SpectodaRuntime(this);
-
-    if (connectorType) {
-      this.runtime.assignConnector(connectorType);
-    }
+    this.#spectoda = new Spectoda_JS();
 
     this.#adopting = false;
     this.#updating = false;
 
-    this.#reconnecting = reconnecting ? true : false;
+    // this.#reconnecting = reconnecting ? true : false;
     this.#connectionState = "disconnected";
     this.#websocketConnectionState = "disconnected";
 
     this.#proxyEventsEmitterRefUnsub = null;
 
-    this.runtime.onConnected = event => {
+    this.#spectoda.onConnected = event => {
       logging.debug("> Runtime connected");
     };
 
-    this.runtime.onDisconnected = event => {
+    this.#spectoda.onDisconnected = event => {
       logging.debug("> Runtime disconnected");
 
       const TIME = 2500;
@@ -146,8 +144,8 @@ export class Spectoda {
 
     // auto clock sync loop
     setInterval(() => {
-      // TODO move this to runtime
-      if (!this.#updating && this.runtime.connector) {
+      // TODO move this to #spectoda
+      if (!this.#updating && this.#spectoda.connector) {
         // this.connected().then(connected => {
         //   if (connected) {
         //     this.syncClock().then(() => {
@@ -190,28 +188,28 @@ export class Spectoda {
         if (websocketConnectionState !== this.#websocketConnectionState) {
           logging.warn("> Spectoda connecting");
           this.#websocketConnectionState = websocketConnectionState;
-          this.runtime.emit("connecting-websockets");
+          this.#spectoda.emit("connecting-websockets");
         }
         break;
       case "connected":
         if (websocketConnectionState !== this.#websocketConnectionState) {
           logging.warn("> Spectoda connected");
           this.#websocketConnectionState = websocketConnectionState;
-          this.runtime.emit("connected-websockets");
+          this.#spectoda.emit("connected-websockets");
         }
         break;
       case "disconnecting":
         if (websocketConnectionState !== this.#websocketConnectionState) {
           logging.warn("> Spectoda disconnecting");
           this.#connectionState = connectionState;
-          this.runtime.emit("disconnecting-websockets");
+          this.#spectoda.emit("disconnecting-websockets");
         }
         break;
       case "disconnected":
         if (websocketConnectionState !== this.#websocketConnectionState) {
           logging.warn("> Spectoda disconnected");
           this.#websocketConnectionState = websocketConnectionState;
-          this.runtime.emit("disconnected-websockets");
+          this.#spectoda.emit("disconnected-websockets");
         }
         break;
       default:
@@ -226,7 +224,7 @@ export class Spectoda {
           logging.warn("> Spectoda connecting");
           this.#connectionState = connectionState;
           // TODO find out how to handle hacky instance return or other way so it will also work through websockets
-          this.runtime.emit("connecting" /*{ target: this }*/);
+          this.#spectoda.emit("connecting" /*{ target: this }*/);
         }
         break;
       case "connected":
@@ -234,7 +232,7 @@ export class Spectoda {
           logging.warn("> Spectoda connected");
           this.#connectionState = connectionState;
           // TODO find out how to handle hacky instance return or other way so it will also work through websockets
-          this.runtime.emit("connected" /*{ target: this }*/);
+          this.#spectoda.emit("connected" /*{ target: this }*/);
         }
         break;
       case "disconnecting":
@@ -242,7 +240,7 @@ export class Spectoda {
           logging.warn("> Spectoda disconnecting");
           this.#connectionState = connectionState;
           // TODO find out how to handle hacky instance return or other way so it will also work through websockets
-          this.runtime.emit("disconnecting" /*{ target: this }*/);
+          this.#spectoda.emit("disconnecting" /*{ target: this }*/);
         }
         break;
       case "disconnected":
@@ -250,7 +248,7 @@ export class Spectoda {
           logging.warn("> Spectoda disconnected");
           this.#connectionState = connectionState;
           // TODO find out how to handle hacky instance return or other way so it will also work through websockets
-          this.runtime.emit("disconnected" /*{ target: this }*/);
+          this.#spectoda.emit("disconnected" /*{ target: this }*/);
         }
         break;
       default:
@@ -528,7 +526,7 @@ export class Spectoda {
    */
   // TODO
   addEventListener(event: JSEvent, callback: unknown) {
-    return this.runtime.addEventListener(event, callback);
+    return this.#spectoda.addEventListener(event, callback);
   }
 
   /**
@@ -536,7 +534,7 @@ export class Spectoda {
    */
   // TODO
   on(event: JSEvent, callback: unknown) {
-    return this.runtime.on(event, callback);
+    return this.#spectoda.on(event, callback);
   }
 
   /**
@@ -554,7 +552,7 @@ export class Spectoda {
     // TODO
 
     logging.debug("> Scanning Spectoda Controllers...");
-    return this.runtime.scan(scan_criteria, scan_period);
+    return this.#spectoda.scan(scan_criteria, scan_period);
   }
 
   #connect(autoConnect) {
@@ -565,10 +563,10 @@ export class Spectoda {
     this.#setConnectionState("connecting");
 
     logging.debug("> Selecting controller...");
-    return (autoConnect ? this.runtime.autoSelect(this.#criteria, 1000, 10000) : this.runtime.userSelect(this.#criteria))
+    return (autoConnect ? this.#spectoda.autoSelect(this.#criteria, 1000, 10000) : this.#spectoda.userSelect(this.#criteria))
       .then(() => {
         logging.debug("> Connecting controller...");
-        return this.runtime.connect();
+        return this.#spectoda.connect();
       })
       .then(connectedDeviceInfo => {
         logging.debug("> Synchronizing Network State...");
@@ -583,7 +581,7 @@ export class Spectoda {
             logging.error("History sync after reconnection failed:", e);
           })
           .then(() => {
-            return this.runtime.connected();
+            return this.#spectoda.connected();
           })
           .then(connected => {
             if (!connected) {
@@ -684,7 +682,7 @@ export class Spectoda {
     logging.debug(`> Disconnecting controller...`);
     this.#setConnectionState("disconnecting");
 
-    return this.runtime.disconnect().finally(() => {
+    return this.#spectoda.disconnect().finally(() => {
       this.#setConnectionState("disconnected");
     });
   }
@@ -724,8 +722,8 @@ export class Spectoda {
       tngl_bytes = this.#parser.parseTnglCode(tngl_code);
     }
 
-    const reinterpret_bytecode = [COMMAND_FLAGS.REINTERPRET_TNGL, ...numberToBytes(this.runtime.clock.millis(), 6), 0, ...numberToBytes(tngl_bytes.length, 4), ...tngl_bytes];
-    this.runtime.evaluate(reinterpret_bytecode);
+    const reinterpret_bytecode = [COMMAND_FLAGS.REINTERPRET_TNGL, ...numberToBytes(this.#spectoda.clock.millis(), 6), 0, ...numberToBytes(tngl_bytes.length, 4), ...tngl_bytes];
+    this.#spectoda.evaluate(reinterpret_bytecode);
 
     return this.getTnglFingerprint().then(device_fingerprint => {
       return computeTnglFingerprint(tngl_bytes, "fingerprint").then(new_fingerprint => {
@@ -762,13 +760,13 @@ export class Spectoda {
       tngl.bytecode = this.#parser.parseTnglCode(tngl.code);
     }
 
-    const timeline_flags = this.runtime.timeline.paused() ? 0b00010000 : 0b00000000; // flags: [reserved,reserved,reserved,timeline_paused,reserved,reserved,reserved,reserved]
-    const timeline_bytecode = [COMMAND_FLAGS.SET_TIMELINE, ...numberToBytes(this.runtime.clock.millis(), 6), ...numberToBytes(this.runtime.timeline.millis(), 4), timeline_flags];
+    const timeline_flags = this.#spectoda.timeline.paused() ? 0b00010000 : 0b00000000; // flags: [reserved,reserved,reserved,timeline_paused,reserved,reserved,reserved,reserved]
+    const timeline_bytecode = [COMMAND_FLAGS.SET_TIMELINE, ...numberToBytes(this.#spectoda.clock.millis(), 6), ...numberToBytes(this.#spectoda.timeline.millis(), 4), timeline_flags];
 
-    const reinterpret_bytecode = [COMMAND_FLAGS.REINTERPRET_TNGL, ...numberToBytes(this.runtime.clock.millis(), 6), 0, ...numberToBytes(tngl.bytecode.length, 4), ...tngl.bytecode];
+    const reinterpret_bytecode = [COMMAND_FLAGS.REINTERPRET_TNGL, ...numberToBytes(this.#spectoda.clock.millis(), 6), 0, ...numberToBytes(tngl.bytecode.length, 4), ...tngl.bytecode];
 
     const payload = [...timeline_bytecode, ...reinterpret_bytecode];
-    return this.runtime.execute(payload, "TNGL").then(() => {
+    return this.#spectoda.execute(payload, "TNGL").then(() => {
       // logging.debug("Written");
     });
   }
@@ -784,8 +782,8 @@ export class Spectoda {
     // }, 5000);
 
     const func = device_id => {
-      const payload = [COMMAND_FLAGS.EMIT_EVENT, ...labelToBytes(eventLabel), ...numberToBytes(this.runtime.clock.millis() + 10, 6), numberToBytes(device_id, 1)];
-      return this.runtime.execute(payload, force_delivery ? null : "E" + eventLabel + device_id);
+      const payload = [COMMAND_FLAGS.EMIT_EVENT, ...labelToBytes(eventLabel), ...numberToBytes(this.#spectoda.clock.millis() + 10, 6), numberToBytes(device_id, 1)];
+      return this.#spectoda.execute(payload, force_delivery ? null : "E" + eventLabel + device_id);
     };
 
     if (typeof device_ids === "object") {
@@ -816,8 +814,8 @@ export class Spectoda {
     }
 
     const func = device_id => {
-      const payload = [COMMAND_FLAGS.EMIT_TIMESTAMP_EVENT, ...numberToBytes(eventValue, 4), ...labelToBytes(eventLabel), ...numberToBytes(this.runtime.clock.millis() + 10, 6), numberToBytes(device_id, 1)];
-      return this.runtime.execute(payload, force_delivery ? null : "E" + eventLabel + device_id);
+      const payload = [COMMAND_FLAGS.EMIT_TIMESTAMP_EVENT, ...numberToBytes(eventValue, 4), ...labelToBytes(eventLabel), ...numberToBytes(this.#spectoda.clock.millis() + 10, 6), numberToBytes(device_id, 1)];
+      return this.#spectoda.execute(payload, force_delivery ? null : "E" + eventLabel + device_id);
     };
 
     if (typeof device_ids === "object") {
@@ -846,8 +844,8 @@ export class Spectoda {
     }
 
     const func = device_id => {
-      const payload = [COMMAND_FLAGS.EMIT_COLOR_EVENT, ...colorToBytes(eventValue), ...labelToBytes(eventLabel), ...numberToBytes(this.runtime.clock.millis() + 10, 6), numberToBytes(device_id, 1)];
-      return this.runtime.execute(payload, force_delivery ? null : "E" + eventLabel + device_id);
+      const payload = [COMMAND_FLAGS.EMIT_COLOR_EVENT, ...colorToBytes(eventValue), ...labelToBytes(eventLabel), ...numberToBytes(this.#spectoda.clock.millis() + 10, 6), numberToBytes(device_id, 1)];
+      return this.#spectoda.execute(payload, force_delivery ? null : "E" + eventLabel + device_id);
     };
 
     if (typeof device_ids === "object") {
@@ -879,8 +877,8 @@ export class Spectoda {
     }
 
     const func = device_id => {
-      const payload = [COMMAND_FLAGS.EMIT_PERCENTAGE_EVENT, ...percentageToBytes(eventValue), ...labelToBytes(eventLabel), ...numberToBytes(this.runtime.clock.millis() + 10, 6), numberToBytes(device_id, 1)];
-      return this.runtime.execute(payload, force_delivery ? null : "E" + eventLabel + device_id);
+      const payload = [COMMAND_FLAGS.EMIT_PERCENTAGE_EVENT, ...percentageToBytes(eventValue), ...labelToBytes(eventLabel), ...numberToBytes(this.#spectoda.clock.millis() + 10, 6), numberToBytes(device_id, 1)];
+      return this.#spectoda.execute(payload, force_delivery ? null : "E" + eventLabel + device_id);
     };
 
     if (typeof device_ids === "object") {
@@ -912,8 +910,8 @@ export class Spectoda {
     }
 
     const func = device_id => {
-      const payload = [COMMAND_FLAGS.EMIT_LABEL_EVENT, ...labelToBytes(eventValue), ...labelToBytes(eventLabel), ...numberToBytes(this.runtime.clock.millis() + 10, 6), numberToBytes(device_id, 1)];
-      return this.runtime.execute(payload, force_delivery ? null : "E" + eventLabel + device_id);
+      const payload = [COMMAND_FLAGS.EMIT_LABEL_EVENT, ...labelToBytes(eventValue), ...labelToBytes(eventLabel), ...numberToBytes(this.#spectoda.clock.millis() + 10, 6), numberToBytes(device_id, 1)];
+      return this.#spectoda.execute(payload, force_delivery ? null : "E" + eventLabel + device_id);
     };
 
     if (typeof device_ids === "object") {
@@ -934,9 +932,9 @@ export class Spectoda {
     // TODO
     logging.debug(`> Synchronizing timeline to device`);
 
-    const flags = this.runtime.timeline.paused() ? 0b00010000 : 0b00000000; // flags: [reserved,reserved,reserved,timeline_paused,reserved,reserved,reserved,reserved]
-    const payload = [COMMAND_FLAGS.SET_TIMELINE, ...numberToBytes(this.runtime.clock.millis(), 6), ...numberToBytes(this.runtime.timeline.millis(), 4), flags];
-    return this.runtime.execute(payload, "TMLN");
+    const flags = this.#spectoda.timeline.paused() ? 0b00010000 : 0b00000000; // flags: [reserved,reserved,reserved,timeline_paused,reserved,reserved,reserved,reserved]
+    const payload = [COMMAND_FLAGS.SET_TIMELINE, ...numberToBytes(this.#spectoda.clock.millis(), 6), ...numberToBytes(this.#spectoda.timeline.millis(), 4), flags];
+    return this.#spectoda.execute(payload, "TMLN");
   }
 
   /**
@@ -949,7 +947,7 @@ export class Spectoda {
     // TODO
     logging.debug("> Syncing clock from device");
 
-    return this.runtime.syncClock().then(() => {
+    return this.#spectoda.syncClock().then(() => {
       logging.debug("> App clock synchronized");
     });
   }
@@ -966,7 +964,7 @@ export class Spectoda {
 
     const request_uuid = this.#getUUID();
     const device_request = [COMMAND_FLAGS.SYNC_STATE_REQUEST, ...numberToBytes(request_uuid, 4), deviceId];
-    return this.runtime.request(device_request, false);
+    return this.#spectoda.request(device_request, false);
   }
 
   /**
@@ -1012,14 +1010,14 @@ export class Spectoda {
       await sleep(100);
 
       try {
-        this.runtime.emit("ota_status", "begin");
+        this.#spectoda.emit("ota_status", "begin");
 
         {
           //===========// RESET //===========//
           logging.info("OTA RESET");
 
           const command_bytes = [COMMAND_FLAGS.OTA_RESET, 0x00, ...numberToBytes(0x00000000, 4)];
-          await this.runtime.execute(command_bytes, null);
+          await this.#spectoda.execute(command_bytes, null);
         }
 
         await sleep(100);
@@ -1029,7 +1027,7 @@ export class Spectoda {
           logging.info("OTA BEGIN");
 
           const command_bytes = [COMMAND_FLAGS.OTA_BEGIN, 0x00, ...numberToBytes(firmware.length, 4)];
-          await this.runtime.execute(command_bytes, null, 20000);
+          await this.#spectoda.execute(command_bytes, null, 20000);
         }
 
         // TODO optimalize this begin by detecting when all controllers have erased its flash
@@ -1047,13 +1045,13 @@ export class Spectoda {
             }
 
             const command_bytes = [COMMAND_FLAGS.OTA_WRITE, 0x00, ...numberToBytes(written, 4), ...firmware.slice(index_from, index_to)];
-            await this.runtime.execute(command_bytes, null, 20000);
+            await this.#spectoda.execute(command_bytes, null, 20000);
 
             written += index_to - index_from;
 
             const percentage = Math.floor((written * 10000) / firmware.length) / 100;
             logging.info(percentage + "%");
-            this.runtime.emit("ota_progress", percentage);
+            this.#spectoda.emit("ota_progress", percentage);
 
             index_from += chunk_size;
             index_to = index_from + chunk_size;
@@ -1067,7 +1065,7 @@ export class Spectoda {
           logging.info("OTA END");
 
           const command_bytes = [COMMAND_FLAGS.OTA_END, 0x00, ...numberToBytes(written, 4)];
-          await this.runtime.execute(command_bytes, null, 20000);
+          await this.#spectoda.execute(command_bytes, null, 20000);
         }
 
         await sleep(3000);
@@ -1076,18 +1074,18 @@ export class Spectoda {
 
         logging.debug("> Firmware written in " + (new Date().getTime() - start_timestamp) / 1000 + " seconds");
 
-        this.runtime.emit("ota_status", "success");
+        this.#spectoda.emit("ota_status", "success");
 
         resolve(null);
         return;
       } catch (e) {
-        this.runtime.emit("ota_status", "fail");
+        this.#spectoda.emit("ota_status", "fail");
         reject(e);
         return;
       }
     })
       .then(() => {
-        return this.runtime.disconnect();
+        return this.#spectoda.disconnect();
       })
 
       .finally(() => {
@@ -1124,7 +1122,7 @@ export class Spectoda {
     const request_uuid = this.#getUUID();
     const bytes = [COMMAND_FLAGS.FW_UPDATE_PEER_REQUEST, ...numberToBytes(request_uuid, 4), ...strMacToBytes(peer)];
 
-    return this.runtime.request(bytes, true).then(response => {
+    return this.#spectoda.request(bytes, true).then(response => {
       let reader = new TnglReader(response);
 
       logging.verbose(`response.byteLength=${response.byteLength}`);
@@ -1163,7 +1161,7 @@ export class Spectoda {
     const request_uuid = this.#getUUID();
     const bytes = [COMMAND_FLAGS.DEVICE_CONFIG_REQUEST, ...numberToBytes(request_uuid, 4)];
 
-    return this.runtime.request(bytes, true).then(response => {
+    return this.#spectoda.request(bytes, true).then(response => {
       let reader = new TnglReader(response);
 
       logging.verbose(`response.byteLength=${response.byteLength}`);
@@ -1226,7 +1224,7 @@ export class Spectoda {
     // make config update request
     const request_uuid = this.#getUUID();
     const bytes = [COMMAND_FLAGS.CONFIG_UPDATE_REQUEST, ...numberToBytes(request_uuid, 4), ...numberToBytes(config_bytes_size, 4), ...config_bytes];
-    return this.runtime.request(bytes, true).then(response => {
+    return this.#spectoda.request(bytes, true).then(response => {
       let reader = new TnglReader(response);
 
       logging.verbose(`response.byteLength=${response.byteLength}`);
@@ -1249,7 +1247,7 @@ export class Spectoda {
         logging.info("Write Config Success");
         // reboot device
         const payload = [COMMAND_FLAGS.DEVICE_REBOOT_REQUEST];
-        return this.runtime.request(payload, false);
+        return this.#spectoda.request(payload, false);
       } else {
         throw "Fail";
       }
@@ -1270,7 +1268,7 @@ export class Spectoda {
     const request_uuid = this.#getUUID();
     const bytes = [COMMAND_FLAGS.TIMELINE_REQUEST, ...numberToBytes(request_uuid, 4)];
 
-    return this.runtime.request(bytes, true).then(response => {
+    return this.#spectoda.request(bytes, true).then(response => {
       logging.verbose(`response.byteLength=${response.byteLength}`);
 
       let reader = new TnglReader(response);
@@ -1298,7 +1296,7 @@ export class Spectoda {
       if (timeline_paused) {
         timeline.setState(timeline_timestamp, true);
       } else {
-        timeline.setState(timeline_timestamp + (this.runtime.clock.millis() - clock_timestamp), false);
+        timeline.setState(timeline_timestamp + (this.#spectoda.clock.millis() - clock_timestamp), false);
       }
 
       return timeline;
@@ -1315,7 +1313,7 @@ export class Spectoda {
     logging.debug("> Rebooting device...");
 
     const payload = [COMMAND_FLAGS.DEVICE_REBOOT_REQUEST];
-    return this.runtime.request(payload, false);
+    return this.#spectoda.request(payload, false);
   }
 
   /**
@@ -1330,7 +1328,7 @@ export class Spectoda {
     const request_uuid = this.#getUUID();
     const bytes = [COMMAND_FLAGS.ERASE_OWNER_REQUEST, ...numberToBytes(request_uuid, 4)];
 
-    return this.runtime.request(bytes, true).then(response => {
+    return this.#spectoda.request(bytes, true).then(response => {
       let reader = new TnglReader(response);
 
       logging.verbose(`response.byteLength=${response.byteLength}`);
@@ -1356,7 +1354,7 @@ export class Spectoda {
       const removed_device_mac_bytes = reader.readBytes(6);
 
       return this.rebootDevice()
-        .catch(() => {})
+        .catch(() => { })
         .then(() => {
           let removed_device_mac = "00:00:00:00:00:00";
           if (removed_device_mac_bytes.length >= 6) {
@@ -1386,7 +1384,7 @@ export class Spectoda {
     const request_uuid = this.#getUUID();
     const bytes = [COMMAND_FLAGS.FW_VERSION_REQUEST, ...numberToBytes(request_uuid, 4)];
 
-    return this.runtime.request(bytes, true).then(response => {
+    return this.#spectoda.request(bytes, true).then(response => {
       let reader = new TnglReader(response);
 
       logging.verbose(`response.byteLength=${response.byteLength}`);
@@ -1434,7 +1432,7 @@ export class Spectoda {
     const request_uuid = this.#getUUID();
     const bytes = [COMMAND_FLAGS.TNGL_FINGERPRINT_REQUEST, ...numberToBytes(request_uuid, 4), 0];
 
-    return this.runtime.request(bytes, true).then(response => {
+    return this.#spectoda.request(bytes, true).then(response => {
       let reader = new TnglReader(response);
 
       logging.verbose("response:", response);
@@ -1486,7 +1484,7 @@ export class Spectoda {
     const request_uuid = this.#getUUID();
     const bytes = [COMMAND_FLAGS.CONNECTED_PEERS_INFO_REQUEST, ...numberToBytes(request_uuid, 4)];
 
-    return this.runtime.request(bytes, true).then(response => {
+    return this.#spectoda.request(bytes, true).then(response => {
       let reader = new TnglReader(response);
 
       logging.verbose(`response.byteLength=${response.byteLength}`);
@@ -1524,8 +1522,8 @@ export class Spectoda {
 
         // logging.info(`count=${count}, peers=`, peers);
         logging.info(`count=${count}, peers=\n${peers.map(x => `mac:${x.mac},rssi:${x.rssi}`).join("\n")}`);
-        // this.runtime.eraseConnectedPeers();
-        // this.runtime.setConnectedPeers(peers.map(x => x.mac));
+        // this.#spectoda.eraseConnectedPeers();
+        // this.#spectoda.setConnectedPeers(peers.map(x => x.mac));
         return peers;
       } else {
         throw "Fail";
@@ -1547,7 +1545,7 @@ export class Spectoda {
     const request_uuid = this.#getUUID();
     const bytes = [COMMAND_FLAGS.EVENT_HISTORY_BC_REQUEST, ...numberToBytes(request_uuid, 4)];
 
-    return this.runtime.request(bytes, true).then(response => {
+    return this.#spectoda.request(bytes, true).then(response => {
       let reader = new TnglReader(response);
 
       logging.info(`response.byteLength=${response.byteLength}`);
@@ -1575,7 +1573,7 @@ export class Spectoda {
         const historic_events_bytecode = reader.readBytes(historic_events_bytecode_size);
         logging.verbose(`historic_events_bytecode=[${historic_events_bytecode}]`);
 
-        this.runtime.evaluate(new Uint8Array(historic_events_bytecode), 0x01);
+        this.#spectoda.evaluate(new Uint8Array(historic_events_bytecode), 0x01);
       } else {
         throw "Fail";
       }
@@ -1595,7 +1593,7 @@ export class Spectoda {
     const request_uuid = this.#getUUID();
     const bytes = [COMMAND_FLAGS.ERASE_EVENT_HISTORY_REQUEST, ...numberToBytes(request_uuid, 4)];
 
-    return this.runtime.execute(bytes, true);
+    return this.#spectoda.execute(bytes, true);
   }
 
   /**
@@ -1611,7 +1609,7 @@ export class Spectoda {
 
     const request_uuid = this.#getUUID();
     const payload = [COMMAND_FLAGS.SLEEP_REQUEST, ...numberToBytes(request_uuid, 4)];
-    return this.runtime.request(payload, false);
+    return this.#spectoda.request(payload, false);
   }
 
   requestSaveState(connection: string[]): Promise<void> {
@@ -1622,7 +1620,7 @@ export class Spectoda {
 
     const request_uuid = this.#getUUID();
     const payload = [COMMAND_FLAGS.SAVE_STATE_REQUEST, ...numberToBytes(request_uuid, 4)];
-    return this.runtime.execute(payload, null);
+    return this.#spectoda.execute(payload, null);
   }
 
   /**
@@ -1647,7 +1645,7 @@ export class Spectoda {
 
     logging.verbose(bytes);
 
-    return this.runtime
+    return this.#spectoda
       .request(bytes, true)
       .then(response => {
         let reader = new TnglReader(response);
@@ -1725,7 +1723,7 @@ export class Spectoda {
 
     const request_uuid = this.#getUUID();
     const payload = [COMMAND_FLAGS.WRITE_CONTROLLER_NAME_REQUEST, ...numberToBytes(request_uuid, 4), ...stringToBytes(name, 16)];
-    return this.runtime.request(payload, false);
+    return this.#spectoda.request(payload, false);
   }
 
   /**
@@ -1740,7 +1738,7 @@ export class Spectoda {
     const request_uuid = this.#getUUID();
     const bytes = [COMMAND_FLAGS.READ_CONTROLLER_NAME_REQUEST, ...numberToBytes(request_uuid, 4)];
 
-    return this.runtime.request(bytes, true).then(response => {
+    return this.#spectoda.request(bytes, true).then(response => {
       let reader = new TnglReader(response);
 
       logging.verbose(`response.byteLength=${response.byteLength}`);
@@ -1802,7 +1800,7 @@ export class Spectoda {
       throw "VariableNotFound";
     }
 
-    const variable_value = this.runtime.readVariableAddress(variable_address, device_id);
+    const variable_value = this.#spectoda.readVariableAddress(variable_address, device_id);
     logging.verbose(`variable_name=${variable_name}, device_id=${device_id}, variable_value=${variable_value.debug}`);
 
     return variable_value;
@@ -1821,7 +1819,7 @@ export class Spectoda {
       throw "DeviceDisconnected";
     }
 
-    return this.runtime.readVariableAddress(variable_address, device_id);
+    return this.#spectoda.readVariableAddress(variable_address, device_id);
   }
 
   // 0.9.4
@@ -1837,7 +1835,7 @@ export class Spectoda {
     const request_uuid = this.#getUUID();
     const bytes = [COMMAND_FLAGS.WRITE_CONTROLLER_CODES_REQUEST, ...numberToBytes(request_uuid, 4), ...numberToBytes(pcb_code, 2), ...numberToBytes(product_code, 2)];
 
-    return this.runtime.request(bytes, true).then(response => {
+    return this.#spectoda.request(bytes, true).then(response => {
       let reader = new TnglReader(response);
 
       logging.verbose(`response.byteLength=${response.byteLength}`);
@@ -1870,7 +1868,7 @@ export class Spectoda {
     const request_uuid = this.#getUUID();
     const bytes = [COMMAND_FLAGS.READ_CONTROLLER_CODES_REQUEST, ...numberToBytes(request_uuid, 4)];
 
-    return this.runtime.request(bytes, true).then(response => {
+    return this.#spectoda.request(bytes, true).then(response => {
       let reader = new TnglReader(response);
 
       logging.verbose("response=", response);

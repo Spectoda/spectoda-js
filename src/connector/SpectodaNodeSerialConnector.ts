@@ -12,9 +12,9 @@ cat /boot/orangepiEnv.txt
 */
 
 import { SpectodaRuntime } from "../SpectodaRuntime";
-import { TimeTrack } from "../TimeTrack.js";
-import { TnglReader } from "../TnglReader.js";
-import { TnglWriter } from "../TnglWriter.js";
+import { TimeTrack } from "../TimeTrack";
+import { TnglReader } from "../TnglReader";
+import { TnglWriter } from "../TnglWriter";
 import { COMMAND_FLAGS } from "../constants";
 import { crc32, numberToBytes, sleep, toBytes } from "../functions";
 import { logging } from "../logging";
@@ -941,10 +941,10 @@ export class SpectodaNodeSerialConnector {
 
     //this.#runtimeReference = null; // dont know if I need to destroy this reference.. But I guess I dont need to?
     return this.disconnect()
-      .catch(() => {})
+      .catch(() => { })
       .then(() => {
         return this.unselect();
       })
-      .catch(() => {});
+      .catch(() => { });
   }
 }
