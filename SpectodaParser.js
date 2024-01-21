@@ -1,8 +1,6 @@
 import { TnglWriter } from "./TnglWriter.js";
-import { mapValue } from "./functions";
-import { logging } from "./logging";
-
-
+import { mapValue, uint8ArrayToHexString } from "./functions";
+import { logging, LOGGING_LEVEL_DEBUG } from "./logging";
 
 // ! must stay this order VAR_VALUE_ADDRESS_OFFSET < CONST_VALUE_ADDRESS_OFFSET < LET_VALUE_ADDRESS_OFFSET
 const VAR_VALUE_ADDRESS_OFFSET = 0x0000;
@@ -1315,7 +1313,12 @@ export class TnglCodeParser {
     let tnglBytes = this.#compiler.tnglBytes;
 
     logging.verbose(tnglBytes);
-    // logging.debug(uint8ArrayToHexString(tnglBytes));
+
+    if (logging.level >= LOGGING_LEVEL_DEBUG) {
+      logging.debug("TNGL_BYTECODE:");
+      logging.debug(uint8ArrayToHexString(tnglBytes));
+    }
+
     logging.info("Compiled tnglbytes length:", tnglBytes.length);
     return tnglBytes;
   }
