@@ -56,6 +56,8 @@ export class Spectoda {
 
   #reconnectRC;
 
+  #clockSyncIntervalHandle;
+
   constructor(connectorType = "default", reconnecting = true) {
     this.#parser = new TnglCodeParser();
 
@@ -109,8 +111,16 @@ export class Spectoda {
       }
     };
 
+    this.#clockSyncIntervalHandle = undefined;
+    this.#resetClockSyncInterval();
+  }
+
+  #resetClockSyncInterval() {
+
+    clearInterval(this.#clockSyncIntervalHandle);
+
     // auto clock sync loop
-    setInterval(() => {
+    this.#clockSyncIntervalHandle = setInterval(() => {
       // TODO move this to runtime
       if (!this.#updating && this.runtime.connector) {
         // this.connected().then(connected => {
@@ -142,7 +152,8 @@ export class Spectoda {
           });
         }
       }
-    }, 60000);
+    }, 8000); // ! it is set to 8000ms because of the 10s timeout in the serial connector
+  
   }
 
   #setWebSocketConnectionState(websocketConnectionState) {
@@ -830,6 +841,8 @@ export class Spectoda {
   syncTngl(tngl_code, tngl_bytes = null) {
     logging.verbose(`syncTngl(tngl_code=${tngl_code}, tngl_bytes=${tngl_bytes})`);
 
+    this.#resetClockSyncInterval();
+
     logging.debug("> Syncing Tngl code...");
 
     if (tngl_code === null && tngl_bytes === null) {
@@ -856,6 +869,8 @@ export class Spectoda {
 
   writeTngl(tngl_code, tngl_bytes = null) {
     logging.verbose(`writeTngl(tngl_code=${tngl_code}, tngl_bytes=${tngl_bytes})`);
+
+    this.#resetClockSyncInterval();
 
     logging.debug(`> Writing Tngl code...`);
 
@@ -899,6 +914,8 @@ export class Spectoda {
   emitEvent(event_label, device_ids = [0xff], force_delivery = true) {
     logging.verbose(`emitEvent(label=${event_label},id=${device_ids},force=${force_delivery})`);
 
+    this.#resetClockSyncInterval();
+
     // clearTimeout(this.#saveStateTimeoutHandle);
     // this.#saveStateTimeoutHandle = setTimeout(() => {
     //   this.saveState();
@@ -930,6 +947,8 @@ export class Spectoda {
    */
   emitTimestampEvent(event_label, event_value, device_ids = [0xff], force_delivery = false) {
     logging.verbose(`emitTimestampEvent(label=${event_label},value=${event_value},id=${device_ids},force=${force_delivery})`);
+
+    this.#resetClockSyncInterval();
 
     // clearTimeout(this.#saveStateTimeoutHandle);
     // this.#saveStateTimeoutHandle = setTimeout(() => {
@@ -972,6 +991,8 @@ export class Spectoda {
   emitColorEvent(event_label, event_value, device_ids = [0xff], force_delivery = false) {
     logging.verbose(`emitColorEvent(label=${event_label},value=${event_value},id=${device_ids},force=${force_delivery})`);
 
+    this.#resetClockSyncInterval();
+
     // clearTimeout(this.#saveStateTimeoutHandle);
     // this.#saveStateTimeoutHandle = setTimeout(() => {
     //   this.saveState();
@@ -1009,6 +1030,8 @@ export class Spectoda {
    */
   emitPercentageEvent(event_label, event_value, device_ids = [0xff], force_delivery = false) {
     logging.info(`emitPercentageEvent(label=${event_label},value=${event_value},id=${device_ids},force=${force_delivery})`);
+
+    this.#resetClockSyncInterval();
 
     // clearTimeout(this.#saveStateTimeoutHandle);
     // this.#saveStateTimeoutHandle = setTimeout(() => {
@@ -1052,6 +1075,8 @@ export class Spectoda {
   emitLabelEvent(event_label, event_value, device_ids = [0xff], force_delivery = false) {
     logging.verbose(`emitLabelEvent(label=${event_label},value=${event_value},id=${device_ids},force=${force_delivery})`);
 
+    this.#resetClockSyncInterval();
+
     // clearTimeout(this.#saveStateTimeoutHandle);
     // this.#saveStateTimeoutHandle = setTimeout(() => {
     //   this.saveState();
@@ -1092,6 +1117,8 @@ export class Spectoda {
 
   syncClock() {
     logging.debug("> Syncing clock from device");
+
+    this.#resetClockSyncInterval();
 
     return this.runtime.syncClock().then(() => {
       logging.debug("> App clock synchronized");
