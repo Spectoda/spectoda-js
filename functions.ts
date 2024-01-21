@@ -643,8 +643,8 @@ if (typeof window !== "undefined") {
 const Color = detectNode()
   ? require("color")
   : (color: string) => {
-      return "#000000";
-    };
+    throw "Color is not supported in browser";
+  };
 
 const barvy: { [key: string]: string } = {
   vypnuto: "#000000",
@@ -702,7 +702,12 @@ const barvy_bez_hacku: { [key: string]: string } = {
 
 export function cssColorToHex(color: typeof barvy | typeof barvy_bez_hacku | string) {
   if (typeof color !== "string" || color.trim() === "") {
+    logging.error("Invalid color type: " + color + " (" + typeof color + ")");
     return null;
+  }
+
+  if (/^#[\dA-Fa-f]{6}$/.test(color)) {
+    return color.toLocaleLowerCase();
   }
 
   if (color.toLocaleLowerCase() in barvy) {
@@ -723,6 +728,7 @@ export function cssColorToHex(color: typeof barvy | typeof barvy_bez_hacku | str
     const hexColor = parsedColor.hex();
     return hexColor;
   } catch {
+    logging.error("Could not parse color: " + color);
     return null;
   }
 }

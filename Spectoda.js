@@ -153,7 +153,7 @@ export class Spectoda {
         }
       }
     }, 8000); // ! it is set to 8000ms because of the 10s timeout in the serial connector
-  
+
   }
 
   #setWebSocketConnectionState(websocketConnectionState) {
@@ -667,6 +667,9 @@ export class Spectoda {
         return this.runtime.connect();
       })
       .then(connectedDeviceInfo => {
+
+        this.#resetClockSyncInterval();
+
         logging.debug("> Synchronizing Network State...");
         return (this.timeline.paused() ? this.requestTimeline() : this.syncTimeline())
           .catch(e => {
@@ -1579,7 +1582,7 @@ export class Spectoda {
       const removed_device_mac_bytes = reader.readBytes(6);
 
       return this.rebootDevice()
-        .catch(() => {})
+        .catch(() => { })
         .then(() => {
           let removed_device_mac = "00:00:00:00:00:00";
           if (removed_device_mac_bytes.length >= 6) {
