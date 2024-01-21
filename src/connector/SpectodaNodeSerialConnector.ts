@@ -380,7 +380,7 @@ export class SpectodaNodeSerialConnector {
                   if (ends_with(command_bytes, "<<<\n")) {
 
                     if (starts_with(command_bytes, "BEGIN", 3)) {
-                      logging.info("SERIAL >>>BEGIN<<<")
+                      logging.warn("SERIAL >>>BEGIN<<<")
                       this.#beginCallback && this.#beginCallback(true);
                       command_bytes.length = 0;
                     }

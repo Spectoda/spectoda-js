@@ -168,7 +168,7 @@ export class Spectoda_JS {
             event_array[i].timestamp_utc = Date.now();
           }
 
-          if (event_array.length) {
+          if (logging.level >= 3 && event_array.length) {
 
             let debug_log = "";
 
@@ -196,7 +196,7 @@ export class Spectoda_JS {
             event_array[i].timestamp_utc = Date.now();
           }
 
-          if (event_array.length) {
+          if (logging.level >= 3 && event_array.length) {
 
             let debug_log = "";
 
