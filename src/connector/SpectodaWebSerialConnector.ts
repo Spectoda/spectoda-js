@@ -294,6 +294,11 @@ export class SpectodaWebSerialConnector {
                                             command_bytes.length = 0;
                                         }
 
+                                        else if (starts_with(command_bytes, "ERROR", 3)) {
+                                            this.#feedbackCallback && this.#feedbackCallback(false);
+                                            command_bytes.length = 0;
+                                        }
+
                                         else if (starts_with(command_bytes, "DATA", 3)) {
                                             this.#dataCallback && this.#dataCallback(new Uint8Array(data_bytes));
                                             command_bytes.length = 0;

@@ -380,7 +380,7 @@ export class SpectodaNodeSerialConnector {
                   if (ends_with(command_bytes, "<<<\n")) {
 
                     if (starts_with(command_bytes, "BEGIN", 3)) {
-                      logging.info("SERIAL >>>BEGIN<<<")
+                      logging.warn("SERIAL >>>BEGIN<<<")
                       this.#beginCallback && this.#beginCallback(true);
                       command_bytes.length = 0;
                     }
@@ -408,7 +408,13 @@ export class SpectodaNodeSerialConnector {
                     }
 
                     else if (starts_with(command_bytes, "FAIL", 3)) {
-                      logging.warn("SERIAL >>>FAIL<<<")
+                      logging.info("SERIAL >>>FAIL<<<")
+                      this.#feedbackCallback && this.#feedbackCallback(false);
+                      command_bytes.length = 0;
+                    }
+
+                    else if (starts_with(command_bytes, "ERROR", 3)) {
+                      logging.error("SERIAL >>>ERROR<<<")
                       this.#feedbackCallback && this.#feedbackCallback(false);
                       command_bytes.length = 0;
                     }
