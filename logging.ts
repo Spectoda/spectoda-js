@@ -1,3 +1,10 @@
+export const LOGGING_LEVEL_NONE = 0;
+export const LOGGING_LEVEL_ERROR = 1;
+export const LOGGING_LEVEL_WARN = 2;
+export const LOGGING_LEVEL_INFO = 3;
+export const LOGGING_LEVEL_DEBUG = 4;
+export const LOGGING_LEVEL_VERBOSE = 5;
+// TODO! Deprecate DEBUG_LEBEL_* and use LOGGING_LEVEL_* instead
 export const DEBUG_LEVEL_NONE = 0;
 export const DEBUG_LEVEL_ERROR = 1;
 export const DEBUG_LEVEL_WARN = 2;
@@ -11,7 +18,7 @@ export var logging = {
   warn: console.warn,
   info: console.log,
   debug: console.log,
-  verbose: console.log,
+  verbose: console.log
 };
 
 export function setLoggingLevel(level: number) {
