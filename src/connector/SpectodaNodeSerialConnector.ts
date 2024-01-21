@@ -408,7 +408,13 @@ export class SpectodaNodeSerialConnector {
                     }
 
                     else if (starts_with(command_bytes, "FAIL", 3)) {
-                      logging.warn("SERIAL >>>FAIL<<<")
+                      logging.info("SERIAL >>>FAIL<<<")
+                      this.#feedbackCallback && this.#feedbackCallback(false);
+                      command_bytes.length = 0;
+                    }
+
+                    else if (starts_with(command_bytes, "ERROR", 3)) {
+                      logging.error("SERIAL >>>ERROR<<<")
                       this.#feedbackCallback && this.#feedbackCallback(false);
                       command_bytes.length = 0;
                     }
