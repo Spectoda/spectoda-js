@@ -160,28 +160,28 @@ export class Spectoda {
     switch (websocketConnectionState) {
       case "connecting":
         if (websocketConnectionState !== this.#websocketConnectionState) {
-          logging.warn("> Spectoda connecting");
+          logging.warn("> Spectoda websockets connecting");
           this.#websocketConnectionState = websocketConnectionState;
           this.runtime.emit("connecting-websockets");
         }
         break;
       case "connected":
         if (websocketConnectionState !== this.#websocketConnectionState) {
-          logging.warn("> Spectoda connected");
+          logging.warn("> Spectoda websockets connected");
           this.#websocketConnectionState = websocketConnectionState;
           this.runtime.emit("connected-websockets");
         }
         break;
       case "disconnecting":
         if (websocketConnectionState !== this.#websocketConnectionState) {
-          logging.warn("> Spectoda disconnecting");
+          logging.warn("> Spectoda websockets disconnecting");
           this.#connectionState = connectionState;
           this.runtime.emit("disconnecting-websockets");
         }
         break;
       case "disconnected":
         if (websocketConnectionState !== this.#websocketConnectionState) {
-          logging.warn("> Spectoda disconnected");
+          logging.warn("> Spectoda websockets disconnected");
           this.#websocketConnectionState = websocketConnectionState;
           this.runtime.emit("disconnected-websockets");
         }
@@ -356,6 +356,7 @@ export class Spectoda {
    * @param {Object} options
    * @param {string?} options.signature - The network signature.
    * @param {string?} options.key - The network key.
+   * @param {Object} [options.meta] - info about the receiver
    * @param {boolean?} [options.sessionOnly] - Whether to enable remote control for the current session only.
    */
   async enableRemoteControl({ signature, key, sessionOnly, meta }) {
@@ -377,6 +378,7 @@ export class Spectoda {
       this.socket.emit("set-meta-data", meta)
     };
 
+
     this.on("connected", async () => {
       setConnectionSocketData();
     });
@@ -392,8 +394,16 @@ export class Spectoda {
 
       this.socket.on("connect", async () => {
         if (sessionOnly) {
-          // todo finish impl + UI
-          const roomId = await this.socket.emitWithAck("join-session");
+          const roomId = await this.socket
+            .emitWithAck("join-session")
+            .then(e => {
+              this.#setWebSocketConnectionState("connected");
+              setConnectionSocketData();
+            })
+            .catch(e => {
+              this.#setWebSocketConnectionState("disconnected");
+            });
+
           logging.debug("Remote control id for this session is", { roomId });
         } else {
           this.#setWebSocketConnectionState("connecting");
