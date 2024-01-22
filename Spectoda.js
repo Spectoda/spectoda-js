@@ -358,17 +358,24 @@ export class Spectoda {
    * @param {string?} options.key - The network key.
    * @param {boolean?} [options.sessionOnly] - Whether to enable remote control for the current session only.
    */
-  async enableRemoteControl({ signature, key, sessionOnly }) {
-    logging.debug("> Connecting to Remote Control");
+  async enableRemoteControl({ signature, key, sessionOnly, meta }) {
+    if (!signature || (!key && !sessionOnly)) {
+      throw new Error("Missing signature or key");
+    }
+    logging.debug("> Connecting to Remote Control", { signature, key, sessionOnly });
 
-    this.socket && this.socket.disconnect();
+    // Disconnect and clean up the previous socket if it exists
+    if (this.socket) {
+      this.socket.removeAllListeners(); // Removes all listeners attached to the socket
+      this.socket.disconnect();
+    }
 
+    // Initialize a new socket connection
     this.socket = io(WEBSOCKET_URL, {
       parser: customParser,
     });
 
     this.socket.connect();
-
     this.requestWakeLock(true);
 
     const setConnectionSocketData = async () => {
@@ -376,15 +383,16 @@ export class Spectoda {
         return [];
       });
       logging.debug("peers", peers);
-      this.socket.emit("set-connection-data", peers);
+      this.socket.emit("set-connectedMacs-data", peers);
     };
 
+    // Reset event listeners for 'connected' and 'disconnected'
     this.on("connected", async () => {
       setConnectionSocketData();
     });
 
     this.on("disconnected", () => {
-      this.socket.emit("set-connection-data", null);
+      this.socket.emit("set-connectedMacs-data", null);
     });
 
     return await new Promise((resolve, reject) => {
@@ -442,7 +450,19 @@ export class Spectoda {
 
           let { functionName, arguments: args } = payload;
 
-          // call internal class function await this[functionName](...args)
+          let deviceType = "browser";
+
+          if (detectNode()) {
+            deviceType = "gateway";
+          } else if (detectSpectodaConnect()) {
+            deviceType = "spectoda-connect";
+          }
+
+          this.socket.emit("set-device-info", { deviceType });
+
+          this.socket.emit("set-meta-data", meta);
+
+          resolve({ status: "success" });
 
           // call internal class function
           try {
