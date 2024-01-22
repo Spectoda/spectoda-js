@@ -81,6 +81,7 @@ export class Spectoda {
     this.#connectionState = "disconnected";
     this.#websocketConnectionState = "disconnected";
 
+
     this.runtime.onConnected = event => {
       logging.debug("> Runtime connected");
     };
@@ -359,33 +360,43 @@ export class Spectoda {
    * @param {Object} [options.meta] - info about the receiver
    * @param {boolean?} [options.sessionOnly] - Whether to enable remote control for the current session only.
    */
+
   async enableRemoteControl({ signature, key, sessionOnly, meta }) {
     logging.debug("> Connecting to Remote Control");
 
-    this.socket && this.socket.disconnect();
+    if (this.socket) {
+      this.socket.removeAllListeners(); // Removes all listeners attached to the socket
+      this.socket.disconnect();
+
+      for (let listener of this.socket?.___SpectodaListeners) {
+        listener();
+      }
+    }
 
     this.socket = io(WEBSOCKET_URL, {
       parser: customParser,
     });
 
+
     this.socket.connect();
     this.requestWakeLock(true);
 
     const setConnectionSocketData = async () => {
-      const peers = await this.getConnectedPeersInfo();
-      logging.debug("peers", peers);
-      this.socket.emit("set-connection-data", peers);
+      // TODO - find way how to do getCOnnectedPeersInfo with waiting for wasm load
+      // const peers = await this.getConnectedPeersInfo();
+      // logging.debug("peers", peers);
+      // this.socket.emit("set-connection-data", peers);
       this.socket.emit("set-meta-data", meta)
     };
 
-
-    this.on("connected", async () => {
+    this.socket.___SpectodaListeners = [this.on("connected", async () => {
       setConnectionSocketData();
-    });
-
-    this.on("disconnected", () => {
+    }), this.on("disconnected", () => {
       this.socket.emit("set-connection-data", null);
-    });
+    })]
+
+
+
 
     return await new Promise((resolve, reject) => {
       this.socket.on("disconnect", () => {
@@ -394,41 +405,48 @@ export class Spectoda {
 
       this.socket.on("connect", async () => {
         if (sessionOnly) {
-          const roomId = await this.socket
-            .emitWithAck("join-session")
-            .then(e => {
-              this.#setWebSocketConnectionState("connected");
-              setConnectionSocketData();
-            })
-            .catch(e => {
-              this.#setWebSocketConnectionState("disconnected");
-            });
+          // Handle session-only logic
+          const response = await this.socket.emitWithAck("join-session", null)
+          const roomNumber = response?.roomNumber;
 
-          logging.debug("Remote control id for this session is", { roomId });
-        } else {
+          if (response?.status === "success") {
+            this.#setWebSocketConnectionState("connected");
+            setConnectionSocketData();
+
+            logging.debug("Remote control session joined successfully", roomNumber);
+
+            resolve({ status: "success", roomNumber });
+          } else {
+            this.#setWebSocketConnectionState("disconnected");
+            logging.debug("Remote control session join failed, does not exist");
+          }
+        } else if (signature) {
+          // Handle signature-based logic
           this.#setWebSocketConnectionState("connecting");
+          logging.debug("Joining network remotely", signature, key)
           await this.socket
             .emitWithAck("join", { signature, key })
             .then(e => {
               this.#setWebSocketConnectionState("connected");
               setConnectionSocketData();
+
+              logging.info("> Connected and joined network remotely");
+
+              resolve({ status: "success" });
             })
             .catch(e => {
               this.#setWebSocketConnectionState("disconnected");
+              reject(e);
             });
         }
 
-        logging.info("> Connected and joined network remotely");
-
-        resolve({ status: "success" });
-
         logging.info("> Listening for events", allEventsEmitter);
+        globalThis.allEventsEmitter = allEventsEmitter;
 
         allEventsEmitter.on("on", ({ name, args }) => {
-          logging.debug("on", name, args);
+          logging.verbose("on", name, args);
           this.socket.emit("event", { name, args });
         });
-
         this.socket.on("func", async (payload, callback) => {
           if (!callback) {
             logging.error("No callback provided");
