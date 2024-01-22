@@ -387,7 +387,7 @@ export class Spectoda {
    * @param {string} options.key - The network key.
    * @param {boolean} [options.sessionOnly] - Whether to enable remote control for the current session only.
    */
-  async enableRemoteControl({ signature, key, sessionOnly }) {
+  async enableRemoteControl({ signature, key, sessionOnly, meta }) {
     logging.debug("> Connecting to Remote Control");
 
     this.socket && this.socket.disconnect();
@@ -403,6 +403,7 @@ export class Spectoda {
       const peers = await this.getConnectedPeersInfo();
       logging.debug("peers", peers);
       this.socket.emit("set-connection-data", peers);
+      this.socket.emit("set-meta-data", meta)
     };
 
     this.on("connected", async () => {
@@ -1596,7 +1597,7 @@ export class Spectoda {
       const removed_device_mac_bytes = reader.readBytes(6);
 
       return this.rebootDevice()
-        .catch(() => {})
+        .catch(() => { })
         .then(() => {
           let removed_device_mac = "00:00:00:00:00:00";
           if (removed_device_mac_bytes.length >= 6) {
