@@ -14,6 +14,10 @@ export const WEBSOCKET_URL = "https://cloud.host.spectoda.com/";
 
 const eventStream = createNanoEvents();
 
+eventStream.on("controller-log", line => {
+  logging.info(line);
+});
+
 if (typeof window !== "undefined") {
   window.sockets = [];
 }
@@ -45,11 +49,11 @@ export function createSpectodaWebsocket() {
       socket
         .emitWithAck("join", networkJoinParams)
         .then(() => {
-          console.log("re/connected to websocket server", networkJoinParams);
+          logging.info("re/connected to websocket server", networkJoinParams);
           eventStream.emit("connected-websockets");
         })
         .catch(err => {
-          console.log("error connecting to websocket server", err);
+          logging.error("error connecting to websocket server", err);
         });
     }
   });
@@ -62,6 +66,18 @@ export function createSpectodaWebsocket() {
     constructor() {
       return new Proxy(this, {
         get: (_, prop) => {
+          if (prop === "onWs") {
+            return (eventName, callback) => {
+              logging.verbose("Subscribing to event", eventName);
+
+              const unsub = socket.on(eventName, callback);
+
+              // nanoid subscribe to event stream
+
+              // unsubscribe from previous event
+              return unsub;
+            };
+          }
           if (prop === "on") {
             // Special handling for "on" method
             return (eventName, callback) => {
@@ -79,14 +95,34 @@ export function createSpectodaWebsocket() {
           } else if (prop === "init") {
             // Expects [{key,sig}, ...] or {key,sig}
             return params => {
-              if (!Array.isArray(params)) params = [params];
-
-              for (let param of params) {
-                param.type = "sender";
+              if (!Array.isArray(params) && !params?.sessionOnly) {
+                params = [params];
+                for (let param of params) {
+                  param.type = "sender";
+                }
+              } else {
+                params.type = "sender";
               }
 
               networkJoinParams = params;
-              return socket.emitWithAck("join", params);
+
+              if (params?.sessionOnly) {
+                return socket.emitWithAck("join-session", params?.roomNumber).then(response => {
+                  if (response.status === "success") {
+                    logging.info("Remote joined session", response.roomNumber);
+                  } else {
+                    throw new Error(response.error);
+                  }
+                });
+              } else {
+                return socket.emitWithAck("join", params).then(response => {
+                  if (response.status === "success") {
+                    logging.info("Remote joined network", response.roomNumber);
+                  } else {
+                    throw new Error(response.error);
+                  }
+                });
+              }
             };
           } else if (prop === "fetchClients") {
             return () => {
@@ -94,14 +130,6 @@ export function createSpectodaWebsocket() {
             };
           } else if (prop === "connectionState") {
             return websocketConnectionState;
-          } else if (prop === "listOnlineClientsWithMac") {
-            return param => {
-              return socket.emitWithAck("list-online-clients-with-mac", param);
-            };
-          } else if (prop === "emitCommand") {
-            return param => {
-              return socket.emitWithAck("send-command-prepay-laboring-detective", param);
-            };
           }
 
           // Always return an async function for any property
@@ -110,6 +138,10 @@ export function createSpectodaWebsocket() {
               functionName: prop,
               arguments: args,
             };
+
+            if (prop === "emitLocal") {
+              return eventStream.emit(args[0], args[1]);
+            }
 
             if (prop === "updateDeviceFirmware" || prop === "updateNetworkFirmware") {
               if (Array.isArray(args?.[0])) {
