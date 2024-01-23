@@ -196,7 +196,7 @@ export class Spectoda_JS {
             event_array[i].timestamp_utc = Date.now();
           }
 
-          if (logging.level >= 3 && event_array.length) {
+          if (logging.level >= 4 && event_array.length) {
 
             let debug_log = "";
 
@@ -210,7 +210,7 @@ export class Spectoda_JS {
               debug_log += `\n${e.id} -> $${e.label}: ${e.value} [${e.timestamp}ms] (local)`;
             }
 
-            logging.info(debug_log);
+            logging.debug(debug_log);
           }
 
 
