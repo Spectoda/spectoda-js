@@ -848,6 +848,46 @@ export class Spectoda {
     // var code = `// Publishing TNGL as "${text_tngl_api_name}":\n/*\n${statements_body}*/\n`;
     // var code = `// Loaded TNGL "${text_tngl_api_name}": \n ${tnglCodeToInject}\n`;
 
+    // 2nd stage, handle enum replacing
+    const enums = this.#parser.getEnums();
+
+    let enumRegexes = [];
+
+    // regex creation
+    for (let enum_name in enums) {
+        const regex = new RegExp(`${enum_name}\\.(\\w+)`, "g");
+        enumRegexes.push(regex);
+    }
+
+    // regex replacing
+    for (let regex of enumRegexes) {
+        processed_tngl_code = processed_tngl_code.replace(regex, (match, enum_value) => {
+            for (let enum_name in enums) {
+                let value = enums[enum_name][enum_value];
+                
+                if (value == undefined) continue;
+
+                return value;
+            }
+            return match;
+        });
+    }
+
+    //3rd stage handle #define replacing
+    const defineRegex = new RegExp(`#define\\s+(\\w+)\\s+(\\w+)`, "g");
+
+    // list all defines [{name: "NAME", value: "VALUE"}, ...]
+    let defines = [];
+    defines = [...processed_tngl_code.matchAll(defineRegex)].map(match => {
+        return { name: match[1], value: match[2] };
+    });
+
+    processed_tngl_code = processed_tngl_code.replaceAll(defineRegex, "");
+
+    for (let define of defines) {
+        processed_tngl_code = processed_tngl_code.replaceAll(define.name, define.value);
+    }
+
     logging.debug(processed_tngl_code);
 
     return processed_tngl_code;

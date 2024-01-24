@@ -186,21 +186,26 @@ const OBJECT_TYPE = Object.freeze({
   OPERATION_MODULO: 21,
   OPERATION_EVENT_SET: 22,
   // TODO OPERATIONS and PROVIDERS should be one type of object
-  PROVIDER_PROXIMITY: 151,
-  PROVIDER_BUTTON: 152,
-  PROVIDER_TOUCH: 153,
-  PROVIDER_VOLTAGE: 154,
-  PROVIDER_PIR: 155,
-  PROVIDER_SLIDER: 156,
-  PROVIDER_SONOFF_ULTIMATE: 157,
-  PROVIDER_NETWORKSYNC: 158,
-  PROVIDER_AMBIENT_LIGHT: 159,
-  PROVIDER_LUXV30B: 160,
-  PROVIDER_VEML7700: 161,
   PROVIDER: 162,
 
   // TODO OPERATION_CONNECTION should be FLAG in TNGL_FLAGS
   OPERATION_CONNECTION: 253,
+});
+
+const ENUMS = Object.freeze({
+    ProviderType: Object.freeze({
+        Invalid: 0,
+        Proximity: 1,
+        Button: 2,
+        Touch: 3,
+        Voltage: 4,
+        PIR: 5,
+        Slider: 6,
+        SonoffTXUltimate: 7,
+        NetworkSync: 8,
+        VEML7700: 9,
+        Event: 10
+    })
 });
 
 export class TnglCompiler {
@@ -1117,11 +1122,9 @@ export class TnglCompiler {
   }
 
   compileConnection(connection) {
-    // connection is in this format:
-    // origin->[0x00]destination
-    // using regex, we can split the connection into 3 parts:
-    // origin -> [0x00] -> destination
-    const regex = /([a-zA-Z0-9_]+)->\[([0-9a-fA-F]+)\]([a-zA-Z0-9_]+)/;
+    // * New connection format: "variable_name[pin]->[pin]variable_name" to allow for multiple outputs
+    // * allows for proper M:N connections
+    const regex = /([a-zA-Z0-9_]+)\[([0-9]+)\]->\[([0-9]+)\]([a-zA-Z0-9_]+)/;
 
     const match = connection.match(regex);
     if (match === null) {
@@ -1130,8 +1133,9 @@ export class TnglCompiler {
     }
 
     const origin = match[1];
-    const destination = match[3];
-    const pin = parseInt(match[2], 16);
+    const originPin = parseInt(match[2], 10);
+    const destinationPin = parseInt(match[3], 10);
+    const destination = match[4];
 
     // find the variable address
     let origin_value_address = undefined;
@@ -1167,9 +1171,9 @@ export class TnglCompiler {
     this.#tnglWriter.writeFlag(OBJECT_TYPE.OPERATION_CONNECTION);
     this.#tnglWriter.writeUint16(origin_value_address);
     this.#tnglWriter.writeUint16(destination_variable_address);
-    // classic Number token will be ignore, because we are in the connection token context
-    // therefore, we need to compile the pin number manually
-    this.compileNumber(pin);
+
+    this.compileNumber(originPin);
+    this.compileNumber(destinationPin);
   }
   // number_t, 3 bytes, max: 16777215
   compileNumber(number) {
@@ -1186,6 +1190,16 @@ export class TnglCompiler {
 
     this.#tnglWriter.writeFlag(TNGL_FLAGS.NUMBER);
     bytes.forEach((byte) => { this.#tnglWriter.writeUint8(byte); });
+  }
+
+  compileId(id) {
+    if (id > 255 || id < 0) {
+        logging.error("Id must be between 0 and 255!");
+        id = 0;
+    }
+
+    this.#tnglWriter.writeFlag(TNGL_FLAGS.ID);
+    this.#tnglWriter.writeUint8(id);
   }
 
   get tnglBytes() {
@@ -1302,6 +1316,10 @@ export class TnglCodeParser {
           this.#compiler.compilePunctuation(element.token);
           break;
 
+        case "id":
+          this.#compiler.compileId(parseInt(element.token.slice(1)));
+          break;
+
         default:
           logging.warn("Unknown token type >", element.type, "<");
           break;
@@ -1324,7 +1342,7 @@ export class TnglCodeParser {
   }
 
   static #parses = {
-    connection: /[\w]+->\[\w*\][\w]+\s*;/,
+    connection: /[\w]+\[\w*\]->\[\w*\][\w]+\s*;/,
     undefined: /undefined/,
     var_declaration: /var +[A-Za-z_][\w]* *=/,
     const_declaration: /const +[A-Za-z_][\w]* *=/,
@@ -1344,13 +1362,17 @@ export class TnglCodeParser {
     number: /([+-]?[0-9]+)/,
     word: /[a-z_][\w]*/i,
     whitespace: /\s+/,
-    punctuation: /[^\w\s]/,
+    id: /@\b\d+\b/,
+    punctuation: /[^\w\s]/
   };
 
   getVariableDeclarations() {
     return this.#compiler.getVariableDeclarations();
   }
 
+  getEnums() {
+    return ENUMS;
+  }
 
   /*
    * Tiny tokenizer
