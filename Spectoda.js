@@ -1445,8 +1445,8 @@ export class Spectoda {
 
     // make config update request
     const request_uuid = this.#getUUID();
-    const bytes = [COMMAND_FLAGS.FLAG_CONFIG_UPDATE_REQUEST, ...numberToBytes(request_uuid, 4), ...numberToBytes(config_bytes_size, 4), ...config_bytes];
-    return this.interface.request(bytes, true).then(response => {
+    const request_bytes = [COMMAND_FLAGS.FLAG_CONFIG_UPDATE_REQUEST, ...numberToBytes(request_uuid, 4), ...numberToBytes(config_bytes_size, 4), ...config_bytes];
+    return this.interface.request(request_bytes, true).then(response => {
       let reader = new TnglReader(response);
 
       logging.verbose(`response.byteLength=${response.byteLength}`);
