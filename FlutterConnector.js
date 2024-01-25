@@ -507,21 +507,20 @@ možnosti:
 
 criteria example:
 [
-  // all Devices that are named "NARA Aplha", are on 0.7.2 fw and are
+  // all Devices that are named "NARA Aplha", are on 0.9.2 fw and are
   // adopted by the owner with "baf2398ff5e6a7b8c9d097d54a9f865f" signature.
-  // Product code is 1 what means NARA Alpha
+  // Product code is 1 what means NARA Alpha, pcbCode 2 means NARA Controller
   {
-    name:"NARA Alpha"
-    fwVersion:"0.7.2"
-    ownerSignature:"baf2398ff5e6a7b8c9d097d54a9f865f"
-    productCode:1
+    name: "NARA Alpha",
+    fwVersion: "0.9.2",
+    ownerSignature: "baf2398ff5e6a7b8c9d097d54a9f865f",
+    productCode: 1
   },
-
   {
-    namePrefix:"NARA"
-    fwVersion:"!0.7.3"
-    productCode:2
-    adoptionFlag:true
+    namePrefix: "NARA",
+    fwVersion: "!0.8.3",
+    pcbCode: 2,
+    adoptionFlag: true
   }
 ]
 
@@ -622,12 +621,12 @@ criteria example:
   // if no criteria are provided, all Spectoda enabled devices (with all different FWs and Owners and such)
   // are eligible.
 
-  scan(criteria_object, scan_period_number = 5000) {
+  scan(criteria_object, scan_duration_number = 5000) {
     // step 1. for the scan_period scan the surroundings for BLE devices.
 
     const criteria_json = JSON.stringify(criteria_object);
 
-    logging.debug(`scan(criteria=${criteria_json}, scan_period=${scan_period_number})`);
+    logging.debug(`scan(criteria=${criteria_json}, scan_duration=${scan_duration_number})`);
 
     this.#promise = new Promise((resolve, reject) => {
       // @ts-ignore
@@ -639,9 +638,9 @@ criteria example:
     });
 
     // @ts-ignore
-    window.flutter_inappwebview.callHandler("scan", criteria_json, scan_period_number);
+    window.flutter_inappwebview.callHandler("scan", criteria_json, scan_duration_number);
 
-    return this.#applyTimeout(this.#promise, scan_period_number * 2.0, "scan");
+    return this.#applyTimeout(this.#promise, scan_duration_number * 2.0, "scan");
   }
 
   /*
@@ -973,10 +972,10 @@ criteria example:
   destroy() {
     //this.#interfaceReference = null; // dont know if I need to destroy this reference.. But I guess I dont need to?
     return this.disconnect()
-      .catch(() => {})
+      .catch(() => { })
       .then(() => {
         return this.unselect();
       })
-      .catch(() => {});
+      .catch(() => { });
   }
 }
