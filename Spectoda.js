@@ -2179,6 +2179,15 @@ export class Spectoda {
     });
   }
 
+  writeNetworkCodes(pcb_code, product_code) {
+    logging.debug("> Writing network codes...");
+
+    const request_uuid = this.#getUUID();
+    const bytes = [COMMAND_FLAGS.FLAG_WRITE_CONTROLLER_CODES_REQUEST, ...numberToBytes(request_uuid, 4), ...numberToBytes(pcb_code, 2), ...numberToBytes(product_code, 2)];
+
+    return this.runtime.execute(bytes, true);
+  }
+
   readControllerCodes() {
     logging.debug("> Requesting controller codes ...");
 
