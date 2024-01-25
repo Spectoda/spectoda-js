@@ -403,7 +403,7 @@ export class Spectoda {
       const peers = await this.getConnectedPeersInfo();
       logging.debug("peers", peers);
       this.socket.emit("set-connection-data", peers);
-      this.socket.emit("set-meta-data", meta)
+      this.socket.emit("set-meta-data", meta);
     };
 
     this.on("connected", async () => {
@@ -1429,7 +1429,7 @@ export class Spectoda {
    *
    */
 
-  updateDeviceConfig(config_raw) {
+  updateDeviceConfig(config_raw, shouldReboot = true) {
     logging.debug("> Updating config...");
 
     logging.info(`config_raw=${config_raw}`);
@@ -1467,7 +1467,9 @@ export class Spectoda {
 
       if (error_code === 0) {
         logging.info("Write Config Success");
-        // reboot device
+
+        if (!shouldReboot) return;
+
         const payload = [COMMAND_FLAGS.FLAG_DEVICE_REBOOT_REQUEST];
         return this.interface.request(payload, false);
       } else {
@@ -1597,7 +1599,7 @@ export class Spectoda {
       const removed_device_mac_bytes = reader.readBytes(6);
 
       return this.rebootDevice()
-        .catch(() => { })
+        .catch(() => {})
         .then(() => {
           let removed_device_mac = "00:00:00:00:00:00";
           if (removed_device_mac_bytes.length >= 6) {
@@ -2175,6 +2177,15 @@ export class Spectoda {
         throw "Fail";
       }
     });
+  }
+
+  writeNetworkCodes(pcb_code, product_code) {
+    logging.debug("> Writing network codes...");
+
+    const request_uuid = this.#getUUID();
+    const bytes = [COMMAND_FLAGS.FLAG_WRITE_CONTROLLER_CODES_REQUEST, ...numberToBytes(request_uuid, 4), ...numberToBytes(pcb_code, 2), ...numberToBytes(product_code, 2)];
+
+    return this.runtime.execute(bytes, true);
   }
 
   readControllerCodes() {
