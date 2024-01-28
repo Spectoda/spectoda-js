@@ -4,7 +4,6 @@ import { WEBSOCKET_URL } from "./SpectodaWebSocketsConnector.js";
 import { colorToBytes, computeTnglFingerprint, detectSpectodaConnect, hexStringToUint8Array, labelToBytes, numberToBytes, percentageToBytes, sleep, strMacToBytes, stringToBytes, uint8ArrayToHexString } from "./functions";
 import { changeLanguage, t } from "./i18n.js";
 import { logging, setLoggingLevel } from "./logging";
-// import { Interface } from "./src/SpectodaInterface.js";
 import { io } from "socket.io-client";
 import customParser from "socket.io-msgpack-parser";
 import { TimeTrack } from "./TimeTrack.js";
@@ -14,19 +13,11 @@ import "./TnglWriter.js";
 
 const DEFAULT_TNGL_BANK = 0;
 
-// should not create more than one object!
-// the destruction of the Spectoda is not well implemented
-
-// TODO - kdyz zavolam spectoda.connect(), kdyz jsem pripojeny, tak nechci aby se do interfacu poslal select
-// TODO - kdyz zavolam funkci connect a uz jsem pripojeny, tak vyslu event connected, pokud si myslim ze nejsem pripojeny.
-// TODO - "watchdog timer" pro resolve/reject z TC
-
 export class Spectoda {
   #uuidCounter;
   #ownerSignature;
   #ownerKey;
   #connecting;
-  // #adoptingFlag;
   #adopting;
   #updating;
   #selected;
@@ -81,18 +72,7 @@ export class Spectoda {
       this.#eventHistory[id] = {};
     }
 
-    // this.#eventHistory = [];
-
     this.interface.on("emitted_events", events => {
-      // interface Event {
-      //   type: number;
-      //   value: any;
-      //   id: number;
-      //   label: string;
-      //   identifier: number;
-      //   timestamp: number;
-      //   meta: EventMeta;
-      // }
 
       for (const event of events) {
         if (event.id === 255) {
@@ -125,29 +105,6 @@ export class Spectoda {
           this.#eventHistory[event.id][event.label].timestamp = event.timestamp;
         }
       }
-
-      // for (const event of events) {
-      //   // Find if an event with the same id and identifier already exists
-      //   const existingEventIndex = this.#eventHistory.findIndex(e => e.id === event.id && e.label === event.label);
-
-      //   if (existingEventIndex !== -1) {
-      //     // Check if the new event has a larger timestamp
-      //     if (event.timestamp > this.#eventHistory[existingEventIndex].timestamp) {
-      //       // Replace the existing event
-      //       this.#eventHistory[existingEventIndex] = event;
-      //       // Re-sort the array since the updated event might change the order
-      //       this.#eventHistory.sort((a, b) => a.timestamp - b.timestamp);
-      //     }
-      //   } else {
-      //     // Insert the new event in a sorted manner
-      //     const insertIndex = this.#eventHistory.findIndex(sortedEvent => sortedEvent.timestamp > event.timestamp);
-      //     if (insertIndex === -1) {
-      //       this.#eventHistory.push(event);
-      //     } else {
-      //       this.#eventHistory.splice(insertIndex, 0, event);
-      //     }
-      //   }
-      // }
 
       logging.verbose("#eventHistory", this.#eventHistory);
     });
@@ -239,10 +196,6 @@ export class Spectoda {
     switch (connectionState) {
       case "connecting":
         if (connectionState !== this.#connectionState) {
-          // if (connectionState == "disconnecting") {
-          //   throw "DisconnectingInProgress";
-          // }
-
           logging.warn("> Spectoda connecting");
           this.#connectionState = connectionState;
           this.interface.emit("connecting");
@@ -250,10 +203,6 @@ export class Spectoda {
         break;
       case "connected":
         if (connectionState !== this.#connectionState) {
-          // if (connectionState != "connecting") {
-          //   throw "ConnectionFailed";
-          // }
-
           logging.warn("> Spectoda connected");
           this.#connectionState = connectionState;
           this.interface.emit("connected");
@@ -261,10 +210,6 @@ export class Spectoda {
         break;
       case "disconnecting":
         if (connectionState !== this.#connectionState) {
-          // if (connectionState == "connecting") {
-          //   throw "ConnectingInProgress";
-          // }
-
           logging.warn("> Spectoda disconnecting");
           this.#connectionState = connectionState;
           this.interface.emit("disconnecting");
@@ -272,10 +217,6 @@ export class Spectoda {
         break;
       case "disconnected":
         if (connectionState !== this.#connectionState) {
-          // if (connectionState != "disconnecting") {
-          //   throw "DisconnectFailed";
-          // }
-
           logging.warn("> Spectoda disconnected");
           this.#connectionState = connectionState;
           this.interface.emit("disconnected");
@@ -527,36 +468,6 @@ export class Spectoda {
   on(event, callback) {
     return this.interface.on(event, callback);
   }
-
-  // každé spectoda zařízení může být spárováno pouze s jedním účtem. (jednim user_key)
-  // jakmile je sparovana, pak ji nelze prepsat novým učtem.
-  // filtr pro pripojovani k zarizeni je pak účet.
-
-  // adopt != pair
-  // adopt reprezentuje proces, kdy si webovka osvoji nove zarizeni. Tohle zarizeni, ale uz
-  // muze byt spárováno s telefonem / SpectodaConnectem
-
-  // pri adoptovani MUSI byt vsechny zarizeni ze skupiny zapnuty.
-  // vsechny zarizeni totiz MUSI vedet o vsech.
-  // adopt() {
-  // const BLE_OPTIONS = {
-  //   //acceptAllDevices: true,
-  //   filters: [
-  //     { services: [this.TRANSMITTER_SERVICE_UUID] },
-  //     // {services: ['c48e6067-5295-48d3-8d5c-0395f61792b1']},
-  //     // {name: 'ExampleName'},
-  //   ],
-  //   //optionalServices: [this.TRANSMITTER_SERVICE_UUID],
-  // };
-  // //
-  // return this.connector
-  //   .adopt(BLE_OPTIONS).then((device)=> {
-  //     // ulozit device do local storage jako json
-  //   })
-  //   .catch((error) => {
-  //     logging.warn(error);
-  //   });
-  // }
 
   scan(scan_period = 5000) {
     logging.info(`scan(scan_period=${scan_period})`);
@@ -868,9 +779,6 @@ export class Spectoda {
       }
     }
 
-    // var code = `// Publishing TNGL as "${text_tngl_api_name}":\n/*\n${statements_body}*/\n`;
-    // var code = `// Loaded TNGL "${text_tngl_api_name}": \n ${tnglCodeToInject}\n`;
-
     logging.debug(processed_tngl_code);
 
     return processed_tngl_code;
@@ -1181,7 +1089,6 @@ export class Spectoda {
     });
   }
 
-  // TODO add
   syncState(deviceId) {
     logging.debug("> Synchronizing state...");
 
@@ -1599,7 +1506,7 @@ export class Spectoda {
       const removed_device_mac_bytes = reader.readBytes(6);
 
       return this.rebootDevice()
-        .catch(() => {})
+        .catch(() => { })
         .then(() => {
           let removed_device_mac = "00:00:00:00:00:00";
           if (removed_device_mac_bytes.length >= 6) {
@@ -1713,13 +1620,6 @@ export class Spectoda {
     });
   }
 
-  // setDeviceId(id) {
-  //   logging.debug("> Rebooting network...");
-
-  //   const payload = [COMMAND_FLAGS.FLAG_DEVICE_ID, id];
-  //   return this.connector.request(payload);
-  // }
-
   // datarate in bits per second
   setNetworkDatarate(datarate) {
     logging.debug(`> Setting network datarate to ${datarate} bsp...`);
@@ -1728,44 +1628,6 @@ export class Spectoda {
     const payload = [COMMAND_FLAGS.FLAG_CHANGE_DATARATE_REQUEST, ...numberToBytes(request_uuid, 4), ...numberToBytes(datarate, 4)];
 
     return this.interface.execute(payload, null);
-  }
-
-  readRomPhyVdd33() {
-    logging.debug("> Requesting rom_phy_vdd33 ...");
-
-    const request_uuid = this.#getUUID();
-    const bytes = [COMMAND_FLAGS.FLAG_ROM_PHY_VDD33_REQUEST, ...numberToBytes(request_uuid, 4)];
-
-    return this.interface.request(bytes, true).then(response => {
-      let reader = new TnglReader(response);
-
-      logging.verbose(`response.byteLength=${response.byteLength}`);
-
-      if (reader.readFlag() !== COMMAND_FLAGS.FLAG_ROM_PHY_VDD33_RESPONSE) {
-        throw "InvalidResponseFlag";
-      }
-
-      const response_uuid = reader.readUint32();
-
-      if (response_uuid != request_uuid) {
-        throw "InvalidResponseUuid";
-      }
-
-      const error_code = reader.readUint8();
-
-      logging.verbose(`error_code=${error_code}`);
-
-      let vdd_reading = null;
-
-      if (error_code === 0) {
-        vdd_reading = reader.readInt32();
-      } else {
-        throw "Fail";
-      }
-      logging.info(`vdd_reading=${vdd_reading}`);
-
-      return vdd_reading;
-    });
   }
 
   readPinVoltage(pin) {
