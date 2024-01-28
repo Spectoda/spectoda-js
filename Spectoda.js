@@ -1772,14 +1772,14 @@ export class Spectoda {
     logging.debug(`> Requesting pin ${pin} voltage ...`);
 
     const request_uuid = this.#getUUID();
-    const bytes = [COMMAND_FLAGS.FLAG_VOLTAGE_ON_PIN_REQUEST, ...numberToBytes(request_uuid, 4), pin];
+    const bytes = [COMMAND_FLAGS.FLAG_GPIO_OPERATION_REQUEST, ...numberToBytes(request_uuid, 4), pin];
 
     return this.interface.request(bytes, true).then(response => {
       let reader = new TnglReader(response);
 
       logging.verbose(`response.byteLength=${response.byteLength}`);
 
-      if (reader.readFlag() !== COMMAND_FLAGS.FLAG_VOLTAGE_ON_PIN_RESPONSE) {
+      if (reader.readFlag() !== COMMAND_FLAGS.FLAG_GPIO_OPERATION_RESPONSE) {
         throw "InvalidResponseFlag";
       }
 
