@@ -2,7 +2,6 @@ import { COMMAND_FLAGS, SpectodaInterfaceLegacy, allEventsEmitter } from "./Spec
 import { TnglCodeParser } from "./SpectodaParser.js";
 import { WEBSOCKET_URL } from "./SpectodaWebSocketsConnector.js";
 import { colorToBytes, computeTnglFingerprint, detectSpectodaConnect, hexStringToUint8Array, labelToBytes, numberToBytes, percentageToBytes, sleep, strMacToBytes, stringToBytes, uint8ArrayToHexString } from "./functions";
-import { changeLanguage, t } from "./i18n.js";
 import { logging, setLoggingLevel } from "./logging";
 import { io } from "socket.io-client";
 import customParser from "socket.io-msgpack-parser";
@@ -566,7 +565,6 @@ export class Spectoda {
 
             if (error_code !== 0) {
               logging.warn("Adoption refused.");
-              window.alert(t("Zkuste to, prosím, znovu."), t("Přidání se nezdařilo"), { confirm: t("OK") });
 
               throw "AdoptionRefused";
             }
@@ -1666,14 +1664,6 @@ export class Spectoda {
 
       return pin_reading;
     });
-  }
-
-  /**
-   * Change language for modals
-   * @param {"en"|"cs"} lng
-   */
-  setLanguage(lng) {
-    changeLanguage(lng);
   }
 
   setDebugLevel(level) {

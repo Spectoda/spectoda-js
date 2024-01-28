@@ -25,7 +25,6 @@ import { TimeTrack } from "./TimeTrack.js";
 import "./TnglReader.js";
 import { TnglReader } from "./TnglReader.js";
 import "./TnglWriter.js";
-import { t } from "./i18n.js";
 
 export const COMMAND_FLAGS = Object.freeze({
   FLAG_UNSUPPORTED_COMMND_RESPONSE: 255, // TODO change FLAG_OTA_BEGIN to not be 255.
@@ -486,10 +485,14 @@ export class SpectodaInterfaceLegacy {
             if ((detectAndroid() && detectChrome()) || (detectMacintosh() && detectChrome()) || (detectWindows() && detectChrome()) || (detectLinux() && detectChrome())) {
               this.connector = new SpectodaWebBluetoothConnector(this);
             } else {
+
+              //! TODO - spectoda.js should not show any alerts or confirmations
+              //! refactor this to be handled by the app - but make sure that evenry app has this handled - and thats the challenge
+
               // iPhone outside Bluefy and SpectodaConnect
               if (detectIPhone()) {
                 // @ts-ignore
-                window.confirm(t("Z tohoto webového prohlížeče bohužel není možné NARU ovládat. Prosím, stáhněte si aplikaci Spectoda Connect."), t("Prohlížeč není podporován")).then(result => {
+                window.confirm("Prohlížeč není podporován. Prosím, stáhněte si aplikaci Spectoda Connect.").then(result => {
                   if (result) {
                     // redirect na Bluefy v app store
                     window.location.replace("https://apps.apple.com/us/app/id1635118423");
@@ -499,7 +502,7 @@ export class SpectodaInterfaceLegacy {
               // Macs outside Google Chrome
               else if (detectMacintosh()) {
                 // @ts-ignore
-                window.confirm(t("Z tohoto webového prohlížeče bohužel není možné NARU ovládat. Prosím, otevřete aplikace v prohlížeči Google Chrome."), t("Prohlížeč není podporován")).then(result => {
+                window.confirm("Prohlížeč není podporován. Prosím, otevřete aplikace v prohlížeči Google Chrome.").then(result => {
                   if (result) {
                     // redirect na Google Chrome
                     window.location.replace("https://www.google.com/intl/cs_CZ/chrome/");
@@ -509,7 +512,7 @@ export class SpectodaInterfaceLegacy {
               // Android outside Google Chrome
               else if (detectAndroid()) {
                 // @ts-ignore
-                window.confirm(t("Z tohoto webového prohlížeče bohužel není možné NARU ovládat. Prosím, stáhněte si aplikaci Spectoda Connect."), t("Prohlížeč není podporován")).then(result => {
+                window.confirm("Prohlížeč není podporován. Prosím, stáhněte si aplikaci Spectoda Connect.").then(result => {
                   if (result) {
                     // redirect na Google Chrome
                     window.location.replace("https://play.google.com/store/apps/details?id=com.spectoda.spectodaconnect");
@@ -519,7 +522,7 @@ export class SpectodaInterfaceLegacy {
               // Windows outside Google Chrome
               else if (detectWindows()) {
                 // @ts-ignore
-                window.confirm(t("Z tohoto webového prohlížeče bohužel není možné NARU ovládat. Prosím, otevřete aplikace v prohlížeči Google Chrome."), t("Prohlížeč není podporován")).then(result => {
+                window.confirm("Prohlížeč není podporován. Prosím, otevřete aplikace v prohlížeči Google Chrome.").then(result => {
                   if (result) {
                     // redirect na Google Chrome
                     window.location.replace("https://www.google.com/intl/cs_CZ/chrome/");
@@ -528,7 +531,7 @@ export class SpectodaInterfaceLegacy {
               }
               // Linux ChromeBooks atd...
               else {
-                window.confirm(t("Z tohoto webového prohlížeče bohužel nejspíš není možné NARU ovládat."));
+                window.confirm("Prohlížeč není podporován");
               }
 
               logging.error("Error: Assigning unsupported connector");
