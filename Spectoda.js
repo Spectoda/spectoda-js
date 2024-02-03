@@ -1,4 +1,4 @@
-import { COMMAND_FLAGS, SpectodaInterfaceLegacy, allEventsEmitter } from "./SpectodaInterfaceLegacy.js";
+import { COMMAND_FLAGS, PIN_OPERATIONS_FLAGS, SpectodaInterfaceLegacy, allEventsEmitter } from "./SpectodaInterfaceLegacy.js";
 import { TnglCodeParser } from "./SpectodaParser.js";
 import { WEBSOCKET_URL } from "./SpectodaWebSocketsConnector.js";
 import { colorToBytes, computeTnglFingerprint, detectSpectodaConnect, hexStringToUint8Array, labelToBytes, numberToBytes, percentageToBytes, sleep, strMacToBytes, stringToBytes, uint8ArrayToHexString } from "./functions";
@@ -1628,44 +1628,6 @@ export class Spectoda {
     return this.interface.execute(payload, null);
   }
 
-  readPinVoltage(pin) {
-    logging.debug(`> Requesting pin ${pin} voltage ...`);
-
-    const request_uuid = this.#getUUID();
-    const bytes = [COMMAND_FLAGS.FLAG_GPIO_OPERATION_REQUEST, ...numberToBytes(request_uuid, 4), pin];
-
-    return this.interface.request(bytes, true).then(response => {
-      let reader = new TnglReader(response);
-
-      logging.verbose(`response.byteLength=${response.byteLength}`);
-
-      if (reader.readFlag() !== COMMAND_FLAGS.FLAG_GPIO_OPERATION_RESPONSE) {
-        throw "InvalidResponseFlag";
-      }
-
-      const response_uuid = reader.readUint32();
-
-      if (response_uuid != request_uuid) {
-        throw "InvalidResponseUuid";
-      }
-
-      const error_code = reader.readUint8();
-
-      logging.verbose(`error_code=${error_code}`);
-
-      let pin_reading = null;
-
-      if (error_code === 0) {
-        pin_reading = reader.readUint32();
-      } else {
-        throw "Fail";
-      }
-      logging.info(`pin_reading=${pin_reading}`);
-
-      return pin_reading;
-    });
-  }
-
   setDebugLevel(level) {
     setLoggingLevel(level);
   }
@@ -2181,4 +2143,56 @@ export class Spectoda {
       }
     }
   }
+
+  // 0.9.9
+
+  WIP_requestFunctionCall(function_code, arg1, arg2, arg3, arg4) {
+    logging.debug(`> Requesting function call: function_code=${function_code}, arg1=${arg1}, arg2=${arg2}, arg3=${arg3}, arg4=${arg4}`);
+
+    if (typeof function_code !== "number") {
+      throw "InvalidFunctionCode";
+    }
+
+    if (arg1 === undefined) arg1 = 0;
+    if (arg2 === undefined) arg2 = 0;
+    if (arg3 === undefined) arg3 = 0;
+    if (arg4 === undefined) arg4 = 0;
+
+    const request_uuid = this.#getUUID();
+    const bytes = [COMMAND_FLAGS.FLAG_INLINE_FUNCTION_CALL_REQUEST, ...numberToBytes(request_uuid, 4), ...numberToBytes(function_code, 4), ...numberToBytes(arg1, 4), ...numberToBytes(arg2, 4), ...numberToBytes(arg3, 4), ...numberToBytes(arg4, 4)];
+
+    return this.interface.request(bytes, true).then(response => {
+      let reader = new TnglReader(response);
+
+      logging.verbose("response=", response);
+
+      if (reader.readFlag() !== COMMAND_FLAGS.FLAG_INLINE_FUNCTION_CALL_RESPONSE) {
+        throw "InvalidResponseFlag";
+      }
+
+      const response_uuid = reader.readUint32();
+
+      if (response_uuid != request_uuid) {
+        logging.error("InvalidResponseUuid");
+        throw "InvalidResponseUuid";
+      }
+
+      const error_code = reader.readUint8();
+
+      logging.verbose(`error_code=${error_code}`);
+
+      if (error_code !== 0) {
+        throw "Fail";
+      }
+
+      const result = reader.readUint32();
+      logging.debug(`result=${result}`);
+      const bytes = reader.readBytes(reader.available);
+      logging.debug(`bytes=${bytes}`);
+
+
+      return { result, bytes };
+    });
+  }
+
 }
