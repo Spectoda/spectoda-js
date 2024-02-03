@@ -876,8 +876,8 @@ criteria example:
     logging.verbose(`connect(timeout=${timeout}})`);
 
     if (timeout <= 0) {
-      logging.debug("> Connect timeout have expired");
-      return Promise.reject("ConnectionFailed");
+      logging.debug("> Connect timeout has expired");
+      return Promise.reject("ConnectionTimeout");
     }
 
     const start = new Date().getTime();
@@ -887,32 +887,28 @@ criteria example:
       return Promise.reject("DeviceNotSelected");
     }
 
-    if (this.#connected()) {
-      logging.debug("> Bluetooth Device is already connected");
-      return Promise.resolve();
-    }
-
-    const timeout_handle = setTimeout(
-      () => {
+    let timeoutHandle = null;
+    let timeoutPromise = new Promise((resolve, reject) => {
+      timeoutHandle = setTimeout(() => {
         logging.warn("Timeout triggered");
         this.#webBTDevice.gatt.disconnect();
-      },
-      timeout < 10000 ? 10000 : timeout,
-    );
+        setTimeout(() => {
+          reject("ConnectionTimeout");
+        }, 1000);
+      }, timeout < 10000 ? 10000 : timeout);
+    });
 
     logging.debug("> Connecting to Bluetooth device...");
-    return this.#webBTDevice.gatt
-      .connect()
+    return Promise.race([this.#webBTDevice.gatt.connect(), timeoutPromise])
       .then(server => {
         this.#connection.reset();
-
         logging.debug("> Getting the Bluetooth Service...");
         return server.getPrimaryService(this.SPECTODA_SERVICE_UUID);
       })
       .then(service => {
         logging.debug("> Getting the Service Characteristic...");
 
-        clearTimeout(timeout_handle);
+        clearTimeout(timeoutHandle);
 
         return this.#connection.attach(service, this.TERMINAL_CHAR_UUID, this.CLOCK_CHAR_UUID, this.DEVICE_CHAR_UUID);
       })
@@ -926,7 +922,7 @@ criteria example:
       .catch(error => {
         logging.warn(error.name);
 
-        clearTimeout(timeout_handle);
+        clearTimeout(timeoutHandle);
 
         // If the device is far away, sometimes this "NetworkError" happends
         if (error.name == "NetworkError") {
@@ -966,10 +962,12 @@ criteria example:
 
     this.#connection.reset();
 
-    if (this.#connected()) {
-      this.#disconnect();
-    } else {
-      logging.debug("Bluetooth Device is already disconnected");
+    try {
+      if (this.#webBTDevice && this.#webBTDevice.gatt) {
+        this.#webBTDevice.gatt.disconnect();
+      }
+    } catch (e) {
+      logging.warn(e);
     }
 
     return Promise.resolve();
