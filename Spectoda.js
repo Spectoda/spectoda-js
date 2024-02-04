@@ -1,4 +1,4 @@
-import { COMMAND_FLAGS, PIN_OPERATIONS_FLAGS, SpectodaInterfaceLegacy, allEventsEmitter } from "./SpectodaInterfaceLegacy.js";
+import { COMMAND_FLAGS, SpectodaInterfaceLegacy, allEventsEmitter } from "./SpectodaInterfaceLegacy.js";
 import { TnglCodeParser } from "./SpectodaParser.js";
 import { WEBSOCKET_URL } from "./SpectodaWebSocketsConnector.js";
 import { colorToBytes, computeTnglFingerprint, detectSpectodaConnect, hexStringToUint8Array, labelToBytes, numberToBytes, percentageToBytes, sleep, strMacToBytes, stringToBytes, uint8ArrayToHexString } from "./functions";
@@ -24,17 +24,17 @@ export class Spectoda {
 
   #reconnectRC;
 
-  #reconnectionInterval;
   #connectionState;
   #websocketConnectionState;
   #reconnectTheSameController;
+  #connectCriteria;
 
   // mechanism for event ordering
   #lastEmitClockTimestamp;
 
   #eventHistory;
 
-  constructor(connectorType = "default", reconnectionInterval = 1000) {
+  constructor(connectorType = "default") {
     // nextjs
     if (typeof window === "undefined") {
       return;
@@ -61,10 +61,10 @@ export class Spectoda {
 
     this.#reconnectRC = false;
 
-    this.#reconnectionInterval = reconnectionInterval;
     this.#connectionState = "disconnected";
     this.#websocketConnectionState = "disconnected";
     this.#reconnectTheSameController = false;
+    this.#connectCriteria = null;
 
     this.#lastEmitClockTimestamp = 0;
 
@@ -112,6 +112,8 @@ export class Spectoda {
 
     this.interface.onConnected = event => {
       logging.info("> Interface connected");
+
+      this.#reconnectTheSameController = false;
     };
 
     this.interface.onDisconnected = event => {
@@ -123,28 +125,28 @@ export class Spectoda {
         this.#eventHistory[id] = {};
       }
 
-      const TIME = 2000;
-
-      if (this.#connectionState === "connected" && this.#reconnectionInterval) {
-        logging.info(`Reconnecting in ${TIME}ms`);
+      if (this.#connectionState === "connected") {
         this.#setConnectionState("connecting");
 
-        setTimeout(() => {
-          logging.debug("Reconnecting device");
-          return this.interface
-            .connect(this.#reconnectionInterval)
-            .then(() => {
-              logging.info("Reconnection successful.");
-              this.#setConnectionState("connected");
-            })
-            .catch(() => {
-              logging.warn("Reconnection failed.");
-              this.#setConnectionState("disconnected");
-            });
-        }, TIME);
+        logging.info("> Reconnecting controller...");
+        return (this.#reconnectTheSameController ? this.interface.connect(7000) : this.connect(this.#connectCriteria, true, this.#ownerSignature, this.#ownerKey))
+          .then(() => {
+            logging.info("> Reconnection successful");
+            this.#setConnectionState("connected");
+          })
+          .catch((e) => {
+            logging.warn("> Reconnection failed:", e);
+            this.#setConnectionState("disconnected");
+          })
+          .finally(() => {
+            this.#reconnectTheSameController = false;
+          })
+
       } else {
         this.#setConnectionState("disconnected");
       }
+
+      this.#reconnectTheSameController = false;
     };
 
     // auto clock sync loop
@@ -163,6 +165,10 @@ export class Spectoda {
         });
       }
     }, 30000);
+  }
+
+  #setNextReconnectToTheSameController() {
+    this.#reconnectTheSameController = true;
   }
 
   #setWebSocketConnectionState(websocketConnectionState) {
@@ -600,8 +606,8 @@ export class Spectoda {
       });
   }
 
-  connect(devices = null, autoConnect = true, ownerSignature = null, ownerKey = null, connectAny = false, fwVersion = "") {
-    logging.info(`connect(devices=${devices}, autoConnect=${autoConnect}, ownerSignature=${ownerSignature}, ownerKey=${ownerKey}, connectAny=${connectAny}, fwVersion=${fwVersion})`);
+  connect(criteria = null, autoConnect = true, ownerSignature = null, ownerKey = null, connectAny = false, fwVersion = "") {
+    logging.info(`connect(criteria=${criteria}, autoConnect=${autoConnect}, ownerSignature=${ownerSignature}, ownerKey=${ownerKey}, connectAny=${connectAny}, fwVersion=${fwVersion})`);
 
     if (this.#connecting) {
       return Promise.reject("ConnectingInProgress");
@@ -617,59 +623,41 @@ export class Spectoda {
 
     if (!connectAny) {
       if (!this.#ownerSignature) {
-        throw "OwnerSignatureNotAssigned";
+        return Promise.reject("OwnerSignatureNotAssigned");
       }
 
       if (!this.#ownerKey) {
-        throw "OwnerKeyNotAssigned";
+        return Promise.reject("OwnerKeyNotAssigned");
       }
     }
 
     this.#setConnectionState("connecting");
-
     this.#connecting = true;
 
-    let criteria = /** @type {any} */ ([{ ownerSignature: this.#ownerSignature }]);
+    if (!criteria) {
+      criteria = [{}];
+    }
+    else if (!Array.isArray(criteria)) {
+      criteria = [criteria];
+    }
 
-    if (devices && devices.length > 0) {
-      let devices_criteria = /** @type {any} */ ([]);
-
-      for (let i = 0; i < devices.length; i++) {
-        let criterium = {};
-
-        if (devices[i].name) {
-          criterium.ownerSignature = this.#ownerSignature;
-          criterium.name = devices[i].name.slice(0, 11);
-          devices_criteria.push(criterium);
-        } else if (devices[i].mac) {
-          criterium.ownerSignature = this.#ownerSignature;
-          criterium.mac = devices[i].mac;
-          devices_criteria.push(criterium);
-        }
-      }
-
-      if (devices_criteria.length != 0) {
-        criteria = devices_criteria;
+    if (!connectAny) {
+      for (let i = 0; i < criteria.length; i++) {
+        criteria[i].ownerSignature = this.#ownerSignature;
       }
     }
 
-    if (connectAny) {
-      if (detectSpectodaConnect()) {
-        criteria = [{}];
-      } else {
-        criteria = [{}, { adoptionFlag: true }, { legacy: true }];
-      }
-    }
-
-    if (typeof fwVersion == "string" && fwVersion.match(/(!?)([\d]+).([\d]+).([\d]+)/)) {
+    if (typeof fwVersion === "string" && fwVersion.match(/(!?)([\d]+).([\d]+).([\d]+)/)) {
       for (let i = 0; i < criteria.length; i++) {
         criteria[i].fwVersion = fwVersion;
       }
     }
 
-    return (autoConnect ? this.interface.autoSelect(criteria, 1000, 10000) : this.interface.userSelect(criteria))
+    this.#connectCriteria = criteria;
+
+    return (autoConnect ? this.interface.autoSelect(this.#connectCriteria, 1000, 10000) : this.interface.userSelect(this.#connectCriteria, 30000))
       .then(() => {
-        return this.interface.connect();
+        return this.interface.connect(10000);
       })
       .then(connectedDeviceInfo => {
         logging.info("> Synchronizing Network State...");
@@ -678,21 +666,22 @@ export class Spectoda {
             logging.error("Timeline sync after reconnection failed:", e);
           })
           .then(() => {
-            return this.readEventHistory();
-          })
-          .catch(e => {
-            logging.error("History sync after reconnection failed:", e);
-          })
-          .then(() => {
             return this.interface.connected();
           })
           .then(connected => {
             if (!connected) {
-              throw "ConnectionFailed";
+              return Promise.reject("ConnectionFailed");
             }
+
+            setTimeout(() => {
+              this.readEventHistory().catch(e => {
+                logging.error("readEventHistory() failed:", e);
+              });
+            }, 250);
+
             this.#setConnectionState("connected");
             return connectedDeviceInfo;
-          });
+          })
       })
       .catch(error => {
         logging.error("Error during connect():", error);
