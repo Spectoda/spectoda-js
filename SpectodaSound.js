@@ -6,13 +6,6 @@ function calculateSensitivityValue(value, sensitivity) {
   return (value * sensitivity) / 100;
 }
 
-// function lerpUp(a, b, t) {
-//   if (b > a) {
-//     t *= 5;
-//   }
-//   return (1 - t) * a + t * b;
-// }
-
 export class SpectodaSound {
   #stream;
   #gain_node;
@@ -121,18 +114,17 @@ export class SpectodaSound {
       }
 
       await new Promise(async (resolve, reject) => {
-        const srcObject = await navigator?.mediaDevices ?
-          .getDisplayMedia(gdmOptions)
-            .then(stream => {
-              this.#stream = stream;
-              this.#source = this.#audioContext.createMediaStreamSource(this.#stream);
-              resolve();
-              logging.debug("SpectodaSound.connect", "Connected SystemSound");
-            })
-            .catch(e => {
-              reject(e);
-              throw "DeviceUnsupported";
-            });
+        const srcObject = await navigator?.mediaDevices?.getDisplayMedia(gdmOptions)
+          .then(stream => {
+            this.#stream = stream;
+            this.#source = this.#audioContext.createMediaStreamSource(this.#stream);
+            resolve();
+            logging.debug("SpectodaSound.connect", "Connected SystemSound");
+          })
+          .catch(e => {
+            reject(e);
+            throw "DeviceUnsupported";
+          });
       });
     } else {
       this.#stream = mediaStream;
@@ -376,10 +368,6 @@ export class SpectodaSound {
   getStream() {
     return this.#stream;
   }
-  // this.#events.emit('control', {
-  //   type: 'loudness',
-  //   value: value
-  // });
 
   getAudioContext() {
     return this.#audioContext;

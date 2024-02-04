@@ -18,8 +18,6 @@ import {
   uint8ArrayToHexString,
 } from "./functions";
 import { logging } from "./logging";
-// import { SpectodaConnectConnector } from "./SpectodaConnectConnector.js";
-// import { SpectodaWebSocketsConnector } from "./SpectodaWebSocketsConnector.js";
 import { FlutterConnector } from "./FlutterConnector.js";
 import { TimeTrack } from "./TimeTrack.js";
 import "./TnglReader.js";
@@ -204,11 +202,8 @@ export class SpectodaInterfaceLegacy {
 
   #chunkSize;
 
-  // #reconection;
   #selecting;
   #disconnectQuery;
-
-  #reconnectionInterval;
 
   #connectGuard;
 
@@ -219,7 +214,7 @@ export class SpectodaInterfaceLegacy {
 
   #isPrioritizedWakelock;
 
-  constructor(deviceReference /*, reconnectionInterval = 1000*/) {
+  constructor(deviceReference) {
     this.#deviceReference = deviceReference;
 
     this.clock = new TimeTrack(0);
@@ -585,10 +580,6 @@ export class SpectodaInterfaceLegacy {
       });
   }
 
-  // reconnection(enable) {
-  //   this.#reconection = enable;
-  // }
-
   userSelect(criteria, timeout = 600000) {
     logging.verbose(`userSelect(criteria=${JSON.stringify(criteria)}, timeout=${timeout}`);
 
@@ -725,8 +716,6 @@ export class SpectodaInterfaceLegacy {
   }
 
   disconnect() {
-    // this.#reconection = false;
-
     const item = new Query(Query.TYPE_DISCONNECT);
     this.#process(item);
     return item.promise;
@@ -741,16 +730,6 @@ export class SpectodaInterfaceLegacy {
 
     this.#connectGuard = false;
     this.onDisconnected(event);
-
-    // if (this.#reconection && this.#reconnectionInterval) {
-    //   logging.info("Reconnecting...");
-    //   setTimeout(() => {
-    //     logging.debug("Reconnecting device");
-    //     return this.connect(this.#reconnectionInterval).catch(() => {
-    //       logging.warn("Reconnection failed.");
-    //     });
-    //   }, 2000);
-    // }
 
     if (this.#disconnectQuery) {
       this.#disconnectQuery.resolve();
@@ -1136,23 +1115,10 @@ export class SpectodaInterfaceLegacy {
 
               case Query.TYPE_DESTROY:
                 {
-                  // this.#reconection = false;
                   try {
-                    // await this.connector
-                    //   .request([COMMAND_FLAGS.FLAG_DEVICE_DISCONNECT_REQUEST], false)
-                    //   .catch(() => { })
-                    //   .then(() => {
                     await this.connector.disconnect();
-                    // })
-                    // .then(() => {
                     await this.connector.destroy();
-                    // })
 
-                    // .catch(error => {
-                    //   //logging.warn(error);
-                    //   this.connector = null;
-                    //   item.reject(error);
-                    // });
                   } catch (error) {
                     console.warn("Error while destroying connector:", error);
                   } finally {
@@ -1191,7 +1157,10 @@ export class SpectodaInterfaceLegacy {
       let emitted_events = [];
 
       while (reader.available > 0) {
-        switch (reader.peekFlag()) {
+
+        const command_flag = reader.peekFlag();
+
+        switch (command_flag) {
           case COMMAND_FLAGS.FLAG_REINTERPRET_TNGL:
             {
               logging.verbose("FLAG_REINTERPRET_TNGL");
@@ -1205,8 +1174,6 @@ export class SpectodaInterfaceLegacy {
 
               logging.verbose(`tngl_size=${tngl_size}`);
               //logging.debug("bytecode_offset=%u", bytecode_offset);
-
-              // Runtime::feed(reader, bytecode_offset, tngl_size);
             }
             break;
 
@@ -1216,24 +1183,21 @@ export class SpectodaInterfaceLegacy {
           case COMMAND_FLAGS.FLAG_EMIT_PERCENTAGE_EVENT:
           case COMMAND_FLAGS.FLAG_EMIT_LABEL_EVENT:
             {
-              // let is_lazy = false;
               let event_value = null;
               let event_type = "unknown";
 
               let log_value_prefix = "";
               let log_value_postfix = "";
 
-              switch (reader.readFlag()) {
-                // case COMMAND_FLAGS.FLAG_EMIT_LAZY_EVENT:
-                //   is_lazy = true;
+              const event_flag = reader.readFlag();
+
+              switch (event_flag) {
                 case COMMAND_FLAGS.FLAG_EMIT_EVENT:
                   logging.verbose("FLAG_EVENT");
                   event_value = null;
                   event_type = "none";
                   break;
 
-                // case COMMAND_FLAGS.FLAG_EMIT_LAZY_TIMESTAMP_EVENT:
-                //   is_lazy = true;
                 case COMMAND_FLAGS.FLAG_EMIT_TIMESTAMP_EVENT:
                   logging.verbose("FLAG_TIMESTAMP_EVENT");
                   event_value = reader.readInt32();
@@ -1241,8 +1205,6 @@ export class SpectodaInterfaceLegacy {
                   log_value_postfix = "ms";
                   break;
 
-                // case COMMAND_FLAGS.FLAG_EMIT_LAZY_COLOR_EVENT:
-                //   is_lazy = true;
                 case COMMAND_FLAGS.FLAG_EMIT_COLOR_EVENT:
                   logging.verbose("FLAG_COLOR_EVENT");
                   const bytes = reader.readBytes(3);
@@ -1250,8 +1212,6 @@ export class SpectodaInterfaceLegacy {
                   event_type = "color";
                   break;
 
-                // case COMMAND_FLAGS.FLAG_EMIT_LAZY_PERCENTAGE_EVENT:
-                //   is_lazy = true;
                 case COMMAND_FLAGS.FLAG_EMIT_PERCENTAGE_EVENT:
                   logging.verbose("FLAG_PERCENTAGE_EVENT");
                   event_value = Math.round(mapValue(reader.readInt32(), -268435455, 268435455, -100, 100) * 1000000.0) / 1000000.0;
@@ -1259,8 +1219,6 @@ export class SpectodaInterfaceLegacy {
                   log_value_postfix = "%";
                   break;
 
-                // case COMMAND_FLAGS.FLAG_EMIT_LAZY_LABEL_EVENT:
-                //   is_lazy = true;
                 case COMMAND_FLAGS.FLAG_EMIT_LABEL_EVENT:
                   logging.verbose("FLAG_LABEL_EVENT");
                   event_value = String.fromCharCode(...reader.readBytes(5)).match(/[\w\d_]*/g)[0];
@@ -1269,8 +1227,11 @@ export class SpectodaInterfaceLegacy {
                   break;
 
                 default:
-                  // logging.error("ERROR");
-                  break;
+                  if (logging.level >= 4) {
+                    logging.warn(`Unknown event flag: ${event_flag}`);
+                  }
+                  reader.forward(reader.available);
+                  return;
               }
 
               logging.verbose(`event_value = ${event_value}`);
@@ -1429,9 +1390,11 @@ export class SpectodaInterfaceLegacy {
             break;
 
           default:
-            logging.error(`ERROR flag=${reader.readFlag()}, available=${reader.available}`);
+            if (logging.level >= 4) {
+              logging.warn(`Unknown Command flag=${command_flag}, available=${reader.available}`);
+            }
             reader.forward(reader.available);
-            break;
+            return;
         }
       }
 
@@ -1440,9 +1403,12 @@ export class SpectodaInterfaceLegacy {
         logging.verbose("emitted_events", emitted_events);
         this.emit("emitted_events", emitted_events);
 
-        const informations = emitted_events.map(x => x.info);
-        logging.info(informations.join("\n"));
+        if (logging.level >= 3) {
+          const informations = emitted_events.map(x => x.info);
+          logging.info(informations.join("\n"));
+        }
       }
+
     } catch (e) {
       logging.error("Error during process:", e);
     }
