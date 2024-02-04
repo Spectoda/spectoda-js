@@ -169,23 +169,30 @@ export class Spectoda {
     switch (websocketConnectionState) {
       case "connecting":
         if (websocketConnectionState !== this.#websocketConnectionState) {
-          logging.warn("> Spectoda connecting");
+          logging.warn("> WS connecting");
           this.#websocketConnectionState = websocketConnectionState;
           this.interface.emit("connecting-websockets");
         }
         break;
       case "connected":
         if (websocketConnectionState !== this.#websocketConnectionState) {
-          logging.warn("> Spectoda connected");
+          logging.warn("> WS connected");
           this.#websocketConnectionState = websocketConnectionState;
           this.interface.emit("connected-websockets");
         }
         break;
       case "disconnecting":
         if (websocketConnectionState !== this.#websocketConnectionState) {
-          logging.warn("> Spectoda disconnecting");
+          logging.warn("> WS disconnecting");
           this.#connectionState = connectionState;
           this.interface.emit("disconnecting-websockets");
+        }
+        break;
+      case "disconnected":
+        if (websocketConnectionState !== this.#websocketConnectionState) {
+          logging.warn("> WS disconnected");
+          this.#connectionState = connectionState;
+          this.interface.emit("disconnected-websockets");
         }
         break;
       default:
