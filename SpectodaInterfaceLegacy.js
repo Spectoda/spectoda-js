@@ -672,15 +672,15 @@ export class SpectodaInterfaceLegacy {
     });
   }
 
-  connect(timeout = 10000, supportLegacy = false) {
-    logging.verbose(`connect(timeout=${timeout}, supportLegacy=${supportLegacy}`);
+  connect(timeout = 10000) {
+    logging.verbose(`connect(timeout=${timeout}`);
 
     if (timeout < 1000) {
       logging.error("Timeout is too short.");
       return Promise.reject("InvalidTimeout");
     }
 
-    const item = new Query(Query.TYPE_CONNECT, timeout, supportLegacy);
+    const item = new Query(Query.TYPE_CONNECT, timeout);
     this.#process(item);
     return item.promise;
   }
@@ -946,7 +946,7 @@ export class SpectodaInterfaceLegacy {
                 {
                   try {
                     await this.connector
-                      .connect(item.a, item.b) // a = timeout, b = supportLegacy
+                      .connect(item.a) // a = timeout
                       .then(device => {
                         if (!this.#connectGuard) {
                           logging.error("Connection logic error. #connected not called during successful connect()?");
