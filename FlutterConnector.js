@@ -648,7 +648,7 @@ criteria example:
   timeout_number ms
 
   */
-  connect(timeout_number = 10000) {
+  connect(timeout_number = 7000) {
     logging.debug(`connect(timeout=${timeout_number})`);
 
     if (timeout_number <= 0) {
@@ -667,7 +667,7 @@ criteria example:
     // @ts-ignore
     window.flutter_inappwebview.callHandler("connect", timeout_number < 1000 ? 1000 : timeout_number);
 
-    return this.#applyTimeout(this.#promise, timeout_number < 5000 ? 10000 : timeout_number * 2, "connect").then(() => {
+    return this.#applyTimeout(this.#promise, timeout_number * 2.0, "connect").then(() => {
       logging.debug("Sleeping for 200ms");
       return sleep(200);
     });

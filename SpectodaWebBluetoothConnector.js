@@ -895,7 +895,7 @@ criteria example:
         setTimeout(() => {
           reject("ConnectionTimeout");
         }, 1000);
-      }, timeout < 10000 ? 10000 : timeout);
+      }, timeout < 5000 ? 5000 : timeout);
     });
 
     logging.debug("> Connecting to Bluetooth device...");

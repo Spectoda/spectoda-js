@@ -503,7 +503,7 @@ export class Spectoda {
 
     const criteria = /** @type {any} */ ([{ adoptionFlag: true }]);
 
-    return (autoSelect ? this.interface.autoSelect(criteria, 4000) : this.interface.userSelect(criteria, 60000))
+    return (autoSelect ? this.interface.autoSelect(criteria, 1000, 7000) : this.interface.userSelect(criteria, 60000))
       .then(() => {
         // this.#adoptingFlag = true;
         return this.interface.connect(10000, true);
