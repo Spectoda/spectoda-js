@@ -629,6 +629,13 @@ criteria example:
         });
     }
 
+    if (this.#selected()) {
+      return this.unselect()
+        .then(() => {
+          return this.userSelect(criteria, timeout);
+        });
+    }
+
     // logging.debug(criteria);
 
     // store new criteria as a array
@@ -920,7 +927,10 @@ criteria example:
         return { connector: "webbluetooth" };
       })
       .catch(error => {
-        logging.warn(error.name);
+
+        if (error.name) {
+          logging.warn(error.name);
+        }
 
         clearTimeout(timeoutHandle);
 
