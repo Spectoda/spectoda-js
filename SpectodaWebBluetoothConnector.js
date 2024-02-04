@@ -513,10 +513,26 @@ export class WebBLEConnection {
 
   // resets the Communations, discarding command queue
   reset() {
-    this.#service = null;
-    this.#networkChar = null;
-    this.#clockChar = null;
-    this.#deviceChar = null;
+
+    if (this.#networkChar) {
+      this.#networkChar.oncharacteristicvaluechanged = null;
+      this.#networkChar = null;
+    }
+
+    if (this.#clockChar) {
+      this.#clockChar.oncharacteristicvaluechanged = null;
+      this.#clockChar = null;
+    }
+
+    if (this.#deviceChar) {
+      this.#deviceChar.oncharacteristicvaluechanged = null;
+      this.#deviceChar = null;
+    }
+
+    if (this.#service) {
+      this.#service = null;
+    }
+
     this.#writing = false;
   }
 
@@ -622,7 +638,7 @@ criteria example:
     if (this.#connected()) {
       return this.disconnect()
         .then(() => {
-          return sleep(1000);
+          return sleep(100);
         })
         .then(() => {
           return this.userSelect(criteria, timeout);
@@ -809,7 +825,10 @@ criteria example:
         this.#webBTDevice = device;
 
         this.#webBTDevice.ongattserverdisconnected = () => {
-          this.#onDisconnected();
+
+          sleep(1000).then(() => {
+            this.#onDisconnected();
+          });
         };
 
         return { connector: this.type };
@@ -834,7 +853,7 @@ criteria example:
     if (this.#connected()) {
       return this.disconnect()
         .then(() => {
-          return sleep(1000);
+          return sleep(100);
         })
         .then(() => {
           return this.autoSelect(criteria, scan_period, timeout);
@@ -1065,7 +1084,7 @@ criteria example:
 
     return new Promise(async (resolve, reject) => {
       for (let index = 0; index < 3; index++) {
-        await sleep(1000);
+        // await sleep(1000); // ! I commented this out, because I think it is not needed, but I am not sure
         try {
           const timestamp = await this.#connection.readClock();
           logging.debug("Clock read success:", timestamp);
