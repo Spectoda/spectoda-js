@@ -27,6 +27,7 @@ export class Spectoda {
   #reconnectionInterval;
   #connectionState;
   #websocketConnectionState;
+  #reconnectTheSameController;
 
   // mechanism for event ordering
   #lastEmitClockTimestamp;
@@ -63,6 +64,7 @@ export class Spectoda {
     this.#reconnectionInterval = reconnectionInterval;
     this.#connectionState = "disconnected";
     this.#websocketConnectionState = "disconnected";
+    this.#reconnectTheSameController = false;
 
     this.#lastEmitClockTimestamp = 0;
 
@@ -1199,10 +1201,7 @@ export class Spectoda {
 
         await sleep(3000);
 
-        logging.debug("Rebooting whole network...");
-
-        const command_bytes = [COMMAND_FLAGS.FLAG_DEVICE_REBOOT_REQUEST];
-        await this.interface.execute(command_bytes, null, 30000);
+        await this.rebootNetwork();
 
         logging.debug("Firmware written in " + (new Date().getTime() - start_timestamp) / 1000 + " seconds");
 
@@ -1216,9 +1215,6 @@ export class Spectoda {
         return;
       }
     })
-      .then(() => {
-        return this.disconnect();
-      })
 
       .finally(() => {
         this.interface.releaseWakeLock();
@@ -1372,14 +1368,14 @@ export class Spectoda {
 
       if (error_code === 0) {
         logging.info("Write Config Success");
-
-        if (!shouldReboot) return;
-
-        const payload = [COMMAND_FLAGS.FLAG_DEVICE_REBOOT_REQUEST];
-        return this.interface.request(payload, false);
       } else {
         throw "Fail";
       }
+
+      if (shouldReboot) {
+        return this.rebootDevice();
+      }
+
     });
   }
 
@@ -1391,7 +1387,7 @@ export class Spectoda {
    *
    */
 
-  updateNetworkConfig(config) {
+  updateNetworkConfig(config, shouldReboot = true) {
     logging.debug("> Updating config of whole network...");
 
     const encoder = new TextEncoder();
@@ -1403,9 +1399,9 @@ export class Spectoda {
     const request_bytes = [COMMAND_FLAGS.FLAG_CONFIG_UPDATE_REQUEST, ...numberToBytes(request_uuid, 4), ...numberToBytes(config_bytes_size, 4), ...config_bytes];
 
     return this.interface.execute(request_bytes, "CONF").then(() => {
-      logging.debug("> Rebooting network...");
-      const command_bytecode = [COMMAND_FLAGS.FLAG_DEVICE_REBOOT_REQUEST];
-      return this.interface.execute(command_bytecode, null);
+      if (shouldReboot) {
+        return this.rebootNetwork();
+      }
     });
   }
 
@@ -1449,30 +1445,27 @@ export class Spectoda {
   // Code.device.interface.execute([240,1,0,0,0,5],null)
   rebootNetwork() {
     logging.debug("> Rebooting network...");
-
+    this.#setNextReconnectToTheSameController();
     const payload = [COMMAND_FLAGS.FLAG_DEVICE_REBOOT_REQUEST];
     return this.interface.execute(payload, null);
   }
 
   rebootDevice() {
     logging.debug("> Rebooting device...");
-
+    this.#setNextReconnectToTheSameController();
     const payload = [COMMAND_FLAGS.FLAG_DEVICE_REBOOT_REQUEST];
     return this.interface.request(payload, false);
   }
 
   rebootAndDisconnectDevice() {
     logging.debug("> Rebooting and disconnecting device...");
-
-    // this.interface.reconnection(false);
-
     const payload = [COMMAND_FLAGS.FLAG_DEVICE_REBOOT_REQUEST];
     return this.interface.request(payload, false).then(() => {
       return this.disconnect();
     });
   }
 
-  removeOwner() {
+  removeOwner(shouldReboot = true) {
     logging.debug("> Removing owner...");
 
     const request_uuid = this.#getUUID();
@@ -1503,8 +1496,7 @@ export class Spectoda {
 
       const removed_device_mac_bytes = reader.readBytes(6);
 
-      return this.rebootDevice()
-        .catch(() => { })
+      return (shouldReboot ? this.rebootDevice().catch(() => { }) : Promise.resolve(null))
         .then(() => {
           let removed_device_mac = "00:00:00:00:00:00";
           if (removed_device_mac_bytes.length >= 6) {
@@ -1519,13 +1511,17 @@ export class Spectoda {
     });
   }
 
-  removeNetworkOwner() {
+  removeNetworkOwner(shouldReboot = true) {
     logging.debug("> Removing network owner...");
 
     const request_uuid = this.#getUUID();
     const bytes = [COMMAND_FLAGS.FLAG_ERASE_OWNER_REQUEST, ...numberToBytes(request_uuid, 4)];
 
-    return this.interface.execute(bytes, true);
+    return this.interface.execute(bytes, true).then(() => {
+      if (shouldReboot) {
+        return this.rebootNetwork();
+      }
+    });
   }
 
   getFwVersion() {
