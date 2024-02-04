@@ -238,7 +238,7 @@ export class SpectodaInterfaceLegacy {
 
     this.#connectGuard = false;
 
-    this.#lastUpdateTime = new Date().getTime();
+    this.#lastUpdateTime = 0;
     this.#lastUpdatePercentage = 0;
 
     this.#connectedPeers = [];
@@ -246,16 +246,32 @@ export class SpectodaInterfaceLegacy {
     this.onConnected = e => { };
     this.onDisconnected = e => { };
 
+    this.#eventEmitter.on("ota_status", value => {
+      if (value === "begin") {
+        this.#lastUpdateTime = new Date().getTime();
+        this.#lastUpdatePercentage = 0;
+      } else if (value === "end") {
+        this.#lastUpdateTime = 0;
+        this.#lastUpdatePercentage = 100;
+      } else if (value === "fail") {
+        this.#lastUpdateTime = 0;
+        this.#lastUpdatePercentage = 0;
+      } else {
+        this.#lastUpdateTime = new Date().getTime();
+        this.#lastUpdatePercentage = 0;
+      }
+    });
+
     this.#eventEmitter.on("ota_progress", value => {
       const now = new Date().getTime();
 
-      const time_delta = now - this.lastUpdateTime;
+      const time_delta = now - this.#lastUpdateTime;
       logging.verbose("time_delta:", time_delta);
-      this.lastUpdateTime = now;
+      this.#lastUpdateTime = now;
 
-      const percentage_delta = value - this.lastUpdatePercentage;
+      const percentage_delta = value - this.#lastUpdatePercentage;
       logging.verbose("percentage_delta:", percentage_delta);
-      this.lastUpdatePercentage = value;
+      this.#lastUpdatePercentage = value;
 
       const percentage_left = 100.0 - value;
       logging.verbose("percentage_left:", percentage_left);
