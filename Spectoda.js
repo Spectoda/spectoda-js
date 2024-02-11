@@ -1,14 +1,14 @@
+import { io } from "socket.io-client";
+import customParser from "socket.io-msgpack-parser";
 import { COMMAND_FLAGS, SpectodaInterfaceLegacy, allEventsEmitter } from "./SpectodaInterfaceLegacy.js";
 import { TnglCodeParser } from "./SpectodaParser.js";
 import { WEBSOCKET_URL } from "./SpectodaWebSocketsConnector.js";
-import { colorToBytes, computeTnglFingerprint, detectSpectodaConnect, hexStringToUint8Array, labelToBytes, numberToBytes, percentageToBytes, sleep, strMacToBytes, stringToBytes, uint8ArrayToHexString } from "./functions";
-import { logging, setLoggingLevel } from "./logging";
-import { io } from "socket.io-client";
-import customParser from "socket.io-msgpack-parser";
 import { TimeTrack } from "./TimeTrack.js";
 import "./TnglReader.js";
 import { TnglReader } from "./TnglReader.js";
 import "./TnglWriter.js";
+import { colorToBytes, computeTnglFingerprint, detectSpectodaConnect, hexStringToUint8Array, labelToBytes, numberToBytes, percentageToBytes, sleep, strMacToBytes, stringToBytes, uint8ArrayToHexString } from "./functions";
+import { logging, setLoggingLevel } from "./logging";
 
 const DEFAULT_TNGL_BANK = 0;
 
@@ -72,7 +72,6 @@ export class Spectoda {
     }
 
     this.interface.on("emitted_events", events => {
-
       for (const event of events) {
         if (event.id === 255) {
           for (let id = 0; id < 255; id++) {
@@ -1504,7 +1503,7 @@ export class Spectoda {
       const removed_device_mac_bytes = reader.readBytes(6);
 
       return this.rebootDevice()
-        .catch(() => { })
+        .catch(() => {})
         .then(() => {
           let removed_device_mac = "00:00:00:00:00:00";
           if (removed_device_mac_bytes.length >= 6) {
@@ -2159,7 +2158,15 @@ export class Spectoda {
     if (arg4 === undefined) arg4 = 0;
 
     const request_uuid = this.#getUUID();
-    const bytes = [COMMAND_FLAGS.FLAG_INLINE_FUNCTION_CALL_REQUEST, ...numberToBytes(request_uuid, 4), ...numberToBytes(function_code, 4), ...numberToBytes(arg1, 4), ...numberToBytes(arg2, 4), ...numberToBytes(arg3, 4), ...numberToBytes(arg4, 4)];
+    const bytes = [
+      COMMAND_FLAGS.FLAG_INLINE_FUNCTION_CALL_REQUEST,
+      ...numberToBytes(request_uuid, 4),
+      ...numberToBytes(function_code, 4),
+      ...numberToBytes(arg1, 4),
+      ...numberToBytes(arg2, 4),
+      ...numberToBytes(arg3, 4),
+      ...numberToBytes(arg4, 4),
+    ];
 
     return this.interface.request(bytes, true).then(response => {
       let reader = new TnglReader(response);
@@ -2190,9 +2197,7 @@ export class Spectoda {
       const bytes = reader.readBytes(reader.available);
       logging.debug(`bytes=${bytes}`);
 
-
       return { result, bytes };
     });
   }
-
 }
