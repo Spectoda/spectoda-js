@@ -659,9 +659,7 @@ export class SpectodaInterfaceLegacy {
 
     this.#selecting = true;
 
-    if (criteria === null) {
-      criteria = [];
-    } else if (!Array.isArray(criteria)) {
+    if (!Array.isArray(criteria)) {
       criteria = [criteria];
     }
 
@@ -732,6 +730,9 @@ export class SpectodaInterfaceLegacy {
 
   execute(bytes, bytes_label, timeout = CONNECTOR_DEFAULT_VALUE) {
     logging.verbose("execute", { bytes, bytes_label, timeout });
+
+    // TODO! check if bytes is valid
+
     const item = new Query(Query.TYPE_EXECUTE, bytes, bytes_label, timeout);
 
     // there must only by one item in the queue with given label
@@ -755,6 +756,9 @@ export class SpectodaInterfaceLegacy {
 
   request(bytes, read_response, timeout = CONNECTOR_DEFAULT_VALUE) {
     logging.verbose("request", { bytes, read_response, timeout });
+
+    // TODO! check if bytes is valid
+
     const item = new Query(Query.TYPE_REQUEST, bytes, read_response, timeout);
     this.#process(item);
     return item.promise;
@@ -795,6 +799,8 @@ export class SpectodaInterfaceLegacy {
 
   updateFW(firmware_bytes) {
     const item = new Query(Query.TYPE_FIRMWARE_UPDATE, firmware_bytes);
+
+    // TODO! check if firmware_bytes is valid
 
     for (let i = 0; i < this.#queue.length; i++) {
       if (this.#queue[i].type === Query.TYPE_FIRMWARE_UPDATE) {
