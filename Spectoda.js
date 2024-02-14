@@ -1,4 +1,4 @@
-import { COMMAND_FLAGS, SpectodaInterfaceLegacy, allEventsEmitter } from "./SpectodaInterfaceLegacy.js";
+import { CONNECTOR_DEFAULT_VALUE, COMMAND_FLAGS, SpectodaInterfaceLegacy, allEventsEmitter } from "./SpectodaInterfaceLegacy.js";
 import { TnglCodeParser } from "./SpectodaParser.js";
 import { WEBSOCKET_URL } from "./SpectodaWebSocketsConnector.js";
 import { colorToBytes, computeTnglFingerprint, detectSpectodaConnect, hexStringToUint8Array, labelToBytes, numberToBytes, percentageToBytes, sleep, strMacToBytes, stringToBytes, uint8ArrayToHexString } from "./functions";
@@ -11,7 +11,6 @@ import { TnglReader } from "./TnglReader.js";
 import "./TnglWriter.js";
 
 const DEFAULT_TNGL_BANK = 0;
-
 export class Spectoda {
   #uuidCounter;
   #ownerSignature;
@@ -129,7 +128,7 @@ export class Spectoda {
         this.#setConnectionState("connecting");
 
         logging.info("> Reconnecting controller...");
-        return (this.#reconnectTheSameController ? this.interface.connect(7000) : this.connect(this.#connectCriteria, true, this.#ownerSignature, this.#ownerKey))
+        return (this.#reconnectTheSameController ? this.interface.connect(CONNECTOR_DEFAULT_VALUE) : this.connect(this.#connectCriteria, true, this.#ownerSignature, this.#ownerKey))
           .then(() => {
             logging.info("> Reconnection successful");
             this.#setConnectionState("connected");
@@ -483,10 +482,10 @@ export class Spectoda {
     return this.interface.on(event, callback);
   }
 
-  scan(scan_period = 5000) {
-    logging.info(`scan(scan_period=${scan_period})`);
+  scan() {
+    logging.info(`scan()`);
 
-    return this.interface.scan([{}], scan_period);
+    return this.interface.scan([{}], CONNECTOR_DEFAULT_VALUE);
   }
 
   adopt(newDeviceName = null, newDeviceId = null, tnglCode = null, ownerSignature = null, ownerKey = null, autoSelect = false) {
@@ -518,10 +517,10 @@ export class Spectoda {
 
     const criteria = /** @type {any} */ ([{ adoptionFlag: true }]);
 
-    return (autoSelect ? this.interface.autoSelect(criteria, 1000, 7000) : this.interface.userSelect(criteria, 60000))
+    return (autoSelect ? this.interface.autoSelect(criteria, CONNECTOR_DEFAULT_VALUE, CONNECTOR_DEFAULT_VALUE) : this.interface.userSelect(criteria, CONNECTOR_DEFAULT_VALUE))
       .then(() => {
         // this.#adoptingFlag = true;
-        return this.interface.connect(10000, true);
+        return this.interface.connect(CONNECTOR_DEFAULT_VALUE);
       })
       .then(() => {
         const owner_signature_bytes = hexStringToUint8Array(this.#ownerSignature, 16);
@@ -655,9 +654,9 @@ export class Spectoda {
 
     this.#connectCriteria = criteria;
 
-    return (autoConnect ? this.interface.autoSelect(this.#connectCriteria, 1000, 10000) : this.interface.userSelect(this.#connectCriteria, 30000))
+    return (autoConnect ? this.interface.autoSelect(this.#connectCriteria, CONNECTOR_DEFAULT_VALUE, CONNECTOR_DEFAULT_VALUE) : this.interface.userSelect(this.#connectCriteria, CONNECTOR_DEFAULT_VALUE))
       .then(() => {
-        return this.interface.connect(10000);
+        return this.interface.connect(CONNECTOR_DEFAULT_VALUE);
       })
       .then(connectedDeviceInfo => {
         logging.info("> Synchronizing Network State...");

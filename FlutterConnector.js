@@ -529,9 +529,10 @@ criteria example:
   // if no criteria are set, then show all Spectoda devices visible.
   // first bonds the BLE device with the PC/Phone/Tablet if it is needed.
   // Then selects the device
-  userSelect(criteria_object, timeout_number = 60000) {
-    const criteria_json = JSON.stringify(criteria_object);
+  userSelect(criteria_object, timeout_number) {
+    if (timeout_number === CONNECTOR_DEFAULT_VALUE) { timeout_number = 30000; }
 
+    const criteria_json = JSON.stringify(criteria_object);
     logging.debug(`userSelect(criteria=${criteria_json}, timeout=${timeout_number})`);
 
     this.#promise = new Promise((resolve, reject) => {
@@ -558,7 +559,9 @@ criteria example:
   // if no criteria are provided, all Spectoda enabled devices (with all different FWs and Owners and such)
   // are eligible.
 
-  autoSelect(criteria_object, scan_period_number = 1000, timeout_number = 10000) {
+  autoSelect(criteria_object, scan_period_number, timeout_number) {
+    if (scan_period_number === CONNECTOR_DEFAULT_VALUE) { scan_period_number = 1000; }
+    if (timeout_number === CONNECTOR_DEFAULT_VALUE) { timeout_number = 5000; }
     // step 1. for the scan_period scan the surroundings for BLE devices.
     // step 2. if some devices matching the criteria are found, then select the one with
     //         the greatest signal strength. If no device is found until the timeout_number,
@@ -621,7 +624,8 @@ criteria example:
   // if no criteria are provided, all Spectoda enabled devices (with all different FWs and Owners and such)
   // are eligible.
 
-  scan(criteria_object, scan_duration_number = 5000) {
+  scan(criteria_object, scan_duration_number) {
+    if (scan_duration_number === CONNECTOR_DEFAULT_VALUE) { scan_duration_number = 7000; }
     // step 1. for the scan_period scan the surroundings for BLE devices.
 
     const criteria_json = JSON.stringify(criteria_object);
@@ -648,7 +652,9 @@ criteria example:
   timeout_number ms
 
   */
-  connect(timeout_number = 7000) {
+  // timeout 30000ms for the old slow devices to be able to connect
+  connect(timeout_number) {
+    if (timeout_number === CONNECTOR_DEFAULT_VALUE) { timeout_number = 30000; }
     logging.debug(`connect(timeout=${timeout_number})`);
 
     if (timeout_number <= 0) {
@@ -710,7 +716,8 @@ criteria example:
 
   // deliver handles the communication with the Spectoda Controller in a way
   // that the command is guaranteed to arrive
-  deliver(payload_bytes, timeout_number = 5000) {
+  deliver(payload_bytes, timeout_number) {
+    if (timeout_number === CONNECTOR_DEFAULT_VALUE) { timeout_number = 5000; }
     logging.debug(`deliver(payload=[${payload_bytes}], timeout=${timeout_number})`);
 
     this.#promise = new Promise((resolve, reject) => {
@@ -728,7 +735,8 @@ criteria example:
 
   // transmit handles the communication with the Spectoda Controller in a way
   // that the paylaod is NOT guaranteed to arrive
-  transmit(payload_bytes, timeout_number = 1000) {
+  transmit(payload_bytes, timeout_number) {
+    if (timeout_number === CONNECTOR_DEFAULT_VALUE) { timeout_number = 1000; }
     logging.debug(`transmit(payload=[${payload_bytes}], timeout=${timeout_number})`);
 
     this.#promise = new Promise((resolve, reject) => {
@@ -746,7 +754,8 @@ criteria example:
 
   // request handles the requests on the Spectoda Controller. The payload request
   // is guaranteed to get a response
-  request(payload_bytes, read_response = true, timeout_number = 5000) {
+  request(payload_bytes, read_response, timeout_number) {
+    if (timeout_number === CONNECTOR_DEFAULT_VALUE) { timeout_number = 5000; }
     logging.debug(`request(payload=[${payload_bytes}], read_response=${read_response ? "true" : "false"}, timeout=${timeout_number})`);
 
     this.#promise = new Promise((resolve, reject) => {

@@ -24,6 +24,8 @@ import "./TnglReader.js";
 import { TnglReader } from "./TnglReader.js";
 import "./TnglWriter.js";
 
+export const CONNECTOR_DEFAULT_VALUE = null;
+
 export const COMMAND_FLAGS = Object.freeze({
   FLAG_UNSUPPORTED_COMMND_RESPONSE: 255, // TODO change FLAG_OTA_BEGIN to not be 255.
 
@@ -580,13 +582,10 @@ export class SpectodaInterfaceLegacy {
       });
   }
 
-  userSelect(criteria, timeout = 600000) {
+  userSelect(criteria, timeout = CONNECTOR_DEFAULT_VALUE) {
     logging.verbose(`userSelect(criteria=${JSON.stringify(criteria)}, timeout=${timeout}`);
 
-    if (timeout < 1000) {
-      logging.error("Timeout is too short.");
-      return Promise.reject("InvalidTimeout");
-    }
+    // TODO! check if criteria is valid
 
     if (this.#selecting) {
       return Promise.reject("SelectingInProgress");
@@ -608,13 +607,10 @@ export class SpectodaInterfaceLegacy {
     });
   }
 
-  autoSelect(criteria, scan_period = 4000, timeout = 10000) {
-    logging.verbose(`autoSelect(criteria=${JSON.stringify(criteria)}, scan_period=${scan_period}, timeout=${timeout}`);
+  autoSelect(criteria, scan_period = CONNECTOR_DEFAULT_VALUE, timeout = CONNECTOR_DEFAULT_VALUE) {
+    logging.debug(`autoSelect(criteria=${JSON.stringify(criteria)}, scan_period=${scan_period}, timeout=${timeout}`);
 
-    if (timeout < 1000) {
-      logging.error("Timeout is too short.");
-      return Promise.reject("InvalidTimeout");
-    }
+    // TODO! check if criteria is valid
 
     if (this.#selecting) {
       return Promise.reject("SelectingInProgress");
@@ -652,13 +648,10 @@ export class SpectodaInterfaceLegacy {
     return item.promise;
   }
 
-  scan(criteria, scan_period = 5000) {
+  scan(criteria, scan_period = CONNECTOR_DEFAULT_VALUE) {
     logging.verbose(`scan(criteria=${JSON.stringify(criteria)}, scan_period=${scan_period}`);
 
-    if (scan_period < 1000) {
-      logging.error("Scan period is too short.");
-      return Promise.reject("InvalidScanPeriod");
-    }
+    // TODO! check if criteria is valid
 
     if (this.#selecting) {
       return Promise.reject("SelectingInProgress");
@@ -679,13 +672,8 @@ export class SpectodaInterfaceLegacy {
     });
   }
 
-  connect(timeout = 10000) {
+  connect(timeout = CONNECTOR_DEFAULT_VALUE) {
     logging.verbose(`connect(timeout=${timeout}`);
-
-    if (timeout < 1000) {
-      logging.error("Timeout is too short.");
-      return Promise.reject("InvalidTimeout");
-    }
 
     const item = new Query(Query.TYPE_CONNECT, timeout);
     this.#process(item);
@@ -742,12 +730,7 @@ export class SpectodaInterfaceLegacy {
     return item.promise;
   }
 
-  execute(bytes, bytes_label, timeout = 5000) {
-    if (timeout < 100) {
-      logging.error("Timeout is too short.");
-      return Promise.reject("InvalidTimeout");
-    }
-
+  execute(bytes, bytes_label, timeout = CONNECTOR_DEFAULT_VALUE) {
     logging.verbose("execute", { bytes, bytes_label, timeout });
     const item = new Query(Query.TYPE_EXECUTE, bytes, bytes_label, timeout);
 
@@ -770,12 +753,7 @@ export class SpectodaInterfaceLegacy {
     return item.promise;
   }
 
-  request(bytes, read_response = true, timeout = 5000) {
-    if (timeout < 100) {
-      logging.error("Timeout is too short.");
-      return Promise.reject("InvalidTimeout");
-    }
-
+  request(bytes, read_response, timeout = CONNECTOR_DEFAULT_VALUE) {
     logging.verbose("request", { bytes, read_response, timeout });
     const item = new Query(Query.TYPE_REQUEST, bytes, read_response, timeout);
     this.#process(item);

@@ -1,7 +1,7 @@
 // npm install --save-dev @types/web-bluetooth
 /// <reference types="web-bluetooth" />
 
-import { COMMAND_FLAGS } from "./SpectodaInterfaceLegacy.js";
+import { COMMAND_FLAGS, CONNECTOR_DEFAULT_VALUE } from "./SpectodaInterfaceLegacy.js";
 import { TimeTrack } from "./TimeTrack.js";
 import { TnglReader } from "./TnglReader.js";
 import { detectAndroid, hexStringToUint8Array, numberToBytes, sleep, toBytes } from "./functions";
@@ -270,7 +270,7 @@ export class WebBLEConnection {
   // returns promise that resolves when message is physically send, but you
   // dont need to wait for it to resolve, and spam deliver() as you please.
   // transmering queue will handle it
-  deliver(payload, timeout) {
+  deliver(payload) {
     if (!this.#networkChar) {
       logging.warn("Network characteristics is null");
       return Promise.reject("DeliverFailed");
@@ -296,7 +296,7 @@ export class WebBLEConnection {
   // transmit() tryes to transmit data NOW. ASAP. It will fail,
   // if deliver or another transmit is being executed at the moment
   // returns promise that will be resolved when message is physically send (only transmittion, not receive)
-  transmit(payload, timeout) {
+  transmit(payload) {
     if (!this.#networkChar) {
       logging.warn("Network characteristics is null");
       return Promise.reject("TransmitFailed");
@@ -321,7 +321,7 @@ export class WebBLEConnection {
 
   // request first writes the request to the Device Characteristics
   // and then reads the response also from the Device Characteristics
-  request(payload, read_response, timeout) {
+  request(payload, read_response) {
     if (!this.#deviceChar) {
       logging.warn("Device characteristics is null");
       return Promise.reject("RequestFailed");
@@ -872,7 +872,7 @@ criteria example:
     // Web Bluetooth nepodporuje možnost automatické volby zařízení.
     // Proto je to tady implementováno totožně jako userSelect.
 
-    return this.userSelect(criteria);
+    return this.userSelect(criteria, timeout);
   }
 
   // if device is conneced, then disconnect it
@@ -906,7 +906,8 @@ criteria example:
 
   // connect Connector to the selected Spectoda Device. Also can be used to reconnect.
   // Fails if no device is selected
-  connect(timeout = 10000) {
+  connect(timeout) {
+    if (timeout === CONNECTOR_DEFAULT_VALUE) { timeout = 10000; }
     logging.verbose(`connect(timeout=${timeout})`);
 
     if (timeout <= 0) {
@@ -1034,7 +1035,7 @@ criteria example:
       return Promise.reject("DeviceDisconnected");
     }
 
-    return this.#connection.deliver(payload, timeout);
+    return this.#connection.deliver(payload);
   }
 
   // transmit handles the communication with the Spectoda network in a way
@@ -1046,7 +1047,7 @@ criteria example:
       return Promise.reject("DeviceDisconnected");
     }
 
-    return this.#connection.transmit(payload, timeout);
+    return this.#connection.transmit(payload);
   }
 
   // request handles the requests on the Spectoda network. The command request
@@ -1058,7 +1059,7 @@ criteria example:
       return Promise.reject("DeviceDisconnected");
     }
 
-    return this.#connection.request(payload, read_response, timeout);
+    return this.#connection.request(payload, read_response);
   }
 
   // synchronizes the device internal clock with the provided TimeTrack clock
@@ -1079,7 +1080,7 @@ criteria example:
           return;
         } catch (e) {
           logging.warn("Clock write failed");
-          await sleep(1000);
+          await sleep(100);
         }
       }
 
@@ -1107,6 +1108,7 @@ criteria example:
           return;
         } catch (e) {
           logging.warn("Clock read failed:", e);
+          await sleep(100);
         }
       }
 
