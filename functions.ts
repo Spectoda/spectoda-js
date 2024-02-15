@@ -1,4 +1,5 @@
 import { createNanoEvents } from "nanoevents";
+import { TnglCodeParser } from "./SpectodaParser";
 import { PERCENTAGE_MAX, PERCENTAGE_MIN } from "./constants";
 import { logging, setLoggingLevel } from "./logging";
 
@@ -253,7 +254,7 @@ export function detectSafari() {
 
 //////////////////////////////////////////////////////
 
-export function computeTnglFingerprint(tngl_bytes, tngl_label) {
+export function computeTnglFingerprint(tngl_bytes: Uint8Array | ArrayBuffer, tngl_label = "fingerprint") {
   let enc = new TextEncoder();
   let algorithm = { name: "HMAC", hash: "SHA-256" };
   let body = new Uint8Array(tngl_bytes);
@@ -266,6 +267,14 @@ export function computeTnglFingerprint(tngl_bytes, tngl_label) {
     .then(signature => {
       return new Uint8Array(signature);
     });
+}
+
+export async function computeTnglCodeFingerprint(tnglCode: string) {
+  const newTnglBytecode = new TnglCodeParser().parseTnglCode(tnglCode);
+  const newTnglFingerprint = await computeTnglFingerprint(newTnglBytecode, "fingerprint");
+  const newTnglFingerprintHex = uint8ArrayToHexString(newTnglFingerprint);
+
+  return newTnglFingerprintHex;
 }
 
 export function hexStringToUint8Array(hex: string, length: number) {
