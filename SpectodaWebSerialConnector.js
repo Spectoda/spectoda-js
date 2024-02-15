@@ -1,7 +1,7 @@
 import { logging } from "./logging";
 import { sleep, toBytes, numberToBytes, crc8, crc32, hexStringToArray, rgbToHex, stringToBytes } from "./functions";
 import { TimeTrack } from "./TimeTrack.js";
-import { COMMAND_FLAGS } from "./SpectodaInterfaceLegacy.js";
+import { COMMAND_FLAGS, CONNECTOR_DEFAULT_VALUE } from "./SpectodaInterfaceLegacy.js";
 import { TnglWriter } from "./TnglWriter.js";
 import { TnglReader } from "./TnglReader.js";
 
@@ -288,8 +288,9 @@ criteria example:
     return Promise.resolve("{}");
   }
 
-  connect(timeout = 15000) {
-    logging.verbose("connect(timeout=" + timeout + ")");
+  connect(timeout) {
+    if (timeout === CONNECTOR_DEFAULT_VALUE) { timeout = 10000; }
+    logging.verbose(`connect(timeout=${timeout})`);
 
     if (timeout <= 0) {
       logging.info("> Connect timeout have expired");
