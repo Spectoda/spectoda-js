@@ -5,15 +5,10 @@ import { colorToBytes, computeTnglFingerprint, detectSpectodaConnect, hexStringT
 import { logging, setLoggingLevel } from "./logging";
 import { io } from "socket.io-client";
 import customParser from "socket.io-msgpack-parser";
-import { COMMAND_FLAGS, SpectodaInterfaceLegacy, allEventsEmitter } from "./SpectodaInterfaceLegacy.js";
-import { TnglCodeParser } from "./SpectodaParser.js";
-import { WEBSOCKET_URL } from "./SpectodaWebSocketsConnector.js";
 import { TimeTrack } from "./TimeTrack.js";
 import "./TnglReader.js";
 import { TnglReader } from "./TnglReader.js";
 import "./TnglWriter.js";
-import { colorToBytes, computeTnglFingerprint, detectSpectodaConnect, hexStringToUint8Array, labelToBytes, numberToBytes, percentageToBytes, sleep, strMacToBytes, stringToBytes, uint8ArrayToHexString } from "./functions";
-import { logging, setLoggingLevel } from "./logging";
 
 const DEFAULT_TNGL_BANK = 0;
 export class Spectoda {
