@@ -450,7 +450,7 @@ criteria example:
     logging.verbose(`initiate(initiate_code=${initiate_code}, payload=${payload}, tries=${tries}, timeout=${timeout})`);
 
     if (!tries) {
-      logging.warn("No #initiate tryes left");
+      logging.warn("No #initiate tries left");
       throw "WriteFailed";
     }
 

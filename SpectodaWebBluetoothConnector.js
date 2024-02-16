@@ -293,7 +293,7 @@ export class WebBLEConnection {
       });
   }
 
-  // transmit() tryes to transmit data NOW. ASAP. It will fail,
+  // transmit() tries to transmit data NOW. ASAP. It will fail,
   // if deliver or another transmit is being executed at the moment
   // returns promise that will be resolved when message is physically send (only transmittion, not receive)
   transmit(payload) {

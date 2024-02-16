@@ -462,8 +462,6 @@ export class FlutterConnector extends FlutterConnection {
   #applyTimeout(promise, timeout_number, message) {
     const handle = setTimeout(() => {
       // @ts-ignore
-      // throw(message, "Error: TC response timeouted");
-      // @ts-ignore
       window.flutterConnection.reject("FlutterSafeguardTimeout: " + message);
     }, timeout_number);
     return promise.finally(() => {
@@ -782,7 +780,7 @@ criteria example:
       for (let index = 0; index < 3; index++) {
         await sleep(1000);
         try {
-          // tryes to ASAP write a timestamp to the clock characteristics.
+          // tries to ASAP write a timestamp to the clock characteristics.
           // if the ASAP write fails, then try it once more
 
           this.#promise = new Promise((resolve, reject) => {
@@ -821,7 +819,7 @@ criteria example:
     return new Promise(async (resolve, reject) => {
       for (let index = 0; index < 3; index++) {
         try {
-          // tryes to ASAP read a timestamp from the clock characteristics.
+          // tries to ASAP read a timestamp from the clock characteristics.
           // if the ASAP read fails, then try it once more
 
           this.#promise = new Promise((resolve, reject) => {
