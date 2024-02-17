@@ -659,31 +659,50 @@ criteria example:
   timeout_number ms
 
   */
-  // timeout 30000ms for the old slow devices to be able to connect
+  // timeout 20000ms for the old slow devices to be able to connect
   connect(timeout_number) {
-    if (timeout_number === NULL_VALUE) { timeout_number = 30000; }
+    if (timeout_number === NULL_VALUE) { timeout_number = 20000; }
     logging.debug(`connect(timeout=${timeout_number})`);
 
-    if (timeout_number <= 0) {
-      return Promise.reject("ConnectionTimeout");
+    const MINIMAL_CONNECT_TIMEOUT = 5000;
+    if (timeout_number <= MINIMAL_CONNECT_TIMEOUT) {
+      return Promise.reject("InvalidTimeout");
     }
 
+    //? I came across an olf Andoid device that needed a two calls of a connect for a successful connection.
+    //? it always timeouted on the first call, but the second call was always successful.
+    //? so I am trying to connect with a minimal timeout first and if it fails, then I try it again with the full timeout
+    //? becouse other devices needs a long timeout for connection to be successful
     this.#promise = new Promise((resolve, reject) => {
       // @ts-ignore
       window.flutterConnection.resolve = function (j) {
         resolve(j ? JSON.parse(j) : null);
       };
       // @ts-ignore
-      window.flutterConnection.reject = reject;
+      window.flutterConnection.reject = function (e) {
+        logging.warn(e);
+
+        // if the second attempt rejects again, then reject the promise
+        window.flutterConnection.reject = reject;
+
+        console.warn("Connect with minimal timeout timeouted, trying it again with the full timeout...");
+        // @ts-ignore
+        window.flutter_inappwebview.callHandler("connect", Math.max(MINIMAL_CONNECT_TIMEOUT, timeout_number)); // on old Androids the minimal timeout is not enough
+      }
     });
 
-    const MINIMAL_CONNECT_TIMEOUT = 1000;
-    // @ts-ignore
-    window.flutter_inappwebview.callHandler("connect", Math.max(timeout_number, MINIMAL_CONNECT_TIMEOUT));
+    // @ts-ignore 
+    window.flutter_inappwebview.callHandler("connect", MINIMAL_CONNECT_TIMEOUT); // first try to connect with the minimal timeout
 
-    const FLUTTER_RESPONSE_TIMEOUT = timeout_number + 5000;
+    //? Leaving this code here for possible benchmarking. Comment out .callHandler("connect" and uncomment this code to use it
+    // setTimeout(() => {
+    //   window.flutterConnection.reject("SimulatedError");
+    // }, MINIMAL_CONNECT_TIMEOUT);
+
+    // the timeout must be long enough to handle the slowest devices
+    const FLUTTER_RESPONSE_TIMEOUT = MINIMAL_CONNECT_TIMEOUT + Math.max(MINIMAL_CONNECT_TIMEOUT, timeout_number) + 5000;
     return this.#applyTimeout(this.#promise, FLUTTER_RESPONSE_TIMEOUT, "connect").then(() => {
-      logging.debug("Sleeping for 100ms...");
+      logging.debug("Sleeping for 100ms after connect...");
       return sleep(100);
     });
   }
