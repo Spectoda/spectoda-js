@@ -24,7 +24,7 @@ import "./TnglReader.js";
 import { TnglReader } from "./TnglReader.js";
 import "./TnglWriter.js";
 
-export const CONNECTOR_DEFAULT_VALUE = null;
+export const NULL_VALUE = null;
 
 export const COMMAND_FLAGS = Object.freeze({
   FLAG_UNSUPPORTED_COMMND_RESPONSE: 255, // TODO change FLAG_OTA_BEGIN to not be 255.
@@ -582,7 +582,7 @@ export class SpectodaInterfaceLegacy {
       });
   }
 
-  userSelect(criteria, timeout = CONNECTOR_DEFAULT_VALUE) {
+  userSelect(criteria, timeout = NULL_VALUE) {
     logging.verbose(`userSelect(criteria=${JSON.stringify(criteria)}, timeout=${timeout}`);
 
     // TODO! check if criteria is valid
@@ -607,8 +607,8 @@ export class SpectodaInterfaceLegacy {
     });
   }
 
-  autoSelect(criteria, scan_period = CONNECTOR_DEFAULT_VALUE, timeout = CONNECTOR_DEFAULT_VALUE) {
-    logging.debug(`autoSelect(criteria=${JSON.stringify(criteria)}, scan_period=${scan_period}, timeout=${timeout}`);
+  autoSelect(criteria, scan_duration = NULL_VALUE, timeout = NULL_VALUE) {
+    logging.debug(`autoSelect(criteria=${JSON.stringify(criteria)}, scan_duration=${scan_duration}, timeout=${timeout}`);
 
     // TODO! check if criteria is valid
 
@@ -624,7 +624,7 @@ export class SpectodaInterfaceLegacy {
       criteria = [criteria];
     }
 
-    const item = new Query(Query.TYPE_AUTOSELECT, criteria, scan_period, timeout);
+    const item = new Query(Query.TYPE_AUTOSELECT, criteria, scan_duration, timeout);
     this.#process(item);
 
     return item.promise.finally(() => {
@@ -648,8 +648,8 @@ export class SpectodaInterfaceLegacy {
     return item.promise;
   }
 
-  scan(criteria, scan_period = CONNECTOR_DEFAULT_VALUE) {
-    logging.verbose(`scan(criteria=${JSON.stringify(criteria)}, scan_period=${scan_period}`);
+  scan(criteria, scan_duration = NULL_VALUE) {
+    logging.verbose(`scan(criteria=${JSON.stringify(criteria)}, scan_duration=${scan_duration}`);
 
     // TODO! check if criteria is valid
 
@@ -663,14 +663,14 @@ export class SpectodaInterfaceLegacy {
       criteria = [criteria];
     }
 
-    const item = new Query(Query.TYPE_SCAN, criteria, scan_period);
+    const item = new Query(Query.TYPE_SCAN, criteria, scan_duration);
     this.#process(item);
     return item.promise.finally(() => {
       this.#selecting = false;
     });
   }
 
-  connect(timeout = CONNECTOR_DEFAULT_VALUE) {
+  connect(timeout = NULL_VALUE) {
     logging.verbose(`connect(timeout=${timeout}`);
 
     const item = new Query(Query.TYPE_CONNECT, timeout);
@@ -728,7 +728,7 @@ export class SpectodaInterfaceLegacy {
     return item.promise;
   }
 
-  execute(bytes, bytes_label, timeout = CONNECTOR_DEFAULT_VALUE) {
+  execute(bytes, bytes_label, timeout = NULL_VALUE) {
     logging.verbose("execute", { bytes, bytes_label, timeout });
 
     // TODO! check if bytes is valid
@@ -754,7 +754,7 @@ export class SpectodaInterfaceLegacy {
     return item.promise;
   }
 
-  request(bytes, read_response, timeout = CONNECTOR_DEFAULT_VALUE) {
+  request(bytes, read_response, timeout = NULL_VALUE) {
     logging.verbose("request", { bytes, read_response, timeout });
 
     // TODO! check if bytes is valid
@@ -872,7 +872,7 @@ export class SpectodaInterfaceLegacy {
                 {
                   try {
                     await this.connector
-                      .autoSelect(item.a, item.b, item.c) // criteria, scan_period, timeout
+                      .autoSelect(item.a, item.b, item.c) // criteria, scan_duration, timeout
                       .then(device => {
                         item.resolve(device);
                       });
@@ -910,7 +910,7 @@ export class SpectodaInterfaceLegacy {
                 {
                   try {
                     await this.connector
-                      .scan(item.a, item.b) // criteria, scan_period
+                      .scan(item.a, item.b) // criteria, scan_duration
                       .then(device => {
                         item.resolve(device);
                       });
@@ -924,8 +924,7 @@ export class SpectodaInterfaceLegacy {
               case Query.TYPE_CONNECT:
                 {
                   try {
-                    await this.connector
-                      .connect(item.a) // a = timeout
+                    await this.connector.connect(item.a) // a = timeout
                       .then(device => {
                         if (!this.#connectGuard) {
                           logging.error("Connection logic error. #connected not called during successful connect()?");

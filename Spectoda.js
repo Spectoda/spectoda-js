@@ -1,4 +1,4 @@
-import { CONNECTOR_DEFAULT_VALUE, COMMAND_FLAGS, SpectodaInterfaceLegacy, allEventsEmitter } from "./SpectodaInterfaceLegacy.js";
+import { NULL_VALUE, COMMAND_FLAGS, SpectodaInterfaceLegacy, allEventsEmitter } from "./SpectodaInterfaceLegacy.js";
 import { TnglCodeParser } from "./SpectodaParser.js";
 import { WEBSOCKET_URL } from "./SpectodaWebSocketsConnector.js";
 import { colorToBytes, computeTnglFingerprint, detectSpectodaConnect, hexStringToUint8Array, labelToBytes, numberToBytes, percentageToBytes, sleep, strMacToBytes, stringToBytes, uint8ArrayToHexString } from "./functions";
@@ -124,10 +124,10 @@ export class Spectoda {
       }
 
       if (this.#connectionState === "connected") {
+        logging.info("> Reconnecting controller...");
         this.#setConnectionState("connecting");
 
-        logging.info("> Reconnecting controller...");
-        return (this.#reconnectTheSameController ? this.interface.connect(CONNECTOR_DEFAULT_VALUE) : this.connect(this.#connectCriteria, true, this.#ownerSignature, this.#ownerKey))
+        return (this.#reconnectTheSameController ? this.interface.connect(NULL_VALUE) : this.connect(this.#connectCriteria, true, this.#ownerSignature, this.#ownerKey))
           .then(() => {
             logging.info("> Reconnection successful");
             this.#setConnectionState("connected");
@@ -141,6 +141,7 @@ export class Spectoda {
           })
 
       } else {
+        logging.info("> Controller disconnected");
         this.#setConnectionState("disconnected");
       }
 
@@ -484,7 +485,7 @@ export class Spectoda {
   scan() {
     logging.info(`scan()`);
 
-    return this.interface.scan([{}], CONNECTOR_DEFAULT_VALUE);
+    return this.interface.scan([{}], NULL_VALUE);
   }
 
   adopt(newDeviceName = null, newDeviceId = null, tnglCode = null, ownerSignature = null, ownerKey = null, autoSelect = false) {
@@ -516,10 +517,10 @@ export class Spectoda {
 
     const criteria = /** @type {any} */ ([{ adoptionFlag: true }]);
 
-    return (autoSelect ? this.interface.autoSelect(criteria, CONNECTOR_DEFAULT_VALUE, CONNECTOR_DEFAULT_VALUE) : this.interface.userSelect(criteria, CONNECTOR_DEFAULT_VALUE))
+    return (autoSelect ? this.interface.autoSelect(criteria, NULL_VALUE, NULL_VALUE) : this.interface.userSelect(criteria, NULL_VALUE))
       .then(() => {
         // this.#adoptingFlag = true;
-        return this.interface.connect(CONNECTOR_DEFAULT_VALUE);
+        return this.interface.connect(NULL_VALUE);
       })
       .then(() => {
         const owner_signature_bytes = hexStringToUint8Array(this.#ownerSignature, 16);
@@ -653,9 +654,9 @@ export class Spectoda {
 
     this.#connectCriteria = criteria;
 
-    return (autoConnect ? this.interface.autoSelect(this.#connectCriteria, CONNECTOR_DEFAULT_VALUE, CONNECTOR_DEFAULT_VALUE) : this.interface.userSelect(this.#connectCriteria, CONNECTOR_DEFAULT_VALUE))
+    return (autoConnect ? this.interface.autoSelect(this.#connectCriteria, NULL_VALUE, NULL_VALUE) : this.interface.userSelect(this.#connectCriteria, NULL_VALUE))
       .then(() => {
-        return this.interface.connect(CONNECTOR_DEFAULT_VALUE);
+        return this.interface.connect(NULL_VALUE);
       })
       .then(connectedDeviceInfo => {
         logging.info("> Synchronizing Network State...");

@@ -1,7 +1,7 @@
 import { logging } from "./logging";
 import { sleep, toBytes, numberToBytes, crc8, crc32, hexStringToArray, rgbToHex, stringToBytes } from "./functions";
 import { TimeTrack } from "./TimeTrack.js";
-import { COMMAND_FLAGS, CONNECTOR_DEFAULT_VALUE } from "./SpectodaInterfaceLegacy.js";
+import { COMMAND_FLAGS, NULL_VALUE } from "./SpectodaInterfaceLegacy.js";
 import { TnglWriter } from "./TnglWriter.js";
 import { TnglReader } from "./TnglReader.js";
 
@@ -247,7 +247,7 @@ criteria example:
     });
   }
 
-  // takes the criteria, scans for scan_period and automatically selects the device,
+  // takes the criteria, scans for scan_duration and automatically selects the device,
   // you can then connect to. This works only for BLE devices that are bond with the phone/PC/tablet
   // the app is running on OR doesnt need to be bonded in a special way.
   // if more devices are found matching the criteria, then the strongest signal wins
@@ -256,10 +256,10 @@ criteria example:
   // if no criteria are provided, all Spectoda enabled devices (with all different FWs and Owners and such)
   // are eligible.
 
-  autoSelect(criteria, scan_period, timeout) {
+  autoSelect(criteria, scan_duration, timeout) {
     logging.verbose("autoSelect()");
 
-    // step 1. for the scan_period scan the surroundings for BLE devices.
+    // step 1. for the scan_duration scan the surroundings for BLE devices.
     // step 2. if some devices matching the criteria are found, then select the one with
     //         the greatest signal strength. If no device is found until the timeout,
     //         then return error
@@ -283,13 +283,13 @@ criteria example:
     return Promise.resolve();
   }
 
-  scan(criteria, scan_period) {
+  scan(criteria, scan_duration) {
     // returns devices like autoSelect scan() function
     return Promise.resolve("{}");
   }
 
   connect(timeout) {
-    if (timeout === CONNECTOR_DEFAULT_VALUE) { timeout = 10000; }
+    if (timeout === NULL_VALUE) { timeout = 10000; }
     logging.verbose(`connect(timeout=${timeout})`);
 
     if (timeout <= 0) {
@@ -571,7 +571,7 @@ criteria example:
   // deliver handles the communication with the Spectoda network in a way
   // that the command is guaranteed to arrive
   deliver(payload, timeout) {
-    if (timeout === CONNECTOR_DEFAULT_VALUE) { timeout = 5000; }
+    if (timeout === NULL_VALUE) { timeout = 5000; }
     logging.debug(`deliver(payload=${payload}, timeout=${timeout})`);
 
     if (!this.#connected) {
@@ -588,7 +588,7 @@ criteria example:
   // transmit handles the communication with the Spectoda network in a way
   // that the command is NOT guaranteed to arrive
   transmit(payload, timeout) {
-    if (timeout === CONNECTOR_DEFAULT_VALUE) { timeout = 1000; }
+    if (timeout === NULL_VALUE) { timeout = 1000; }
     logging.debug(`transmit(payload=${payload}, timeout=${timeout})`);
 
 
@@ -606,7 +606,7 @@ criteria example:
   // request handles the requests on the Spectoda network. The command request
   // is guaranteed to get a response
   request(payload, read_response, timeout) {
-    if (timeout === CONNECTOR_DEFAULT_VALUE) { timeout = 5000; }
+    if (timeout === NULL_VALUE) { timeout = 5000; }
     logging.debug(`request(payload=${payload}, read_response=${read_response}, timeout=${timeout})`);
 
     if (!this.#connected) {

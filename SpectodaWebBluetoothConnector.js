@@ -1,7 +1,7 @@
 // npm install --save-dev @types/web-bluetooth
 /// <reference types="web-bluetooth" />
 
-import { COMMAND_FLAGS, CONNECTOR_DEFAULT_VALUE } from "./SpectodaInterfaceLegacy.js";
+import { COMMAND_FLAGS, NULL_VALUE } from "./SpectodaInterfaceLegacy.js";
 import { TimeTrack } from "./TimeTrack.js";
 import { TnglReader } from "./TnglReader.js";
 import { detectAndroid, hexStringToUint8Array, numberToBytes, sleep, toBytes } from "./functions";
@@ -293,18 +293,19 @@ export class WebBLEConnection {
       });
   }
 
+
   // transmit() tries to transmit data NOW. ASAP. It will fail,
   // if deliver or another transmit is being executed at the moment
   // returns promise that will be resolved when message is physically send (only transmittion, not receive)
   transmit(payload) {
     if (!this.#networkChar) {
       logging.warn("Network characteristics is null");
-      return Promise.reject("TransmitFailed");
+      Promise.reject("TransmitFailed");
     }
 
     if (this.#writing) {
       logging.warn("Communication in proccess");
-      return Promise.reject("TransmitFailed");
+      throw "TransmitFailed";
     }
 
     this.#writing = true;
@@ -836,7 +837,7 @@ criteria example:
       });
   }
 
-  // takes the criteria, scans for scan_period and automatically selects the device,
+  // takes the criteria, scans for scan_duration and automatically selects the device,
   // you can then connect to. This works only for BLE devices that are bond with the phone/PC/tablet
   // the app is running on OR doesnt need to be bonded in a special way.
   // if more devices are found matching the criteria, then the strongest signal wins
@@ -845,29 +846,12 @@ criteria example:
   // if no criteria are provided, all Spectoda enabled devices (with all different FWs and Owners and such)
   // are eligible.
 
-  autoSelect(criteria, scan_period, timeout) {
-    logging.verbose(`autoSelect(criteria=${JSON.stringify(criteria)}, scan_period=${scan_period}, timeout=${timeout})`);
-    // step 1. for the scan_period scan the surroundings for BLE devices.
+  autoSelect(criteria, scan_duration, timeout) {
+    logging.verbose(`autoSelect(criteria=${JSON.stringify(criteria)}, scan_duration=${scan_duration}, timeout=${timeout})`);
+    // step 1. for the scan_duration scan the surroundings for BLE devices.
     // step 2. if some devices matching the criteria are found, then select the one with
     //         the greatest signal strength. If no device is found until the timeout,
     //         then return error
-
-    if (this.#connected()) {
-      return this.disconnect()
-        .then(() => {
-          return sleep(100);
-        })
-        .then(() => {
-          return this.autoSelect(criteria, scan_period, timeout);
-        });
-    }
-
-    // // web bluetooth cant really auto select bluetooth device. This is the closest you can get.
-    // if (this.#selected() && criteria.ownerSignature === this.#criteria.ownerSignature) {
-    //   return Promise.resolve();
-    // }
-
-    this.#criteria = criteria;
 
     // Web Bluetooth nepodporuje možnost automatické volby zařízení.
     // Proto je to tady implementováno totožně jako userSelect.
@@ -897,8 +881,8 @@ criteria example:
     return Promise.resolve(this.#selected() ? { connector: this.type } : null);
   }
 
-  scan(criteria, scan_period) {
-    logging.verbose(`scan(criteria=${JSON.stringify(criteria)}, scan_period=${scan_period})`);
+  scan(criteria, scan_duration) {
+    logging.verbose(`scan(criteria=${JSON.stringify(criteria)}, scan_duration=${scan_duration})`);
 
     // returns devices like autoSelect scan() function
     return Promise.resolve("{}");
@@ -907,7 +891,7 @@ criteria example:
   // connect Connector to the selected Spectoda Device. Also can be used to reconnect.
   // Fails if no device is selected
   connect(timeout) {
-    if (timeout === CONNECTOR_DEFAULT_VALUE) { timeout = 10000; }
+    if (timeout === NULL_VALUE) { timeout = 10000; }
     logging.verbose(`connect(timeout=${timeout})`);
 
     if (timeout <= 0) {
@@ -923,14 +907,17 @@ criteria example:
     }
 
     let timeoutHandle = null;
+
+    const MINIMUM_CONNECT_TIMEOUT = 5000;
     let timeoutPromise = new Promise((resolve, reject) => {
       timeoutHandle = setTimeout(() => {
         logging.warn("Timeout triggered");
         this.#webBTDevice.gatt.disconnect();
+        const LET_BLUETOOTH_RESET_SAFELY_TIMEOUT = 1000;
         setTimeout(() => {
           reject("ConnectionTimeout");
-        }, 1000);
-      }, timeout < 5000 ? 5000 : timeout);
+        }, LET_BLUETOOTH_RESET_SAFELY_TIMEOUT);
+      }, Math.max(timeout, MINIMUM_CONNECT_TIMEOUT));
     });
 
     logging.debug("> Connecting to Bluetooth device...");
@@ -1029,7 +1016,7 @@ criteria example:
   // deliver handles the communication with the Spectoda network in a way
   // that the command is guaranteed to arrive
   deliver(payload, timeout) {
-    logging.verbose(`deliver(payload=${payload}, timeout=${timeout})`);
+    logging.verbose(`deliver(payload=${payload})`);
 
     if (!this.#connected()) {
       return Promise.reject("DeviceDisconnected");
@@ -1041,7 +1028,7 @@ criteria example:
   // transmit handles the communication with the Spectoda network in a way
   // that the command is NOT guaranteed to arrive
   transmit(payload, timeout) {
-    logging.verbose(`transmit(payload=${payload}, timeout=${timeout})`);
+    logging.verbose(`transmit(payload=${payload})`);
 
     if (!this.#connected()) {
       return Promise.reject("DeviceDisconnected");
@@ -1053,7 +1040,7 @@ criteria example:
   // request handles the requests on the Spectoda network. The command request
   // is guaranteed to get a response
   request(payload, read_response, timeout) {
-    logging.verbose(`request(payload=${payload}, read_response=${read_response}, timeout=${timeout})`);
+    logging.verbose(`request(payload=${payload}, read_response=${read_response})`);
 
     if (!this.#connected()) {
       return Promise.reject("DeviceDisconnected");
