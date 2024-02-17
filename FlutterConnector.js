@@ -540,6 +540,8 @@ criteria example:
     this.#promise = new Promise((resolve, reject) => {
       // @ts-ignore
       window.flutterConnection.resolve = function (j) {
+        //! [BUG] Flutter app on Android tends to return nulls as strings with a null character at the end. This is a workaround for that.
+        j = j.replace(/\u0000/g, '');
         resolve(j ? JSON.parse(j) : null);
       };
       // @ts-ignore
@@ -577,6 +579,8 @@ criteria example:
     this.#promise = new Promise((resolve, reject) => {
       // @ts-ignore
       window.flutterConnection.resolve = function (j) {
+        //! [BUG] Flutter app on Android tends to return nulls as strings with a null character at the end. This is a workaround for that.
+        j = j.replace(/\u0000/g, '');
         resolve(j ? JSON.parse(j) : null);
       };
       // @ts-ignore
@@ -596,6 +600,8 @@ criteria example:
     this.#promise = new Promise((resolve, reject) => {
       // @ts-ignore
       window.flutterConnection.resolve = function (j) {
+        //! [BUG] Flutter app on Android tends to return nulls as strings with a null character at the end. This is a workaround for that.
+        j = j.replace(/\u0000/g, '');
         resolve(j ? JSON.parse(j) : null);
       };
       // @ts-ignore
@@ -641,6 +647,8 @@ criteria example:
     this.#promise = new Promise((resolve, reject) => {
       // @ts-ignore
       window.flutterConnection.resolve = function (j) {
+        //! [BUG] Flutter app on Android tends to return nulls as strings with a null character at the end. This is a workaround for that.
+        j = j.replace(/\u0000/g, '');
         resolve(j ? JSON.parse(j) : null);
       };
       // @ts-ignore
@@ -676,6 +684,8 @@ criteria example:
     this.#promise = new Promise((resolve, reject) => {
       // @ts-ignore
       window.flutterConnection.resolve = function (j) {
+        //! [BUG] Flutter app on Android tends to return nulls as strings with a null character at the end. This is a workaround for that.
+        j = j.replace(/\u0000/g, '');
         resolve(j ? JSON.parse(j) : null);
       };
       // @ts-ignore
@@ -731,6 +741,8 @@ criteria example:
     this.#promise = new Promise((resolve, reject) => {
       // @ts-ignore
       window.flutterConnection.resolve = function (j) {
+        //! [BUG] Flutter app on Android tends to return nulls as strings with a null character at the end. This is a workaround for that.
+        j = j.replace(/\u0000/g, '');
         resolve(j ? JSON.parse(j) : null);
       };
       // @ts-ignore
