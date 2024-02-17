@@ -1,7 +1,7 @@
 // npm install --save-dev @types/web-bluetooth
 /// <reference types="web-bluetooth" />
 
-import { COMMAND_FLAGS } from "./SpectodaInterfaceLegacy.js";
+import { COMMAND_FLAGS, NULL_VALUE } from "./SpectodaInterfaceLegacy.js";
 import { TimeTrack } from "./TimeTrack.js";
 import { TnglReader } from "./TnglReader.js";
 import { detectAndroid, hexStringToUint8Array, numberToBytes, sleep, toBytes } from "./functions";
@@ -270,7 +270,7 @@ export class WebBLEConnection {
   // returns promise that resolves when message is physically send, but you
   // dont need to wait for it to resolve, and spam deliver() as you please.
   // transmering queue will handle it
-  deliver(payload, timeout) {
+  deliver(payload) {
     if (!this.#networkChar) {
       logging.warn("Network characteristics is null");
       return Promise.reject("DeliverFailed");
@@ -293,18 +293,19 @@ export class WebBLEConnection {
       });
   }
 
-  // transmit() tryes to transmit data NOW. ASAP. It will fail,
+
+  // transmit() tries to transmit data NOW. ASAP. It will fail,
   // if deliver or another transmit is being executed at the moment
   // returns promise that will be resolved when message is physically send (only transmittion, not receive)
-  transmit(payload, timeout) {
+  transmit(payload) {
     if (!this.#networkChar) {
       logging.warn("Network characteristics is null");
-      return Promise.reject("TransmitFailed");
+      Promise.reject("TransmitFailed");
     }
 
     if (this.#writing) {
       logging.warn("Communication in proccess");
-      return Promise.reject("TransmitFailed");
+      throw "TransmitFailed";
     }
 
     this.#writing = true;
@@ -321,7 +322,7 @@ export class WebBLEConnection {
 
   // request first writes the request to the Device Characteristics
   // and then reads the response also from the Device Characteristics
-  request(payload, read_response, timeout) {
+  request(payload, read_response) {
     if (!this.#deviceChar) {
       logging.warn("Device characteristics is null");
       return Promise.reject("RequestFailed");
@@ -513,10 +514,26 @@ export class WebBLEConnection {
 
   // resets the Communations, discarding command queue
   reset() {
-    this.#service = null;
-    this.#networkChar = null;
-    this.#clockChar = null;
-    this.#deviceChar = null;
+
+    if (this.#networkChar) {
+      this.#networkChar.oncharacteristicvaluechanged = null;
+      this.#networkChar = null;
+    }
+
+    if (this.#clockChar) {
+      this.#clockChar.oncharacteristicvaluechanged = null;
+      this.#clockChar = null;
+    }
+
+    if (this.#deviceChar) {
+      this.#deviceChar.oncharacteristicvaluechanged = null;
+      this.#deviceChar = null;
+    }
+
+    if (this.#service) {
+      this.#service = null;
+    }
+
     this.#writing = false;
   }
 
@@ -617,13 +634,20 @@ criteria example:
   // first bonds the BLE device with the PC/Phone/Tablet if it is needed.
   // Then selects the device
   userSelect(criteria, timeout) {
-    //logging.debug("choose()");
+    logging.verbose(`userSelect(criteria=${JSON.stringify(criteria)}, timeout=${timeout})`);
 
     if (this.#connected()) {
       return this.disconnect()
         .then(() => {
-          return sleep(1000);
+          return sleep(100);
         })
+        .then(() => {
+          return this.userSelect(criteria, timeout);
+        });
+    }
+
+    if (this.#selected()) {
+      return this.unselect()
         .then(() => {
           return this.userSelect(criteria, timeout);
         });
@@ -790,8 +814,9 @@ criteria example:
       web_ble_options = { acceptAllDevices: true, optionalServices: [this.SPECTODA_SERVICE_UUID] };
     }
 
-    return navigator.bluetooth
-      .requestDevice(web_ble_options)
+    logging.verbose(`navigator.bluetooth.requestDevice(${JSON.stringify(web_ble_options)})`);
+
+    return navigator.bluetooth.requestDevice(web_ble_options)
       .catch(e => {
         // TODO! Throw UserGestureRequired if e.message.includes("user gesture"). ad DEV-3298
 
@@ -802,14 +827,17 @@ criteria example:
         this.#webBTDevice = device;
 
         this.#webBTDevice.ongattserverdisconnected = () => {
-          this.#onDisconnected();
+
+          sleep(1000).then(() => {
+            this.#onDisconnected();
+          });
         };
 
         return { connector: this.type };
       });
   }
 
-  // takes the criteria, scans for scan_period and automatically selects the device,
+  // takes the criteria, scans for scan_duration and automatically selects the device,
   // you can then connect to. This works only for BLE devices that are bond with the phone/PC/tablet
   // the app is running on OR doesnt need to be bonded in a special way.
   // if more devices are found matching the criteria, then the strongest signal wins
@@ -818,37 +846,23 @@ criteria example:
   // if no criteria are provided, all Spectoda enabled devices (with all different FWs and Owners and such)
   // are eligible.
 
-  autoSelect(criteria, scan_period, timeout) {
-    // step 1. for the scan_period scan the surroundings for BLE devices.
+  autoSelect(criteria, scan_duration, timeout) {
+    logging.verbose(`autoSelect(criteria=${JSON.stringify(criteria)}, scan_duration=${scan_duration}, timeout=${timeout})`);
+    // step 1. for the scan_duration scan the surroundings for BLE devices.
     // step 2. if some devices matching the criteria are found, then select the one with
     //         the greatest signal strength. If no device is found until the timeout,
     //         then return error
 
-    if (this.#connected()) {
-      return this.disconnect()
-        .then(() => {
-          return sleep(1000);
-        })
-        .then(() => {
-          return this.autoSelect(criteria, scan_period, timeout);
-        });
-    }
-
-    // // web bluetooth cant really auto select bluetooth device. This is the closest you can get.
-    // if (this.#selected() && criteria.ownerSignature === this.#criteria.ownerSignature) {
-    //   return Promise.resolve();
-    // }
-
-    this.#criteria = criteria;
-
     // Web Bluetooth nepodporuje možnost automatické volby zařízení.
     // Proto je to tady implementováno totožně jako userSelect.
 
-    return this.userSelect(criteria);
+    return this.userSelect(criteria, timeout);
   }
 
   // if device is conneced, then disconnect it
   unselect() {
+    logging.verbose("unselect()");
+
     return (this.#connected() ? this.disconnect() : Promise.resolve()).then(() => {
       this.#webBTDevice = null;
       this.#connection.reset();
@@ -862,18 +876,23 @@ criteria example:
   }
 
   selected() {
+    logging.verbose("selected()");
+
     return Promise.resolve(this.#selected() ? { connector: this.type } : null);
   }
 
-  scan(criteria, scan_period) {
+  scan(criteria, scan_duration) {
+    logging.verbose(`scan(criteria=${JSON.stringify(criteria)}, scan_duration=${scan_duration})`);
+
     // returns devices like autoSelect scan() function
     return Promise.resolve("{}");
   }
 
   // connect Connector to the selected Spectoda Device. Also can be used to reconnect.
   // Fails if no device is selected
-  connect(timeout = 10000) {
-    logging.verbose(`connect(timeout=${timeout}})`);
+  connect(timeout) {
+    if (timeout === NULL_VALUE) { timeout = 10000; }
+    logging.verbose(`connect(timeout=${timeout})`);
 
     if (timeout <= 0) {
       logging.debug("> Connect timeout has expired");
@@ -888,14 +907,17 @@ criteria example:
     }
 
     let timeoutHandle = null;
+
+    const MINIMUM_CONNECT_TIMEOUT = 5000;
     let timeoutPromise = new Promise((resolve, reject) => {
       timeoutHandle = setTimeout(() => {
         logging.warn("Timeout triggered");
         this.#webBTDevice.gatt.disconnect();
+        const LET_BLUETOOTH_RESET_SAFELY_TIMEOUT = 1000;
         setTimeout(() => {
           reject("ConnectionTimeout");
-        }, 1000);
-      }, timeout < 10000 ? 10000 : timeout);
+        }, LET_BLUETOOTH_RESET_SAFELY_TIMEOUT);
+      }, Math.max(timeout, MINIMUM_CONNECT_TIMEOUT));
     });
 
     logging.debug("> Connecting to Bluetooth device...");
@@ -920,7 +942,10 @@ criteria example:
         return { connector: "webbluetooth" };
       })
       .catch(error => {
-        logging.warn(error.name);
+
+        if (error.name) {
+          logging.warn(error.name);
+        }
 
         clearTimeout(timeoutHandle);
 
@@ -947,15 +972,15 @@ criteria example:
 
   // connected() is an interface function that needs to return a Promise
   connected() {
-    return Promise.resolve(this.#connected() ? { connector: this.type } : null);
-  }
+    logging.verbose("connected()");
 
-  #disconnect() {
-    this.#webBTDevice.gatt.disconnect();
+    return Promise.resolve(this.#connected() ? { connector: this.type } : null);
   }
 
   // disconnect Connector from the connected Spectoda Device. But keep it selected
   disconnect() {
+    logging.verbose("disconnect()");
+
     this.#reconection = false;
 
     logging.debug("> Disconnecting from Bluetooth Device...");
@@ -981,6 +1006,7 @@ criteria example:
   #onDisconnected = event => {
     logging.debug("> Bluetooth Device disconnected");
     this.#connection.reset();
+
     if (this.#connectedGuard) {
       logging.verbose("emitting #disconnected");
       this.#interfaceReference.emit("#disconnected");
@@ -990,37 +1016,43 @@ criteria example:
   // deliver handles the communication with the Spectoda network in a way
   // that the command is guaranteed to arrive
   deliver(payload, timeout) {
+    logging.verbose(`deliver(payload=${payload})`);
+
     if (!this.#connected()) {
       return Promise.reject("DeviceDisconnected");
     }
 
-    return this.#connection.deliver(payload, timeout);
+    return this.#connection.deliver(payload);
   }
 
   // transmit handles the communication with the Spectoda network in a way
   // that the command is NOT guaranteed to arrive
   transmit(payload, timeout) {
+    logging.verbose(`transmit(payload=${payload})`);
+
     if (!this.#connected()) {
       return Promise.reject("DeviceDisconnected");
     }
 
-    return this.#connection.transmit(payload, timeout);
+    return this.#connection.transmit(payload);
   }
 
   // request handles the requests on the Spectoda network. The command request
   // is guaranteed to get a response
   request(payload, read_response, timeout) {
+    logging.verbose(`request(payload=${payload}, read_response=${read_response})`);
+
     if (!this.#connected()) {
       return Promise.reject("DeviceDisconnected");
     }
 
-    return this.#connection.request(payload, read_response, timeout);
+    return this.#connection.request(payload, read_response);
   }
 
   // synchronizes the device internal clock with the provided TimeTrack clock
   // of the application as precisely as possible
   setClock(clock) {
-    logging.verbose("setClock()");
+    logging.verbose(`setClock(clock.millis=${clock.millis()})`);
 
     if (!this.#connected()) {
       return Promise.reject("DeviceDisconnected");
@@ -1035,7 +1067,7 @@ criteria example:
           return;
         } catch (e) {
           logging.warn("Clock write failed");
-          await sleep(1000);
+          await sleep(100);
         }
       }
 
@@ -1047,7 +1079,7 @@ criteria example:
   // returns a TimeTrack clock object that is synchronized with the internal clock
   // of the device as precisely as possible
   getClock() {
-    logging.verbose("getClock()");
+    logging.verbose(`getClock()`);
 
     if (!this.#connected()) {
       return Promise.reject("DeviceDisconnected");
@@ -1055,7 +1087,7 @@ criteria example:
 
     return new Promise(async (resolve, reject) => {
       for (let index = 0; index < 3; index++) {
-        await sleep(1000);
+        // await sleep(1000); // ! I commented this out, because I think it is not needed, but I am not sure
         try {
           const timestamp = await this.#connection.readClock();
           logging.debug("Clock read success:", timestamp);
@@ -1063,6 +1095,7 @@ criteria example:
           return;
         } catch (e) {
           logging.warn("Clock read failed:", e);
+          await sleep(100);
         }
       }
 
@@ -1074,6 +1107,8 @@ criteria example:
   // handles the firmware updating. Sends "ota" events
   // to all handlers
   updateFW(firmware) {
+    logging.verbose(`updateFW(firmware=${firmware})`);
+
     if (!this.#connected()) {
       return Promise.reject("DeviceDisconnected");
     }
@@ -1084,6 +1119,8 @@ criteria example:
   }
 
   destroy() {
+    logging.verbose(`destroy()`);
+
     //this.#interfaceReference = null; // dont know if I need to destroy this reference.. But I guess I dont need to?
     return this.disconnect()
       .catch(() => { })

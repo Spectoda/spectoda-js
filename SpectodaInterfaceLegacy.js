@@ -18,13 +18,13 @@ import {
   uint8ArrayToHexString,
 } from "./functions";
 import { logging } from "./logging";
-// import { SpectodaConnectConnector } from "./SpectodaConnectConnector.js";
-// import { SpectodaWebSocketsConnector } from "./SpectodaWebSocketsConnector.js";
 import { FlutterConnector } from "./FlutterConnector.js";
 import { TimeTrack } from "./TimeTrack.js";
 import "./TnglReader.js";
 import { TnglReader } from "./TnglReader.js";
 import "./TnglWriter.js";
+
+export const NULL_VALUE = null;
 
 export const COMMAND_FLAGS = Object.freeze({
   FLAG_UNSUPPORTED_COMMND_RESPONSE: 255, // TODO change FLAG_OTA_BEGIN to not be 255.
@@ -204,11 +204,8 @@ export class SpectodaInterfaceLegacy {
 
   #chunkSize;
 
-  // #reconection;
   #selecting;
   #disconnectQuery;
-
-  #reconnectionInterval;
 
   #connectGuard;
 
@@ -218,8 +215,9 @@ export class SpectodaInterfaceLegacy {
   #connectedPeers;
 
   #isPrioritizedWakelock;
+  #assignedConnector;
 
-  constructor(deviceReference /*, reconnectionInterval = 1000*/) {
+  constructor(deviceReference) {
     this.#deviceReference = deviceReference;
 
     this.clock = new TimeTrack(0);
@@ -238,24 +236,43 @@ export class SpectodaInterfaceLegacy {
 
     this.#connectGuard = false;
 
-    this.#lastUpdateTime = new Date().getTime();
+    this.#lastUpdateTime = 0;
     this.#lastUpdatePercentage = 0;
 
     this.#connectedPeers = [];
 
+    this.#isPrioritizedWakelock = false;
+    this.#assignedConnector = "none";
+
     this.onConnected = e => { };
     this.onDisconnected = e => { };
+
+    this.#eventEmitter.on("ota_status", value => {
+      if (value === "begin") {
+        this.#lastUpdateTime = new Date().getTime();
+        this.#lastUpdatePercentage = 0;
+      } else if (value === "end") {
+        this.#lastUpdateTime = 0;
+        this.#lastUpdatePercentage = 100;
+      } else if (value === "fail") {
+        this.#lastUpdateTime = 0;
+        this.#lastUpdatePercentage = 0;
+      } else {
+        this.#lastUpdateTime = new Date().getTime();
+        this.#lastUpdatePercentage = 0;
+      }
+    });
 
     this.#eventEmitter.on("ota_progress", value => {
       const now = new Date().getTime();
 
-      const time_delta = now - this.lastUpdateTime;
+      const time_delta = now - this.#lastUpdateTime;
       logging.verbose("time_delta:", time_delta);
-      this.lastUpdateTime = now;
+      this.#lastUpdateTime = now;
 
-      const percentage_delta = value - this.lastUpdatePercentage;
+      const percentage_delta = value - this.#lastUpdatePercentage;
       logging.verbose("percentage_delta:", percentage_delta);
-      this.lastUpdatePercentage = value;
+      this.#lastUpdatePercentage = value;
 
       const percentage_left = 100.0 - value;
       logging.verbose("percentage_left:", percentage_left);
@@ -431,17 +448,9 @@ export class SpectodaInterfaceLegacy {
       connector_type = "default";
     }
 
-    // leave this at info, for faster debug
-    logging.info(`> Assigning ${connector_type} connector...`);
-
-    if ((!this.connector && connector_type === "none") || (this.connector && this.connector.type === connector_type)) {
-      logging.warn("Reassigning current connector.");
-      // return Promise.resolve();
-    }
-
     if (connector_type == "default" || connector_type == "automatic") {
       if (detectSpectodaConnect()) {
-        connector_type = "flutter";
+        connector_type = "spectodaconnect";
       } else if (navigator.bluetooth) {
         connector_type = "webbluetooth";
       } else {
@@ -449,137 +458,145 @@ export class SpectodaInterfaceLegacy {
       }
     }
 
-    return this.destroyConnector()
-      .catch(() => { })
-      .then(() => {
-        switch (connector_type) {
-          case "none":
-            this.connector = null;
-            break;
-
-          case "dummy":
-            this.connector = new SpectodaDummyConnector(this, false);
-            break;
-
-          case "vdummy":
-            return (
-              window
-                // @ts-ignore
-                .prompt("Simulace FW verze dummy connecoru", "VDUMMY_0.8.1_20220301", "Zvolte FW verzi dummy connecoru", "text", {
-                  placeholder: "DUMMY_0.0.0_00000000",
-                  regex: /^[\w\d]+_\d.\d.\d_[\d]{8}/,
-                  invalidText: "FW verze není správná",
-                  maxlength: 32,
-                })
-                // @ts-ignore
-                .then(version => {
-                  this.connector = new SpectodaDummyConnector(this, false, version);
-                })
-            );
-
-          case "edummy":
-            this.connector = new SpectodaDummyConnector(this, true);
-            break;
-
-          case "webbluetooth":
-            if ((detectAndroid() && detectChrome()) || (detectMacintosh() && detectChrome()) || (detectWindows() && detectChrome()) || (detectLinux() && detectChrome())) {
-              this.connector = new SpectodaWebBluetoothConnector(this);
-            } else {
-
-              //! TODO - spectoda.js should not show any alerts or confirmations
-              //! refactor this to be handled by the app - but make sure that evenry app has this handled - and thats the challenge
-
-              // iPhone outside Bluefy and SpectodaConnect
-              if (detectIPhone()) {
-                // @ts-ignore
-                window.confirm("Prohlížeč není podporován. Prosím, stáhněte si aplikaci Spectoda Connect.").then(result => {
-                  if (result) {
-                    // redirect na Bluefy v app store
-                    window.location.replace("https://apps.apple.com/us/app/id1635118423");
-                  }
-                });
-              }
-              // Macs outside Google Chrome
-              else if (detectMacintosh()) {
-                // @ts-ignore
-                window.confirm("Prohlížeč není podporován. Prosím, otevřete aplikace v prohlížeči Google Chrome.").then(result => {
-                  if (result) {
-                    // redirect na Google Chrome
-                    window.location.replace("https://www.google.com/intl/cs_CZ/chrome/");
-                  }
-                });
-              }
-              // Android outside Google Chrome
-              else if (detectAndroid()) {
-                // @ts-ignore
-                window.confirm("Prohlížeč není podporován. Prosím, stáhněte si aplikaci Spectoda Connect.").then(result => {
-                  if (result) {
-                    // redirect na Google Chrome
-                    window.location.replace("https://play.google.com/store/apps/details?id=com.spectoda.spectodaconnect");
-                  }
-                });
-              }
-              // Windows outside Google Chrome
-              else if (detectWindows()) {
-                // @ts-ignore
-                window.confirm("Prohlížeč není podporován. Prosím, otevřete aplikace v prohlížeči Google Chrome.").then(result => {
-                  if (result) {
-                    // redirect na Google Chrome
-                    window.location.replace("https://www.google.com/intl/cs_CZ/chrome/");
-                  }
-                });
-              }
-              // Linux ChromeBooks atd...
-              else {
-                window.confirm("Prohlížeč není podporován");
-              }
-
-              logging.error("Error: Assigning unsupported connector");
-              this.connector = null;
-            }
-
-            break;
-
-          case "webserial":
-            if (detectChrome()) {
-              this.connector = new SpectodaWebSerialConnector(this);
-            } else {
-              logging.error("Error: Assigning unsupported connector");
-              this.connector = null;
-            }
-            break;
-
-          case "flutter":
-            if (detectSpectodaConnect() || detectWindows() || detectMacintosh()) {
-              this.connector = new FlutterConnector(this);
-            } else {
-              logging.error("Error: Assigning unsupported connector");
-              this.connector = null;
-            }
-            break;
-
-          // case "websockets":
-          //   this.connector = new SpectodaWebSocketsConnector(this);
-          //   break;
-
-          default:
-            logging.warn("Selected unknown connector");
-            throw "UnknownConnector";
-        }
-      });
+    // leave this at info, for faster debug
+    logging.info(`> Assigning ${connector_type} connector...`);
+    this.#assignedConnector = connector_type;
   }
 
-  // reconnection(enable) {
-  //   this.#reconection = enable;
-  // }
 
-  userSelect(criteria, timeout = 600000) {
-    logging.verbose(`userSelect(criteria=${JSON.stringify(criteria)}, timeout=${timeout}`);
+  async #updateConnector() {
 
-    if (timeout < 1000) {
-      logging.error("Timeout is too short.");
-      return Promise.reject("InvalidTimeout");
+    if ((!this.connector && this.#assignedConnector === "none") || (this.connector && this.connector.type === this.#assignedConnector)) {
+      logging.verbose("connector set as requested");
+      return;
     }
+
+    if (this.connector) {
+      await this.connector.disconnect();
+      await this.connector.destroy();
+    }
+
+    switch (this.#assignedConnector) {
+      case "none":
+        this.connector = null;
+        break;
+
+      case "dummy":
+        this.connector = new SpectodaDummyConnector(this, false);
+        break;
+
+      case "vdummy":
+        return (
+          window
+            // @ts-ignore
+            .prompt("Simulace FW verze dummy connecoru", "VDUMMY_0.8.1_20220301", "Zvolte FW verzi dummy connecoru", "text", {
+              placeholder: "DUMMY_0.0.0_00000000",
+              regex: /^[\w\d]+_\d.\d.\d_[\d]{8}/,
+              invalidText: "FW verze není správná",
+              maxlength: 32,
+            })
+            // @ts-ignore
+            .then(version => {
+              this.connector = new SpectodaDummyConnector(this, false, version);
+            })
+        );
+
+      case "edummy":
+        this.connector = new SpectodaDummyConnector(this, true);
+        break;
+
+      case "webbluetooth":
+        if ((detectAndroid() && detectChrome()) || (detectMacintosh() && detectChrome()) || (detectWindows() && detectChrome()) || (detectLinux() && detectChrome())) {
+          this.connector = new SpectodaWebBluetoothConnector(this);
+        } else {
+
+          //! TODO - spectoda.js should not show any alerts or confirmations
+          //! refactor this to be handled by the app - but make sure that evenry app has this handled - and thats the challenge
+
+          // iPhone outside Bluefy and SpectodaConnect
+          if (detectIPhone()) {
+            // @ts-ignore
+            window.confirm("Prohlížeč není podporován. Prosím, stáhněte si aplikaci Spectoda Connect.").then(result => {
+              if (result) {
+                // redirect na Bluefy v app store
+                window.location.replace("https://apps.apple.com/us/app/id1635118423");
+              }
+            });
+          }
+          // Macs outside Google Chrome
+          else if (detectMacintosh()) {
+            // @ts-ignore
+            window.confirm("Prohlížeč není podporován. Prosím, otevřete aplikace v prohlížeči Google Chrome.").then(result => {
+              if (result) {
+                // redirect na Google Chrome
+                window.location.replace("https://www.google.com/intl/cs_CZ/chrome/");
+              }
+            });
+          }
+          // Android outside Google Chrome
+          else if (detectAndroid()) {
+            // @ts-ignore
+            window.confirm("Prohlížeč není podporován. Prosím, stáhněte si aplikaci Spectoda Connect.").then(result => {
+              if (result) {
+                // redirect na Google Chrome
+                window.location.replace("https://play.google.com/store/apps/details?id=com.spectoda.spectodaconnect");
+              }
+            });
+          }
+          // Windows outside Google Chrome
+          else if (detectWindows()) {
+            // @ts-ignore
+            window.confirm("Prohlížeč není podporován. Prosím, otevřete aplikace v prohlížeči Google Chrome.").then(result => {
+              if (result) {
+                // redirect na Google Chrome
+                window.location.replace("https://www.google.com/intl/cs_CZ/chrome/");
+              }
+            });
+          }
+          // Linux ChromeBooks atd...
+          else {
+            window.confirm("Prohlížeč není podporován");
+          }
+
+          logging.error("Error: Assigning unsupported connector");
+          this.connector = null;
+        }
+
+        break;
+
+      case "webserial":
+        if (detectChrome()) {
+          this.connector = new SpectodaWebSerialConnector(this);
+        } else {
+          logging.error("Error: Assigning unsupported connector");
+          this.connector = null;
+        }
+        break;
+
+      case "spectodaconnect":
+        if (detectSpectodaConnect() || detectWindows() || detectMacintosh()) {
+          this.connector = new FlutterConnector(this);
+        } else {
+          logging.error("Error: Assigning unsupported connector");
+          this.connector = null;
+        }
+        break;
+
+      // case "websockets":
+      //   this.connector = new SpectodaWebSocketsConnector(this);
+      //   break;
+
+      default:
+        logging.warn("Selected unknown connector");
+        throw "UnknownConnector";
+    }
+
+  }
+
+  userSelect(criteria, timeout = NULL_VALUE) {
+    logging.verbose(`userSelect(criteria=${JSON.stringify(criteria)}, timeout=${timeout})`);
+
+    // TODO! check if criteria is valid
 
     if (this.#selecting) {
       return Promise.reject("SelectingInProgress");
@@ -601,13 +618,10 @@ export class SpectodaInterfaceLegacy {
     });
   }
 
-  autoSelect(criteria, scan_period = 4000, timeout = 10000) {
-    logging.verbose(`autoSelect(criteria=${JSON.stringify(criteria)}, scan_period=${scan_period}, timeout=${timeout}`);
+  autoSelect(criteria, scan_duration = NULL_VALUE, timeout = NULL_VALUE) {
+    logging.debug(`autoSelect(criteria=${JSON.stringify(criteria)}, scan_duration=${scan_duration}, timeout=${timeout})`);
 
-    if (timeout < 1000) {
-      logging.error("Timeout is too short.");
-      return Promise.reject("InvalidTimeout");
-    }
+    // TODO! check if criteria is valid
 
     if (this.#selecting) {
       return Promise.reject("SelectingInProgress");
@@ -621,7 +635,7 @@ export class SpectodaInterfaceLegacy {
       criteria = [criteria];
     }
 
-    const item = new Query(Query.TYPE_AUTOSELECT, criteria, scan_period, timeout);
+    const item = new Query(Query.TYPE_AUTOSELECT, criteria, scan_duration, timeout);
     this.#process(item);
 
     return item.promise.finally(() => {
@@ -645,13 +659,10 @@ export class SpectodaInterfaceLegacy {
     return item.promise;
   }
 
-  scan(criteria, scan_period = 5000) {
-    logging.verbose(`scan(criteria=${JSON.stringify(criteria)}, scan_period=${scan_period}`);
+  scan(criteria, scan_duration = NULL_VALUE) {
+    logging.verbose(`scan(criteria=${JSON.stringify(criteria)}, scan_duration=${scan_duration})`);
 
-    if (scan_period < 1000) {
-      logging.error("Scan period is too short.");
-      return Promise.reject("InvalidScanPeriod");
-    }
+    // TODO! check if criteria is valid
 
     if (this.#selecting) {
       return Promise.reject("SelectingInProgress");
@@ -659,28 +670,21 @@ export class SpectodaInterfaceLegacy {
 
     this.#selecting = true;
 
-    if (criteria === null) {
-      criteria = [];
-    } else if (!Array.isArray(criteria)) {
+    if (!Array.isArray(criteria)) {
       criteria = [criteria];
     }
 
-    const item = new Query(Query.TYPE_SCAN, criteria, scan_period);
+    const item = new Query(Query.TYPE_SCAN, criteria, scan_duration);
     this.#process(item);
     return item.promise.finally(() => {
       this.#selecting = false;
     });
   }
 
-  connect(timeout = 10000, supportLegacy = false) {
-    logging.verbose(`connect(timeout=${timeout}, supportLegacy=${supportLegacy}`);
+  connect(timeout = NULL_VALUE) {
+    logging.verbose(`connect(timeout=${timeout}`);
 
-    if (timeout < 1000) {
-      logging.error("Timeout is too short.");
-      return Promise.reject("InvalidTimeout");
-    }
-
-    const item = new Query(Query.TYPE_CONNECT, timeout, supportLegacy);
+    const item = new Query(Query.TYPE_CONNECT, timeout);
     this.#process(item);
     return item.promise;
   }
@@ -709,8 +713,6 @@ export class SpectodaInterfaceLegacy {
   }
 
   disconnect() {
-    // this.#reconection = false;
-
     const item = new Query(Query.TYPE_DISCONNECT);
     this.#process(item);
     return item.promise;
@@ -726,16 +728,6 @@ export class SpectodaInterfaceLegacy {
     this.#connectGuard = false;
     this.onDisconnected(event);
 
-    // if (this.#reconection && this.#reconnectionInterval) {
-    //   logging.info("Reconnecting...");
-    //   setTimeout(() => {
-    //     logging.debug("Reconnecting device");
-    //     return this.connect(this.#reconnectionInterval).catch(() => {
-    //       logging.warn("Reconnection failed.");
-    //     });
-    //   }, 2000);
-    // }
-
     if (this.#disconnectQuery) {
       this.#disconnectQuery.resolve();
     }
@@ -747,13 +739,11 @@ export class SpectodaInterfaceLegacy {
     return item.promise;
   }
 
-  execute(bytes, bytes_label, timeout = 5000) {
-    if (timeout < 100) {
-      logging.error("Timeout is too short.");
-      return Promise.reject("InvalidTimeout");
-    }
-
+  execute(bytes, bytes_label, timeout = NULL_VALUE) {
     logging.verbose("execute", { bytes, bytes_label, timeout });
+
+    // TODO! check if bytes is valid
+
     const item = new Query(Query.TYPE_EXECUTE, bytes, bytes_label, timeout);
 
     // there must only by one item in the queue with given label
@@ -775,13 +765,11 @@ export class SpectodaInterfaceLegacy {
     return item.promise;
   }
 
-  request(bytes, read_response = true, timeout = 5000) {
-    if (timeout < 100) {
-      logging.error("Timeout is too short.");
-      return Promise.reject("InvalidTimeout");
-    }
-
+  request(bytes, read_response, timeout = NULL_VALUE) {
     logging.verbose("request", { bytes, read_response, timeout });
+
+    // TODO! check if bytes is valid
+
     const item = new Query(Query.TYPE_REQUEST, bytes, read_response, timeout);
     this.#process(item);
     return item.promise;
@@ -822,6 +810,8 @@ export class SpectodaInterfaceLegacy {
 
   updateFW(firmware_bytes) {
     const item = new Query(Query.TYPE_FIRMWARE_UPDATE, firmware_bytes);
+
+    // TODO! check if firmware_bytes is valid
 
     for (let i = 0; i < this.#queue.length; i++) {
       if (this.#queue[i].type === Query.TYPE_FIRMWARE_UPDATE) {
@@ -866,13 +856,16 @@ export class SpectodaInterfaceLegacy {
         let item = undefined;
 
         try {
+          await this.#updateConnector();
+
+          if (!this.connector) {
+            item.reject("ConnectorNotAssigned");
+            this.#queue = [];
+            return;
+          }
+
           while (this.#queue.length > 0) {
             item = this.#queue.shift();
-
-            if (this.connector === null || this.connector === undefined) {
-              item.reject("ConnectorNotAssigned");
-              continue;
-            }
 
             switch (item.type) {
               case Query.TYPE_USERSELECT:
@@ -893,7 +886,7 @@ export class SpectodaInterfaceLegacy {
                 {
                   try {
                     await this.connector
-                      .autoSelect(item.a, item.b, item.c) // criteria, scan_period, timeout
+                      .autoSelect(item.a, item.b, item.c) // criteria, scan_duration, timeout
                       .then(device => {
                         item.resolve(device);
                       });
@@ -931,7 +924,7 @@ export class SpectodaInterfaceLegacy {
                 {
                   try {
                     await this.connector
-                      .scan(item.a, item.b) // criteria, scan_period
+                      .scan(item.a, item.b) // criteria, scan_duration
                       .then(device => {
                         item.resolve(device);
                       });
@@ -945,8 +938,7 @@ export class SpectodaInterfaceLegacy {
               case Query.TYPE_CONNECT:
                 {
                   try {
-                    await this.connector
-                      .connect(item.a, item.b) // a = timeout, b = supportLegacy
+                    await this.connector.connect(item.a) // a = timeout
                       .then(device => {
                         if (!this.#connectGuard) {
                           logging.error("Connection logic error. #connected not called during successful connect()?");
@@ -1120,23 +1112,10 @@ export class SpectodaInterfaceLegacy {
 
               case Query.TYPE_DESTROY:
                 {
-                  // this.#reconection = false;
                   try {
-                    // await this.connector
-                    //   .request([COMMAND_FLAGS.FLAG_DEVICE_DISCONNECT_REQUEST], false)
-                    //   .catch(() => { })
-                    //   .then(() => {
                     await this.connector.disconnect();
-                    // })
-                    // .then(() => {
                     await this.connector.destroy();
-                    // })
 
-                    // .catch(error => {
-                    //   //logging.warn(error);
-                    //   this.connector = null;
-                    //   item.reject(error);
-                    // });
                   } catch (error) {
                     console.warn("Error while destroying connector:", error);
                   } finally {
@@ -1175,7 +1154,10 @@ export class SpectodaInterfaceLegacy {
       let emitted_events = [];
 
       while (reader.available > 0) {
-        switch (reader.peekFlag()) {
+
+        const command_flag = reader.peekFlag();
+
+        switch (command_flag) {
           case COMMAND_FLAGS.FLAG_REINTERPRET_TNGL:
             {
               logging.verbose("FLAG_REINTERPRET_TNGL");
@@ -1189,8 +1171,6 @@ export class SpectodaInterfaceLegacy {
 
               logging.verbose(`tngl_size=${tngl_size}`);
               //logging.debug("bytecode_offset=%u", bytecode_offset);
-
-              // Runtime::feed(reader, bytecode_offset, tngl_size);
             }
             break;
 
@@ -1200,24 +1180,21 @@ export class SpectodaInterfaceLegacy {
           case COMMAND_FLAGS.FLAG_EMIT_PERCENTAGE_EVENT:
           case COMMAND_FLAGS.FLAG_EMIT_LABEL_EVENT:
             {
-              // let is_lazy = false;
               let event_value = null;
               let event_type = "unknown";
 
               let log_value_prefix = "";
               let log_value_postfix = "";
 
-              switch (reader.readFlag()) {
-                // case COMMAND_FLAGS.FLAG_EMIT_LAZY_EVENT:
-                //   is_lazy = true;
+              const event_flag = reader.readFlag();
+
+              switch (event_flag) {
                 case COMMAND_FLAGS.FLAG_EMIT_EVENT:
                   logging.verbose("FLAG_EVENT");
                   event_value = null;
                   event_type = "none";
                   break;
 
-                // case COMMAND_FLAGS.FLAG_EMIT_LAZY_TIMESTAMP_EVENT:
-                //   is_lazy = true;
                 case COMMAND_FLAGS.FLAG_EMIT_TIMESTAMP_EVENT:
                   logging.verbose("FLAG_TIMESTAMP_EVENT");
                   event_value = reader.readInt32();
@@ -1225,8 +1202,6 @@ export class SpectodaInterfaceLegacy {
                   log_value_postfix = "ms";
                   break;
 
-                // case COMMAND_FLAGS.FLAG_EMIT_LAZY_COLOR_EVENT:
-                //   is_lazy = true;
                 case COMMAND_FLAGS.FLAG_EMIT_COLOR_EVENT:
                   logging.verbose("FLAG_COLOR_EVENT");
                   const bytes = reader.readBytes(3);
@@ -1234,8 +1209,6 @@ export class SpectodaInterfaceLegacy {
                   event_type = "color";
                   break;
 
-                // case COMMAND_FLAGS.FLAG_EMIT_LAZY_PERCENTAGE_EVENT:
-                //   is_lazy = true;
                 case COMMAND_FLAGS.FLAG_EMIT_PERCENTAGE_EVENT:
                   logging.verbose("FLAG_PERCENTAGE_EVENT");
                   event_value = Math.round(mapValue(reader.readInt32(), -268435455, 268435455, -100, 100) * 1000000.0) / 1000000.0;
@@ -1243,8 +1216,6 @@ export class SpectodaInterfaceLegacy {
                   log_value_postfix = "%";
                   break;
 
-                // case COMMAND_FLAGS.FLAG_EMIT_LAZY_LABEL_EVENT:
-                //   is_lazy = true;
                 case COMMAND_FLAGS.FLAG_EMIT_LABEL_EVENT:
                   logging.verbose("FLAG_LABEL_EVENT");
                   event_value = String.fromCharCode(...reader.readBytes(5)).match(/[\w\d_]*/g)[0];
@@ -1253,8 +1224,11 @@ export class SpectodaInterfaceLegacy {
                   break;
 
                 default:
-                  // logging.error("ERROR");
-                  break;
+                  if (logging.level >= 4) {
+                    logging.warn(`Unknown event flag: ${event_flag}`);
+                  }
+                  reader.forward(reader.available);
+                  return;
               }
 
               logging.verbose(`event_value = ${event_value}`);
@@ -1413,9 +1387,11 @@ export class SpectodaInterfaceLegacy {
             break;
 
           default:
-            logging.error(`ERROR flag=${reader.readFlag()}, available=${reader.available}`);
+            if (logging.level >= 4) {
+              logging.warn(`Unknown Command flag=${command_flag}, available=${reader.available})`);
+            }
             reader.forward(reader.available);
-            break;
+            return;
         }
       }
 
@@ -1424,9 +1400,12 @@ export class SpectodaInterfaceLegacy {
         logging.verbose("emitted_events", emitted_events);
         this.emit("emitted_events", emitted_events);
 
-        const informations = emitted_events.map(x => x.info);
-        logging.info(informations.join("\n"));
+        if (logging.level >= 3) {
+          const informations = emitted_events.map(x => x.info);
+          logging.info(informations.join("\n"));
+        }
       }
+
     } catch (e) {
       logging.error("Error during process:", e);
     }
