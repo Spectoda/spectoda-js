@@ -459,7 +459,7 @@ criteria example:
     }
 
     const header_writer = new TnglWriter(32);
-    const timeout_min = (25 + payload.length / this.#divisor);
+    const timeout_min = (1000 + payload.length / this.#divisor);
 
     if (!timeout || timeout < timeout_min) {
       timeout = timeout_min;
