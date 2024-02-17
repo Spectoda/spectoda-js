@@ -215,6 +215,7 @@ export class SpectodaInterfaceLegacy {
   #connectedPeers;
 
   #isPrioritizedWakelock;
+  #assignedConnector;
 
   constructor(deviceReference) {
     this.#deviceReference = deviceReference;
@@ -239,6 +240,9 @@ export class SpectodaInterfaceLegacy {
     this.#lastUpdatePercentage = 0;
 
     this.#connectedPeers = [];
+
+    this.#isPrioritizedWakelock = false;
+    this.#assignedConnector = "none";
 
     this.onConnected = e => { };
     this.onDisconnected = e => { };
@@ -444,17 +448,9 @@ export class SpectodaInterfaceLegacy {
       connector_type = "default";
     }
 
-    // leave this at info, for faster debug
-    logging.info(`> Assigning ${connector_type} connector...`);
-
-    if ((!this.connector && connector_type === "none") || (this.connector && this.connector.type === connector_type)) {
-      logging.warn("Reassigning current connector.");
-      // return Promise.resolve();
-    }
-
     if (connector_type == "default" || connector_type == "automatic") {
       if (detectSpectodaConnect()) {
-        connector_type = "flutter";
+        connector_type = "spectodaconnect";
       } else if (navigator.bluetooth) {
         connector_type = "webbluetooth";
       } else {
@@ -462,128 +458,143 @@ export class SpectodaInterfaceLegacy {
       }
     }
 
-    return this.destroyConnector()
-      .catch(() => { })
-      .then(() => {
-        switch (connector_type) {
-          case "none":
-            this.connector = null;
-            break;
+    // leave this at info, for faster debug
+    logging.info(`> Assigning ${connector_type} connector...`);
+    this.#assignedConnector = connector_type;
+  }
 
-          case "dummy":
-            this.connector = new SpectodaDummyConnector(this, false);
-            break;
 
-          case "vdummy":
-            return (
-              window
-                // @ts-ignore
-                .prompt("Simulace FW verze dummy connecoru", "VDUMMY_0.8.1_20220301", "Zvolte FW verzi dummy connecoru", "text", {
-                  placeholder: "DUMMY_0.0.0_00000000",
-                  regex: /^[\w\d]+_\d.\d.\d_[\d]{8}/,
-                  invalidText: "FW verze není správná",
-                  maxlength: 32,
-                })
-                // @ts-ignore
-                .then(version => {
-                  this.connector = new SpectodaDummyConnector(this, false, version);
-                })
-            );
+  async #updateConnector() {
 
-          case "edummy":
-            this.connector = new SpectodaDummyConnector(this, true);
-            break;
+    if ((!this.connector && this.#assignedConnector === "none") || (this.connector && this.connector.type === this.#assignedConnector)) {
+      logging.verbose("connector set as requested");
+      return;
+    }
 
-          case "webbluetooth":
-            if ((detectAndroid() && detectChrome()) || (detectMacintosh() && detectChrome()) || (detectWindows() && detectChrome()) || (detectLinux() && detectChrome())) {
-              this.connector = new SpectodaWebBluetoothConnector(this);
-            } else {
+    if (this.connector) {
+      await this.connector.disconnect();
+      await this.connector.destroy();
+    }
 
-              //! TODO - spectoda.js should not show any alerts or confirmations
-              //! refactor this to be handled by the app - but make sure that evenry app has this handled - and thats the challenge
+    switch (this.#assignedConnector) {
+      case "none":
+        this.connector = null;
+        break;
 
-              // iPhone outside Bluefy and SpectodaConnect
-              if (detectIPhone()) {
-                // @ts-ignore
-                window.confirm("Prohlížeč není podporován. Prosím, stáhněte si aplikaci Spectoda Connect.").then(result => {
-                  if (result) {
-                    // redirect na Bluefy v app store
-                    window.location.replace("https://apps.apple.com/us/app/id1635118423");
-                  }
-                });
+      case "dummy":
+        this.connector = new SpectodaDummyConnector(this, false);
+        break;
+
+      case "vdummy":
+        return (
+          window
+            // @ts-ignore
+            .prompt("Simulace FW verze dummy connecoru", "VDUMMY_0.8.1_20220301", "Zvolte FW verzi dummy connecoru", "text", {
+              placeholder: "DUMMY_0.0.0_00000000",
+              regex: /^[\w\d]+_\d.\d.\d_[\d]{8}/,
+              invalidText: "FW verze není správná",
+              maxlength: 32,
+            })
+            // @ts-ignore
+            .then(version => {
+              this.connector = new SpectodaDummyConnector(this, false, version);
+            })
+        );
+
+      case "edummy":
+        this.connector = new SpectodaDummyConnector(this, true);
+        break;
+
+      case "webbluetooth":
+        if ((detectAndroid() && detectChrome()) || (detectMacintosh() && detectChrome()) || (detectWindows() && detectChrome()) || (detectLinux() && detectChrome())) {
+          this.connector = new SpectodaWebBluetoothConnector(this);
+        } else {
+
+          //! TODO - spectoda.js should not show any alerts or confirmations
+          //! refactor this to be handled by the app - but make sure that evenry app has this handled - and thats the challenge
+
+          // iPhone outside Bluefy and SpectodaConnect
+          if (detectIPhone()) {
+            // @ts-ignore
+            window.confirm("Prohlížeč není podporován. Prosím, stáhněte si aplikaci Spectoda Connect.").then(result => {
+              if (result) {
+                // redirect na Bluefy v app store
+                window.location.replace("https://apps.apple.com/us/app/id1635118423");
               }
-              // Macs outside Google Chrome
-              else if (detectMacintosh()) {
-                // @ts-ignore
-                window.confirm("Prohlížeč není podporován. Prosím, otevřete aplikace v prohlížeči Google Chrome.").then(result => {
-                  if (result) {
-                    // redirect na Google Chrome
-                    window.location.replace("https://www.google.com/intl/cs_CZ/chrome/");
-                  }
-                });
+            });
+          }
+          // Macs outside Google Chrome
+          else if (detectMacintosh()) {
+            // @ts-ignore
+            window.confirm("Prohlížeč není podporován. Prosím, otevřete aplikace v prohlížeči Google Chrome.").then(result => {
+              if (result) {
+                // redirect na Google Chrome
+                window.location.replace("https://www.google.com/intl/cs_CZ/chrome/");
               }
-              // Android outside Google Chrome
-              else if (detectAndroid()) {
-                // @ts-ignore
-                window.confirm("Prohlížeč není podporován. Prosím, stáhněte si aplikaci Spectoda Connect.").then(result => {
-                  if (result) {
-                    // redirect na Google Chrome
-                    window.location.replace("https://play.google.com/store/apps/details?id=com.spectoda.spectodaconnect");
-                  }
-                });
+            });
+          }
+          // Android outside Google Chrome
+          else if (detectAndroid()) {
+            // @ts-ignore
+            window.confirm("Prohlížeč není podporován. Prosím, stáhněte si aplikaci Spectoda Connect.").then(result => {
+              if (result) {
+                // redirect na Google Chrome
+                window.location.replace("https://play.google.com/store/apps/details?id=com.spectoda.spectodaconnect");
               }
-              // Windows outside Google Chrome
-              else if (detectWindows()) {
-                // @ts-ignore
-                window.confirm("Prohlížeč není podporován. Prosím, otevřete aplikace v prohlížeči Google Chrome.").then(result => {
-                  if (result) {
-                    // redirect na Google Chrome
-                    window.location.replace("https://www.google.com/intl/cs_CZ/chrome/");
-                  }
-                });
+            });
+          }
+          // Windows outside Google Chrome
+          else if (detectWindows()) {
+            // @ts-ignore
+            window.confirm("Prohlížeč není podporován. Prosím, otevřete aplikace v prohlížeči Google Chrome.").then(result => {
+              if (result) {
+                // redirect na Google Chrome
+                window.location.replace("https://www.google.com/intl/cs_CZ/chrome/");
               }
-              // Linux ChromeBooks atd...
-              else {
-                window.confirm("Prohlížeč není podporován");
-              }
+            });
+          }
+          // Linux ChromeBooks atd...
+          else {
+            window.confirm("Prohlížeč není podporován");
+          }
 
-              logging.error("Error: Assigning unsupported connector");
-              this.connector = null;
-            }
-
-            break;
-
-          case "webserial":
-            if (detectChrome()) {
-              this.connector = new SpectodaWebSerialConnector(this);
-            } else {
-              logging.error("Error: Assigning unsupported connector");
-              this.connector = null;
-            }
-            break;
-
-          case "flutter":
-            if (detectSpectodaConnect() || detectWindows() || detectMacintosh()) {
-              this.connector = new FlutterConnector(this);
-            } else {
-              logging.error("Error: Assigning unsupported connector");
-              this.connector = null;
-            }
-            break;
-
-          // case "websockets":
-          //   this.connector = new SpectodaWebSocketsConnector(this);
-          //   break;
-
-          default:
-            logging.warn("Selected unknown connector");
-            throw "UnknownConnector";
+          logging.error("Error: Assigning unsupported connector");
+          this.connector = null;
         }
-      });
+
+        break;
+
+      case "webserial":
+        if (detectChrome()) {
+          this.connector = new SpectodaWebSerialConnector(this);
+        } else {
+          logging.error("Error: Assigning unsupported connector");
+          this.connector = null;
+        }
+        break;
+
+      case "spectodaconnect":
+        if (detectSpectodaConnect() || detectWindows() || detectMacintosh()) {
+          this.connector = new FlutterConnector(this);
+        } else {
+          logging.error("Error: Assigning unsupported connector");
+          this.connector = null;
+        }
+        break;
+
+      // case "websockets":
+      //   this.connector = new SpectodaWebSocketsConnector(this);
+      //   break;
+
+      default:
+        logging.warn("Selected unknown connector");
+        throw "UnknownConnector";
+    }
+
   }
 
   userSelect(criteria, timeout = NULL_VALUE) {
-    logging.verbose(`userSelect(criteria=${JSON.stringify(criteria)}, timeout=${timeout}`);
+    logging.verbose(`userSelect(criteria=${JSON.stringify(criteria)}, timeout=${timeout})`);
 
     // TODO! check if criteria is valid
 
@@ -608,7 +619,7 @@ export class SpectodaInterfaceLegacy {
   }
 
   autoSelect(criteria, scan_duration = NULL_VALUE, timeout = NULL_VALUE) {
-    logging.debug(`autoSelect(criteria=${JSON.stringify(criteria)}, scan_duration=${scan_duration}, timeout=${timeout}`);
+    logging.debug(`autoSelect(criteria=${JSON.stringify(criteria)}, scan_duration=${scan_duration}, timeout=${timeout})`);
 
     // TODO! check if criteria is valid
 
@@ -649,7 +660,7 @@ export class SpectodaInterfaceLegacy {
   }
 
   scan(criteria, scan_duration = NULL_VALUE) {
-    logging.verbose(`scan(criteria=${JSON.stringify(criteria)}, scan_duration=${scan_duration}`);
+    logging.verbose(`scan(criteria=${JSON.stringify(criteria)}, scan_duration=${scan_duration})`);
 
     // TODO! check if criteria is valid
 
@@ -845,13 +856,16 @@ export class SpectodaInterfaceLegacy {
         let item = undefined;
 
         try {
+          await this.#updateConnector();
+
+          if (!this.connector) {
+            item.reject("ConnectorNotAssigned");
+            this.#queue = [];
+            return;
+          }
+
           while (this.#queue.length > 0) {
             item = this.#queue.shift();
-
-            if (this.connector === null || this.connector === undefined) {
-              item.reject("ConnectorNotAssigned");
-              continue;
-            }
 
             switch (item.type) {
               case Query.TYPE_USERSELECT:
@@ -1374,7 +1388,7 @@ export class SpectodaInterfaceLegacy {
 
           default:
             if (logging.level >= 4) {
-              logging.warn(`Unknown Command flag=${command_flag}, available=${reader.available}`);
+              logging.warn(`Unknown Command flag=${command_flag}, available=${reader.available})`);
             }
             reader.forward(reader.available);
             return;
