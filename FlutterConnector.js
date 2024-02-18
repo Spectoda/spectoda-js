@@ -572,6 +572,9 @@ criteria example:
     //         the greatest signal strength. If no device is found until the timeout_number,
     //         then return error
 
+    const MINIMAL_AUTOSELECT_SCAN_DURATION = 1200;
+    const MINIMAL_AUTOSELECT_TIMEOUT = 2000;
+
     const criteria_json = JSON.stringify(criteria_object);
 
     logging.debug(`autoSelect(criteria=${criteria_json}, scan_duration=${scan_duration_number}, timeout=${timeout_number})`);
@@ -583,14 +586,29 @@ criteria example:
         j = j.replace(/\u0000/g, '');
         resolve(j ? JSON.parse(j) : null);
       };
+
       // @ts-ignore
-      window.flutterConnection.reject = reject;
+      window.flutterConnection.reject = function (e) { // on old Androids sometimes the first time you call autoSelect right after bluetooth is turned on, it rejects with a timeout
+        logging.warn(e);
+
+        // if the second attempt rejects again, then reject the promise
+        window.flutterConnection.reject = reject;
+
+        console.warn("autoSelect() with minimal timeout timeouted, trying it again with the full timeout...");
+        // @ts-ignore
+        window.flutter_inappwebview.callHandler("autoSelect", criteria_json, Math.max(MINIMAL_AUTOSELECT_SCAN_DURATION, scan_duration_number), Math.max(MINIMAL_AUTOSELECT_TIMEOUT, timeout_number));
+      };
     });
 
     // @ts-ignore
-    window.flutter_inappwebview.callHandler("autoSelect", criteria_json, scan_duration_number, timeout_number);
+    window.flutter_inappwebview.callHandler("autoSelect", criteria_json, Math.max(MINIMAL_AUTOSELECT_SCAN_DURATION, scan_duration_number), Math.max(MINIMAL_AUTOSELECT_TIMEOUT, scan_duration_number));
 
-    const FLUTTER_RESPONSE_TIMEOUT = timeout_number + 5000;
+    //? Leaving this code here for possible benchmarking. Comment out .callHandler("connect" and uncomment this code to use it
+    // setTimeout(() => {
+    //   window.flutterConnection.reject("SimulatedError");
+    // }, MINIMAL_AUTOSELECT_TIMEOUT);
+
+    const FLUTTER_RESPONSE_TIMEOUT = Math.max(MINIMAL_AUTOSELECT_TIMEOUT, scan_duration_number) + Math.max(MINIMAL_AUTOSELECT_TIMEOUT, timeout_number) + 5000;
     return this.#applyTimeout(this.#promise, FLUTTER_RESPONSE_TIMEOUT, "autoSelect");
   }
 
@@ -698,7 +716,7 @@ criteria example:
         console.warn("Connect with minimal timeout timeouted, trying it again with the full timeout...");
         // @ts-ignore
         window.flutter_inappwebview.callHandler("connect", Math.max(MINIMAL_CONNECT_TIMEOUT, timeout_number)); // on old Androids the minimal timeout is not enough
-      }
+      };
     });
 
     // @ts-ignore 
