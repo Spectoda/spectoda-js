@@ -991,7 +991,7 @@ export class Spectoda {
    * @returns
    */
   emitPercentageEvent(event_label, event_value, device_ids = [0xff], force_delivery = false) {
-    logging.info(`emitPercentageEvent(label=${event_label},value=${event_value},id=${device_ids},force=${force_delivery})`);
+    logging.verbose(`emitPercentageEvent(label=${event_label},value=${event_value},id=${device_ids},force=${force_delivery})`);
 
     // clearTimeout(this.#saveStateTimeoutHandle);
     // this.#saveStateTimeoutHandle = setTimeout(() => {
