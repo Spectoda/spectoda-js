@@ -16,6 +16,7 @@ export class Spectoda {
   #ownerSignature;
   #ownerKey;
   #connecting;
+  #disconnecting;
   #adopting;
   #updating;
   #selected;
@@ -53,10 +54,10 @@ export class Spectoda {
     }
 
     this.#connecting = false;
-    // this.#adoptingFlag = false;
+    this.#disconnecting = false;
+
     this.#adopting = false;
     this.#updating = false;
-    // this.#saveStateTimeoutHandle = null;
 
     this.#reconnectRC = false;
 
@@ -612,6 +613,10 @@ export class Spectoda {
       return Promise.reject("ConnectingInProgress");
     }
 
+    if (this.#disconnecting) {
+      return Promise.reject("DisconnectingInProgress");
+    }
+
     if (ownerSignature) {
       this.#setOwnerSignature(ownerSignature);
     }
@@ -701,6 +706,17 @@ export class Spectoda {
   }
 
   disconnect() {
+
+    if (this.#connecting) {
+      Promise.reject("ConnectingInProgress");
+    }
+
+    if (this.#disconnecting) {
+      Promise.reject("DisconnectingInProgress");
+    }
+
+    this.#disconnecting = true;
+
     if (this.#connectionState === "disconnected") {
       Promise.reject("DeviceAlreadyDisconnected");
     }
@@ -708,11 +724,12 @@ export class Spectoda {
     this.#setConnectionState("disconnecting");
     return this.interface.disconnect().finally(() => {
       this.#setConnectionState("disconnected");
+      this.#disconnecting = false;
     });
   }
 
   connected() {
-    if (this.#connecting || this.#adopting) {
+    if (this.#connecting || this.#disconnecting) {
       return Promise.resolve(null); // resolve nothing === not connected
     }
 
