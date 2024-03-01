@@ -1,7 +1,7 @@
 // npm install --save-dev @types/web-bluetooth
 /// <reference types="web-bluetooth" />
 
-import { COMMAND_FLAGS, NULL_VALUE } from "./SpectodaInterfaceLegacy.js";
+import { COMMAND_FLAGS, NULL_VALUE } from "./SpectodaRuntime.js";
 import { TimeTrack } from "./TimeTrack.js";
 import { TnglReader } from "./TnglReader.js";
 import { detectAndroid, hexStringToUint8Array, numberToBytes, sleep, toBytes } from "./functions";

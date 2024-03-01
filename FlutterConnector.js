@@ -2,7 +2,7 @@ import { logging } from "./logging";
 import { sleep, toBytes, detectSpectodaConnect, numberToBytes, detectAndroid } from "./functions";
 import { TimeTrack } from "./TimeTrack.js";
 import { TnglReader } from "./TnglReader.js";
-import { NULL_VALUE, COMMAND_FLAGS, SpectodaInterfaceLegacy } from "./SpectodaInterfaceLegacy.js";
+import { NULL_VALUE, COMMAND_FLAGS, SpectodaRuntime } from "./SpectodaRuntime.js";
 
 /////////////////////////////////////////////////////////////////////////////////////
 

@@ -16,8 +16,8 @@ import {
   rgbToHex,
   sleep,
   uint8ArrayToHexString,
-} from "./functions";
-import { logging } from "./logging";
+} from "./functions.js";
+import { logging } from "./logging.js";
 import { FlutterConnector } from "./FlutterConnector.js";
 import { TimeTrack } from "./TimeTrack.js";
 import "./TnglReader.js";
@@ -125,12 +125,12 @@ export const COMMAND_FLAGS = Object.freeze({
   FLAG_ADOPT_RESPONSE: 241,
 });
 
-// Spectoda.js -> SpectodaInterfaceLegacy.js -> | SpectodaXXXConnector.js ->
+// Spectoda.js -> SpectodaRuntime.js -> | SpectodaXXXConnector.js ->
 
-// SpectodaInterfaceLegacy vsude vraci Promisy a ma v sobe spolecne
+// SpectodaRuntime vsude vraci Promisy a ma v sobe spolecne
 // koncepty pro vsechny konektory. Tzn send queue, ktery paruje odpovedi a resolvuje
 // promisy.
-// SpectodaInterfaceLegacy definuje
+// SpectodaRuntime definuje
 // userSelect, autoSelect, selected
 // connect, disconnect, connected
 // execute, request
@@ -148,7 +148,7 @@ export const COMMAND_FLAGS = Object.freeze({
 //     |            |            |
 //  Runtime      Runtime      Runtime
 
-// TODO SpectodaInterfaceLegacy is the host of the FW simulation of the Spectoda Controller Runtime.
+// TODO SpectodaRuntime is the host of the FW simulation of the Spectoda Controller Runtime.
 // TODO Wasm holds the event history, current TNGL banks and acts like the FW.
 // TODO execute commands goes in and when processed goes back out to be handed over to Connectors to sendExecute() the commands to other connected Interfaces
 // TODO request commands goes in and if needed another request command goes out to Connectors to sendRequest() to a external Interface with given mac address.
@@ -193,7 +193,7 @@ class Query {
 }
 
 // filters out duplicate payloads and merges them together. Also decodes payloads received from the connector.
-export class SpectodaInterfaceLegacy {
+export class SpectodaRuntime {
   #deviceReference;
 
   #eventEmitter;
