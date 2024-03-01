@@ -396,6 +396,49 @@ export class Spectoda {
     })]
 
 
+    allEventsEmitter.on("on", ({ name, args }) => {
+      logging.verbose("on", name, args);
+      this.socket.emit("event", { name, args });
+    });
+
+    globalThis.allEventsEmitter = allEventsEmitter;
+
+    this.socket.on("func", async (payload, callback) => {
+      if (!callback) {
+        logging.error("No callback provided");
+        return;
+      }
+
+      let { functionName, arguments: args } = payload;
+
+      // call internal class function await this[functionName](...args)
+
+      // call internal class function
+      try {
+        if (functionName === "debug") {
+          logging.debug(...args);
+          return callback({ status: "success", message: "debug", payload: args });
+        }
+        if (functionName === "assignOwnerSignature" || functionName === "assignOwnerKey") {
+          return callback({ status: "success", message: "assign key/signature is ignored on remote." });
+        }
+
+        if (functionName === "updateDeviceFirmware" || functionName === "updateNetworkFirmware") {
+          if (Array.isArray(args?.[0])) {
+            args[0] = new Uint8Array(args[0]);
+          } else if (typeof args?.[0] === "object") {
+            const arr = Object.values(args[0]);
+            const uint8Array = new Uint8Array(arr);
+            args[0] = uint8Array;
+          }
+        }
+        const result = await this[functionName](...args);
+        callback({ status: "success", result });
+      } catch (e) {
+        logging.error(e);
+        callback({ status: "error", error: e });
+      }
+    });
 
 
     return await new Promise((resolve, reject) => {
@@ -439,52 +482,10 @@ export class Spectoda {
               reject(e);
             });
         }
-
-        logging.info("> Listening for events", allEventsEmitter);
-        globalThis.allEventsEmitter = allEventsEmitter;
-
-        allEventsEmitter.on("on", ({ name, args }) => {
-          logging.verbose("on", name, args);
-          this.socket.emit("event", { name, args });
-        });
-        this.socket.on("func", async (payload, callback) => {
-          if (!callback) {
-            logging.error("No callback provided");
-            return;
-          }
-
-          let { functionName, arguments: args } = payload;
-
-          // call internal class function await this[functionName](...args)
-
-          // call internal class function
-          try {
-            if (functionName === "debug") {
-              logging.debug(...args);
-              return callback({ status: "success", message: "debug", payload: args });
-            }
-            if (functionName === "assignOwnerSignature" || functionName === "assignOwnerKey") {
-              return callback({ status: "success", message: "assign key/signature is ignored on remote." });
-            }
-
-            if (functionName === "updateDeviceFirmware" || functionName === "updateNetworkFirmware") {
-              if (Array.isArray(args?.[0])) {
-                args[0] = new Uint8Array(args[0]);
-              } else if (typeof args?.[0] === "object") {
-                const arr = Object.values(args[0]);
-                const uint8Array = new Uint8Array(arr);
-                args[0] = uint8Array;
-              }
-            }
-            const result = await this[functionName](...args);
-            callback({ status: "success", result });
-          } catch (e) {
-            logging.error(e);
-            callback({ status: "error", error: e });
-          }
-        });
       });
     });
+
+
   }
 
   disableRemoteControl() {
@@ -855,22 +856,22 @@ export class Spectoda {
 
     // regex creation
     for (let enum_name in enums) {
-        const regex = new RegExp(`${enum_name}\\.(\\w+)`, "g");
-        enumRegexes.push(regex);
+      const regex = new RegExp(`${enum_name}\\.(\\w+)`, "g");
+      enumRegexes.push(regex);
     }
 
     // regex replacing
     for (let regex of enumRegexes) {
-        processed_tngl_code = processed_tngl_code.replace(regex, (match, enum_value) => {
-            for (let enum_name in enums) {
-                let value = enums[enum_name][enum_value];
-                
-                if (value == undefined) continue;
+      processed_tngl_code = processed_tngl_code.replace(regex, (match, enum_value) => {
+        for (let enum_name in enums) {
+          let value = enums[enum_name][enum_value];
 
-                return value;
-            }
-            return match;
-        });
+          if (value == undefined) continue;
+
+          return value;
+        }
+        return match;
+      });
     }
 
     //3rd stage handle #define replacing
@@ -879,13 +880,13 @@ export class Spectoda {
     // list all defines [{name: "NAME", value: "VALUE"}, ...]
     let defines = [];
     defines = [...processed_tngl_code.matchAll(defineRegex)].map(match => {
-        return { name: match[1], value: match[2] };
+      return { name: match[1], value: match[2] };
     });
 
     processed_tngl_code = processed_tngl_code.replaceAll(defineRegex, "");
 
     for (let define of defines) {
-        processed_tngl_code = processed_tngl_code.replaceAll(define.name, define.value);
+      processed_tngl_code = processed_tngl_code.replaceAll(define.name, define.value);
     }
 
     logging.debug(processed_tngl_code);
