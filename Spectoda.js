@@ -17,12 +17,7 @@ export class Spectoda {
   #ownerKey;
   #connecting;
   #disconnecting;
-  #adopting;
   #updating;
-  #selected;
-  #saveStateTimeoutHandle;
-
-  #reconnectRC;
 
   #connectionState;
   #websocketConnectionState;
@@ -56,10 +51,7 @@ export class Spectoda {
     this.#connecting = false;
     this.#disconnecting = false;
 
-    this.#adopting = false;
     this.#updating = false;
-
-    this.#reconnectRC = false;
 
     this.#connectionState = "disconnected";
     this.#websocketConnectionState = "disconnected";
@@ -487,123 +479,6 @@ export class Spectoda {
     logging.info(`scan()`);
 
     return this.interface.scan([{}], NULL_VALUE);
-  }
-
-  adopt(newDeviceName = null, newDeviceId = null, tnglCode = null, ownerSignature = null, ownerKey = null, autoSelect = false) {
-    logging.info(`adopt(newDeviceName=${newDeviceName}, newDeviceId=${newDeviceId}, tnglCode=${tnglCode}, ownerSignature=${ownerSignature}, ownerKey=${ownerKey}, autoSelect=${autoSelect})`);
-
-    if (this.#adopting) {
-      return Promise.reject("AdoptingInProgress");
-    }
-
-    if (ownerSignature) {
-      this.#setOwnerSignature(ownerSignature);
-    }
-
-    if (ownerKey) {
-      this.#setOwnerKey(ownerKey);
-    }
-
-    if (!this.#ownerSignature) {
-      throw "OwnerSignatureNotAssigned";
-    }
-
-    if (!this.#ownerKey) {
-      throw "OwnerKeyNotAssigned";
-    }
-
-    this.#adopting = true;
-
-    this.#setConnectionState("connecting");
-
-    const criteria = /** @type {any} */ ([{ adoptionFlag: true }]);
-
-    return (autoSelect ? this.interface.autoSelect(criteria, NULL_VALUE, NULL_VALUE) : this.interface.userSelect(criteria, NULL_VALUE))
-      .then(() => {
-        // this.#adoptingFlag = true;
-        return this.interface.connect(NULL_VALUE);
-      })
-      .then(() => {
-        const owner_signature_bytes = hexStringToUint8Array(this.#ownerSignature, 16);
-        const owner_key_bytes = hexStringToUint8Array(this.#ownerKey, 16);
-
-        logging.info("owner_signature_bytes", owner_signature_bytes);
-        logging.info("owner_key_bytes", owner_key_bytes);
-
-        const request_uuid = this.#getUUID();
-        const bytes = [COMMAND_FLAGS.FLAG_ADOPT_REQUEST, ...numberToBytes(request_uuid, 4), ...owner_signature_bytes, ...owner_key_bytes /*, ...device_name_bytes, ...numberToBytes(device_id, 1)*/];
-
-        logging.debug("> Adopting device...");
-        logging.verbose(bytes);
-
-        return this.interface
-          .request(bytes, true)
-          .then(response => {
-            let reader = new TnglReader(response);
-
-            logging.debug("> Got response:", response);
-
-            if (reader.readFlag() !== COMMAND_FLAGS.FLAG_ADOPT_RESPONSE) {
-              throw "InvalidResponse";
-            }
-
-            const response_uuid = reader.readUint32();
-            if (response_uuid != request_uuid) {
-              throw "InvalidResponse";
-            }
-
-            const error_code = reader.readUint8();
-
-            let device_mac = "00:00:00:00:00:00";
-            if (error_code === 0) {
-              // error_code 0 is success
-              const device_mac_bytes = reader.readBytes(6);
-
-              device_mac = Array.from(device_mac_bytes, function (byte) {
-                return ("0" + (byte & 0xff).toString(16)).slice(-2);
-              }).join(":");
-            }
-
-            logging.verbose(`error_code=${error_code}, device_mac=${device_mac}`);
-
-            if (error_code === 0) {
-              logging.info(`Adopted ${device_mac} successfully`);
-
-              return {
-                mac: device_mac,
-                ownerSignature: this.#ownerSignature,
-                ownerKey: this.#ownerKey,
-                // name: newDeviceName,
-                // id: newDeviceId,
-              };
-            }
-
-            if (error_code !== 0) {
-              logging.warn("Adoption refused.");
-
-              throw "AdoptionRefused";
-            }
-          })
-          .catch(e => {
-            logging.error("Error during adopt():", e);
-            this.disconnect().finally(() => {
-              // @ts-ignore
-              throw "AdoptionFailed";
-            });
-          });
-      })
-      .catch(error => {
-        logging.warn("Error during adopt:", error);
-        if (error === "UserCanceledSelection") {
-          return this.connected().then(result => {
-            if (!result) throw "UserCanceledSelection";
-          });
-        }
-      })
-      .finally(() => {
-        this.#adopting = false;
-        this.#setConnectionState("disconnected");
-      });
   }
 
   connect(criteria = null, autoConnect = true, ownerSignature = null, ownerKey = null, connectAny = false, fwVersion = "") {

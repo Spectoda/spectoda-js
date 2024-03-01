@@ -467,7 +467,7 @@ export class SpectodaInterfaceLegacy {
   async #updateConnector() {
 
     if ((!this.connector && this.#assignedConnector === "none") || (this.connector && this.connector.type === this.#assignedConnector)) {
-      logging.verbose("connector set as requested");
+      logging.verbose("connector is already set as requested");
       return;
     }
 
