@@ -1,4 +1,4 @@
-import { FFT } from "./dsp.js";
+import { FFT } from "./dsp";
 import { createNanoEvents, mapValue, sleep } from "./functions";
 import { logging } from "./logging";
 

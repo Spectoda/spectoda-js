@@ -1,9 +1,9 @@
 import { logging } from "./logging";
 import { sleep } from "./functions";
-import { TimeTrack } from "./TimeTrack.js";
-import { COMMAND_FLAGS } from "./SpectodaRuntime.js";
-import { TnglReader } from "./TnglReader.js";
-import { TnglWriter } from "./TnglWriter.js";
+import { TimeTrack } from "./TimeTrack";
+import { COMMAND_FLAGS } from "./SpectodaRuntime";
+import { TnglReader } from "./TnglReader";
+import { TnglWriter } from "./TnglWriter";
 
 /////////////////////////////////////////////////////////////////////////////////////
 

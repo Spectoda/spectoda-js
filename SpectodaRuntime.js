@@ -1,6 +1,6 @@
-import { SpectodaDummyConnector } from "./SpectodaDummyConnector.js";
-import { SpectodaWebBluetoothConnector } from "./SpectodaWebBluetoothConnector.js";
-import { SpectodaWebSerialConnector } from "./SpectodaWebSerialConnector.js";
+import { SpectodaDummyConnector } from "./SpectodaDummyConnector";
+import { SpectodaWebBluetoothConnector } from "./SpectodaWebBluetoothConnector";
+import { SpectodaWebSerialConnector } from "./SpectodaWebSerialConnector";
 import {
   createNanoEvents,
   createNanoEventsWithWrappedEmit,
@@ -16,13 +16,13 @@ import {
   rgbToHex,
   sleep,
   uint8ArrayToHexString,
-} from "./functions.js";
-import { logging } from "./logging.js";
-import { FlutterConnector } from "./FlutterConnector.js";
-import { TimeTrack } from "./TimeTrack.js";
-import "./TnglReader.js";
-import { TnglReader } from "./TnglReader.js";
-import "./TnglWriter.js";
+} from "./functions";
+import { logging } from "./logging";
+import { FlutterConnector } from "./FlutterConnector";
+import { TimeTrack } from "./TimeTrack";
+import "./TnglReader";
+import { TnglReader } from "./TnglReader";
+import "./TnglWriter";
 
 export const NULL_VALUE = null;
 

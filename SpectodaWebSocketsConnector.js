@@ -1,5 +1,5 @@
 import { io } from "socket.io-client";
-// import { TimeTrack } from "./TimeTrack.js";
+// import { TimeTrack } from "./TimeTrack";
 // import { logging } from "./logging";
 
 import customParser from "socket.io-msgpack-parser";
