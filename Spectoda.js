@@ -116,6 +116,11 @@ export class Spectoda {
         this.#eventHistory[id] = {};
       }
 
+      if (this.#connecting || this.#disconnecting) {
+        // if we are in the middle of connecting or disconnecting, we should reconnect or set the state to disconnected
+        return;
+      }
+
       if (this.#connectionState === "connected") {
         logging.info("> Reconnecting controller...");
         this.#setConnectionState("connecting");

@@ -691,7 +691,6 @@ export class SpectodaRuntime {
 
   #onConnected = event => {
     if (this.#connectGuard) {
-      logging.error("Connecting logic error. #connected called when already connected?");
       logging.warn("Ignoring the #connected event");
       return;
     }
@@ -720,7 +719,6 @@ export class SpectodaRuntime {
 
   #onDisconnected = event => {
     if (!this.#connectGuard) {
-      logging.error("Connecting logic error. #disconnected called when already disconnected?");
       logging.warn("Ignoring the #disconnected event");
       return;
     }
