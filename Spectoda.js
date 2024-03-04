@@ -187,14 +187,14 @@ export class Spectoda {
       case "disconnecting":
         if (websocketConnectionState !== this.#websocketConnectionState) {
           logging.warn("> WS disconnecting");
-          this.#connectionState = connectionState;
+          this.#connectionState = websocketConnectionState;
           this.runtime.emit("disconnecting-websockets");
         }
         break;
       case "disconnected":
         if (websocketConnectionState !== this.#websocketConnectionState) {
           logging.warn("> WS disconnected");
-          this.#connectionState = connectionState;
+          this.#connectionState = websocketConnectionState;
           this.runtime.emit("disconnected-websockets");
         }
         break;
