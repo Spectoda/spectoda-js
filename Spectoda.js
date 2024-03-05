@@ -125,7 +125,8 @@ export class Spectoda {
         logging.info("> Reconnecting controller...");
         this.#setConnectionState("connecting");
 
-        return (this.#reconnectTheSameController ? this.runtime.connect(NULL_VALUE) : this.connect(this.#connectCriteria, true, this.#ownerSignature, this.#ownerKey))
+        const RECONNECT_TO_SAME_THE_CONTROLLER_TIMEOUT = 2000;
+        return (this.#reconnectTheSameController ? this.runtime.connect(RECONNECT_TO_SAME_THE_CONTROLLER_TIMEOUT) : this.connect(this.#connectCriteria, true, this.#ownerSignature, this.#ownerKey))
           .then(() => {
             logging.info("> Reconnection successful");
             this.#setConnectionState("connected");
