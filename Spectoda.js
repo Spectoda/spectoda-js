@@ -346,29 +346,82 @@ export class Spectoda {
   async enableRemoteControl({ signature, key, sessionOnly, meta }) {
     logging.debug("> Connecting to Remote Control");
 
-    this.socket && this.socket.disconnect();
+    if (this.socket) {
+      this.socket.removeAllListeners(); // Removes all listeners attached to the socket
+      this.socket.disconnect();
+
+      for (let listener of this.socket?.___SpectodaListeners) {
+        listener();
+      }
+    }
 
     this.socket = io(WEBSOCKET_URL, {
       parser: customParser,
     });
 
+
     this.socket.connect();
     this.requestWakeLock(true);
 
     const setConnectionSocketData = async () => {
-      const peers = await this.getConnectedPeersInfo();
-      logging.debug("peers", peers);
-      this.socket.emit("set-connection-data", peers);
-      this.socket.emit("set-meta-data", meta);
+      // TODO - find way how to do getCOnnectedPeersInfo with waiting for wasm load
+      // const peers = await this.getConnectedPeersInfo();
+      // logging.debug("peers", peers);
+      // this.socket.emit("set-connection-data", peers);
+      this.socket.emit("set-meta-data", meta)
     };
 
-    this.on("connected", async () => {
+    this.socket.___SpectodaListeners = [this.on("connected", async () => {
       setConnectionSocketData();
+    }), this.on("disconnected", () => {
+      this.socket.emit("set-connection-data", null);
+    })]
+
+
+    allEventsEmitter.on("on", ({ name, args }) => {
+      logging.verbose("on", name, args);
+      this.socket.emit("event", { name, args });
     });
 
-    this.on("disconnected", () => {
-      this.socket.emit("set-connection-data", null);
+    globalThis.allEventsEmitter = allEventsEmitter;
+
+    this.socket.on("func", async (payload, callback) => {
+      if (!callback) {
+        logging.error("No callback provided");
+        return;
+      }
+
+      let { functionName, arguments: args } = payload;
+
+      // call internal class function await this[functionName](...args)
+
+      // call internal class function
+      try {
+        if (functionName === "debug") {
+          logging.debug(...args);
+          return callback({ status: "success", message: "debug", payload: args });
+        }
+        if (functionName === "assignOwnerSignature" || functionName === "assignOwnerKey") {
+          return callback({ status: "success", message: "assign key/signature is ignored on remote." });
+        }
+
+        if (functionName === "updateDeviceFirmware" || functionName === "updateNetworkFirmware") {
+          if (Array.isArray(args?.[0])) {
+            args[0] = new Uint8Array(args[0]);
+          } else if (typeof args?.[0] === "object") {
+            const arr = Object.values(args[0]);
+            const uint8Array = new Uint8Array(arr);
+            args[0] = uint8Array;
+          }
+        }
+        const result = await this[functionName](...args);
+        callback({ status: "success", result });
+      } catch (e) {
+        logging.error(e);
+        callback({ status: "error", error: e });
+      }
     });
+
 
     return await new Promise((resolve, reject) => {
       this.socket.on("disconnect", () => {
@@ -377,70 +430,40 @@ export class Spectoda {
 
       this.socket.on("connect", async () => {
         if (sessionOnly) {
-          // todo finish impl + UI
-          const roomId = await this.socket.emitWithAck("join-session");
-          logging.debug("Remote control id for this session is", { roomId });
-        } else {
+          // Handle session-only logic
+          const response = await this.socket.emitWithAck("join-session", null)
+          const roomNumber = response?.roomNumber;
+
+          if (response?.status === "success") {
+            this.#setWebSocketConnectionState("connected");
+            setConnectionSocketData();
+
+            logging.debug("Remote control session joined successfully", roomNumber);
+
+            resolve({ status: "success", roomNumber });
+          } else {
+            this.#setWebSocketConnectionState("disconnected");
+            logging.debug("Remote control session join failed, does not exist");
+          }
+        } else if (signature) {
+          // Handle signature-based logic
           this.#setWebSocketConnectionState("connecting");
+          logging.debug("Joining network remotely", signature, key)
           await this.socket
             .emitWithAck("join", { signature, key })
             .then(e => {
               this.#setWebSocketConnectionState("connected");
               setConnectionSocketData();
+
+              logging.info("> Connected and joined network remotely");
+
+              resolve({ status: "success" });
             })
             .catch(e => {
               this.#setWebSocketConnectionState("disconnected");
+              reject(e);
             });
         }
-
-        logging.info("> Connected and joined network remotely");
-
-        resolve({ status: "success" });
-
-        logging.info("> Listening for events", allEventsEmitter);
-        window.allEventsEmitter = allEventsEmitter;
-
-        allEventsEmitter.on("on", ({ name, args }) => {
-          logging.debug("on", name, args);
-          this.socket.emit("event", { name, args });
-        });
-
-        this.socket.on("func", async (payload, callback) => {
-          if (!callback) {
-            logging.error("No callback provided");
-            return;
-          }
-
-          let { functionName, arguments: args } = payload;
-
-          // call internal class function await this[functionName](...args)
-
-          // call internal class function
-          try {
-            if (functionName === "debug") {
-              logging.debug(...args);
-              return callback({ status: "success", message: "debug", payload: args });
-            }
-            if (functionName === "assignOwnerSignature" || functionName === "assignOwnerKey") {
-              return callback({ status: "success", message: "assign key/signature is ignored on remote." });
-            }
-
-            if (functionName === "updateDeviceFirmware" || functionName === "updateNetworkFirmware") {
-              if (Array.isArray(args?.[0])) {
-                args[0] = new Uint8Array(args[0]);
-              } else if (typeof args?.[0] === "object") {
-                const arr = Object.values(args[0]);
-                const uint8Array = new Uint8Array(arr);
-                args[0] = uint8Array;
-              }
-            }
-            const result = await this[functionName](...args);
-            callback({ status: "success", result });
-          } catch (e) {
-            logging.error(e);
-            callback({ status: "error", error: e });
-          }
-        });
       });
     });
   }
