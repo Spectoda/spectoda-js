@@ -33,10 +33,12 @@ function onWasmLoad() {
     moduleInitilized = true;
 
     logging.info("Webassembly runtime initilized");
-
-    SpectodaWasm.Spectoda_WASM = Module.Spectoda_WASM;
+    
+    SpectodaWasm.WasmInterface = Module.WasmInterface;
     SpectodaWasm.Uint8Vector = Module.Uint8Vector;
-    // SpectodaWasm.send_result_t = Module.send_result_t;
+    SpectodaWasm.evaluate_result_t = Module.evaluate_result_t;
+    SpectodaWasm.send_result_t = Module.send_result_t;
+
 
     if (typeof window !== "undefined") {
       // Make a directory other than '/'

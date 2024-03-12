@@ -2,7 +2,7 @@ import { TextureLoader } from "three";
 import { logging } from "../logging";
 import { SpectodaWasm } from "./SpectodaWasm.js";
 
-const WASM_VERSION = "DEBUG_0.10.1_20240121";
+const WASM_VERSION = "DEBUG_0.9.10_20240312";
 
 export const COMMAND_FLAGS = Object.freeze({
   FLAG_UNSUPPORTED_COMMND_RESPONSE: 255, // TODO change FLAG_OTA_BEGIN to not be 255.
@@ -168,7 +168,7 @@ export class Spectoda_JS {
             event_array[i].timestamp_utc = Date.now();
           }
 
-          if (logging.level >= 3 && event_array.length) {
+          if (event_array.length) {
 
             let debug_log = "";
 
@@ -183,10 +183,11 @@ export class Spectoda_JS {
             }
 
             logging.info(debug_log);
+
           }
 
 
-          this.#runtimeReference.emit("emitted_global_events", event_array);
+          this.#runtimeReference.emit("emitted_events", event_array);
         },
 
         _onLocalEvents: event_array => {
@@ -196,7 +197,7 @@ export class Spectoda_JS {
             event_array[i].timestamp_utc = Date.now();
           }
 
-          if (logging.level >= 4 && event_array.length) {
+          if (event_array.length) {
 
             let debug_log = "";
 
@@ -210,27 +211,29 @@ export class Spectoda_JS {
               debug_log += `\n${e.id} -> $${e.label}: ${e.value} [${e.timestamp}ms] (local)`;
             }
 
-            logging.debug(debug_log);
+            logging.info(debug_log);
+
           }
 
 
-          this.#runtimeReference.emit("emitted_events", event_array);
+          this.#runtimeReference.emit("emitted_local_events", event_array);
         },
 
         _onExecute: (commands_bytecode_vector, source_connection) => {
           logging.verbose("_onExecute", commands_bytecode_vector, source_connection);
 
-          // try {
-          // dont know how to make Uint8Array in C++ yet. So I am forced to give data out in C++ std::vector
-          // const commands_bytecode = SpectodaWasm.convertNumberVectorToJSArray(commands_bytecode_vector);
+          try {
+            // dont know how to make Uint8Array in C++ yet. So I am forced to give data out in C++ std::vector
+            const commands_bytecode = SpectodaWasm.convertNumberVectorToJSArray(commands_bytecode_vector);
 
-          // TODO IMPLEMENT SENDING TO OTHER INTERFACES
+            // TODO IMPLEMENT SENDING TO OTHER INTERFACES
 
-          // } catch {
 
-          // }
+          } catch {
+            return Module.send_result_t.SEND_ERROR;
+          }
 
-          return true;
+          return Module.send_result_t.SEND_OK;
         },
 
         // _onRequest: () => {
@@ -240,28 +243,18 @@ export class Spectoda_JS {
         //     // dont know how to make Uint8Array in C++ yet. So I am forced to give data out in C++ std::vector
         //     const commands_bytecode = SpectodaWasm.convertNumberVectorToJSArray(commands_bytecode_vector);
 
-        //     logging.verbose("commands_bytecode", commands_bytecode);
+        //     console.log("commands_bytecode", commands_bytecode);
 
         //     // TODO IMPLEMENT SENDING TO OTHER INTERFACES
         //   } catch {
+        //     return Module.send_result_t.SEND_ERROR;
         //   }
 
-        // return true;
+        //   return Module.send_result_t.SEND_OK;
         // },
 
         _onSynchronize: synchronization_object => {
-          logging.verbose("_onSynchronize", synchronization_object);
-
-          try {
-            this.#runtimeReference.setClock(synchronization_object.clock_timestamp).catch(e => {
-              logging.error(e);
-            });
-          } catch (e) {
-            logging.error(e);
-          }
-
-
-          return true;
+          logging.debug("_onSynchronize", synchronization_object);
         },
 
         _handlePeerConnected: peer_mac => {
@@ -286,50 +279,10 @@ export class Spectoda_JS {
 
           return Module.interface_error_t.SUCCESS;
         },
-
-        _onLog: (level, filename, message) => {
-
-          if (level - 1 < logging.level) {
-            return;
-          }
-
-          switch (level) {
-            case 5:
-              logging.verbose(`<spectoda> [V][${filename}]: ${message}`);
-              break;
-            case 4:
-              logging.debug(`<spectoda> [D][${filename}]: ${message}`);
-              break;
-            case 3:
-              logging.info(`<spectoda> [I][${filename}]: ${message}`);
-              break;
-            case 2:
-              logging.warn(`<spectoda> [W][${filename}]: ${message}`);
-              break;
-            case 1:
-              logging.error(`<spectoda> [E][${filename}]: ${message}`);
-              break;
-            default:
-              logging.error(`<spectoda> [?][${filename}]: ${message}`);
-              break;
-          }
-        }
-
       };
 
-      this.#instance = SpectodaWasm.Spectoda_WASM.implement(WasmInterfaceImplementation);
-
-      this.#instance.init(mac_address, `{"controller":{"name": "Spectoda"}}`);
-      this.#instance.begin();
-
-      // this.#instance.makePort("A", 1, brightness, 255, true, false);
-      // this.#instance.makePort("B", 1, brightness, 255, true, false);
-      // this.#instance.makePort("C", 1, brightness, 255, true, false);
-      // this.#instance.makePort("D", 1, brightness, 255, true, false);
-      // this.#instance.makePort("E", 1, brightness, 255, true, false);
-      // this.#instance.makePort("F", 1, brightness, 255, true, false);
-      // this.#instance.makePort("G", 1, brightness, 255, true, false);
-      // this.#instance.makePort("H", 1, brightness, 255, true, false);
+      this.#instance = SpectodaWasm.WasmInterface.implement(WasmInterfaceImplementation);
+      this.#instance.begin(label, mac_address, id_offset);
     });
   }
 

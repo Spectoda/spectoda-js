@@ -4,7 +4,8 @@
 
 // add overlays=uart3 to /boot/orangepiEnv.txt
 // add overlays=uart0 to /boot/orangepiEnv.txt
-// stty -F /dev/ttyS3 1500000
+// sudo stty -F /dev/ttyS3 1500000
+// screen /dev/ttyS3 1500000
 
 /*
 echo 'overlays=uart3' | sudo tee -a /boot/orangepiEnv.txt
