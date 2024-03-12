@@ -568,7 +568,7 @@ criteria example:
   // are eligible.
 
   autoSelect(criteria_object, scan_duration_number, timeout_number) {
-    if (scan_duration_number === NULL_VALUE) { scan_duration_number = 1200; } // 1200ms seems to be the minimum for the scan_duration if the controller is rebooted
+    if (scan_duration_number === NULL_VALUE) { scan_duration_number = 1500; } // 1200ms seems to be the minimum for the scan_duration if the controller is rebooted
     if (timeout_number === NULL_VALUE) { timeout_number = 5000; }
     // step 1. for the scan_duration scan the surroundings for BLE devices.
     // step 2. if some devices matching the criteria are found, then select the one with
@@ -576,7 +576,7 @@ criteria example:
     //         then return error
 
     const MINIMAL_AUTOSELECT_SCAN_DURATION = 1200;
-    const MINIMAL_AUTOSELECT_TIMEOUT = 2000;
+    const MINIMAL_AUTOSELECT_TIMEOUT = 3000;
 
     const criteria_json = JSON.stringify(criteria_object);
 

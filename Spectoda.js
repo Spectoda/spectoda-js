@@ -126,7 +126,10 @@ export class Spectoda {
         this.#setConnectionState("connecting");
 
         const RECONNECT_TO_SAME_THE_CONTROLLER_TIMEOUT = 2000;
-        return (this.#reconnectTheSameController ? this.runtime.connect(RECONNECT_TO_SAME_THE_CONTROLLER_TIMEOUT) : this.connect(this.#connectCriteria, true, this.#ownerSignature, this.#ownerKey))
+        const SAFETY_DELAY_FOR_BLE_TO_DISCONNECT = 250;
+        return (this.#reconnectTheSameController
+          ? sleep(SAFETY_DELAY_FOR_BLE_TO_DISCONNECT).then(() => this.runtime.connect(RECONNECT_TO_SAME_THE_CONTROLLER_TIMEOUT))
+          : this.connect(this.#connectCriteria, true, this.#ownerSignature, this.#ownerKey))
           .then(() => {
             logging.info("> Reconnection successful");
             this.#setConnectionState("connected");
