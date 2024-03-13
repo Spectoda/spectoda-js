@@ -380,7 +380,7 @@ export class SpectodaNodeSerialConnector {
         // });
 
         this.#serialPort.on('data', (chunk: Buffer) => {
-          logging.info("[data]", decoder.decode(chunk));
+          // logging.info("[data]", decoder.decode(chunk));
 
           for (const byte of chunk) {
 
@@ -438,13 +438,13 @@ export class SpectodaNodeSerialConnector {
                       this.#dataCallback && this.#dataCallback(new Uint8Array(data_bytes));
                       
                       if (data_header.data_type === NETWORK_WRITE) {
-                        logging.info("SERIAL >>>NETWORK_WRITE<<<")
+                        logging.debug("SERIAL >>>NETWORK_WRITE<<<")
 
                         this.#runtimeReference.evaluate(new Uint8Array(data_bytes), 0x01010101);
                       }
 
                       else if (data_header.data_type === CLOCK_WRITE) {
-                        logging.info("SERIAL >>>CLOCK_WRITE<<<")
+                        logging.debug("SERIAL >>>CLOCK_WRITE<<<")
 
                         let tnglReader = new TnglReader(new DataView(new Uint8Array(data_bytes).buffer));
                         
