@@ -226,9 +226,13 @@ export class TnglCompiler {
     this.#var_declarations = []; // addresses starts from 0x0001 to 0xfffe. 0x0000 is a "nullptr", 0xffff is unknown address
   }
 
+  getVariableDeclarations() {
+    return this.#var_declarations;
+  }
+
   reset() {
     this.#tnglWriter.reset();
-    
+
     this.#const_declarations_stack.length = 0;
     this.#const_scope_depth_stack.length = 0;
     this.#let_declarations_stack.length = 0;
@@ -1359,6 +1363,10 @@ export class TnglCodeParser {
     whitespace: /\s+/,
     punctuation: /[^\s\w]/,
   };
+
+  getVariableDeclarations() {
+    return this.#compiler.getVariableDeclarations();
+  }
 
   /*
    * Tiny tokenizer
