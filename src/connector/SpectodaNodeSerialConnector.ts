@@ -38,10 +38,23 @@ const PORT_OPTIONS = { path: "/dev/ttyS0", baudRate: 115200, dataBits: 8, stopBi
 
 const CODE_WRITE = 100;
 const CODE_READ = 200;
-
 const CHANNEL_NETWORK = 1;
 const CHANNEL_DEVICE = 2;
 const CHANNEL_CLOCK = 3;
+const COMMAND = 0;
+const DATA = 10;
+
+const UNKNOWN_PACKET = 0;
+
+const NETWORK_WRITE = CODE_WRITE + CHANNEL_NETWORK + COMMAND;
+const DEVICE_WRITE = CODE_WRITE + CHANNEL_DEVICE + COMMAND;
+const CLOCK_WRITE = CODE_WRITE + CHANNEL_CLOCK + COMMAND;
+const NETWORK_READ = CODE_READ + CHANNEL_NETWORK + COMMAND;
+const DEVICE_READ = CODE_READ + CHANNEL_DEVICE + COMMAND;
+const CLOCK_READ = CODE_READ + CHANNEL_CLOCK + COMMAND;
+const NETWORK_READ_DATA = CODE_READ + CHANNEL_NETWORK + DATA;
+const DEVICE_READ_DATA = CODE_READ + CHANNEL_DEVICE + DATA;
+const CLOCK_READ_DATA = CODE_READ + CHANNEL_CLOCK + DATA;
 
 const starts_with = function (buffer: number[], string: string, start_offset: number = 0) {
   for (let index = 0; index < string.length; index++) {
@@ -335,7 +348,7 @@ export class SpectodaNodeSerialConnector {
         let command_bytes: number[] = [];
 
         let header_bytes: number[] = [];
-        let data_header: { data_type: number, data_size: number, data_receive_timeout: number, data_crc32: number, header_crc32: number } | undefined = undefined;
+        let data_header: { data_type: number, data_size: number, data_receive_timeout: number, data_crc32: number, header_crc32: number } = { data_type: 0, data_size: 0, data_receive_timeout: 0, data_crc32: 0, header_crc32: 0 };
         let data_bytes: number[] = [];
 
         let notify_header: undefined | object = undefined;
@@ -367,7 +380,7 @@ export class SpectodaNodeSerialConnector {
         // });
 
         this.#serialPort.on('data', (chunk: Buffer) => {
-          // logging.info("[data]", decoder.decode(chunk));
+          logging.info("[data]", decoder.decode(chunk));
 
           for (const byte of chunk) {
 
@@ -423,6 +436,30 @@ export class SpectodaNodeSerialConnector {
                     else if (starts_with(command_bytes, "DATA", 3)) {
                       logging.verbose("SERIAL >>>DATA<<<")
                       this.#dataCallback && this.#dataCallback(new Uint8Array(data_bytes));
+                      
+                      if (data_header.data_type === NETWORK_WRITE) {
+                        logging.info("SERIAL >>>NETWORK_WRITE<<<")
+
+                        this.#runtimeReference.evaluate(new Uint8Array(data_bytes), 0x01010101);
+                      }
+
+                      else if (data_header.data_type === CLOCK_WRITE) {
+                        logging.info("SERIAL >>>CLOCK_WRITE<<<")
+
+                        let tnglReader = new TnglReader(new DataView(new Uint8Array(data_bytes).buffer));
+                        
+                        let clock_timestamp = tnglReader.readUint64();
+                        let timeline_timestamp = tnglReader.readUint32();
+                        let timeline_paused_flag = tnglReader.readUint32();
+                        let history_fingerprint = tnglReader.readBytes(4);
+                        let tngl_fingerprint = tnglReader.readBytes(4);
+
+                        console.info(`clock_timestamp=${clock_timestamp}, timeline_timestamp=${timeline_timestamp}, timeline_paused_flag=${timeline_paused_flag}, history_fingerprint=${history_fingerprint}, tngl_fingerprint=${tngl_fingerprint}`);
+
+                        this.#runtimeReference.clock = new TimeTrack(clock_timestamp);
+                        this.#runtimeReference.spectoda.setClock(this.#runtimeReference.clock);
+                      }
+                      
                       command_bytes.length = 0;
                     }
 
@@ -430,6 +467,9 @@ export class SpectodaNodeSerialConnector {
 
                   else if (ends_with(command_bytes, "DATA=")) {
                     mode = MODE_DATA_RECEIVE;
+
+                    header_bytes.length = 0;
+                    data_bytes.length = 0;
                   }
 
                   else if (command_bytes.length > 20) {
@@ -459,7 +499,7 @@ export class SpectodaNodeSerialConnector {
 
             else if (mode == MODE_DATA_RECEIVE) {
 
-              if (!data_header) {
+              if (header_bytes.length < 20) {
 
                 header_bytes.push(byte);
 
@@ -482,14 +522,6 @@ export class SpectodaNodeSerialConnector {
                 data_bytes.push(byte);
 
                 if (data_bytes.length >= data_header.data_size) {
-
-                  const data_array = new Uint8Array(data_bytes);
-                  logging.verbose("data_array=", data_array);
-
-                  this.#dataCallback && this.#dataCallback(data_array);
-                  header_bytes.length = 0;
-                  data_bytes.length = 0;
-                  data_header = undefined;
                   mode = MODE_UTF8_RECEIVE;
                 }
 
