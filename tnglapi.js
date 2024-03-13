@@ -35,9 +35,9 @@ const LocalStorageManager = {
  * @throws {Error} If the API request fails.
  */
 
-const url = location !== "undefined" && location.href.match(/studio|localhost/) ? `/api/tnglcode?id=${id}` : `https://studio.spectoda.com/api/tnglcode?id=${id}`;
-
 async function fetchTnglFromApiById(id) {
+  const url = typeof window !== "undefined" && location.href.match(/studio|localhost/) ? `/api/tnglcode?id=${id}` : `https://studio.spectoda.com/api/tnglcode?id=${id}`;
+
   try {
     const response = await fetch(url);
     const data = await response.json();
@@ -68,6 +68,8 @@ async function fetchTnglFromApiById(id) {
  */
 
 async function sendTnglToApi({ tngl, name, id }) {
+  const url = typeof window !== "undefined" && location.href.match(/studio|localhost/) ? `/api/tnglcode?id=${id}` : `https://studio.spectoda.com/api/tnglcode?id=${id}`;
+
   const options = {
     method: "POST",
     headers: { "content-type": "application/json" },
