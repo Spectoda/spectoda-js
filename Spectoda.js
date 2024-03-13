@@ -26,6 +26,7 @@ import { io } from "socket.io-client";
 import customParser from "socket.io-msgpack-parser";
 import { WEBSOCKET_URL } from "./SpectodaWebSocketsConnector.js";
 import { SpectodaRuntime, allEventsEmitter } from "./src/SpectodaRuntime.js";
+import { fetchTnglFromApiById, sendTnglToApi } from "./tnglapi.js";
 
 // should not create more than one object!
 // the destruction of the Spectoda is not well implemented
@@ -81,7 +82,6 @@ export class Spectoda {
     this.#connectionState = "disconnected";
     this.#websocketConnectionState = "disconnected";
 
-
     this.runtime.onConnected = event => {
       logging.debug("> Runtime connected");
     };
@@ -117,7 +117,6 @@ export class Spectoda {
   }
 
   #resetClockSyncInterval() {
-
     clearInterval(this.#clockSyncIntervalHandle);
 
     // auto clock sync loop
@@ -154,7 +153,6 @@ export class Spectoda {
         }
       }
     }, 8000); // ! it is set to 8000ms because of the 10s timeout in the serial connector
-
   }
 
   #setWebSocketConnectionState(websocketConnectionState) {
@@ -377,7 +375,6 @@ export class Spectoda {
       parser: customParser,
     });
 
-
     this.socket.connect();
     this.requestWakeLock(true);
 
@@ -386,15 +383,17 @@ export class Spectoda {
       // const peers = await this.getConnectedPeersInfo();
       // logging.debug("peers", peers);
       // this.socket.emit("set-connection-data", peers);
-      this.socket.emit("set-meta-data", meta)
+      this.socket.emit("set-meta-data", meta);
     };
 
-    this.socket.___SpectodaListeners = [this.on("connected", async () => {
-      setConnectionSocketData();
-    }), this.on("disconnected", () => {
-      this.socket.emit("set-connection-data", null);
-    })]
-
+    this.socket.___SpectodaListeners = [
+      this.on("connected", async () => {
+        setConnectionSocketData();
+      }),
+      this.on("disconnected", () => {
+        this.socket.emit("set-connection-data", null);
+      }),
+    ];
 
     allEventsEmitter.on("on", ({ name, args }) => {
       logging.verbose("on", name, args);
@@ -440,7 +439,6 @@ export class Spectoda {
       }
     });
 
-
     return await new Promise((resolve, reject) => {
       this.socket.on("disconnect", () => {
         this.#setWebSocketConnectionState("disconnected");
@@ -449,7 +447,7 @@ export class Spectoda {
       this.socket.on("connect", async () => {
         if (sessionOnly) {
           // Handle session-only logic
-          const response = await this.socket.emitWithAck("join-session", null)
+          const response = await this.socket.emitWithAck("join-session", null);
           const roomNumber = response?.roomNumber;
 
           if (response?.status === "success") {
@@ -466,7 +464,7 @@ export class Spectoda {
         } else if (signature) {
           // Handle signature-based logic
           this.#setWebSocketConnectionState("connecting");
-          logging.debug("Joining network remotely", signature, key)
+          logging.debug("Joining network remotely", signature, key);
           await this.socket
             .emitWithAck("join", { signature, key })
             .then(e => {
@@ -484,8 +482,6 @@ export class Spectoda {
         }
       });
     });
-
-
   }
 
   disableRemoteControl() {
@@ -681,7 +677,6 @@ export class Spectoda {
         return this.runtime.connect();
       })
       .then(connectedDeviceInfo => {
-
         this.#resetClockSyncInterval();
 
         logging.debug("> Synchronizing Network State...");
@@ -841,7 +836,7 @@ export class Spectoda {
         const response = await fetchTnglFromApiById(id);
         processed_tngl_code = processed_tngl_code.replace(match[0], response.tngl);
       } catch (e) {
-        logging.error(`Failed to fetch "${name}" from TNGL API`);
+        logging.error(`Failed to fetch "${name}" from TNGL API`, e);
         throw "FetchTnglFromApiFailed";
       }
     }
@@ -990,7 +985,6 @@ export class Spectoda {
       return func(device_ids);
     }
   }
-
 
   // event_label example: "evt1"
   // event_value example: 1000
@@ -1636,7 +1630,7 @@ export class Spectoda {
       const removed_device_mac_bytes = reader.readBytes(6);
 
       return this.rebootDevice()
-        .catch(() => { })
+        .catch(() => {})
         .then(() => {
           let removed_device_mac = "00:00:00:00:00:00";
           if (removed_device_mac_bytes.length >= 6) {
