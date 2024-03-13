@@ -34,9 +34,10 @@ const LocalStorageManager = {
  * @returns {Promise<ApiResponse>} A promise that resolves to the tngl data.
  * @throws {Error} If the API request fails.
  */
-async function fetchTnglFromApiById(id) {
-  const url = location.href.match(/studio|localhost/) ? `/api/tnglcode?id=${id}` : `https://studio.spectoda.com/api/tnglcode?id=${id}`;
 
+const url = location !== "undefined" && location.href.match(/studio|localhost/) ? `/api/tnglcode?id=${id}` : `https://studio.spectoda.com/api/tnglcode?id=${id}`;
+
+async function fetchTnglFromApiById(id) {
   try {
     const response = await fetch(url);
     const data = await response.json();
@@ -67,7 +68,6 @@ async function fetchTnglFromApiById(id) {
  */
 
 async function sendTnglToApi({ tngl, name, id }) {
-  const url = location.href.match(/studio|localhost/) ? `/api/tnglcode?id=${id}` : `https://studio.spectoda.com/api/tnglcode?id=${id}`;
   const options = {
     method: "POST",
     headers: { "content-type": "application/json" },
