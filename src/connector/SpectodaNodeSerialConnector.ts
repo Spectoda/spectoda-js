@@ -456,8 +456,8 @@ export class SpectodaNodeSerialConnector {
 
                         console.info(`clock_timestamp=${clock_timestamp}, timeline_timestamp=${timeline_timestamp}, timeline_paused_flag=${timeline_paused_flag}, history_fingerprint=${history_fingerprint}, tngl_fingerprint=${tngl_fingerprint}`);
 
-                        this.#runtimeReference.clock = new TimeTrack(clock_timestamp);
-                        this.#runtimeReference.spectoda.setClock(this.#runtimeReference.clock);
+                        this.#runtimeReference.clock.setMillis(clock_timestamp);
+                        this.#runtimeReference.spectoda.setClock(clock_timestamp);
                       }
                       
                       command_bytes.length = 0;
