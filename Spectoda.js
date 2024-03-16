@@ -435,7 +435,19 @@ export class Spectoda {
         callback({ status: "success", result });
       } catch (e) {
         logging.error(e);
-        callback({ status: "error", error: e });
+
+        // convert error to string becuase object is not serializable
+        if (typeof e === "string") {
+          callback({ status: "error", error: e });
+        } else if (e instanceof Error) {
+          callback({ status: "error", error: e.message });
+        } else if (e instanceof Object) {
+          callback({ status: "error", error: JSON.stringify(e) });
+        } else if (e instanceof Array) {
+          callback({ status: "error", error: JSON.stringify(e) });
+        } else {
+          callback({ status: "error", error: "" + e });
+        }
       }
     });
 
