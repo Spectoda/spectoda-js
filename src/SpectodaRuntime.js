@@ -144,8 +144,8 @@ export class SpectodaRuntime {
     this.#lastUpdateTime = new Date().getTime();
     this.#lastUpdatePercentage = 0;
 
-    this.onConnected = e => {};
-    this.onDisconnected = e => {};
+    this.onConnected = e => { };
+    this.onDisconnected = e => { };
 
     this.#eventEmitter.on("ota_progress", value => {
       const now = new Date().getTime();
@@ -238,17 +238,17 @@ export class SpectodaRuntime {
       });
     }
 
-    this.previewControllers = {};
+    // this.previewControllers = {};
 
-    this.#eventEmitter.on("wasm_execute", command => {
-      for (const previewController of Object.values(this.previewControllers)) {
-        try {
-          previewController.execute(command, 123456789);
-        } catch (error) {
-          logging.error(error);
-        }
-      }
-    });
+    // this.#eventEmitter.on("wasm_execute", command => {
+    //   for (const previewController of Object.values(this.previewControllers)) {
+    //     try {
+    //       previewController.execute(command, 123456789);
+    //     } catch (error) {
+    //       logging.error(error);
+    //     }
+    //   }
+    // });
 
     // this.#eventEmitter.on("wasm_request", command => {
     //   for (const previewController of Object.values(this.previewControllers)) {
@@ -256,15 +256,15 @@ export class SpectodaRuntime {
     //   }
     // });
 
-    this.#eventEmitter.on("wasm_clock", timestamp => {
-      for (const previewController of Object.values(this.previewControllers)) {
-        try {
-          previewController.setClock(timestamp, 123456789);
-        } catch (error) {
-          logging.error(error);
-        }
-      }
-    });
+    // this.#eventEmitter.on("wasm_clock", timestamp => {
+    //   for (const previewController of Object.values(this.previewControllers)) {
+    //     try {
+    //       previewController.setClock(timestamp, 123456789);
+    //     } catch (error) {
+    //       logging.error(error);
+    //     }
+    //   }
+    // });
   }
 
   #runtimeTask = async () => {
@@ -861,7 +861,7 @@ export class SpectodaRuntime {
                         try {
                           this.clock = await this.connector.getClock();
                           this.spectoda.setClock(this.clock.millis());
-                          this.emit("wasm_clock", this.clock.millis());
+                          // this.emit("wasm_clock", this.clock.millis());
                           item.resolve(device);
                         } catch (error) {
                           logging.error(error);
@@ -958,7 +958,7 @@ export class SpectodaRuntime {
 
                   logging.debug("REQUEST", uint8ArrayToHexString(item.a));
 
-                  this.emit("wasm_request", item.a);
+                  // this.emit("wasm_request", item.a);
                   this.spectoda.request(item.a, 0x00);
 
                   try {
@@ -973,7 +973,7 @@ export class SpectodaRuntime {
 
               case Query.TYPE_SET_CLOCK:
                 {
-                  this.emit("wasm_clock", item.a.millis());
+                  // this.emit("wasm_clock", item.a.millis());
                   this.spectoda.setClock(item.a.millis());
 
                   try {
@@ -1070,113 +1070,113 @@ export class SpectodaRuntime {
     return this.spectoda.readVariableAddress(variable_address, device_id);
   }
 
-  WIP_makePreviewController(controller_mac_address, controller_config) {
-    logging.debug(`> Making PreviewController ${controller_mac_address}...`);
+  // WIP_makePreviewController(controller_mac_address, controller_config) {
+  //   logging.debug(`> Making PreviewController ${controller_mac_address}...`);
 
-    if (typeof controller_config === "string") {
-      controller_config = JSON.parse(controller_config);
-    }
+  //   if (typeof controller_config === "string") {
+  //     controller_config = JSON.parse(controller_config);
+  //   }
 
-    logging.verbose(`controller_config=`, controller_config);
+  //   logging.verbose(`controller_config=`, controller_config);
 
-    let controller = new PreviewController(controller_mac_address);
-    this.previewControllers[controller_mac_address] = controller;
-    controller.construct(controller_config);
+  //   let controller = new PreviewController(controller_mac_address);
+  //   this.previewControllers[controller_mac_address] = controller;
+  //   controller.construct(controller_config);
 
-    return controller;
-  }
+  //   return controller;
+  // }
 
-  WIP_getPreviewController(controller_mac_address) {
-    logging.verbose(`> Getting PreviewController ${controller_mac_address}...`);
+  // WIP_getPreviewController(controller_mac_address) {
+  //   logging.verbose(`> Getting PreviewController ${controller_mac_address}...`);
 
-    return this.previewControllers[controller_mac_address];
-  }
+  //   return this.previewControllers[controller_mac_address];
+  // }
 
-  WIP_getPreviewControllers() {
-    logging.verbose(`> Getting PreviewControllers...`);
+  // WIP_getPreviewControllers() {
+  //   logging.verbose(`> Getting PreviewControllers...`);
 
-    return this.previewControllers;
-  }
+  //   return this.previewControllers;
+  // }
 
-  WIP_renderPreview() {
-    // logging.verbose(`> Rendering preview...`);
+  // WIP_renderPreview() {
+  //   // logging.verbose(`> Rendering preview...`);
 
-    for (const previewController of Object.values(this.previewControllers)) {
-      previewController.bakeTnglFrame();
-    }
-  }
+  //   for (const previewController of Object.values(this.previewControllers)) {
+  //     previewController.bakeTnglFrame();
+  //   }
+  // }
 
-  WIP_loadFS() {
-    return SpectodaWasm.loadFS();
-  }
+  // WIP_loadFS() {
+  //   return SpectodaWasm.loadFS();
+  // }
 
-  WIP_saveFS() {
-    return SpectodaWasm.saveFS();
-  }
+  // WIP_saveFS() {
+  //   return SpectodaWasm.saveFS();
+  // }
 
-  // returns a promise that resolves a bytecode of the captured port pixels
-  async WIP_capturePixels() {
-    const A_ASCII_CODE = "A".charCodeAt(0);
-    const D_ASCII_CODE = "D".charCodeAt(0);
+  // // returns a promise that resolves a bytecode of the captured port pixels
+  // async WIP_capturePixels() {
+  //   const A_ASCII_CODE = "A".charCodeAt(0);
+  //   const D_ASCII_CODE = "D".charCodeAt(0);
 
-    const PIXEL_ENCODING_CODE = 1;
+  //   const PIXEL_ENCODING_CODE = 1;
 
-    let uuidCounter = Math.floor(Math.random() * 0xffffffff);
+  //   let uuidCounter = Math.floor(Math.random() * 0xffffffff);
 
-    const writer = new TnglWriter(65535);
+  //   const writer = new TnglWriter(65535);
 
-    for (const previewController of Object.values(this.previewControllers)) {
-      const tempWriter = new TnglWriter(65535);
+  //   for (const previewController of Object.values(this.previewControllers)) {
+  //     const tempWriter = new TnglWriter(65535);
 
-      for (let portTag = A_ASCII_CODE; portTag <= D_ASCII_CODE; portTag++) {
-        const request_uuid = uuidCounter++;
-        const request_bytes = [COMMAND_FLAGS.FLAG_READ_PORT_PIXELS_REQUEST, ...numberToBytes(request_uuid, 4), portTag, PIXEL_ENCODING_CODE];
+  //     for (let portTag = A_ASCII_CODE; portTag <= D_ASCII_CODE; portTag++) {
+  //       const request_uuid = uuidCounter++;
+  //       const request_bytes = [COMMAND_FLAGS.FLAG_READ_PORT_PIXELS_REQUEST, ...numberToBytes(request_uuid, 4), portTag, PIXEL_ENCODING_CODE];
 
-        logging.debug("Sending request", uint8ArrayToHexString(request_bytes));
-        const response = await previewController.request(new Uint8Array(request_bytes), 123456789);
+  //       logging.debug("Sending request", uint8ArrayToHexString(request_bytes));
+  //       const response = await previewController.request(new Uint8Array(request_bytes), 123456789);
 
-        logging.debug("Received response", uint8ArrayToHexString(response));
-        const tempReader = new TnglReader(new DataView(response.buffer));
+  //       logging.debug("Received response", uint8ArrayToHexString(response));
+  //       const tempReader = new TnglReader(new DataView(response.buffer));
 
-        const response_flag = tempReader.readFlag();
-        if (response_flag !== COMMAND_FLAGS.FLAG_READ_PORT_PIXELS_RESPONSE) {
-          logging.error("InvalidResponse1");
-          continue;
-        }
+  //       const response_flag = tempReader.readFlag();
+  //       if (response_flag !== COMMAND_FLAGS.FLAG_READ_PORT_PIXELS_RESPONSE) {
+  //         logging.error("InvalidResponse1");
+  //         continue;
+  //       }
 
-        const response_uuid = tempReader.readUint32();
-        if (response_uuid !== request_uuid) {
-          logging.error("InvalidResponse2");
-          continue;
-        }
+  //       const response_uuid = tempReader.readUint32();
+  //       if (response_uuid !== request_uuid) {
+  //         logging.error("InvalidResponse2");
+  //         continue;
+  //       }
 
-        const error_code = tempReader.readUint8();
-        if (error_code === 0) {
-          // error_code 0 is success
-          const pixelDataSize = tempReader.readUint16();
-          logging.debug("pixelDataSize=", pixelDataSize);
+  //       const error_code = tempReader.readUint8();
+  //       if (error_code === 0) {
+  //         // error_code 0 is success
+  //         const pixelDataSize = tempReader.readUint16();
+  //         logging.debug("pixelDataSize=", pixelDataSize);
 
-          const pixelData = tempReader.readBytes(pixelDataSize);
-          logging.debug("pixelData=", pixelData);
+  //         const pixelData = tempReader.readBytes(pixelDataSize);
+  //         logging.debug("pixelData=", pixelData);
 
-          tempWriter.writeBytes([COMMAND_FLAGS.FLAG_WRITE_PORT_PIXELS_REQUEST, ...numberToBytes(uuidCounter++, 4), portTag, PIXEL_ENCODING_CODE, ...numberToBytes(pixelDataSize, 2), ...pixelData]);
-        }
-      }
+  //         tempWriter.writeBytes([COMMAND_FLAGS.FLAG_WRITE_PORT_PIXELS_REQUEST, ...numberToBytes(uuidCounter++, 4), portTag, PIXEL_ENCODING_CODE, ...numberToBytes(pixelDataSize, 2), ...pixelData]);
+  //       }
+  //     }
 
-      const controllerIdentifier = previewController.identifier;
-      logging.debug("controllerIdentifier=", controllerIdentifier);
+  //     const controllerIdentifier = previewController.identifier;
+  //     logging.debug("controllerIdentifier=", controllerIdentifier);
 
-      const tempWriterDataView = tempWriter.bytes;
-      const tempWriterDataArray = new Uint8Array(tempWriterDataView.buffer);
+  //     const tempWriterDataView = tempWriter.bytes;
+  //     const tempWriterDataArray = new Uint8Array(tempWriterDataView.buffer);
 
-      writer.writeBytes([COMMAND_FLAGS.FLAG_EVALUATE_ON_CONTROLLER_REQUEST, ...numberToBytes(uuidCounter++, 4), ...numberToBytes(controllerIdentifier, 4), ...numberToBytes(tempWriter.written, 2), ...tempWriterDataArray]);
-    }
+  //     writer.writeBytes([COMMAND_FLAGS.FLAG_EVALUATE_ON_CONTROLLER_REQUEST, ...numberToBytes(uuidCounter++, 4), ...numberToBytes(controllerIdentifier, 4), ...numberToBytes(tempWriter.written, 2), ...tempWriterDataArray]);
+  //   }
 
-    const command_bytes = new Uint8Array(writer.bytes.buffer);
-    logging.verbose("command_bytes=", command_bytes);
+  //   const command_bytes = new Uint8Array(writer.bytes.buffer);
+  //   logging.verbose("command_bytes=", command_bytes);
 
-    this.execute(command_bytes);
+  //   this.execute(command_bytes);
 
-    return command_bytes;
-  }
+  //   return command_bytes;
+  // }
 }
