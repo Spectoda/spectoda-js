@@ -24,9 +24,14 @@ if (typeof window !== "undefined") {
 /////////////////////////////////////////////////////////////////////////////////////
 
 export function createSpectodaWebsocket() {
-  const timeline = new TimeTrack();
 
-  // todo sync timeline
+  // ! this timeline is a dummy timeline that it not correctly synced across remote control
+  // TODO sync timeline over RC
+  const dummyTimeline = new TimeTrack(0, true);
+  dummyTimeline.on("change", time => {
+    dummyTimeline.setMillisWithoutEvent(0);
+    dummyTimeline.pauseWithoutEvent();
+  });
 
   const socket = io(WEBSOCKET_URL, {
     parser: customParser,
@@ -91,7 +96,7 @@ export function createSpectodaWebsocket() {
               return unsub;
             };
           } else if (prop === "timeline") {
-            return timeline;
+            return dummyTimeline;
           } else if (prop === "init") {
             // Expects [{key,sig}, ...] or {key,sig}
             return params => {
