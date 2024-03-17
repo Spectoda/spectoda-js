@@ -2377,4 +2377,8 @@ export class Spectoda {
   execute(bytecode) {
     return this.runtime.execute(bytecode, null, 60000);
   }
+
+  reload() {
+    process.exit(1);
+  }
 }
