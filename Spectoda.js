@@ -136,12 +136,6 @@ export class Spectoda {
         if (this.#getConnectionState() === "connected") {
           return (
             this.syncClock()
-              // .then(() => {
-              //   return this.syncTimeline();
-              // })
-              // .then(() => {
-              //   return this.syncEventHistory(); // ! this might slow down stuff for Bukanyr
-              // })
               .catch(error => {
                 logging.warn(error);
               })
@@ -2335,6 +2329,48 @@ export class Spectoda {
       logging.info(`> Controller Codes: pcb_code=${pcb_code}, product_code=${product_code}`);
 
       return { pcb_code: pcb_code, product_code: product_code };
+    });
+  }
+
+  syncTnglFromControllerToWasm() {
+    logging.info("> Requesting event history bytecode...");
+
+    const request_uuid = this.#getUUID();
+    const bytes = [COMMAND_FLAGS.FLAG_TNGL_BC_REQUEST, ...numberToBytes(request_uuid, 4)];
+
+    return this.runtime.request(bytes, true).then(response => {
+      let reader = new TnglReader(response);
+
+      logging.info(`response.byteLength=${response.byteLength}`);
+
+      if (reader.readFlag() !== COMMAND_FLAGS.FLAG_TNGL_BC_RESPONSE) {
+        logging.error("InvalidResponseFlag");
+        throw "InvalidResponseFlag";
+      }
+
+      const response_uuid = reader.readUint32();
+
+      if (response_uuid != request_uuid) {
+        logging.error("InvalidResponseUuid");
+        throw "InvalidResponseUuid";
+      }
+
+      const error_code = reader.readUint8();
+
+      logging.info(`error_code=${error_code}`);
+
+      if (error_code === 0) {
+        const tngl_bytecode_size = reader.readUint16();
+        logging.info(`tngl_bytecode_size=${tngl_bytecode_size}`);
+
+        const tngl_bytecode = reader.readBytes(tngl_bytecode_size);
+        logging.info(`tngl_bytecode=[${tngl_bytecode}]`);
+
+        this.runtime.evaluate(new Uint8Array(tngl_bytecode), 0x01);
+      } else {
+        logging.error("Failed to sync TNGL bytecode from controller to wasm");
+        throw "Fail";
+      }
     });
   }
 

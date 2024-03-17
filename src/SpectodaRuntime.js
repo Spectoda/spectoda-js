@@ -101,7 +101,8 @@ class Query {
 
 // filters out duplicate payloads and merges them together. Also decodes payloads received from the connector.
 export class SpectodaRuntime {
-  #spectodaReference;
+  spectodaReference;
+  spectoda;
 
   #eventEmitter;
 
@@ -121,8 +122,9 @@ export class SpectodaRuntime {
   #inicilized;
 
   constructor(spectodaReference) {
-    this.#spectodaReference = spectodaReference;
+    this.spectodaReference = spectodaReference;
 
+    // this.spectoda is webassembly spectoda instance 
     this.spectoda = new Spectoda_JS(this);
 
     this.clock = new TimeTrack(0);

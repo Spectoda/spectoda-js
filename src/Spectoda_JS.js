@@ -2,7 +2,7 @@ import { TextureLoader } from "three";
 import { logging } from "../logging";
 import { SpectodaWasm } from "./SpectodaWasm.js";
 
-const WASM_VERSION = "DEBUG_0.9.10_20240312";
+const WASM_VERSION = "DEBUG_0.9.10_20240317";
 
 export const COMMAND_FLAGS = Object.freeze({
   FLAG_UNSUPPORTED_COMMND_RESPONSE: 255, // TODO change FLAG_OTA_BEGIN to not be 255.
@@ -37,6 +37,9 @@ export const COMMAND_FLAGS = Object.freeze({
   FLAG_EMIT_LABEL_EVENT: 115,
 
   // Former CommandFlag end
+
+  FLAG_TNGL_BC_REQUEST: 180,
+  FLAG_TNGL_BC_RESPONSE: 181,
 
   FLAG_READ_PORT_PIXELS_REQUEST: 190,
   FLAG_READ_PORT_PIXELS_RESPONSE: 191,
@@ -122,10 +125,15 @@ export class Spectoda_JS {
 
   #instance;
 
+  // this is a concept from 0.10. It is used to store the last known state of the timeline and the clock.
+  synchronization; // { clock_timestamp, timeline_timestamp, timeline_paused, history_fingerprint, tngl_fingerprint };
+
   constructor(runtimeReference) {
     this.#runtimeReference = runtimeReference;
 
     this.#instance = null;
+
+    this.synchronization = {};
   }
 
   waitForInitilize() {
@@ -254,7 +262,11 @@ export class Spectoda_JS {
         // },
 
         _onSynchronize: synchronization_object => {
-          logging.debug("_onSynchronize", synchronization_object);
+          this.synchronization.clock_timestamp = synchronization_object.clock_timestamp;
+          this.synchronization.timeline_timestamp = synchronization_object.timeline_timestamp;
+          this.synchronization.timeline_paused_flag = synchronization_object.timeline_paused;
+          this.synchronization.tngl_fingerprint = synchronization_object.tngl_fingerprint;
+          this.synchronization.history_fingerprint = synchronization_object.history_fingerprint;
         },
 
         _handlePeerConnected: peer_mac => {
@@ -417,6 +429,30 @@ export class Spectoda_JS {
     }
 
     return this.#instance.readVariableAddress(variable_address, device_id);
+  }
+
+  clearHistory() {
+    if (!this.#instance) {
+      throw "NotConstructed";
+    }
+
+    this.#instance.clearHistory();
+  }
+
+  clearTngl() {
+    if (!this.#instance) {
+      throw "NotConstructed";
+    }
+
+    this.#instance.clearTngl();
+  }
+
+  clearTimeline() {
+    if (!this.#instance) {
+      throw "NotConstructed";
+    }
+
+    this.#instance.clearTimeline();
   }
 }
 

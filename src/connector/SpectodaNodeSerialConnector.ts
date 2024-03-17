@@ -13,7 +13,7 @@ cat /boot/orangepiEnv.txt
 */
 
 import { logging } from "../../logging";
-import { sleep, toBytes, numberToBytes, crc8, crc32, hexStringToArray, rgbToHex, stringToBytes, convertToByteArray } from "../../functions";
+import { sleep, toBytes, numberToBytes, crc8, crc32, hexStringToArray, rgbToHex, stringToBytes, convertToByteArray, uint8ArrayToHexString } from "../../functions";
 import { TimeTrack } from "../../TimeTrack.js";
 import { COMMAND_FLAGS } from "../Spectoda_JS.js";
 import { TnglWriter } from "../../TnglWriter.js";
@@ -447,17 +447,53 @@ export class SpectodaNodeSerialConnector {
                         logging.debug("SERIAL >>>CLOCK_WRITE<<<")
 
                         let tnglReader = new TnglReader(new DataView(new Uint8Array(data_bytes).buffer));
-                        
+
                         let clock_timestamp = tnglReader.readUint64();
                         let timeline_timestamp = tnglReader.readUint32();
-                        let timeline_paused_flag = tnglReader.readUint32();
-                        let history_fingerprint = tnglReader.readBytes(4);
-                        let tngl_fingerprint = tnglReader.readBytes(4);
+                        let timeline_paused = tnglReader.readUint32();
+                        let history_fingerprint = uint8ArrayToHexString(tnglReader.readBytes(4));
+                        let tngl_fingerprint = uint8ArrayToHexString(tnglReader.readBytes(4));
 
-                        console.info(`clock_timestamp=${clock_timestamp}, timeline_timestamp=${timeline_timestamp}, timeline_paused_flag=${timeline_paused_flag}, history_fingerprint=${history_fingerprint}, tngl_fingerprint=${tngl_fingerprint}`);
+                        console.info(`NodeSerialConnector: clock_timestamp=${clock_timestamp}, timeline_timestamp=${timeline_timestamp}, timeline_paused=${timeline_paused}, history_fingerprint=${history_fingerprint}, tngl_fingerprint=${tngl_fingerprint}`);
 
                         this.#runtimeReference.clock.setMillis(clock_timestamp);
                         this.#runtimeReference.spectoda.setClock(clock_timestamp);
+
+                        // ! this whole section should be moved to SpectodaRuntime
+                        if (this.#runtimeReference.spectoda.synchronization) {
+                          const synchronization = this.#runtimeReference.spectoda.synchronization;
+
+                          if (!synchronization.history_fingerprint.startsWith(history_fingerprint)) {
+                            logging.warn("> Synchronizing event history...");
+
+                            // TODO sync history from wasm to controller instead of clearing it
+                            try {
+                              this.#runtimeReference.spectoda.clearHistory();
+                            } catch (error) {
+                              logging.error("Failed to clear wasm history", error);
+                            }
+
+                            this.#runtimeReference.spectodaReference.syncEventHistory().catch(error => {
+                              logging.error("Failed to sync history", error);
+                            });
+                          }
+
+                          else if (!synchronization.tngl_fingerprint.startsWith(tngl_fingerprint)) {
+                            logging.warn("> Synchronizing tngl...");
+
+                            // TODO sync tngl from wasm to controller instead of clearing it
+                            try {
+                              this.#runtimeReference.spectoda.clearTngl();
+                            } catch (error) {
+                              logging.error("Failed to clear wasm tngl", error);
+                            }
+
+                            this.#runtimeReference.spectodaReference.syncTnglFromControllerToWasm().catch(error => {
+                              logging.error("Failed to sync tngl", error);
+                            });
+                          }
+                        }
+
                       }
                       
                       command_bytes.length = 0;
@@ -1011,7 +1047,8 @@ export class SpectodaNodeSerialConnector {
           await this.#write(CHANNEL_DEVICE, bytes, 10000);
         }
 
-        logging.info("Firmware written in " + (new Date().getTime() - start_timestamp) / 1000 + " seconds");
+        //? keep this as console.log to log even if the logging level is set to 0
+        console.log("Firmware written in " + (new Date().getTime() - start_timestamp) / 1000 + " seconds");
 
         await sleep(2000);
 
