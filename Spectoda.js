@@ -507,10 +507,10 @@ export class Spectoda {
     return this.runtime.on(event, callback);
   }
 
-  scan() {
-    logging.info(`scan()`);
+  scan(criteria = [{}], timeout = NULL_VALUE) {
+    logging.info(`scan(criteria=${criteria}, timeout=${timeout})`);
 
-    return this.runtime.scan([{}], NULL_VALUE);
+    return this.runtime.scan(criteria, timeout);
   }
 
   connect(criteria = null, autoConnect = true, ownerSignature = null, ownerKey = null, connectAny = false, fwVersion = "") {
@@ -613,6 +613,7 @@ export class Spectoda {
   }
 
   disconnect() {
+    logging.verbose("disconnect()");
 
     if (this.#connecting) {
       Promise.reject("ConnectingInProgress");
@@ -636,11 +637,19 @@ export class Spectoda {
   }
 
   connected() {
+    logging.verbose("connected()");
+
     if (this.#connecting || this.#disconnecting) {
       return Promise.resolve(null); // resolve nothing === not connected
     }
 
     return this.runtime.connected();
+  }
+
+  cancel() {
+    logging.verbose("cancel()");
+
+    return this.runtime.cancel();
   }
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

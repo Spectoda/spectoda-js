@@ -70,6 +70,7 @@ class FlutterConnection {
         window.flutterConnection.reject(value);
       });
 
+      // TODO deprecate #emit and replace with #connected and #disconnected
       window.addEventListener("#emit", e => {
         // @ts-ignore
         const event = e.detail.value;
@@ -108,6 +109,15 @@ class FlutterConnection {
         // @ts-ignore
         const bytes = e.detail.value;
         logging.debug(`> Triggered #clock: [${bytes}]`, bytes);
+      });
+
+      window.addEventListener("#scan", e => {
+        // @ts-ignore
+        const json = e.detail.value;
+        logging.debug(`> Triggered #scan: [${json}]`);
+
+        // @ts-ignore
+        window.flutterConnection.emit("scan", json);
       });
 
       logging.verbose("> FlutterConnection inited");
@@ -452,8 +462,8 @@ export class FlutterConnector extends FlutterConnection {
     this.#promise = null;
 
     // @ts-ignore
-    window.flutterConnection.emit = event => {
-      this.#interfaceReference.emit(event, null);
+    window.flutterConnection.emit = (event, value) => {
+      this.#interfaceReference.emit(event, value);
     };
 
     // @ts-ignore
@@ -1060,6 +1070,12 @@ criteria example:
       .finally(() => {
         this.#interfaceReference.releaseWakeLock();
       });
+  }
+
+  cancel() {
+    logging.debug("cancel()");
+
+    window.flutter_inappwebview.callHandler("cancel");
   }
 
   destroy() {
