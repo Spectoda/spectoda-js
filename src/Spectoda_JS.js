@@ -172,8 +172,15 @@ export class Spectoda_JS {
         _onEvents: event_array => {
           logging.verbose("_onEvents", event_array);
 
-          for (let i = 0; i < event_array.length; i++) {
-            event_array[i].timestamp_utc = Date.now();
+          for (let i = event_array.length - 1; i >= 0; i--) {
+            if (
+              // ! This should handle FW instead, no IDxxx from FW here
+              event_array[i].label.match(/^ID/)
+            ) {
+              event_array.splice(i, 1)
+            } else {
+              event_array[i].timestamp_utc = Date.now();
+            }
           }
 
           if (event_array.length && logging.level >= 3) {
