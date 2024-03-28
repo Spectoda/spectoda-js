@@ -463,22 +463,7 @@ export class SpectodaNodeSerialConnector {
                         if (this.#runtimeReference.spectoda.synchronization) {
                           const synchronization = this.#runtimeReference.spectoda.synchronization;
 
-                          if (!synchronization.history_fingerprint.startsWith(history_fingerprint)) {
-                            logging.warn("> Synchronizing event history...");
-
-                            // TODO sync history from wasm to controller instead of clearing it
-                            try {
-                              this.#runtimeReference.spectoda.clearHistory();
-                            } catch (error) {
-                              logging.error("Failed to clear wasm history", error);
-                            }
-
-                            this.#runtimeReference.spectodaReference.syncEventHistory().catch(error => {
-                              logging.error("Failed to sync history", error);
-                            });
-                          }
-
-                          else if (!synchronization.tngl_fingerprint.startsWith(tngl_fingerprint)) {
+                          if (!synchronization.tngl_fingerprint.startsWith(tngl_fingerprint)) {
                             logging.warn("> Synchronizing tngl...");
 
                             // TODO sync tngl from wasm to controller instead of clearing it
@@ -490,6 +475,21 @@ export class SpectodaNodeSerialConnector {
 
                             this.#runtimeReference.spectodaReference.syncTnglFromControllerToWasm().catch(error => {
                               logging.error("Failed to sync tngl", error);
+                            });
+                          }
+
+                         else if (!synchronization.history_fingerprint.startsWith(history_fingerprint)) {
+                            logging.warn("> Synchronizing event history...");
+
+                            // TODO sync history from wasm to controller instead of clearing it
+                            try {
+                              this.#runtimeReference.spectoda.clearHistory();
+                            } catch (error) {
+                              logging.error("Failed to clear wasm history", error);
+                            }
+
+                            this.#runtimeReference.spectodaReference.syncEventHistory().catch(error => {
+                              logging.error("Failed to sync history", error);
                             });
                           }
                         }
