@@ -70,6 +70,7 @@ class FlutterConnection {
         window.flutterConnection.reject(value);
       });
 
+      // TODO deprecate #emit and replace with #connected and #disconnected
       window.addEventListener("#emit", e => {
         // @ts-ignore
         const event = e.detail.value;
@@ -108,6 +109,15 @@ class FlutterConnection {
         // @ts-ignore
         const bytes = e.detail.value;
         logging.debug(`> Triggered #clock: [${bytes}]`, bytes);
+      });
+
+      window.addEventListener("#scan", e => {
+        // @ts-ignore
+        const json = e.detail.value;
+        logging.debug(`> Triggered #scan: [${json}]`);
+
+        // @ts-ignore
+        window.flutterConnection.emit("scan", json);
       });
 
       logging.verbose("> FlutterConnection inited");
@@ -452,8 +462,8 @@ export class FlutterConnector extends FlutterConnection {
     this.#promise = null;
 
     // @ts-ignore
-    window.flutterConnection.emit = event => {
-      this.#interfaceReference.emit(event, null);
+    window.flutterConnection.emit = (event, value) => {
+      this.#interfaceReference.emit(event, value);
     };
 
     // @ts-ignore
@@ -568,7 +578,7 @@ criteria example:
   // are eligible.
 
   autoSelect(criteria_object, scan_duration_number, timeout_number) {
-    if (scan_duration_number === NULL_VALUE) { scan_duration_number = 1200; } // 1200ms seems to be the minimum for the scan_duration if the controller is rebooted
+    if (scan_duration_number === NULL_VALUE) { scan_duration_number = 1500; } // 1200ms seems to be the minimum for the scan_duration if the controller is rebooted
     if (timeout_number === NULL_VALUE) { timeout_number = 5000; }
     // step 1. for the scan_duration scan the surroundings for BLE devices.
     // step 2. if some devices matching the criteria are found, then select the one with
@@ -576,7 +586,7 @@ criteria example:
     //         then return error
 
     const MINIMAL_AUTOSELECT_SCAN_DURATION = 1200;
-    const MINIMAL_AUTOSELECT_TIMEOUT = 2000;
+    const MINIMAL_AUTOSELECT_TIMEOUT = 3000;
 
     const criteria_json = JSON.stringify(criteria_object);
 
@@ -1060,6 +1070,12 @@ criteria example:
       .finally(() => {
         this.#interfaceReference.releaseWakeLock();
       });
+  }
+
+  cancel() {
+    logging.debug("cancel()");
+
+    window.flutter_inappwebview.callHandler("cancel");
   }
 
   destroy() {

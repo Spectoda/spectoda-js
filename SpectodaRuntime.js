@@ -819,6 +819,12 @@ export class SpectodaRuntime {
     return item.promise;
   }
 
+  cancel() {
+    if (this.connector) {
+      this.connector.cancel();
+    }
+  }
+
   destroyConnector() {
     const item = new Query(Query.TYPE_DESTROY);
 

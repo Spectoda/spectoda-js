@@ -4,7 +4,7 @@ const { execSync } = require("child_process");
 const TARGET_CHANNEL_ID = "C05GTKQ5JHW"; // #monorepo-commits
 const ACCESS_TOKEN = process.env.SCREAM_COMMITS_SLACK_ID;
 
-const githubProject = "https://github.com/Spectoda/spectoda-monorepo";
+const githubProject = "https://github.com/Spectoda/spectoda-js";
 
 const slackApi = axios.create({
   baseURL: "https://slack.com/api",

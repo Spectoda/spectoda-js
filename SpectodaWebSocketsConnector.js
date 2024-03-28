@@ -24,9 +24,14 @@ if (typeof window !== "undefined") {
 /////////////////////////////////////////////////////////////////////////////////////
 
 export function createSpectodaWebsocket() {
-  const timeline = new TimeTrack();
 
-  // todo sync timeline
+  // ! this timeline is a dummy timeline that it not correctly synced across remote control
+  // TODO sync timeline over RC
+  const dummyTimeline = new TimeTrack(0, true);
+  dummyTimeline.on("change", time => {
+    dummyTimeline.setMillisWithoutEvent(0);
+    dummyTimeline.pauseWithoutEvent();
+  });
 
   const socket = io(WEBSOCKET_URL, {
     parser: customParser,
@@ -91,7 +96,7 @@ export function createSpectodaWebsocket() {
               return unsub;
             };
           } else if (prop === "timeline") {
-            return timeline;
+            return dummyTimeline;
           } else if (prop === "init") {
             // Expects [{key,sig}, ...] or {key,sig}
             return params => {
@@ -154,23 +159,24 @@ export function createSpectodaWebsocket() {
             if (result.status === "success") {
               for (let res of result?.data) {
                 if (res.status === "error") {
-                  logging.error("[WEBSOCKET]", result);
-
-                  throw new Error(res.error);
+                  logging.error("[WEBSOCKET]", res);
+                  throw new Error(res?.error);
                 }
               }
 
               logging.verbose("[WEBSOCKET]", result);
 
               return result?.data?.[0].result;
-            } else {
-              let error = new Error(result?.error);
-              if (Array.isArray(result)) {
-                error = new Error(result[0]);
-              }
-              logging.error("[WEBSOCKET]", error);
+            }
 
+            else if (result.status === "error") {
+              logging.error("[WEBSOCKET]", result);
               throw new Error(result?.error);
+            }
+
+            else {
+              logging.error("[WEBSOCKET]", result);
+              throw new Error("Unknown error");
             }
           };
         },
