@@ -1,6 +1,11 @@
+import { FlutterConnector } from "./FlutterConnector";
 import { SpectodaDummyConnector } from "./SpectodaDummyConnector";
 import { SpectodaWebBluetoothConnector } from "./SpectodaWebBluetoothConnector";
 import { SpectodaWebSerialConnector } from "./SpectodaWebSerialConnector";
+import { TimeTrack } from "./TimeTrack";
+import "./TnglReader";
+import { TnglReader } from "./TnglReader";
+import "./TnglWriter";
 import {
   createNanoEvents,
   createNanoEventsWithWrappedEmit,
@@ -18,11 +23,6 @@ import {
   uint8ArrayToHexString,
 } from "./functions";
 import { logging } from "./logging";
-import { FlutterConnector } from "./FlutterConnector";
-import { TimeTrack } from "./TimeTrack";
-import "./TnglReader";
-import { TnglReader } from "./TnglReader";
-import "./TnglWriter";
 
 export const NULL_VALUE = null;
 
@@ -244,8 +244,8 @@ export class SpectodaRuntime {
     this.#isPrioritizedWakelock = false;
     this.#assignedConnector = "none";
 
-    this.onConnected = e => { };
-    this.onDisconnected = e => { };
+    this.onConnected = e => {};
+    this.onDisconnected = e => {};
 
     this.#eventEmitter.on("ota_status", value => {
       if (value === "begin") {
@@ -297,42 +297,42 @@ export class SpectodaRuntime {
       // @ts-ignore
 
       /** @type {HTMLBodyElement} */ document.querySelector("body").addEventListener("click", function (e) {
-      e.preventDefault();
+        e.preventDefault();
 
-      (function (e, d, w) {
-        if (!e.composedPath) {
-          e.composedPath = function () {
-            if (this.path) {
+        (function (e, d, w) {
+          if (!e.composedPath) {
+            e.composedPath = function () {
+              if (this.path) {
+                return this.path;
+              }
+              var target = this.target;
+
+              this.path = [];
+              while (target.parentNode !== null) {
+                this.path.push(target);
+                target = target.parentNode;
+              }
+              this.path.push(d, w);
               return this.path;
-            }
-            var target = this.target;
+            };
+          }
+        })(Event.prototype, document, window);
+        // @ts-ignore
+        const path = e.path || (e.composedPath && e.composedPath());
 
-            this.path = [];
-            while (target.parentNode !== null) {
-              this.path.push(target);
-              target = target.parentNode;
-            }
-            this.path.push(d, w);
-            return this.path;
-          };
+        // @ts-ignore
+        for (let el of path) {
+          if (el.tagName === "A" && el.getAttribute("target") === "_blank") {
+            e.preventDefault();
+            const url = el.getAttribute("href");
+            logging.verbose(url);
+            // @ts-ignore
+            logging.debug("Openning external url", url);
+            window.flutter_inappwebview.callHandler("openExternalUrl", url);
+            break;
+          }
         }
-      })(Event.prototype, document, window);
-      // @ts-ignore
-      const path = e.path || (e.composedPath && e.composedPath());
-
-      // @ts-ignore
-      for (let el of path) {
-        if (el.tagName === "A" && el.getAttribute("target") === "_blank") {
-          e.preventDefault();
-          const url = el.getAttribute("href");
-          logging.verbose(url);
-          // @ts-ignore
-          logging.debug("Openning external url", url);
-          window.flutter_inappwebview.callHandler("openExternalUrl", url);
-          break;
-        }
-      }
-    });
+      });
     }
 
     window.addEventListener("beforeunload", e => {
@@ -463,9 +463,7 @@ export class SpectodaRuntime {
     this.#assignedConnector = connector_type;
   }
 
-
   async #updateConnector() {
-
     if ((!this.connector && this.#assignedConnector === "none") || (this.connector && this.connector.type === this.#assignedConnector)) {
       logging.verbose("connector is already set as requested");
       return;
@@ -481,7 +479,7 @@ export class SpectodaRuntime {
         this.connector = null;
         break;
 
-      case "dummy":
+      case "simulated":
         this.connector = new SpectodaDummyConnector(this, false);
         break;
 
@@ -509,7 +507,6 @@ export class SpectodaRuntime {
         if ((detectAndroid() && detectChrome()) || (detectMacintosh() && detectChrome()) || (detectWindows() && detectChrome()) || (detectLinux() && detectChrome())) {
           this.connector = new SpectodaWebBluetoothConnector(this);
         } else {
-
           //! TODO - spectoda.js should not show any alerts or confirmations
           //! refactor this to be handled by the app - but make sure that evenry app has this handled - and thats the challenge
 
@@ -590,7 +587,6 @@ export class SpectodaRuntime {
         logging.warn("Selected unknown connector");
         throw "UnknownConnector";
     }
-
   }
 
   userSelect(criteria, timeout = NULL_VALUE) {
@@ -936,7 +932,8 @@ export class SpectodaRuntime {
               case Query.TYPE_CONNECT:
                 {
                   try {
-                    await this.connector.connect(item.a) // a = timeout
+                    await this.connector
+                      .connect(item.a) // a = timeout
                       .then(device => {
                         if (!this.#connectGuard) {
                           logging.error("Connection logic error. #connected not called during successful connect()?");
@@ -1092,7 +1089,7 @@ export class SpectodaRuntime {
                 {
                   try {
                     await this.requestWakeLock();
-                  } catch { }
+                  } catch {}
 
                   try {
                     await this.connector.updateFW(item.a).then(response => {
@@ -1104,7 +1101,7 @@ export class SpectodaRuntime {
 
                   try {
                     this.releaseWakeLock();
-                  } catch { }
+                  } catch {}
                 }
                 break;
 
@@ -1113,7 +1110,6 @@ export class SpectodaRuntime {
                   try {
                     await this.connector.disconnect();
                     await this.connector.destroy();
-
                   } catch (error) {
                     console.warn("Error while destroying connector:", error);
                   } finally {
@@ -1152,7 +1148,6 @@ export class SpectodaRuntime {
       let emitted_events = [];
 
       while (reader.available > 0) {
-
         const command_flag = reader.peekFlag();
 
         switch (command_flag) {
@@ -1403,7 +1398,6 @@ export class SpectodaRuntime {
           logging.info(informations.join("\n"));
         }
       }
-
     } catch (e) {
       logging.error("Error during process:", e);
     }
