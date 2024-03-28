@@ -838,7 +838,7 @@ export class Spectoda {
       const id = encodeURIComponent(name);
 
       try {
-        logging.verbose(`fetchTnglFromApiById({ id=${id} })`);
+        logging.info(`fetchTnglFromApiById({ id=${id} })`);
         const response = await fetchTnglFromApiById(id);
         processed_tngl_code = processed_tngl_code.replace(match[0], response.tngl);
       } catch (e) {
@@ -912,7 +912,6 @@ export class Spectoda {
     }
 
     const reinterpret_bytecode = [COMMAND_FLAGS.FLAG_REINTERPRET_TNGL, ...numberToBytes(this.runtime.clock.millis(), 6), 0, ...numberToBytes(tngl_bytes.length, 4), ...tngl_bytes];
-    this.runtime.evaluate(reinterpret_bytecode);
 
     return this.getTnglFingerprint().then(device_fingerprint => {
       return computeTnglFingerprint(tngl_bytes, "fingerprint").then(new_fingerprint => {
@@ -1888,10 +1887,8 @@ export class Spectoda {
           });
         }
 
-        // logging.info(`count=${count}, peers=`, peers);
-        logging.info(`count=${count}, peers=\n${peers.map(x => `mac:${x.mac},rssi:${x.rssi}`).join("\n")}`);
-        // this.runtime.eraseConnectedPeers();
-        // this.runtime.setConnectedPeers(peers.map(x => x.mac));
+        logging.debug(`count=${count}, peers=\n${peers.map(x => `mac:${x.mac},rssi:${x.rssi}`).join("\n")}`);
+
         return peers;
       } else {
         throw "Fail";
