@@ -2,7 +2,7 @@ import { TextureLoader } from "three";
 import { logging } from "../logging";
 import { SpectodaWasm } from "./SpectodaWasm.js";
 
-const WASM_VERSION = "DEBUG_0.9.10_20240317";
+const WASM_VERSION = "DEBUG_0.9.10_20240328";
 
 export const COMMAND_FLAGS = Object.freeze({
   FLAG_UNSUPPORTED_COMMND_RESPONSE: 255, // TODO change FLAG_OTA_BEGIN to not be 255.
@@ -172,15 +172,8 @@ export class Spectoda_JS {
         _onEvents: event_array => {
           logging.verbose("_onEvents", event_array);
 
-          for (let i = event_array.length - 1; i >= 0; i--) {
-            if (
-              // ! This should handle FW instead, no IDxxx from FW here
-              event_array[i].label.match(/^ID/)
-            ) {
-              event_array.splice(i, 1)
-            } else {
-              event_array[i].timestamp_utc = Date.now();
-            }
+          for (let i = 0; i < event_array.length; i++) {
+            event_array[i].timestamp_utc = Date.now();
           }
 
           if (event_array.length && logging.level >= 3) {
