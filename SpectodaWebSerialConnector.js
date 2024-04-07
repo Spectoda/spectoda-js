@@ -288,7 +288,7 @@ criteria example:
     return Promise.resolve("{}");
   }
 
-  connect(timeout) {
+  connect(timeout = NULL_VALUE) {
     if (timeout === NULL_VALUE) { timeout = 10000; }
     logging.verbose(`connect(timeout=${timeout})`);
 
@@ -570,7 +570,7 @@ criteria example:
 
   // deliver handles the communication with the Spectoda network in a way
   // that the command is guaranteed to arrive
-  deliver(payload, timeout) {
+  deliver(payload, timeout = NULL_VALUE) {
     if (timeout === NULL_VALUE) { timeout = 5000; }
     logging.debug(`deliver(payload=${payload}, timeout=${timeout})`);
 
@@ -587,7 +587,7 @@ criteria example:
 
   // transmit handles the communication with the Spectoda network in a way
   // that the command is NOT guaranteed to arrive
-  transmit(payload, timeout) {
+  transmit(payload, timeout = NULL_VALUE) {
     if (timeout === NULL_VALUE) { timeout = 1000; }
     logging.debug(`transmit(payload=${payload}, timeout=${timeout})`);
 
@@ -605,7 +605,7 @@ criteria example:
 
   // request handles the requests on the Spectoda network. The command request
   // is guaranteed to get a response
-  request(payload, read_response, timeout) {
+  request(payload, read_response, timeout = NULL_VALUE) {
     if (timeout === NULL_VALUE) { timeout = 5000; }
     logging.debug(`request(payload=${payload}, read_response=${read_response}, timeout=${timeout})`);
 

@@ -890,7 +890,7 @@ criteria example:
 
   // connect Connector to the selected Spectoda Device. Also can be used to reconnect.
   // Fails if no device is selected
-  connect(timeout) {
+  connect(timeout = NULL_VALUE) {
     if (timeout === NULL_VALUE) { timeout = 10000; }
     logging.verbose(`connect(timeout=${timeout})`);
 

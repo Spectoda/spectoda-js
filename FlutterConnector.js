@@ -541,7 +541,7 @@ criteria example:
   // if no criteria are set, then show all Spectoda devices visible.
   // first bonds the BLE device with the PC/Phone/Tablet if it is needed.
   // Then selects the device
-  userSelect(criteria_object, timeout_number) {
+  userSelect(criteria_object, timeout_number = NULL_VALUE) {
     if (timeout_number === NULL_VALUE) { timeout_number = 30000; }
 
     const criteria_json = JSON.stringify(criteria_object);
@@ -564,7 +564,7 @@ criteria example:
     // @ts-ignore
     window.flutter_inappwebview.callHandler("userSelect", criteria_json, timeout_number);
 
-    const FLUTTER_RESPONSE_TIMEOUT = timeout_number + 5000;
+    const FLUTTER_RESPONSE_TIMEOUT = timeout_number + 60000;
     return this.#applyTimeout(this.#promise, FLUTTER_RESPONSE_TIMEOUT, "userSelect");
   }
 
@@ -577,7 +577,7 @@ criteria example:
   // if no criteria are provided, all Spectoda enabled devices (with all different FWs and Owners and such)
   // are eligible.
 
-  autoSelect(criteria_object, scan_duration_number, timeout_number) {
+  autoSelect(criteria_object, scan_duration_number = NULL_VALUE, timeout_number = NULL_VALUE) {
     if (scan_duration_number === NULL_VALUE) { scan_duration_number = 1500; } // 1200ms seems to be the minimum for the scan_duration if the controller is rebooted
     if (timeout_number === NULL_VALUE) { timeout_number = 5000; }
     // step 1. for the scan_duration scan the surroundings for BLE devices.
@@ -673,7 +673,7 @@ criteria example:
   // if no criteria are provided, all Spectoda enabled devices (with all different FWs and Owners and such)
   // are eligible.
 
-  scan(criteria_object, scan_duration_number) {
+  scan(criteria_object, scan_duration_number = NULL_VALUE) {
     if (scan_duration_number === NULL_VALUE) { scan_duration_number = 7000; }
     // step 1. for the scan_duration scan the surroundings for BLE devices.
 
@@ -708,7 +708,7 @@ criteria example:
 
   */
   // timeout 20000ms for the old slow devices to be able to connect
-  connect(timeout_number) {
+  connect(timeout_number = NULL_VALUE) {
     if (timeout_number === NULL_VALUE) { timeout_number = 20000; }
     logging.debug(`connect(timeout=${timeout_number})`);
 
@@ -804,7 +804,7 @@ criteria example:
 
   // deliver handles the communication with the Spectoda Controller in a way
   // that the command is guaranteed to arrive
-  deliver(payload_bytes, timeout_number) {
+  deliver(payload_bytes, timeout_number = NULL_VALUE) {
     if (timeout_number === NULL_VALUE) { timeout_number = 5000; }
     logging.debug(`deliver(payload=[${payload_bytes}], timeout=${timeout_number})`);
 
@@ -824,7 +824,7 @@ criteria example:
 
   // transmit handles the communication with the Spectoda Controller in a way
   // that the paylaod is NOT guaranteed to arrive
-  transmit(payload_bytes, timeout_number) {
+  transmit(payload_bytes, timeout_number = NULL_VALUE) {
     if (timeout_number === NULL_VALUE) { timeout_number = 1000; }
     logging.debug(`transmit(payload=[${payload_bytes}], timeout=${timeout_number})`);
 
@@ -844,7 +844,7 @@ criteria example:
 
   // request handles the requests on the Spectoda Controller. The payload request
   // is guaranteed to get a response
-  request(payload_bytes, read_response, timeout_number) {
+  request(payload_bytes, read_response, timeout_number = NULL_VALUE) {
     if (timeout_number === NULL_VALUE) { timeout_number = 5000; }
     logging.debug(`request(payload=[${payload_bytes}], read_response=${read_response ? "true" : "false"}, timeout=${timeout_number})`);
 
@@ -998,7 +998,7 @@ criteria example:
           logging.info("OTA RESET");
 
           const device_bytes = [COMMAND_FLAGS.FLAG_OTA_RESET, 0x00, ...numberToBytes(0x00000000, 4)];
-          await this.request(device_bytes, false);
+          await this.request(device_bytes, false, 10000);
         }
 
         await sleep(100);
@@ -1023,7 +1023,7 @@ criteria example:
             }
 
             const device_bytes = [COMMAND_FLAGS.FLAG_OTA_WRITE, 0x00, ...numberToBytes(written, 4), ...firmware_bytes.slice(index_from, index_to)];
-            await this.request(device_bytes, false);
+            await this.request(device_bytes, false, 10000);
 
             written += index_to - index_from;
 
@@ -1043,7 +1043,7 @@ criteria example:
           logging.info("OTA END");
 
           const device_bytes = [COMMAND_FLAGS.FLAG_OTA_END, 0x00, ...numberToBytes(written, 4)];
-          await this.request(device_bytes, false);
+          await this.request(device_bytes, false, 10000);
         }
 
         await sleep(100);
