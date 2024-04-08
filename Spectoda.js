@@ -1,14 +1,14 @@
-import { NULL_VALUE, COMMAND_FLAGS, SpectodaRuntime, allEventsEmitter } from "./SpectodaRuntime";
-import { TnglCodeParser } from "./SpectodaParser";
-import { WEBSOCKET_URL } from "./SpectodaWebSocketsConnector";
-import { colorToBytes, computeTnglFingerprint, detectSpectodaConnect, hexStringToUint8Array, labelToBytes, numberToBytes, percentageToBytes, sleep, strMacToBytes, stringToBytes, uint8ArrayToHexString } from "./functions";
-import { logging, setLoggingLevel } from "./logging";
 import { io } from "socket.io-client";
 import customParser from "socket.io-msgpack-parser";
+import { TnglCodeParser } from "./SpectodaParser";
+import { COMMAND_FLAGS, NULL_VALUE, SpectodaRuntime, allEventsEmitter } from "./SpectodaRuntime";
+import { WEBSOCKET_URL } from "./SpectodaWebSocketsConnector";
 import { TimeTrack } from "./TimeTrack";
 import "./TnglReader";
 import { TnglReader } from "./TnglReader";
 import "./TnglWriter";
+import { colorToBytes, computeTnglFingerprint, detectSpectodaConnect, hexStringToUint8Array, labelToBytes, numberToBytes, percentageToBytes, sleep, strMacToBytes, stringToBytes, uint8ArrayToHexString } from "./functions";
+import { logging, setLoggingLevel } from "./logging";
 
 const DEFAULT_TNGL_BANK = 0;
 export class Spectoda {
@@ -653,61 +653,51 @@ export class Spectoda {
   }
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
+  
   async preprocessTngl(tngl_code) {
     // 1st stage: preprocess the code
-
-    // logging.debug(tngl_code);
-
     let processed_tngl_code = tngl_code;
 
-    const regexPUBLISH_TNGL_TO_API = /PUBLISH_TNGL_TO_API\s*\(\s*"([^"]*)"\s*,\s*`([^`]*)`\s*\);?/ms;
-    const regexINJECT_TNGL_FROM_API = /INJECT_TNGL_FROM_API\s*\(\s*"([^"]*)"\s*\);?/ms;
+    const regexPUBLISH_TNGL_TO_API = /PUBLISH_TNGL_TO_API\s*\(\s*"([^"]*)"\s*,\s*`([^`]*)`\s*\);?/gms;
+    const regexINJECT_TNGL_FROM_API = /INJECT_TNGL_FROM_API\s*\(\s*"([^"]*)"\s*\);?/gms;
 
-    for (let requests = 0; requests < 64; requests++) {
-      const match = regexPUBLISH_TNGL_TO_API.exec(processed_tngl_code);
-      logging.verbose(match);
-
-      if (!match) {
-        break;
-      }
-
-      const name = match[1];
+    // Collect all publish requests
+    let publishMatches = [...processed_tngl_code.matchAll(regexPUBLISH_TNGL_TO_API)];
+    let publishPromises = publishMatches.map(match => {
+      const [fullMatch, name, tngl] = match;
       const id = encodeURIComponent(name);
-      const tngl = match[2];
+      return sendTnglToApi({ id, name, tngl }).then(() => fullMatch);
+    });
 
-      try {
-        logging.debug(`sendTnglToApi({ id=${id}, name=${name}, tngl=${tngl} })`);
-        await sendTnglToApi({ id, name, tngl });
-        processed_tngl_code = processed_tngl_code.replace(match[0], "");
-      } catch (e) {
-        logging.error(`Failed to send "${name}" to TNGL API`);
-        throw "SendTnglToApiFailed";
-      }
+    // Wait for all publish requests to complete
+    try {
+      const publishResults = await Promise.all(publishPromises);
+      publishResults.forEach(fullMatch => {
+        processed_tngl_code = processed_tngl_code.replace(fullMatch, "");
+      });
+    } catch (e) {
+      throw new Error("SendTnglToApiFailed");
     }
 
-    for (let requests = 0; requests < 64; requests++) {
-      const match = regexINJECT_TNGL_FROM_API.exec(processed_tngl_code);
-      logging.verbose(match);
-
-      if (!match) {
-        break;
-      }
-
-      const name = match[1];
+    // Collect all inject requests
+    let injectMatches = [...processed_tngl_code.matchAll(regexINJECT_TNGL_FROM_API)];
+    let injectPromises = injectMatches.map(match => {
+      const [fullMatch, name] = match;
       const id = encodeURIComponent(name);
+      return fetchTnglFromApiById(id).then(response => ({ fullMatch, tngl: response.tngl }));
+    });
+    console.time("fetchTnglFromApiById");
 
-      try {
-        logging.debug(`fetchTnglFromApiById({ id=${id} })`);
-        const response = await fetchTnglFromApiById(id);
-        processed_tngl_code = processed_tngl_code.replace(match[0], response.tngl);
-      } catch (e) {
-        logging.error(`Failed to fetch "${name}" from TNGL API`);
-        throw "FetchTnglFromApiFailed";
-      }
+    // Wait for all inject requests to complete
+    try {
+      const injectResults = await Promise.all(injectPromises);
+      injectResults.forEach(({ fullMatch, tngl }) => {
+        processed_tngl_code = processed_tngl_code.replace(fullMatch, tngl);
+      });
+    } catch (e) {
+      throw new Error("FetchTnglFromApiFailed");
     }
-
-    logging.debug(processed_tngl_code);
+    console.timeEnd("fetchTnglFromApiById");
 
     return processed_tngl_code;
   }
