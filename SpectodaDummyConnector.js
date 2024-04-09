@@ -1,9 +1,9 @@
-import { COMMAND_FLAGS } from "./SpectodaRuntime";
+import { logging } from "./logging";
+import { sleep } from "./functions";
 import { TimeTrack } from "./TimeTrack";
+import { COMMAND_FLAGS } from "./SpectodaRuntime";
 import { TnglReader } from "./TnglReader";
 import { TnglWriter } from "./TnglWriter";
-import { sleep } from "./functions";
-import { logging } from "./logging";
 
 /////////////////////////////////////////////////////////////////////////////////////
 
@@ -19,7 +19,7 @@ export class SpectodaDummyConnector {
   #clock;
 
   constructor(interfaceReference, enableErrors = false, dummyFWVersion = "DUMMY_0.0.0_00000000") {
-    this.type = enableErrors ? "edummy" : "simulated";
+    this.type = enableErrors ? "edummy" : "dummy";
 
     this.#interfaceReference = interfaceReference;
     this.#enableErrors = enableErrors;
@@ -538,11 +538,11 @@ criteria example:
     logging.verbose(`destroy()`);
 
     return this.disconnect()
-      .catch(() => {})
+      .catch(() => { })
       .then(() => {
         return this.unselect();
       })
-      .catch(() => {});
+      .catch(() => { });
 
     return Promise.resolve();
   }
