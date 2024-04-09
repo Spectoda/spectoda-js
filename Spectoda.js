@@ -127,21 +127,22 @@ export class Spectoda {
 
         const RECONNECT_TO_SAME_THE_CONTROLLER_TIMEOUT = 2000;
         const SAFETY_DELAY_FOR_BLE_TO_DISCONNECT = 250;
-        return (this.#reconnectTheSameController
-          ? sleep(SAFETY_DELAY_FOR_BLE_TO_DISCONNECT).then(() => this.runtime.connect(RECONNECT_TO_SAME_THE_CONTROLLER_TIMEOUT))
-          : this.connect(this.#connectCriteria, true, this.#ownerSignature, this.#ownerKey))
+        return (
+          this.#reconnectTheSameController
+            ? sleep(SAFETY_DELAY_FOR_BLE_TO_DISCONNECT).then(() => this.runtime.connect(RECONNECT_TO_SAME_THE_CONTROLLER_TIMEOUT))
+            : this.connect(this.#connectCriteria, true, this.#ownerSignature, this.#ownerKey)
+        )
           .then(() => {
             logging.info("> Reconnection successful");
             this.#setConnectionState("connected");
           })
-          .catch((e) => {
+          .catch(e => {
             logging.warn("> Reconnection failed:", e);
             this.#setConnectionState("disconnected");
           })
           .finally(() => {
             this.#reconnectTheSameController = false;
-          })
-
+          });
       } else {
         logging.info("> Controller disconnected");
         this.#setConnectionState("disconnected");
@@ -359,7 +360,6 @@ export class Spectoda {
       parser: customParser,
     });
 
-
     this.socket.connect();
     this.requestWakeLock(true);
 
@@ -368,15 +368,17 @@ export class Spectoda {
       // const peers = await this.getConnectedPeersInfo();
       // logging.debug("peers", peers);
       // this.socket.emit("set-connection-data", peers);
-      this.socket.emit("set-meta-data", meta)
+      this.socket.emit("set-meta-data", meta);
     };
 
-    this.socket.___SpectodaListeners = [this.on("connected", async () => {
-      setConnectionSocketData();
-    }), this.on("disconnected", () => {
-      this.socket.emit("set-connection-data", null);
-    })]
-
+    this.socket.___SpectodaListeners = [
+      this.on("connected", async () => {
+        setConnectionSocketData();
+      }),
+      this.on("disconnected", () => {
+        this.socket.emit("set-connection-data", null);
+      }),
+    ];
 
     allEventsEmitter.on("on", ({ name, args }) => {
       logging.verbose("on", name, args);
@@ -422,7 +424,6 @@ export class Spectoda {
       }
     });
 
-
     return await new Promise((resolve, reject) => {
       this.socket.on("disconnect", () => {
         this.#setWebSocketConnectionState("disconnected");
@@ -431,7 +432,7 @@ export class Spectoda {
       this.socket.on("connect", async () => {
         if (sessionOnly) {
           // Handle session-only logic
-          const response = await this.socket.emitWithAck("join-session", null)
+          const response = await this.socket.emitWithAck("join-session", null);
           const roomNumber = response?.roomNumber;
 
           if (response?.status === "success") {
@@ -448,7 +449,7 @@ export class Spectoda {
         } else if (signature) {
           // Handle signature-based logic
           this.#setWebSocketConnectionState("connecting");
-          logging.debug("Joining network remotely", signature, key)
+          logging.debug("Joining network remotely", signature, key);
           await this.socket
             .emitWithAck("join", { signature, key })
             .then(e => {
@@ -513,6 +514,56 @@ export class Spectoda {
     return this.runtime.scan(criteria, timeout);
   }
 
+  /**
+   * `criteria` is an array of objects, with each object specifying a set of conditions used for filtering devices.
+   * These conditions allow for selecting devices based on various attributes, such as device name, firmware version,
+   * owner signature, product code, and other criteria. Each object within the array can specify conditions across
+   * one or more of these attributes, and devices are filtered according to the combined conditions specified by all objects in the array.
+   *
+   * @typedef {Object} Criterion
+   * @property {string} [name] - Specifies the exact name of the device for direct matches. Optional.
+   * @property {string} [namePrefix] - Specifies the prefix of the device name for broader matches. Optional.
+   * @property {string} [fwVersion] - Specifies the firmware version for matching. A leading '!' excludes the specified version. Optional.
+   * @property {string} [ownerSignature] - Specifies the unique signature of the device's owner. Optional.
+   * @property {number} [productCode] - Specifies the product code indicating the type of device. Optional.
+   * @property {number} [pcbCode] - Specifies the PCB code to identify the hardware version of the device. Optional.
+   * @property {boolean} [adoptionFlag] - Indicates whether the device has been adopted, for true/false matches. Optional.
+   *
+   * ! See the Typescript definition in ./types.d.ts
+   *
+   * Example:
+   * @example
+   * const criteria = [
+   *   {
+   *     name: "NARA Alpha",
+   *     fwVersion: "0.9.2",
+   *     ownerSignature: "baf2398ff5e6a7b8c9d097d54a9f865f",
+   *     productCode: 1,
+   *   },
+   *   {
+   *     namePrefix: "NARA",
+   *     fwVersion: "!0.8.3",
+   *     pcbCode: 2,
+   *     adoptionFlag: true,
+   *   },
+   * ];
+   *
+   * This example demonstrates how to define criteria for filtering devices. Each object within the `criteria` array
+   * represents a set of filtering conditions. Devices must meet all specified conditions in at least one object to be included.
+   */
+
+  /**
+   * @name connect
+   * @param {Criterion[] | null} [criteria] - An array of objects specifying conditions for filtering devices.
+   * @param {boolean} [autoConnect] - Whether to automatically select a device based on the criteria.
+   * @param {string | null} [ownerSignature] - The unique signature of the device's owner.
+   * @param {string | null} [ownerKey] - The unique key of the device's owner.
+   * @param {boolean} [connectAny] - Whether to connect to any device without requiring an owner signature or key.
+   * @param {string} [fwVersion] - The firmware version to match when selecting a device.
+   *
+   * ! Missing: return type
+   */
+
   connect(criteria = null, autoConnect = true, ownerSignature = null, ownerKey = null, connectAny = false, fwVersion = "") {
     logging.info(`connect(criteria=${criteria}, autoConnect=${autoConnect}, ownerSignature=${ownerSignature}, ownerKey=${ownerKey}, connectAny=${connectAny}, fwVersion=${fwVersion})`);
 
@@ -547,8 +598,7 @@ export class Spectoda {
 
     if (!criteria) {
       criteria = [{}];
-    }
-    else if (!Array.isArray(criteria)) {
+    } else if (!Array.isArray(criteria)) {
       criteria = [criteria];
     }
 
@@ -592,7 +642,7 @@ export class Spectoda {
 
             this.#setConnectionState("connected");
             return connectedDeviceInfo;
-          })
+          });
       })
       .catch(error => {
         logging.error("Error during connect():", error);
@@ -1129,12 +1179,10 @@ export class Spectoda {
         reject(e);
         return;
       }
-    })
-
-      .finally(() => {
-        this.runtime.releaseWakeLock();
-        this.#updating = false;
-      });
+    }).finally(() => {
+      this.runtime.releaseWakeLock();
+      this.#updating = false;
+    });
   }
 
   async updatePeerFirmware(peer) {
@@ -1290,7 +1338,6 @@ export class Spectoda {
       if (shouldReboot) {
         return this.rebootDevice();
       }
-
     });
   }
 
@@ -1411,18 +1458,17 @@ export class Spectoda {
 
       const removed_device_mac_bytes = reader.readBytes(6);
 
-      return (shouldReboot ? this.rebootDevice().catch(() => { }) : Promise.resolve(null))
-        .then(() => {
-          let removed_device_mac = "00:00:00:00:00:00";
-          if (removed_device_mac_bytes.length >= 6) {
-            removed_device_mac = Array.from(removed_device_mac_bytes, function (byte) {
-              return ("0" + (byte & 0xff).toString(16)).slice(-2);
-            }).join(":");
-          }
-          return {
-            mac: removed_device_mac !== "00:00:00:00:00:00" ? removed_device_mac : null,
-          };
-        });
+      return (shouldReboot ? this.rebootDevice().catch(() => {}) : Promise.resolve(null)).then(() => {
+        let removed_device_mac = "00:00:00:00:00:00";
+        if (removed_device_mac_bytes.length >= 6) {
+          removed_device_mac = Array.from(removed_device_mac_bytes, function (byte) {
+            return ("0" + (byte & 0xff).toString(16)).slice(-2);
+          }).join(":");
+        }
+        return {
+          mac: removed_device_mac !== "00:00:00:00:00:00" ? removed_device_mac : null,
+        };
+      });
     });
   }
 

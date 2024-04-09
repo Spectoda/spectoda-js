@@ -1,4 +1,4 @@
-import { noSleep, validateTimestamp } from "./functions";
+import { validateTimestamp } from "./functions";
 
 declare namespace nosleep {
   class NoSleep {
@@ -27,6 +27,16 @@ declare global {
     mapValue: (x: any, in_min: any, in_max: any, out_min: any, out_max: any) => any;
     eruda: any;
   }
+}
+
+export interface Criterion {
+  name?: string | undefined;
+  namePrefix?: string | undefined;
+  fwVersion?: string | undefined;
+  ownerSignature?: string | undefined;
+  productCode?: number | undefined;
+  pcbCode?: number | undefined;
+  adoptionFlag?: boolean | undefined;
 }
 
 export default nosleep.NoSleep;
