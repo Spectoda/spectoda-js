@@ -1,4 +1,4 @@
-import { SpectodaError } from "@spectoda/spectoda-utils/errors";
+
 import { TnglWriter } from "./TnglWriter";
 import { mapValue } from "./functions";
 import { logging } from "./logging";
@@ -339,10 +339,8 @@ export class TnglCompiler {
 
     if (value_address === undefined) {
       logging.error(`Variable ${variable_name} is not declared`);
-      throw new SpectodaError({
-        code: "CompilationError",
-        message: `Variable ${variable_name} is not declared`,
-      });
+      throw new Error(`Variable ${variable_name} is not declared`);
+
     }
 
     logging.verbose(`VALUE_ADDRESS name=${variable_name}, address=${value_address}`);
