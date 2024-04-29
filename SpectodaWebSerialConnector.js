@@ -727,7 +727,7 @@ criteria example:
           logging.debug("OTA RESET");
 
           const bytes = [COMMAND_FLAGS.FLAG_OTA_RESET, 0x00, ...numberToBytes(0x00000000, 4)];
-          await this.#write(this.CHANNEL_DEVICE, bytes);
+          await this.#write(this.CHANNEL_DEVICE, bytes, 10000);
         }
 
         await sleep(100);
@@ -753,7 +753,7 @@ criteria example:
 
             const bytes = [COMMAND_FLAGS.FLAG_OTA_WRITE, 0x00, ...numberToBytes(written, 4), ...firmware.slice(index_from, index_to)];
 
-            await this.#write(this.CHANNEL_DEVICE, bytes);
+            await this.#write(this.CHANNEL_DEVICE, bytes, 10000);
             written += index_to - index_from;
 
             const percentage = Math.floor((written * 10000) / firmware.length) / 100;
@@ -773,7 +773,7 @@ criteria example:
           logging.debug("OTA END");
 
           const bytes = [COMMAND_FLAGS.FLAG_OTA_END, 0x00, ...numberToBytes(written, 4)];
-          await this.#write(this.CHANNEL_DEVICE, bytes);
+          await this.#write(this.CHANNEL_DEVICE, bytes, 20000);
         }
 
         await sleep(2000);
