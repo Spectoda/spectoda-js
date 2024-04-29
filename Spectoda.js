@@ -703,7 +703,7 @@ export class Spectoda {
   }
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-  
+
   async preprocessTngl(tngl_code) {
     // 1st stage: preprocess the code
     let processed_tngl_code = tngl_code;
@@ -1458,7 +1458,7 @@ export class Spectoda {
 
       const removed_device_mac_bytes = reader.readBytes(6);
 
-      return (shouldReboot ? this.rebootDevice().catch(() => {}) : Promise.resolve(null)).then(() => {
+      return (shouldReboot ? this.rebootDevice().catch(() => { }) : Promise.resolve(null)).then(() => {
         let removed_device_mac = "00:00:00:00:00:00";
         if (removed_device_mac_bytes.length >= 6) {
           removed_device_mac = Array.from(removed_device_mac_bytes, function (byte) {
@@ -1624,7 +1624,7 @@ export class Spectoda {
             .readBytes(6)
             .map(v => v.toString(16).padStart(2, "0"))
             .join(":");
-          const rssi = reader.readUint16() / (65535.0 / 512.0) - 256.0;
+          const rssi = Math.round(reader.readUint16() / (65536.0 / 512.0) - 256.0);
           peers.push({
             mac: mac,
             rssi: rssi,
