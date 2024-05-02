@@ -736,7 +736,6 @@ export class Spectoda {
       const id = encodeURIComponent(name);
       return fetchTnglFromApiById(id).then(response => ({ fullMatch, tngl: response.tngl }));
     });
-    console.time("fetchTnglFromApiById");
 
     // Wait for all inject requests to complete
     try {
@@ -747,7 +746,6 @@ export class Spectoda {
     } catch (e) {
       throw new Error("FetchTnglFromApiFailed");
     }
-    console.timeEnd("fetchTnglFromApiById");
 
     return processed_tngl_code;
   }
@@ -1458,7 +1456,7 @@ export class Spectoda {
 
       const removed_device_mac_bytes = reader.readBytes(6);
 
-      return (shouldReboot ? this.rebootDevice().catch(() => { }) : Promise.resolve(null)).then(() => {
+      return (shouldReboot ? this.rebootDevice().catch(() => {}) : Promise.resolve(null)).then(() => {
         let removed_device_mac = "00:00:00:00:00:00";
         if (removed_device_mac_bytes.length >= 6) {
           removed_device_mac = Array.from(removed_device_mac_bytes, function (byte) {
