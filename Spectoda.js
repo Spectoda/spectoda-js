@@ -1,13 +1,13 @@
 import { io } from "socket.io-client";
 import customParser from "socket.io-msgpack-parser";
 import { TnglCodeParser } from "./SpectodaParser";
-import { COMMAND_FLAGS, NULL_VALUE, SpectodaRuntime, allEventsEmitter } from "./SpectodaRuntime";
+import { COMMAND_FLAGS, NULL_VALUE, SpectodaRuntime } from "./SpectodaRuntime";
 import { WEBSOCKET_URL } from "./SpectodaWebSocketsConnector";
 import { TimeTrack } from "./TimeTrack";
 import "./TnglReader";
 import { TnglReader } from "./TnglReader";
 import "./TnglWriter";
-import { colorToBytes, computeTnglFingerprint, detectSpectodaConnect, hexStringToUint8Array, labelToBytes, numberToBytes, percentageToBytes, sleep, strMacToBytes, stringToBytes, uint8ArrayToHexString } from "./functions";
+import { allEventsEmitter, colorToBytes, computeTnglFingerprint, detectSpectodaConnect, hexStringToUint8Array, labelToBytes, numberToBytes, percentageToBytes, sleep, strMacToBytes, stringToBytes, uint8ArrayToHexString } from "./functions";
 import { logging, setLoggingLevel } from "./logging";
 
 const DEFAULT_TNGL_BANK = 0;
@@ -378,12 +378,15 @@ export class Spectoda {
       this.on("disconnected", () => {
         this.socket.emit("set-connection-data", null);
       }),
+      allEventsEmitter.on("on", ({ name, args }) => {
+        try {
+          // circular json, function ... can be issues, that's why wrapped
+          this.socket.emit("event", { name, args });
+        } catch (err) {
+          console.error(err);
+        }
+      }),
     ];
-
-    allEventsEmitter.on("on", ({ name, args }) => {
-      logging.verbose("on", name, args);
-      this.socket.emit("event", { name, args });
-    });
 
     globalThis.allEventsEmitter = allEventsEmitter;
 

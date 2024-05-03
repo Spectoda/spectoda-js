@@ -7,7 +7,6 @@ import "./TnglReader";
 import { TnglReader } from "./TnglReader";
 import "./TnglWriter";
 import {
-  createNanoEvents,
   createNanoEventsWithWrappedEmit,
   detectAndroid,
   detectChrome,
@@ -17,6 +16,7 @@ import {
   detectNode,
   detectSpectodaConnect,
   detectWindows,
+  emitHandler,
   mapValue,
   rgbToHex,
   sleep,
@@ -153,11 +153,6 @@ export const COMMAND_FLAGS = Object.freeze({
 // TODO execute commands goes in and when processed goes back out to be handed over to Connectors to sendExecute() the commands to other connected Interfaces
 // TODO request commands goes in and if needed another request command goes out to Connectors to sendRequest() to a external Interface with given mac address.
 
-export const allEventsEmitter = createNanoEvents();
-
-function emitHandler(event, args) {
-  allEventsEmitter.emit("on", { name: event, args });
-}
 /////////////////////////////////////////////////////////////////////////
 
 // Deffered object

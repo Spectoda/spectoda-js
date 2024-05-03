@@ -1,3 +1,5 @@
+import { emitHandler } from "./functions";
+
 /**
  * @deprecated use logging.LOGGING_LEVEL_NONE */
 export const DEBUG_LEVEL_NONE = 0;
@@ -17,7 +19,41 @@ export const DEBUG_LEVEL_DEBUG = 4;
  * @deprecated use logging.LOGGING_LEVEL_VERBOSE */
 export const DEBUG_LEVEL_VERBOSE = 5;
 
-export var logging = {
+const logLevels: Record<number, string> = {
+  0: "none",
+  1: "error",
+  2: "warn",
+  3: "info",
+  4: "debug",
+  5: "verbose",
+};
+
+export const logWrapper = (level: number, ...msgs: any) => {
+  const levelStr = logLevels[level] ?? "info";
+
+  switch (level) {
+    case 1:
+      console.error(...msgs);
+      break;
+    case 2:
+      console.warn(...msgs);
+      break;
+    case 3:
+      console.log(...msgs);
+      break;
+    case 4:
+      console.log(...msgs);
+      break;
+    case 5:
+      console.log(...msgs);
+      break;
+  }
+
+  emitHandler("log", { level, msgs });
+};
+
+// Logging configuration object
+export const logging = {
   LOGGING_LEVEL_NONE: 0,
   LOGGING_LEVEL_ERROR: 1,
   LOGGING_LEVEL_WARN: 2,
@@ -28,33 +64,34 @@ export var logging = {
   level: 3,
 
   setLoggingLevel: (level: number) => {
-    if (level !== undefined && level !== null && level >= 0 && level <= 5) {
+    if (level >= 0 && level <= 5) {
       logging.level = level;
     }
-    logging.error = logging.level >= 1 ? console.error : function (...msg) { };
-    logging.warn = logging.level >= 2 ? console.warn : function (...msg) { };
-    logging.info = logging.level >= 3 ? console.log : function (...msg) { };
-    logging.debug = logging.level >= 4 ? console.log : function (...msg) { };
-    logging.verbose = logging.level >= 5 ? console.log : function (...msg) { };
+    logging.error = logging.level >= 1 ? (...msg) => logWrapper(1, ...msg) : () => {};
+    logging.warn = logging.level >= 2 ? (...msg) => logWrapper(2, ...msg) : () => {};
+    logging.info = logging.level >= 3 ? (...msg) => logWrapper(3, ...msg) : () => {};
+    logging.debug = logging.level >= 4 ? (...msg) => logWrapper(4, ...msg) : () => {};
+    logging.verbose = logging.level >= 5 ? (...msg) => logWrapper(5, ...msg) : () => {};
   },
 
-  routeLoggingElswhere: (callback, level: number) => {
-    if (level !== undefined && level !== null && level >= 0 && level <= 5) {
+  routeLoggingElsewhere: (callback: Function, level: number) => {
+    if (level >= 0 && level <= 5) {
       logging.level = level;
     }
-    logging.error = logging.level >= 1 ? callback : function (...msg) { };
-    logging.warn = logging.level >= 2 ? callback : function (...msg) { };
-    logging.info = logging.level >= 3 ? callback : function (...msg) { };
-    logging.debug = logging.level >= 4 ? callback : function (...msg) { };
-    logging.verbose = logging.level >= 5 ? callback : function (...msg) { };
+    logging.error = logging.level >= 1 ? (...msg) => callback(1, ...msg) : () => {};
+    logging.warn = logging.level >= 2 ? (...msg) => callback(2, ...msg) : () => {};
+    logging.info = logging.level >= 3 ? (...msg) => callback(3, ...msg) : () => {};
+    logging.debug = logging.level >= 4 ? (...msg) => callback(4, ...msg) : () => {};
+    logging.verbose = logging.level >= 5 ? (...msg) => callback(5, ...msg) : () => {};
   },
 
-  error: console.error,
-  warn: console.warn,
-  info: console.log,
-  debug: function (...msg: any) { },
-  verbose: function (...msg: any) { },
+  error: (...msg: any) => logWrapper(1, ...msg),
+  warn: (...msg: any) => logWrapper(2, ...msg),
+  info: (...msg: any) => logWrapper(3, ...msg),
+  debug: (...msg: any) => logWrapper(4, ...msg),
+  verbose: (...msg: any) => logWrapper(5, ...msg),
 };
+setLoggingLevel(3);
 
 // ! deprecated use logging.setLoggingLevel
 export function setLoggingLevel(level: number) {
@@ -62,8 +99,8 @@ export function setLoggingLevel(level: number) {
 }
 
 // ! deprecated use logging.routeLoggingElswhere
-export function routeLoggingElswhere(callback, level: number = 3) {
-  return logging.routeLoggingElswhere(callback, level);
+export function routeLoggingElswhere(callback: Function, level: number = 3) {
+  return logging.routeLoggingElsewhere(callback, level);
 }
 
 if (typeof window !== "undefined") {

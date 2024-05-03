@@ -18,13 +18,16 @@ eventStream.on("controller-log", line => {
   logging.info(line);
 });
 
+eventStream.on("log", ({ msgs }) => {
+  console.log(...msgs);
+});
+
 if (typeof window !== "undefined") {
   window.sockets = [];
 }
 /////////////////////////////////////////////////////////////////////////////////////
 
 export function createSpectodaWebsocket() {
-
   // ! this timeline is a dummy timeline that it not correctly synced across remote control
   // TODO sync timeline over RC
   const dummyTimeline = new TimeTrack(0, true);
@@ -42,7 +45,7 @@ export function createSpectodaWebsocket() {
   if (typeof window !== "undefined") window.socket = socket;
 
   socket.on("event", data => {
-    eventStream.emit(data.name, ...data.args);
+    eventStream.emit(data.name, data?.args);
   });
 
   let networkJoinParams = [];
@@ -167,14 +170,10 @@ export function createSpectodaWebsocket() {
               logging.verbose("[WEBSOCKET]", result);
 
               return result?.data?.[0].result;
-            }
-
-            else if (result.status === "error") {
+            } else if (result.status === "error") {
               logging.error("[WEBSOCKET]", result);
               throw new Error(result?.error);
-            }
-
-            else {
+            } else {
               logging.error("[WEBSOCKET]", result);
               throw new Error("Unknown error");
             }
