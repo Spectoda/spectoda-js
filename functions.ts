@@ -3,6 +3,8 @@ import { TnglCodeParser } from "./SpectodaParser";
 import { PERCENTAGE_MAX, PERCENTAGE_MIN } from "./constants";
 import { logging, setLoggingLevel } from "./logging";
 
+export const allEventsEmitter = createNanoEvents();
+
 export const createNanoEventsWithWrappedEmit = emitHandler => ({
   emit(event, ...args) {
     emitHandler(event, args);
@@ -20,6 +22,10 @@ export const createNanoEventsWithWrappedEmit = emitHandler => ({
     };
   },
 });
+
+export function emitHandler(event: string, args: any) {
+  allEventsEmitter.emit("on", { name: event, args });
+}
 
 export { createNanoEvents };
 
