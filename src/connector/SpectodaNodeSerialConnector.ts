@@ -479,18 +479,20 @@ export class SpectodaNodeSerialConnector {
                           }
 
                          else if (!synchronization.history_fingerprint.startsWith(history_fingerprint)) {
-                            logging.warn("> Synchronizing event history...");
 
-                            // TODO sync history from wasm to controller instead of clearing it
-                            try {
-                              this.#runtimeReference.spectoda.clearHistory();
-                            } catch (error) {
-                              logging.error("Failed to clear wasm history", error);
-                            }
+                            // TODO! Matty fix event history synchronization!
+                            // logging.warn("> Synchronizing event history...");
 
-                            this.#runtimeReference.spectodaReference.syncEventHistory().catch(error => {
-                              logging.error("Failed to sync history", error);
-                            });
+                            // // TODO sync history from wasm to controller instead of clearing it
+                            // try {
+                            //   this.#runtimeReference.spectoda.clearHistory();
+                            // } catch (error) {
+                            //   logging.error("Failed to clear wasm history", error);
+                            // }
+
+                            // this.#runtimeReference.spectodaReference.syncEventHistory().catch(error => {
+                            //   logging.error("Failed to sync history", error);
+                            // });
                           }
                         }
 
