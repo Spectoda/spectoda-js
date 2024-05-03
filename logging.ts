@@ -1,18 +1,23 @@
-// ! deprecated use logging.LOGGING_LEVEL_NONE
+/**
+ * @deprecated use logging.LOGGING_LEVEL_NONE */
 export const DEBUG_LEVEL_NONE = 0;
-// ! deprecated use logging.LOGGING_LEVEL_ERROR
+/**
+ * @deprecated use logging.LOGGING_LEVEL_ERROR */
 export const DEBUG_LEVEL_ERROR = 1;
-// ! deprecated use logging.LOGGING_LEVEL_WARN
+/**
+ * @deprecated use logging.LOGGING_LEVEL_WARN */
 export const DEBUG_LEVEL_WARN = 2;
-// ! deprecated use logging.LOGGING_LEVEL_INFO
+/**
+ * @deprecated use logging.LOGGING_LEVEL_INFO */
 export const DEBUG_LEVEL_INFO = 3;
-// ! deprecated use logging.LOGGING_LEVEL_DEBUG
+/**
+ * @deprecated use logging.LOGGING_LEVEL_DEBUG */
 export const DEBUG_LEVEL_DEBUG = 4;
-// ! deprecated use logging.LOGGING_LEVEL_VERBOSE
+/**
+ * @deprecated use logging.LOGGING_LEVEL_VERBOSE */
 export const DEBUG_LEVEL_VERBOSE = 5;
 
 export var logging = {
-
   LOGGING_LEVEL_NONE: 0,
   LOGGING_LEVEL_ERROR: 1,
   LOGGING_LEVEL_WARN: 2,
