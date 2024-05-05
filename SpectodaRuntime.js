@@ -1,7 +1,7 @@
 import { FlutterConnector } from "./FlutterConnector";
 import { SpectodaDummyConnector } from "./SpectodaDummyConnector";
 import { SpectodaWebBluetoothConnector } from "./SpectodaWebBluetoothConnector";
-import { SpectodaWebSerialConnector } from "./SpectodaWebSerialConnector";
+import { SpectodaWebSerialConnector } from "./src/connector/SpectodaWebSerialConnector";
 import { TimeTrack } from "./TimeTrack";
 import "./TnglReader";
 import { TnglReader } from "./TnglReader";

@@ -2,12 +2,11 @@
 /// <reference types="w3c-web-serial" />
 
 import { logging } from "../../logging";
-import { sleep, toBytes, numberToBytes, crc8, crc32, hexStringToArray, rgbToHex, stringToBytes, convertToByteArray } from "../../functions";
+import { sleep, toBytes, numberToBytes, crc32, stringToBytes } from "../../functions";
 import { TimeTrack } from "../../TimeTrack.js";
-import { COMMAND_FLAGS } from "../Spectoda_JS.js";
+import { COMMAND_FLAGS, NULL_VALUE, SpectodaRuntime } from "../../SpectodaRuntime";
 import { TnglWriter } from "../../TnglWriter.js";
 import { TnglReader } from "../../TnglReader.js";
-import { SpectodaRuntime } from "../SpectodaRuntime";
 
 let { SerialPort, ReadlineParser }: { SerialPort: any; ReadlineParser: any } = { SerialPort: null, ReadlineParser: null };
 
@@ -19,7 +18,7 @@ if (typeof window === "undefined" && !process.env.NEXT_PUBLIC_VERSION) {
 
 ///////////////////////////////////////////////////////////////////////////////////
 
-const PORT_OPTIONS: SerialOptions = { baudRate: 115200, dataBits: 8, stopBits: 1, parity: "none", bufferSize: 65535, flowControl: "none" };
+const PORT_OPTIONS: SerialOptions = { baudRate: 1500000, dataBits: 8, stopBits: 1, parity: "none", bufferSize: 65535, flowControl: "none" };
 
 const CODE_WRITE = 100;
 const CODE_READ = 200;
@@ -27,6 +26,28 @@ const CODE_READ = 200;
 const CHANNEL_NETWORK = 1;
 const CHANNEL_DEVICE = 2;
 const CHANNEL_CLOCK = 3;
+
+const COMMAND = 0;
+const DATA = 10;
+
+// ================== COMMANDS ==================
+
+const UNKNOWN_PACKET = 0;
+
+const NETWORK_WRITE = CODE_WRITE + CHANNEL_NETWORK + COMMAND;
+const DEVICE_WRITE = CODE_WRITE + CHANNEL_DEVICE + COMMAND;
+const CLOCK_WRITE = CODE_WRITE + CHANNEL_CLOCK + COMMAND;
+
+const NETWORK_READ = CODE_READ + CHANNEL_NETWORK + COMMAND;
+const DEVICE_READ = CODE_READ + CHANNEL_DEVICE + COMMAND;
+const CLOCK_READ = CODE_READ + CHANNEL_CLOCK + COMMAND;
+
+const NETWORK_READ_DATA = CODE_READ + CHANNEL_NETWORK + DATA;
+const DEVICE_READ_DATA = CODE_READ + CHANNEL_DEVICE + DATA;
+const CLOCK_READ_DATA = CODE_READ + CHANNEL_CLOCK + DATA;
+
+// ===============================================
+
 
 const starts_with = function (buffer: number[], string: string, start_offset: number = 0) {
     for (let index = 0; index < string.length; index++) {
@@ -67,12 +88,12 @@ export class SpectodaWebSerialConnector {
 
     #beginCallback: ((result: boolean) => void) | undefined;
     #feedbackCallback: ((success: boolean) => void) | undefined;
-    #dataCallback: ((data: Uint8Array) => void) | undefined;
+    #readDataCallback: ((data: Uint8Array) => void) | undefined;
 
     type: string;
 
     constructor(runtimeReference: SpectodaRuntime) {
-        this.type = "nodeserial";
+        this.type = "webserial";
 
         this.#runtimeReference = runtimeReference;
 
@@ -90,7 +111,7 @@ export class SpectodaWebSerialConnector {
 
         this.#beginCallback = undefined;
         this.#feedbackCallback = undefined;
-        this.#dataCallback = undefined;
+        this.#readDataCallback = undefined;
     }
 
     /*
@@ -163,7 +184,9 @@ export class SpectodaWebSerialConnector {
     // if no criteria are provided, all Spectoda enabled devices (with all different FWs and Owners and such)
     // are eligible.
 
-    autoSelect(criteria: { baudrate: number | undefined, baudRate: number | undefined }[], scan_period: number, timeout: number): Promise<{ connector: string }> {
+    autoSelect(criteria: { baudrate: number | undefined, baudRate: number | undefined }[], scan_period: number | typeof NULL_VALUE = NULL_VALUE, timeout: number | typeof NULL_VALUE = NULL_VALUE): Promise<{ connector: string }> {
+        if (scan_period === NULL_VALUE) { scan_period = 10000; }
+        if (timeout === NULL_VALUE) { timeout = 15000; }
         logging.verbose("autoSelect()");
 
         // step 1. for the scan_period scan the surroundings for BLE devices.
@@ -203,6 +226,8 @@ export class SpectodaWebSerialConnector {
     }
 
     scan(criteria: { baudrate: number | undefined, baudRate: number | undefined }[], scan_period: number) {
+        if (scan_period === NULL_VALUE) { scan_period = 10000; }
+
         logging.verbose("scan(criteria=" + JSON.stringify(criteria) + ", scan_period=" + scan_period + ")");
 
         // TODO implement this
@@ -266,11 +291,13 @@ export class SpectodaWebSerialConnector {
                                     if (ends_with(command_bytes, "<<<\n")) {
 
                                         if (starts_with(command_bytes, "BEGIN", 3)) {
+                                            logging.warn("BEGIN");
                                             this.#beginCallback && this.#beginCallback(true);
                                             command_bytes.length = 0;
                                         }
 
                                         else if (starts_with(command_bytes, "END", 3)) {
+                                            logging.warn("END");
                                             await this.disconnect();
                                             this.#beginCallback && this.#beginCallback(false);
                                             this.#feedbackCallback && this.#feedbackCallback(false);
@@ -300,7 +327,9 @@ export class SpectodaWebSerialConnector {
                                         }
 
                                         else if (starts_with(command_bytes, "DATA", 3)) {
-                                            this.#dataCallback && this.#dataCallback(new Uint8Array(data_bytes));
+                                            console.debug("DATA");
+                                            //! move callback calling from here to the data receive part
+                                            // this.#readDataCallback && this.#readDataCallback(new Uint8Array(data_bytes));
                                             command_bytes.length = 0;
                                         }
 
@@ -351,7 +380,22 @@ export class SpectodaWebSerialConnector {
                                     data_header.data_crc32 = tnglReader.readUint32();
                                     data_header.header_crc32 = tnglReader.readUint32();
 
-                                    logging.verbose("data_header=", data_header);
+                                    logging.debug("data_header=", data_header);
+
+                                    // compute header crc32 and compare it with the received one
+                                    const header_crc32 = crc32(new Uint8Array(header_bytes.slice(0, 16)));
+                                    if (header_crc32 !== data_header.header_crc32) {
+                                        logging.error("Header CRC32 mismatch");
+
+                                        this.#writer?.write(new Uint8Array(stringToBytes(">>>FINISH_SERIAL<<<\n", 20)));
+
+                                        header_bytes.length = 0;
+                                        data_bytes.length = 0;
+                                        data_header = undefined;
+                                        mode = MODE_UTF8_RECEIVE;
+
+
+                                    }
                                 }
 
                             } else /* if (data_header) */ {
@@ -363,13 +407,46 @@ export class SpectodaWebSerialConnector {
                                     const data_array = new Uint8Array(data_bytes);
                                     logging.verbose("data_array=", data_array);
 
-                                    this.#dataCallback && this.#dataCallback(data_array);
+                                    //! move to the "else if (starts_with(command_bytes, "DATA", 3)) {"
+
+                                    // compute data crc32 and compare it with the received one
+                                    const data_crc32 = crc32(data_array);
+                                    if (data_crc32 !== data_header.data_crc32) {
+                                        logging.error("Data CRC32 mismatch");
+
+                                        this.#writer?.write(new Uint8Array(stringToBytes(">>>FINISH_SERIAL<<<\n", 20)));
+
+                                        header_bytes.length = 0;
+                                        data_bytes.length = 0;
+                                        data_header = undefined;
+                                        mode = MODE_UTF8_RECEIVE;
+
+
+                                    } else {
+
+                                        if (data_header.data_type == NETWORK_WRITE) {
+                                            logging.debug("NETWORK_WRITE");
+                                            try {
+                                                this.#runtimeReference.process(new DataView(new Uint8Array(data_bytes).buffer), false);
+                                            } catch (e) {
+                                                logging.error("Error while processing data:", e);
+                                            }
+                                        } else if (data_header.data_type == DEVICE_READ_DATA || data_header.data_type == NETWORK_READ_DATA || data_header.data_type == CLOCK_READ_DATA) {
+                                            logging.debug("DEVICE_READ_DATA");
+                                            try {
+                                                this.#readDataCallback && this.#readDataCallback(data_array);
+                                            } catch (e) {
+                                                logging.error("Error while processing data:", e);
+                                            }
+                                        }
+
+                                    }
+
                                     header_bytes.length = 0;
                                     data_bytes.length = 0;
                                     data_header = undefined;
                                     mode = MODE_UTF8_RECEIVE;
                                 }
-
                             }
                         }
 
@@ -381,6 +458,12 @@ export class SpectodaWebSerialConnector {
                     this.#reader?.releaseLock();
                     this.#writer?.releaseLock();
                     logging.info("this.#reader DONE");
+
+                    if (this.#connected) {
+                        this.#connected = false;
+                        this.#runtimeReference.emit("#disconnected");
+                    }
+
                     break;
                 }
 
@@ -392,8 +475,9 @@ export class SpectodaWebSerialConnector {
         }
     }
 
-    connect(timeout: number = 15000) {
-        logging.verbose("connect(timeout=" + timeout + ")");
+    connect(timeout: number | typeof NULL_VALUE = NULL_VALUE) {
+        if (timeout === NULL_VALUE) { timeout = 3000; }
+        logging.verbose(`connect(timeout=${timeout})`);
 
         if (timeout <= 0) {
             logging.warn("Connect timeout have expired");
@@ -414,10 +498,10 @@ export class SpectodaWebSerialConnector {
         let port_options = PORT_OPTIONS;
 
         if (this.#criteria && Array.isArray(this.#criteria) && this.#criteria.length && (this.#criteria[0].baudrate || this.#criteria[0].baudRate)) {
-            port_options.baudRate = this.#criteria[0].baudrate || this.#criteria[0].baudRate;
+            port_options.baudRate = this.#criteria[0].baudrate || this.#criteria[0].baudRate || 1500000;
         }
 
-        logging.info("> Opening serial port on 'baudRate':", port_options.baudRate);
+        logging.warn("> Opening serial port on 'baudRate':", port_options.baudRate);
 
         return this.#serialPort.open(port_options)
             .then(() => {
@@ -459,6 +543,7 @@ export class SpectodaWebSerialConnector {
                     };
 
                     this.#writer?.write(new Uint8Array(stringToBytes(">>>ENABLE_SERIAL<<<\n", 20)));
+
                     // this.#writer?.releaseLock();
                 });
             })
@@ -476,6 +561,8 @@ export class SpectodaWebSerialConnector {
 
     // disconnect Connector from the connected Spectoda Device. But keep it selected
     async disconnect() {
+        logging.verbose("disconnect()");
+
         logging.debug("> Closing serial port...");
 
         if (!this.#serialPort) {
@@ -516,10 +603,6 @@ export class SpectodaWebSerialConnector {
             })
             .finally(() => {
                 this.#disconnecting = false;
-                if (this.#connected) {
-                    this.#connected = false;
-                    this.#runtimeReference.emit("#disconnected");
-                }
             });
 
 
@@ -539,7 +622,8 @@ export class SpectodaWebSerialConnector {
     //   CLOCK_WRITE = 3
     // };
 
-    #initiate(initiate_code: number, payload: number[], tries: number, timeout: number) {
+    #initiate(initiate_code: number, payload: number[], tries: number, timeout: number | typeof NULL_VALUE = NULL_VALUE) {
+        if (timeout === NULL_VALUE) { timeout = 10000; }
         logging.verbose(`initiate(initiate_code=${initiate_code}, payload=${payload}, tries=${tries}, timeout=${timeout})`);
 
         if (!tries) {
@@ -627,9 +711,9 @@ export class SpectodaWebSerialConnector {
     #read(channel_type: number, timeout: number) {
         let response = new DataView(new ArrayBuffer(0));
 
-        this.#dataCallback = data => {
+        this.#readDataCallback = data => {
             response = new DataView(data.buffer);
-            this.#dataCallback = undefined;
+            this.#readDataCallback = undefined;
         };
 
         return this.#initiate(CODE_READ + channel_type, [], 10, timeout).then(() => {
@@ -650,6 +734,7 @@ export class SpectodaWebSerialConnector {
     // deliver handles the communication with the Spectoda network in a way
     // that the command is guaranteed to arrive
     deliver(payload: number[], timeout: number) {
+        if (timeout === NULL_VALUE) { timeout = 10000; }
         logging.verbose(`deliver(payload=${payload})`);
 
         if (!this.#connected) {
@@ -666,6 +751,7 @@ export class SpectodaWebSerialConnector {
     // transmit handles the communication with the Spectoda network in a way
     // that the command is NOT guaranteed to arrive
     transmit(payload: number[], timeout: number) {
+        if (timeout === NULL_VALUE) { timeout = 1000; }
         logging.verbose(`transmit(payload=${payload})`);
 
         if (!this.#connected) {
@@ -682,6 +768,7 @@ export class SpectodaWebSerialConnector {
     // request handles the requests on the Spectoda network. The command request
     // is guaranteed to get a response
     request(payload: number[], read_response: boolean, timeout: number) {
+        if (timeout === NULL_VALUE) { timeout = 30000; }
         logging.verbose(`request(payload=${payload})`);
 
         if (!this.#connected) {
@@ -847,6 +934,9 @@ export class SpectodaWebSerialConnector {
                 logging.info("Firmware written in " + (new Date().getTime() - start_timestamp) / 1000 + " seconds");
 
                 await sleep(2000);
+
+                const bytes = [COMMAND_FLAGS.FLAG_DEVICE_REBOOT_REQUEST];
+                await this.#write(CHANNEL_DEVICE, bytes, 10000);
 
                 this.#runtimeReference.emit("ota_status", "success");
                 resolve(null);
