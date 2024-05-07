@@ -371,6 +371,17 @@ export class Spectoda {
       this.socket.emit("set-meta-data", meta);
     };
 
+    // listener is closed in socket.removeAllListeners, no need to take care of it
+    this.socket.on("check-connection", () => {
+      this.connected().then(connector => {
+        if (connector) {
+          this.socket.emit("event", { name: "connected", args: [connector] });
+        } else {
+          this.socket.emit("event", { name: "disconnected", args: [] });
+        }
+      });
+    });
+
     this.socket.___SpectodaListeners = [
       this.on("connected", async () => {
         setConnectionSocketData();
