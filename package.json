@@ -5,6 +5,7 @@
   "dependencies": {
     "@spectoda/spectoda-utils": "^1.0.0",
     "nanoevents": "^7.0.1",
-    "nanoid": "^4.0.0"
+    "nanoid": "^4.0.0",
+    "serialport": "^12.0.0"
   }
 }
