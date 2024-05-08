@@ -2,7 +2,7 @@
 /// <reference types="w3c-web-serial" />
 
 import { logging } from "../../logging";
-import { sleep, toBytes, numberToBytes, crc32, stringToBytes } from "../../functions";
+import { sleep, toBytes, numberToBytes, crc32, stringToBytes, isNode } from "../../functions";
 import { TimeTrack } from "../../TimeTrack.js";
 import { COMMAND_FLAGS, NULL_VALUE, SpectodaRuntime } from "../../SpectodaRuntime";
 import { TnglWriter } from "../../TnglWriter.js";
@@ -10,7 +10,7 @@ import { TnglReader } from "../../TnglReader.js";
 
 let { SerialPort, ReadlineParser }: { SerialPort: any; ReadlineParser: any } = { SerialPort: null, ReadlineParser: null };
 
-if (typeof window === "undefined" && !process.env.NEXT_PUBLIC_VERSION) {
+if (typeof window === "undefined" && !isNode()) {
     const serialport = require("serialport");
     SerialPort = serialport.SerialPort;
     ReadlineParser = serialport.ReadlineParser;

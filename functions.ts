@@ -623,3 +623,7 @@ if (typeof window !== "undefined") {
 
   window.mapValue = mapValue;
 }
+
+export function isNode() {
+  return typeof process == "object" && typeof process.versions == "object" && typeof process.versions.node == "string";
+}
