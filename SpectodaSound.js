@@ -114,7 +114,8 @@ export class SpectodaSound {
       }
 
       await new Promise(async (resolve, reject) => {
-        const srcObject = await navigator?.mediaDevices?.getDisplayMedia(gdmOptions)
+        const srcObject = await navigator?.mediaDevices
+          ?.getDisplayMedia(gdmOptions)
           .then(stream => {
             this.#stream = stream;
             this.#source = this.#audioContext.createMediaStreamSource(this.#stream);

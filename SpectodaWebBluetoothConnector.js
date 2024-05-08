@@ -293,7 +293,6 @@ export class WebBLEConnection {
       });
   }
 
-
   // transmit() tries to transmit data NOW. ASAP. It will fail,
   // if deliver or another transmit is being executed at the moment
   // returns promise that will be resolved when message is physically send (only transmittion, not receive)
@@ -514,7 +513,6 @@ export class WebBLEConnection {
 
   // resets the Communations, discarding command queue
   reset() {
-
     if (this.#networkChar) {
       this.#networkChar.oncharacteristicvaluechanged = null;
       this.#networkChar = null;
@@ -647,10 +645,9 @@ criteria example:
     }
 
     if (this.#selected()) {
-      return this.unselect()
-        .then(() => {
-          return this.userSelect(criteria, timeout);
-        });
+      return this.unselect().then(() => {
+        return this.userSelect(criteria, timeout);
+      });
     }
 
     // logging.debug(criteria);
@@ -816,7 +813,8 @@ criteria example:
 
     logging.verbose(`navigator.bluetooth.requestDevice(${JSON.stringify(web_ble_options)})`);
 
-    return navigator.bluetooth.requestDevice(web_ble_options)
+    return navigator.bluetooth
+      .requestDevice(web_ble_options)
       .catch(e => {
         // TODO! Throw UserGestureRequired if e.message.includes("user gesture"). ad DEV-3298
 
@@ -827,7 +825,6 @@ criteria example:
         this.#webBTDevice = device;
 
         this.#webBTDevice.ongattserverdisconnected = () => {
-
           sleep(1000).then(() => {
             this.#onDisconnected();
           });
@@ -891,7 +888,9 @@ criteria example:
   // connect Connector to the selected Spectoda Device. Also can be used to reconnect.
   // Fails if no device is selected
   connect(timeout = NULL_VALUE) {
-    if (timeout === NULL_VALUE) { timeout = 10000; }
+    if (timeout === NULL_VALUE) {
+      timeout = 10000;
+    }
     logging.verbose(`connect(timeout=${timeout})`);
 
     if (timeout <= 0) {
@@ -910,14 +909,17 @@ criteria example:
 
     const MINIMUM_CONNECT_TIMEOUT = 5000;
     let timeoutPromise = new Promise((resolve, reject) => {
-      timeoutHandle = setTimeout(() => {
-        logging.warn("Timeout triggered");
-        this.#webBTDevice.gatt.disconnect();
-        const LET_BLUETOOTH_RESET_SAFELY_TIMEOUT = 1000;
-        setTimeout(() => {
-          reject("ConnectionTimeout");
-        }, LET_BLUETOOTH_RESET_SAFELY_TIMEOUT);
-      }, Math.max(timeout, MINIMUM_CONNECT_TIMEOUT));
+      timeoutHandle = setTimeout(
+        () => {
+          logging.warn("Timeout triggered");
+          this.#webBTDevice.gatt.disconnect();
+          const LET_BLUETOOTH_RESET_SAFELY_TIMEOUT = 1000;
+          setTimeout(() => {
+            reject("ConnectionTimeout");
+          }, LET_BLUETOOTH_RESET_SAFELY_TIMEOUT);
+        },
+        Math.max(timeout, MINIMUM_CONNECT_TIMEOUT),
+      );
     });
 
     logging.debug("> Connecting to Bluetooth device...");
@@ -942,7 +944,6 @@ criteria example:
         return { connector: "webbluetooth" };
       })
       .catch(error => {
-
         if (error.name) {
           logging.warn(error.name);
         }
@@ -1123,10 +1124,10 @@ criteria example:
 
     //this.#interfaceReference = null; // dont know if I need to destroy this reference.. But I guess I dont need to?
     return this.disconnect()
-      .catch(() => { })
+      .catch(() => {})
       .then(() => {
         return this.unselect();
       })
-      .catch(() => { });
+      .catch(() => {});
   }
 }

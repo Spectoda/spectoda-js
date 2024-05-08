@@ -31,7 +31,7 @@ class FlutterConnection {
     window.flutterConnection.emit = null;
 
     // ! This code historically was used to handle the opening of links in SpectodaConnect webview.
-    // ! It is not used anymore, but I keep it here for historical reasons, if someone would be searching for 
+    // ! It is not used anymore, but I keep it here for historical reasons, if someone would be searching for
     // ! a way to open links in a new tab in a webview.
     // // target="_blank" global handler
     // // @ts-ignore
@@ -121,7 +121,6 @@ class FlutterConnection {
       });
 
       logging.verbose("> FlutterConnection inited");
-
     } else {
       logging.debug("> Simulating FlutterConnection Functions...");
 
@@ -542,7 +541,9 @@ criteria example:
   // first bonds the BLE device with the PC/Phone/Tablet if it is needed.
   // Then selects the device
   userSelect(criteria_object, timeout_number = NULL_VALUE) {
-    if (timeout_number === NULL_VALUE) { timeout_number = 30000; }
+    if (timeout_number === NULL_VALUE) {
+      timeout_number = 30000;
+    }
 
     const criteria_json = JSON.stringify(criteria_object);
     logging.debug(`userSelect(criteria=${criteria_json}, timeout=${timeout_number})`);
@@ -552,7 +553,7 @@ criteria example:
       window.flutterConnection.resolve = function (j) {
         // the resolve returns JSON string or null
         if (j) {
-          j = j.replace(/\0/g, ''); //! [BUG] Flutter app on Android tends to return nulls as strings with a null character at the end. This is a workaround for that.
+          j = j.replace(/\0/g, ""); //! [BUG] Flutter app on Android tends to return nulls as strings with a null character at the end. This is a workaround for that.
           j = JSON.parse(j);
         }
         resolve(j);
@@ -578,8 +579,12 @@ criteria example:
   // are eligible.
 
   autoSelect(criteria_object, scan_duration_number = NULL_VALUE, timeout_number = NULL_VALUE) {
-    if (scan_duration_number === NULL_VALUE) { scan_duration_number = 1500; } // 1200ms seems to be the minimum for the scan_duration if the controller is rebooted
-    if (timeout_number === NULL_VALUE) { timeout_number = 5000; }
+    if (scan_duration_number === NULL_VALUE) {
+      scan_duration_number = 1500;
+    } // 1200ms seems to be the minimum for the scan_duration if the controller is rebooted
+    if (timeout_number === NULL_VALUE) {
+      timeout_number = 5000;
+    }
     // step 1. for the scan_duration scan the surroundings for BLE devices.
     // step 2. if some devices matching the criteria are found, then select the one with
     //         the greatest signal strength. If no device is found until the timeout_number,
@@ -597,14 +602,15 @@ criteria example:
       window.flutterConnection.resolve = function (j) {
         // the resolve returns JSON string or null
         if (j) {
-          j = j.replace(/\0/g, ''); //! [BUG] Flutter app on Android tends to return nulls as strings with a null character at the end. This is a workaround for that.
+          j = j.replace(/\0/g, ""); //! [BUG] Flutter app on Android tends to return nulls as strings with a null character at the end. This is a workaround for that.
           j = JSON.parse(j);
         }
         resolve(j);
       };
 
       // @ts-ignore
-      window.flutterConnection.reject = function (e) { // on old Androids sometimes the first time you call autoSelect right after bluetooth is turned on, it rejects with a timeout
+      window.flutterConnection.reject = function (e) {
+        // on old Androids sometimes the first time you call autoSelect right after bluetooth is turned on, it rejects with a timeout
         logging.warn(e);
 
         // if the second attempt rejects again, then reject the promise
@@ -636,7 +642,7 @@ criteria example:
       window.flutterConnection.resolve = function (j) {
         // the resolve returns JSON string or null
         if (j) {
-          j = j.replace(/\0/g, ''); //! [BUG] Flutter app on Android tends to return nulls as strings with a null character at the end. This is a workaround for that.
+          j = j.replace(/\0/g, ""); //! [BUG] Flutter app on Android tends to return nulls as strings with a null character at the end. This is a workaround for that.
           j = JSON.parse(j);
         }
         resolve(j);
@@ -674,7 +680,9 @@ criteria example:
   // are eligible.
 
   scan(criteria_object, scan_duration_number = NULL_VALUE) {
-    if (scan_duration_number === NULL_VALUE) { scan_duration_number = 7000; }
+    if (scan_duration_number === NULL_VALUE) {
+      scan_duration_number = 7000;
+    }
     // step 1. for the scan_duration scan the surroundings for BLE devices.
 
     const criteria_json = JSON.stringify(criteria_object);
@@ -686,7 +694,7 @@ criteria example:
       window.flutterConnection.resolve = function (j) {
         // the resolve returns JSON string or null
         if (j) {
-          j = j.replace(/\0/g, ''); //! [BUG] Flutter app on Android tends to return nulls as strings with a null character at the end. This is a workaround for that.
+          j = j.replace(/\0/g, ""); //! [BUG] Flutter app on Android tends to return nulls as strings with a null character at the end. This is a workaround for that.
           j = JSON.parse(j);
         }
         resolve(j);
@@ -709,7 +717,9 @@ criteria example:
   */
   // timeout 20000ms for the old slow devices to be able to connect
   connect(timeout_number = NULL_VALUE) {
-    if (timeout_number === NULL_VALUE) { timeout_number = 20000; }
+    if (timeout_number === NULL_VALUE) {
+      timeout_number = 20000;
+    }
     logging.debug(`connect(timeout=${timeout_number})`);
 
     const MINIMAL_CONNECT_TIMEOUT = 5000;
@@ -726,7 +736,7 @@ criteria example:
       window.flutterConnection.resolve = function (j) {
         // the resolve returns JSON string or null
         if (j) {
-          j = j.replace(/\0/g, ''); //! [BUG] Flutter app on Android tends to return nulls as strings with a null character at the end. This is a workaround for that.
+          j = j.replace(/\0/g, ""); //! [BUG] Flutter app on Android tends to return nulls as strings with a null character at the end. This is a workaround for that.
           j = JSON.parse(j);
         }
         resolve(j);
@@ -744,7 +754,7 @@ criteria example:
       };
     });
 
-    // @ts-ignore 
+    // @ts-ignore
     window.flutter_inappwebview.callHandler("connect", MINIMAL_CONNECT_TIMEOUT); // first try to connect with the minimal timeout
 
     //? Leaving this code here for possible benchmarking. Comment out .callHandler("connect" and uncomment this code to use it
@@ -786,7 +796,7 @@ criteria example:
       window.flutterConnection.resolve = function (j) {
         // the resolve returns JSON string or null
         if (j) {
-          j = j.replace(/\0/g, ''); //! [BUG] Flutter app on Android tends to return nulls as strings with a null character at the end. This is a workaround for that.
+          j = j.replace(/\0/g, ""); //! [BUG] Flutter app on Android tends to return nulls as strings with a null character at the end. This is a workaround for that.
           j = JSON.parse(j);
         }
         resolve(j);
@@ -805,7 +815,9 @@ criteria example:
   // deliver handles the communication with the Spectoda Controller in a way
   // that the command is guaranteed to arrive
   deliver(payload_bytes, timeout_number = NULL_VALUE) {
-    if (timeout_number === NULL_VALUE) { timeout_number = 5000; }
+    if (timeout_number === NULL_VALUE) {
+      timeout_number = 5000;
+    }
     logging.debug(`deliver(payload=[${payload_bytes}], timeout=${timeout_number})`);
 
     this.#promise = new Promise((resolve, reject) => {
@@ -825,7 +837,9 @@ criteria example:
   // transmit handles the communication with the Spectoda Controller in a way
   // that the paylaod is NOT guaranteed to arrive
   transmit(payload_bytes, timeout_number = NULL_VALUE) {
-    if (timeout_number === NULL_VALUE) { timeout_number = 1000; }
+    if (timeout_number === NULL_VALUE) {
+      timeout_number = 1000;
+    }
     logging.debug(`transmit(payload=[${payload_bytes}], timeout=${timeout_number})`);
 
     this.#promise = new Promise((resolve, reject) => {
@@ -845,7 +859,9 @@ criteria example:
   // request handles the requests on the Spectoda Controller. The payload request
   // is guaranteed to get a response
   request(payload_bytes, read_response, timeout_number = NULL_VALUE) {
-    if (timeout_number === NULL_VALUE) { timeout_number = 5000; }
+    if (timeout_number === NULL_VALUE) {
+      timeout_number = 5000;
+    }
     logging.debug(`request(payload=[${payload_bytes}], read_response=${read_response ? "true" : "false"}, timeout=${timeout_number})`);
 
     this.#promise = new Promise((resolve, reject) => {
@@ -895,7 +911,6 @@ criteria example:
           // @ts-ignore
           resolve();
           return;
-
         } catch (e) {
           logging.warn("Clock write failed: " + e);
         }
@@ -1081,10 +1096,10 @@ criteria example:
   destroy() {
     //this.#interfaceReference = null; // dont know if I need to destroy this reference.. But I guess I dont need to?
     return this.disconnect()
-      .catch(() => { })
+      .catch(() => {})
       .then(() => {
         return this.unselect();
       })
-      .catch(() => { });
+      .catch(() => {});
   }
 }

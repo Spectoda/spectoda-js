@@ -538,11 +538,11 @@ criteria example:
     logging.verbose(`destroy()`);
 
     return this.disconnect()
-      .catch(() => { })
+      .catch(() => {})
       .then(() => {
         return this.unselect();
       })
-      .catch(() => { });
+      .catch(() => {});
 
     return Promise.resolve();
   }

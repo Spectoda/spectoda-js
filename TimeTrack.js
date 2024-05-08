@@ -71,7 +71,6 @@ export class TimeTrack {
       this.paused_ = true;
       this.memory_ = Date.now() - this.memory_;
     }
-
   }
 
   unpause() {

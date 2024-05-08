@@ -24,7 +24,6 @@ if (typeof window !== "undefined") {
 /////////////////////////////////////////////////////////////////////////////////////
 
 export function createSpectodaWebsocket() {
-
   // ! this timeline is a dummy timeline that it not correctly synced across remote control
   // TODO sync timeline over RC
   const dummyTimeline = new TimeTrack(0, true);
@@ -167,14 +166,10 @@ export function createSpectodaWebsocket() {
               logging.verbose("[WEBSOCKET]", result);
 
               return result?.data?.[0].result;
-            }
-
-            else if (result.status === "error") {
+            } else if (result.status === "error") {
               logging.error("[WEBSOCKET]", result);
               throw new Error(result?.error);
-            }
-
-            else {
+            } else {
               logging.error("[WEBSOCKET]", result);
               throw new Error("Unknown error");
             }

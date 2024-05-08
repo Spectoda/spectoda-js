@@ -31,29 +31,29 @@ export var logging = {
     if (level !== undefined && level !== null && level >= 0 && level <= 5) {
       logging.level = level;
     }
-    logging.error = logging.level >= 1 ? console.error : function (...msg) { };
-    logging.warn = logging.level >= 2 ? console.warn : function (...msg) { };
-    logging.info = logging.level >= 3 ? console.log : function (...msg) { };
-    logging.debug = logging.level >= 4 ? console.log : function (...msg) { };
-    logging.verbose = logging.level >= 5 ? console.log : function (...msg) { };
+    logging.error = logging.level >= 1 ? console.error : function (...msg) {};
+    logging.warn = logging.level >= 2 ? console.warn : function (...msg) {};
+    logging.info = logging.level >= 3 ? console.log : function (...msg) {};
+    logging.debug = logging.level >= 4 ? console.log : function (...msg) {};
+    logging.verbose = logging.level >= 5 ? console.log : function (...msg) {};
   },
 
   routeLoggingElswhere: (callback, level: number) => {
     if (level !== undefined && level !== null && level >= 0 && level <= 5) {
       logging.level = level;
     }
-    logging.error = logging.level >= 1 ? callback : function (...msg) { };
-    logging.warn = logging.level >= 2 ? callback : function (...msg) { };
-    logging.info = logging.level >= 3 ? callback : function (...msg) { };
-    logging.debug = logging.level >= 4 ? callback : function (...msg) { };
-    logging.verbose = logging.level >= 5 ? callback : function (...msg) { };
+    logging.error = logging.level >= 1 ? callback : function (...msg) {};
+    logging.warn = logging.level >= 2 ? callback : function (...msg) {};
+    logging.info = logging.level >= 3 ? callback : function (...msg) {};
+    logging.debug = logging.level >= 4 ? callback : function (...msg) {};
+    logging.verbose = logging.level >= 5 ? callback : function (...msg) {};
   },
 
   error: console.error,
   warn: console.warn,
   info: console.log,
-  debug: function (...msg: any) { },
-  verbose: function (...msg: any) { },
+  debug: function (...msg: any) {},
+  verbose: function (...msg: any) {},
 };
 
 // ! deprecated use logging.setLoggingLevel
