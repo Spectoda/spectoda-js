@@ -11,7 +11,8 @@ import { TnglReader } from "../../TnglReader.js";
 let { SerialPort, ReadlineParser }: { SerialPort: any; ReadlineParser: any } = { SerialPort: null, ReadlineParser: null };
 
 if (typeof window === "undefined" && !isNode()) {
-  const serialport = require("serialport");
+  const requireFunc = require;
+  const serialport = requireFunc("serialport");
   SerialPort = serialport.SerialPort;
   ReadlineParser = serialport.ReadlineParser;
 }
