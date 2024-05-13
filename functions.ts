@@ -1,7 +1,7 @@
 import { createNanoEvents } from "nanoevents";
 import { TnglCodeParser } from "./SpectodaParser";
 import { PERCENTAGE_MAX, PERCENTAGE_MIN } from "./constants";
-import { logging, setLoggingLevel } from "./logging";
+import { logging } from "./logging";
 
 export const allEventsEmitter = createNanoEvents();
 
@@ -444,7 +444,7 @@ export const noSleep = new NoSleep();
 export function enableDebugMode() {
   if (window.eruda) {
     window.eruda.init();
-    setLoggingLevel(4);
+    logging.setLoggingLevel(4);
   }
 }
 
