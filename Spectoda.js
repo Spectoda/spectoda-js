@@ -8,7 +8,7 @@ import "./TnglReader";
 import { TnglReader } from "./TnglReader";
 import "./TnglWriter";
 import { allEventsEmitter, colorToBytes, computeTnglFingerprint, detectSpectodaConnect, hexStringToUint8Array, labelToBytes, numberToBytes, percentageToBytes, sleep, strMacToBytes, stringToBytes, uint8ArrayToHexString } from "./functions";
-import { logging, setLoggingLevel } from "./logging";
+import { defaultLoggingCallBacks, logging } from "./logging";
 
 const DEFAULT_TNGL_BANK = 0;
 export class Spectoda {
@@ -444,6 +444,24 @@ export class Spectoda {
       });
 
       this.socket.on("connect", async () => {
+        logging.setLogCallback((...e) => {
+          defaultLoggingCallBacks.log(...e);
+          this.socket.emit("event", { name: "log", args: e });
+        });
+
+        logging.setWarnCallback((...e) => {
+          defaultLoggingCallBacks.warn(...e);
+          this.socket.emit("event", { name: "log-warn", args: e });
+        });
+
+        logging.setErrorCallback((...e) => {
+          defaultLoggingCallBacks.error(...e);
+          this.socket.emit("event", { name: "log-error", args: e });
+        });
+
+        // ! this is required for log callbacks to apply
+        logging.setLoggingLevel(logging.level);
+
         if (sessionOnly) {
           // Handle session-only logic
           const response = await this.socket.emitWithAck("join-session", null);
@@ -484,7 +502,11 @@ export class Spectoda {
   }
 
   disableRemoteControl() {
-    logging.debug("> Disonnecting from the Remote Control");
+    logging.setLogCallback(defaultLoggingCallBacks.log);
+    logging.setWarnCallback(defaultLoggingCallBacks.warn);
+    logging.setErrorCallback(defaultLoggingCallBacks.error);
+
+    logging.debug("> Disconnecting from the Remote Control");
 
     this.releaseWakeLock(true);
     this.socket?.disconnect();
@@ -1598,7 +1620,7 @@ export class Spectoda {
   }
 
   setDebugLevel(level) {
-    setLoggingLevel(level);
+    logging.setLoggingLevel(level);
   }
 
   getConnectedPeersInfo() {
