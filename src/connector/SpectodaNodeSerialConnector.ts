@@ -4,7 +4,8 @@
 
 // add overlays=uart3 to /boot/orangepiEnv.txt
 // add overlays=uart0 to /boot/orangepiEnv.txt
-// stty -F /dev/ttyS3 1500000
+// sudo stty -F /dev/ttyS3 1500000
+// screen /dev/ttyS3 1500000
 
 /*
 echo 'overlays=uart3' | sudo tee -a /boot/orangepiEnv.txt
@@ -12,7 +13,7 @@ cat /boot/orangepiEnv.txt
 */
 
 import { logging } from "../../logging";
-import { sleep, toBytes, numberToBytes, crc8, crc32, hexStringToArray, rgbToHex, stringToBytes, convertToByteArray } from "../../functions";
+import { sleep, toBytes, numberToBytes, crc8, crc32, hexStringToArray, rgbToHex, stringToBytes, convertToByteArray, uint8ArrayToHexString } from "../../functions";
 import { TimeTrack } from "../../TimeTrack.js";
 import { COMMAND_FLAGS } from "../Spectoda_JS.js";
 import { TnglWriter } from "../../TnglWriter.js";
@@ -28,6 +29,9 @@ if (typeof window === "undefined" && !process.env.NEXT_PUBLIC_VERSION) {
   ReadlineParser = serialport.ReadlineParser;
 }
 
+let tngl_sync_counter = 0;
+let history_sync_counter = 0;
+
 // import SerialPort from "serialport"
 // import ReadlineParser from "serialport"
 
@@ -37,10 +41,23 @@ const PORT_OPTIONS = { path: "/dev/ttyS0", baudRate: 115200, dataBits: 8, stopBi
 
 const CODE_WRITE = 100;
 const CODE_READ = 200;
-
 const CHANNEL_NETWORK = 1;
 const CHANNEL_DEVICE = 2;
 const CHANNEL_CLOCK = 3;
+const COMMAND = 0;
+const DATA = 10;
+
+const UNKNOWN_PACKET = 0;
+
+const NETWORK_WRITE = CODE_WRITE + CHANNEL_NETWORK + COMMAND;
+const DEVICE_WRITE = CODE_WRITE + CHANNEL_DEVICE + COMMAND;
+const CLOCK_WRITE = CODE_WRITE + CHANNEL_CLOCK + COMMAND;
+const NETWORK_READ = CODE_READ + CHANNEL_NETWORK + COMMAND;
+const DEVICE_READ = CODE_READ + CHANNEL_DEVICE + COMMAND;
+const CLOCK_READ = CODE_READ + CHANNEL_CLOCK + COMMAND;
+const NETWORK_READ_DATA = CODE_READ + CHANNEL_NETWORK + DATA;
+const DEVICE_READ_DATA = CODE_READ + CHANNEL_DEVICE + DATA;
+const CLOCK_READ_DATA = CODE_READ + CHANNEL_CLOCK + DATA;
 
 const starts_with = function (buffer: number[], string: string, start_offset: number = 0) {
   for (let index = 0; index < string.length; index++) {
@@ -76,7 +93,7 @@ export class SpectodaNodeSerialConnector {
   #disconnecting: boolean;
   #disconnectingResolve: ((value: unknown) => void) | undefined;
 
-  #timeoutMultiplier: number;
+  #timeoutMultiplier: number; 
 
   #beginCallback: ((result: boolean) => void) | undefined;
   #feedbackCallback: ((success: boolean) => void) | undefined;
@@ -334,7 +351,7 @@ export class SpectodaNodeSerialConnector {
         let command_bytes: number[] = [];
 
         let header_bytes: number[] = [];
-        let data_header: { data_type: number, data_size: number, data_receive_timeout: number, data_crc32: number, header_crc32: number } | undefined = undefined;
+        let data_header: { data_type: number, data_size: number, data_receive_timeout: number, data_crc32: number, header_crc32: number } = { data_type: 0, data_size: 0, data_receive_timeout: 0, data_crc32: 0, header_crc32: 0 };
         let data_bytes: number[] = [];
 
         let notify_header: undefined | object = undefined;
@@ -422,6 +439,89 @@ export class SpectodaNodeSerialConnector {
                     else if (starts_with(command_bytes, "DATA", 3)) {
                       logging.verbose("SERIAL >>>DATA<<<")
                       this.#dataCallback && this.#dataCallback(new Uint8Array(data_bytes));
+                      
+                      if (data_header.data_type === NETWORK_WRITE) {
+                        logging.debug("SERIAL >>>NETWORK_WRITE<<<")
+
+                        this.#runtimeReference.evaluate(new Uint8Array(data_bytes), 0x01010101);
+                      }
+
+                      else if (data_header.data_type === CLOCK_WRITE) {
+                        logging.debug("SERIAL >>>CLOCK_WRITE<<<")
+
+                        let tnglReader = new TnglReader(new DataView(new Uint8Array(data_bytes).buffer));
+
+                        let clock_timestamp = tnglReader.readUint64();
+                        let timeline_timestamp = tnglReader.readUint32();
+                        let timeline_paused = tnglReader.readUint32();
+                        let history_fingerprint = uint8ArrayToHexString(tnglReader.readBytes(4));
+                        let tngl_fingerprint = uint8ArrayToHexString(tnglReader.readBytes(4));
+
+                        console.info(`NodeSerialConnector: clock_timestamp=${clock_timestamp}, timeline_timestamp=${timeline_timestamp}, timeline_paused=${timeline_paused}, history_fingerprint=${history_fingerprint}, tngl_fingerprint=${tngl_fingerprint}`);
+
+                        this.#runtimeReference.clock.setMillis(clock_timestamp);
+                        this.#runtimeReference.spectoda.setClock(clock_timestamp);
+
+                        // try {
+
+                        // // ! this whole section should be moved to SpectodaRuntime
+                        // if (this.#runtimeReference.spectoda.synchronization) {
+                        //   const synchronization = this.#runtimeReference.spectoda.synchronization;
+
+                        //   if (!synchronization.tngl_fingerprint.startsWith(tngl_fingerprint)) {
+                        //     logging.warn("> Synchronizing tngl...");
+                        //     // TODO sync tngl from wasm to controller instead of clearing it
+                            
+                        //     if (tngl_sync_counter !== 0 && tngl_sync_counter % 16 === 0) {
+                        //       this.#runtimeReference.spectoda.clearTngl();
+                        //     } 
+
+                        //     else if (tngl_sync_counter % 8 === 0) {
+                        //       this.#runtimeReference.spectodaReference.syncTnglFromControllerToWasm().catch(error => {
+                        //         logging.error("Failed to sync tngl", error);
+                        //       });
+                        //     }
+
+                        //     tngl_sync_counter += 1;
+                        //   }
+
+                        //   else if (!synchronization.history_fingerprint.startsWith(history_fingerprint)) {
+
+                        //     logging.warn("> Synchronizing event history...");
+                        //     // TODO Integrate backwards event synchronization so that I 
+
+                        //     if (history_sync_counter !== 0 && history_sync_counter % 4 === 0) {
+                        //       logging.warn("Clearing Event History");
+                        //       this.#runtimeReference.spectoda.clearHistory(); //? This is only needed because there is no backwards event synchronization
+                        //     } 
+                            
+                        //     else if (history_sync_counter >= 8) {
+                        //       logging.error("History synchonization is failing.. Restart");
+                        //       this.#runtimeReference.spectodaReference.reload();
+                        //     }
+
+                        //     if (history_sync_counter % 2 === 0) {
+                        //       this.#runtimeReference.spectodaReference.syncEventHistory().catch(error => {
+                        //         logging.error("Failed to sync history", error);
+                        //       });
+                        //     }
+
+                        //     history_sync_counter += 1;
+                        //   }
+
+                        //   else {
+                        //     tngl_sync_counter = 0;
+                        //     history_sync_counter = 0;
+                        //   }
+
+                        // }
+
+                        // } catch (error) {
+                        //   logging.error("Failed to synchronize", error);
+                        // }
+
+                      }
+
                       command_bytes.length = 0;
                     }
 
@@ -429,6 +529,9 @@ export class SpectodaNodeSerialConnector {
 
                   else if (ends_with(command_bytes, "DATA=")) {
                     mode = MODE_DATA_RECEIVE;
+
+                    header_bytes.length = 0;
+                    data_bytes.length = 0;
                   }
 
                   else if (command_bytes.length > 20) {
@@ -458,7 +561,7 @@ export class SpectodaNodeSerialConnector {
 
             else if (mode == MODE_DATA_RECEIVE) {
 
-              if (!data_header) {
+              if (header_bytes.length < 20) {
 
                 header_bytes.push(byte);
 
@@ -481,14 +584,6 @@ export class SpectodaNodeSerialConnector {
                 data_bytes.push(byte);
 
                 if (data_bytes.length >= data_header.data_size) {
-
-                  const data_array = new Uint8Array(data_bytes);
-                  logging.verbose("data_array=", data_array);
-
-                  this.#dataCallback && this.#dataCallback(data_array);
-                  header_bytes.length = 0;
-                  data_bytes.length = 0;
-                  data_header = undefined;
                   mode = MODE_UTF8_RECEIVE;
                 }
 
@@ -894,7 +989,7 @@ export class SpectodaNodeSerialConnector {
     });
   }
 
-  // handles the firmware updating. Sends "ota" events
+ // handles the firmware updating. Sends "ota" events
   // to all handlers
   updateFW(firmware: Uint8Array) {
     logging.verbose(`updateFW(firmware=${firmware})`);
@@ -942,7 +1037,7 @@ export class SpectodaNodeSerialConnector {
           await this.#write(CHANNEL_DEVICE, bytes, 10000);
         }
 
-        await sleep(8000); // need to wait 10 seconds to let the ESP erase the flash.
+        await sleep(100);
 
         {
           //===========// WRITE //===========//
@@ -981,6 +1076,9 @@ export class SpectodaNodeSerialConnector {
         logging.info("Firmware written in " + (new Date().getTime() - start_timestamp) / 1000 + " seconds");
 
         await sleep(2000);
+
+        const bytes = [COMMAND_FLAGS.FLAG_DEVICE_REBOOT_REQUEST];
+        await this.#write(CHANNEL_DEVICE, bytes, 10000);
 
         this.#runtimeReference.emit("ota_status", "success");
         resolve(null);
