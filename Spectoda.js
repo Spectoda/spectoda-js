@@ -2329,4 +2329,14 @@ export class Spectoda {
   execute(bytecode) {
     return this.runtime.execute(bytecode, null, 60000);
   }
+
+  reload() {
+    if (detectNode()) {
+      process.exit(1);
+    } else {
+      if (window && window.location) {
+        window.location.reload();
+      }
+    }
+  }
 }
