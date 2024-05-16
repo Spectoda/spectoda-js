@@ -17,12 +17,6 @@ export const DEBUG_LEVEL_DEBUG = 4;
  * @deprecated use logging.LOGGING_LEVEL_VERBOSE */
 export const DEBUG_LEVEL_VERBOSE = 5;
 
-export const defaultLoggingCallBacks = Object.freeze({
-  log: console.log,
-  warn: console.warn,
-  error: console.error,
-});
-
 // Logging configuration object
 export const logging = {
   LOGGING_LEVEL_NONE: 0,
@@ -34,9 +28,9 @@ export const logging = {
 
   level: 3,
 
-  logCallback: defaultLoggingCallBacks.log,
-  warnCallback: defaultLoggingCallBacks.warn,
-  errorCallback: defaultLoggingCallBacks.error,
+  logCallback: console.log,
+  warnCallback: console.warn,
+  errorCallback: console.error,
 
   setLoggingLevel: (level: number) => {
     if (level >= 0 && level <= 5) {
