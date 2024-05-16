@@ -541,7 +541,7 @@ export class SpectodaRuntime {
       default:
         logging.warn(`Unsupported connector: ${this.#assignedConnector}`);
 
-        this.#assignedConnector = none;
+        this.#assignedConnector = "none";
         this.connector = null;
     }
   }
