@@ -18,6 +18,18 @@ eventStream.on("controller-log", line => {
   logging.info(line);
 });
 
+eventStream.on("log", msgs => {
+  console.log(...msgs);
+});
+
+eventStream.on("log-warn", msgs => {
+  console.warn(...msgs);
+});
+
+eventStream.on("log-error", msgs => {
+  console.error(...msgs);
+});
+
 if (typeof window !== "undefined") {
   window.sockets = [];
 }
@@ -37,7 +49,7 @@ export function createSpectodaWebsocket() {
   if (typeof window !== "undefined") window.socket = socket;
 
   socket.on("event", data => {
-    eventStream.emit(data.name, ...data.args);
+    eventStream.emit(data.name, data?.args);
   });
 
   let networkJoinParams = [];
