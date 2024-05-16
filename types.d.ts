@@ -8,7 +8,7 @@ declare global {
     DEBUG_LEVEL_INFO: number;
     DEBUG_LEVEL_DEBUG: number;
     DEBUG_LEVEL_VERBOSE: number;
-    setLoggingLevel: (level: number) => void;
+    logging: typeof logging;
 
     MSStream: any;
     validateTimestamp: typeof validateTimestamp;
@@ -16,4 +16,3 @@ declare global {
     eruda: any;
   }
 }
-
