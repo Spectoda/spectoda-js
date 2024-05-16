@@ -8,7 +8,7 @@ import "./TnglReader";
 import { TnglReader } from "./TnglReader";
 import "./TnglWriter";
 import { allEventsEmitter, colorToBytes, computeTnglFingerprint, detectSpectodaConnect, hexStringToUint8Array, labelToBytes, numberToBytes, percentageToBytes, sleep, strMacToBytes, stringToBytes, uint8ArrayToHexString } from "./functions";
-import { defaultLoggingCallBacks, logging } from "./logging";
+import { logging } from "./logging";
 
 const DEFAULT_TNGL_BANK = 0;
 export class Spectoda {
@@ -445,17 +445,17 @@ export class Spectoda {
 
       this.socket.on("connect", async () => {
         logging.setLogCallback((...e) => {
-          defaultLoggingCallBacks.log(...e);
+          console.log(...e);
           this.socket.emit("event", { name: "log", args: e });
         });
 
         logging.setWarnCallback((...e) => {
-          defaultLoggingCallBacks.warn(...e);
+          console.warn(...e);
           this.socket.emit("event", { name: "log-warn", args: e });
         });
 
         logging.setErrorCallback((...e) => {
-          defaultLoggingCallBacks.error(...e);
+          console.error(...e);
           this.socket.emit("event", { name: "log-error", args: e });
         });
 
@@ -502,9 +502,9 @@ export class Spectoda {
   }
 
   disableRemoteControl() {
-    logging.setLogCallback(defaultLoggingCallBacks.log);
-    logging.setWarnCallback(defaultLoggingCallBacks.warn);
-    logging.setErrorCallback(defaultLoggingCallBacks.error);
+    logging.setLogCallback(console.log);
+    logging.setWarnCallback(console.warn);
+    logging.setErrorCallback(console.error);
 
     logging.debug("> Disconnecting from the Remote Control");
 
