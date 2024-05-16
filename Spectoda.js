@@ -134,12 +134,9 @@ export class Spectoda {
         // });
 
         if (this.#getConnectionState() === "connected") {
-          return (
-            this.syncClock()
-              .catch(error => {
-                logging.warn(error);
-              })
-          );
+          return this.syncClock().catch(error => {
+            logging.warn(error);
+          });
         } else if (this.#getConnectionState() === "disconnected" && this.#autonomousConnection) {
           return this.#connect(true).catch(error => {
             logging.warn(error);
@@ -2376,6 +2373,12 @@ export class Spectoda {
   }
 
   reload() {
-    process.exit(1);
+    if (detectNode()) {
+      process.exit(1);
+    } else {
+      if (window && window.location) {
+        window.location.reload();
+      }
+    }
   }
 }
