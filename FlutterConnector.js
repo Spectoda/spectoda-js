@@ -163,7 +163,7 @@ class FlutterConnection {
               }
               _selected = true;
               // @ts-ignore
-              window.flutterConnection.resolve('{"connector":"spectodaconnect"}');
+              window.flutterConnection.resolve('{"connector":"flutterbluetooth"}');
             }
             break;
 
@@ -181,7 +181,7 @@ class FlutterConnection {
               }
               _selected = true;
               // @ts-ignore
-              window.flutterConnection.resolve('{"connector":"spectodaconnect"}'); // resolve with json containing the information about the connected device
+              window.flutterConnection.resolve('{"connector":"flutterbluetooth"}'); // resolve with json containing the information about the connected device
             }
             break;
 
@@ -190,7 +190,7 @@ class FlutterConnection {
               // params: ()
               if (_selected) {
                 // @ts-ignore
-                window.flutterConnection.resolve('{"connector":"spectodaconnect"}'); // if the device is selected, return json
+                window.flutterConnection.resolve('{"connector":"flutterbluetooth"}'); // if the device is selected, return json
               } else {
                 // @ts-ignore
                 window.flutterConnection.resolve(); // if no device is selected resolve nothing
@@ -226,7 +226,7 @@ class FlutterConnection {
               }
               _selected = true;
               // @ts-ignore
-              window.flutterConnection.resolve('{"connector":"spectodaconnect"}'); // resolve with json containing the information about the connected device
+              window.flutterConnection.resolve('{"connector":"flutterbluetooth"}'); // resolve with json containing the information about the connected device
             }
             break;
 
@@ -247,7 +247,7 @@ class FlutterConnection {
               _connected = true;
               // @ts-ignore
               // @ts-ignore
-              window.flutterConnection.resolve('{"connector":"spectodaconnect"}');
+              window.flutterConnection.resolve('{"connector":"flutterbluetooth"}');
               // after connection the SpectodaConnect can any time emit #disconnect event.
 
               await sleep(1000); // unselect logic
@@ -283,7 +283,7 @@ class FlutterConnection {
               // params: ()
               if (_connected) {
                 // @ts-ignore
-                window.flutterConnection.resolve('{"connector":"spectodaconnect"}');
+                window.flutterConnection.resolve('{"connector":"flutterbluetooth"}');
               } else {
                 // @ts-ignore
                 window.flutterConnection.resolve();
@@ -455,7 +455,7 @@ export class FlutterConnector extends FlutterConnection {
   constructor(interfaceReference) {
     super();
 
-    this.type = "spectodaconnect";
+    this.type = "flutterbluetooth";
 
     this.#interfaceReference = interfaceReference;
     this.#promise = null;

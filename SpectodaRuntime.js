@@ -432,35 +432,64 @@ export class SpectodaRuntime {
     }
   }
 
-  assignConnector(connector_type = "default") {
-    logging.verbose(`assignConnector(connector_type=${connector_type})`);
+  assignConnector(desired_connector = "default") {
+    logging.verbose(`assignConnector(desired_connector=${desired_connector})`);
 
-    if (connector_type === null) {
-      connector_type = "none";
-    }
+    let choosen_connector = undefined;
 
-    if (connector_type == "") {
-      connector_type = "default";
-    }
-
-    if (connector_type == "default" || connector_type == "automatic") {
+    if (desired_connector == "default" || desired_connector == "automatic") {
       if (detectSpectodaConnect()) {
-        connector_type = "spectodaconnect";
-      } else if (navigator.bluetooth) {
-        connector_type = "webbluetooth";
+        desired_connector = "serial";
       } else {
-        connector_type = "none";
+        desired_connector = "bluetooth";
       }
     }
 
+    if (desired_connector.includes("bluetooth")) {
+      if (detectSpectodaConnect()) {
+        choosen_connector = "flutterbluetooth";
+      } else if ((detectAndroid() && detectChrome()) || (detectMacintosh() && detectChrome()) || (detectWindows() && detectChrome()) || (detectLinux() && detectChrome())) {
+        choosen_connector = "webbluetooth";
+      } else if (detectNode()) {
+        choosen_connector = "nodebluetooth";
+      } else {
+        throw "UnsupportedConnectorPlatform";
+      }
+    }
+    //
+    else if (desired_connector.includes("serial")) {
+      if (detectNode()) {
+        choosen_connector = "nodeserial";
+      } else if ((detectMacintosh() && detectChrome()) || (detectWindows() && detectChrome()) || (detectLinux() && detectChrome())) {
+        choosen_connector = "webserial";
+      } else {
+        throw "UnsupportedConnectorPlatform";
+      }
+    }
+    //
+    else if (desired_connector.includes("dummy")) {
+      choosen_connector = "dummy";
+    }
+    //
+    else if (desired_connector.includes("simulated")) {
+      choosen_connector = "simulated";
+    }
+    //
+    else if (desired_connector.includes("none") || desired_connector == "") {
+      choosen_connector = "none";
+    }
+
+    if (choosen_connector === undefined) {
+      throw "UnsupportedConnector";
+    }
+
     // leave this at info, for faster debug
-    logging.info(`> Assigning ${connector_type} connector...`);
-    this.#assignedConnector = connector_type;
+    logging.info(`> Assigning ${choosen_connector} connector...`);
+    this.#assignedConnector = choosen_connector;
   }
 
   async #updateConnector() {
-    if ((!this.connector && this.#assignedConnector === "none") || (this.connector && this.connector.type === this.#assignedConnector)) {
-      logging.verbose("connector is already set as requested");
+    if ((this.connector !== null && this.#assignedConnector === this.connector.type) || (this.connector === null && this.#assignedConnector === "none")) {
       return;
     }
 
@@ -474,113 +503,46 @@ export class SpectodaRuntime {
         this.connector = null;
         break;
 
-      case "dummy":
-        this.connector = new SpectodaDummyConnector(this, false);
+      case "simulated":
+        this.connector = new SpectodaDummyConnector(this); // TODO! implement SpectodaSimulatedConnector with WASM
         break;
 
-      case "vdummy":
-        return (
-          window
-            // @ts-ignore
-            .prompt("Simulace FW verze dummy connecoru", "VDUMMY_0.8.1_20220301", "Zvolte FW verzi dummy connecoru", "text", {
-              placeholder: "DUMMY_0.0.0_00000000",
-              regex: /^[\w\d]+_\d.\d.\d_[\d]{8}/,
-              invalidText: "FW verze není správná",
-              maxlength: 32,
-            })
-            // @ts-ignore
-            .then(version => {
-              this.connector = new SpectodaDummyConnector(this, false, version);
-            })
-        );
-
-      case "edummy":
-        this.connector = new SpectodaDummyConnector(this, true);
+      case "dummy":
+        this.connector = new SpectodaDummyConnector(this);
         break;
 
       case "webbluetooth":
-        if ((detectAndroid() && detectChrome()) || (detectMacintosh() && detectChrome()) || (detectWindows() && detectChrome()) || (detectLinux() && detectChrome())) {
-          this.connector = new SpectodaWebBluetoothConnector(this);
-        } else {
-          //! TODO - spectoda.js should not show any alerts or confirmations
-          //! refactor this to be handled by the app - but make sure that evenry app has this handled - and thats the challenge
-
-          // iPhone outside Bluefy and SpectodaConnect
-          if (detectIPhone()) {
-            // @ts-ignore
-            window.confirm("Prohlížeč není podporován. Prosím, stáhněte si aplikaci Spectoda Connect.").then(result => {
-              if (result) {
-                // redirect na Bluefy v app store
-                window.location.replace("https://apps.apple.com/us/app/id1635118423");
-              }
-            });
-          }
-          // Macs outside Google Chrome
-          else if (detectMacintosh()) {
-            // @ts-ignore
-            window.confirm("Prohlížeč není podporován. Prosím, otevřete aplikace v prohlížeči Google Chrome.").then(result => {
-              if (result) {
-                // redirect na Google Chrome
-                window.location.replace("https://www.google.com/intl/cs_CZ/chrome/");
-              }
-            });
-          }
-          // Android outside Google Chrome
-          else if (detectAndroid()) {
-            // @ts-ignore
-            window.confirm("Prohlížeč není podporován. Prosím, stáhněte si aplikaci Spectoda Connect.").then(result => {
-              if (result) {
-                // redirect na Google Chrome
-                window.location.replace("https://play.google.com/store/apps/details?id=com.spectoda.spectodaconnect");
-              }
-            });
-          }
-          // Windows outside Google Chrome
-          else if (detectWindows()) {
-            // @ts-ignore
-            window.confirm("Prohlížeč není podporován. Prosím, otevřete aplikace v prohlížeči Google Chrome.").then(result => {
-              if (result) {
-                // redirect na Google Chrome
-                window.location.replace("https://www.google.com/intl/cs_CZ/chrome/");
-              }
-            });
-          }
-          // Linux ChromeBooks atd...
-          else {
-            window.confirm("Prohlížeč není podporován");
-          }
-
-          logging.error("Error: Assigning unsupported connector");
-          this.connector = null;
-        }
-
+        this.connector = new SpectodaWebBluetoothConnector(this);
         break;
 
       case "webserial":
-        if (detectChrome()) {
-          this.connector = new SpectodaWebSerialConnector(this);
-        } else {
-          logging.error("Error: Assigning unsupported connector");
-          this.connector = null;
-        }
+        this.connector = new SpectodaWebSerialConnector(this);
         break;
 
-      case "spectodaconnect":
-        if (detectSpectodaConnect() || detectWindows() || detectMacintosh()) {
-          this.connector = new FlutterConnector(this);
-        } else {
-          logging.error("Error: Assigning unsupported connector");
-          this.connector = null;
-        }
+      case "flutterbluetooth":
+        this.connector = new FlutterConnector(this);
         break;
 
+      //? use 0.9-dev-bridge branch
+      // case "nodebluetooth":
+      //   this.connector = new SpectodaWebSocketsConnector(this);
+      //   break;
+
+      //? use 0.9-dev-bridge branch
+      // case "nodeserial":
+      //   this.connector = new SpectodaWebSocketsConnector(this);
+      //   break;
+
+      //? TBD in the future
       // case "websockets":
       //   this.connector = new SpectodaWebSocketsConnector(this);
       //   break;
 
       default:
-        logging.warn("Selected unknown connector");
-        throw "UnknownConnector";
+        logging.warn(`Unsupported connector: ${this.#assignedConnector}`);
+
+        this.#assignedConnector = none;
+        this.connector = null;
     }
   }
 
