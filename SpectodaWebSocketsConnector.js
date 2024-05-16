@@ -14,10 +14,6 @@ export const WEBSOCKET_URL = "https://cloud.host.spectoda.com/";
 
 const eventStream = createNanoEvents();
 
-eventStream.on("controller-log", line => {
-  logging.info(line);
-});
-
 eventStream.on("log", msgs => {
   console.log(...msgs);
 });
