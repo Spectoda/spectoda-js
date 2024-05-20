@@ -19,21 +19,15 @@ import {
   uint8ArrayToHexString,
 } from "./functions";
 import { changeLanguage, t } from "./i18n.js";
-import { logging, setLoggingLevel } from "./logging";
+import { logging } from "./logging";
 import { COMMAND_FLAGS } from "./src/Spectoda_JS.js";
 
 import { io } from "socket.io-client";
 import customParser from "socket.io-msgpack-parser";
-import { WEBSOCKET_URL } from "./SpectodaWebSocketsConnector.js";
-import { SpectodaRuntime, allEventsEmitter } from "./src/SpectodaRuntime.js";
-import { fetchTnglFromApiById, sendTnglToApi } from "./tnglapi.js";
-
-// should not create more than one object!
-// the destruction of the Spectoda is not well implemented
-
-// TODO - kdyz zavolam spectoda.connect(), kdyz jsem pripojeny, tak nechci aby se do interfacu poslal select
-// TODO - kdyz zavolam funkci connect a uz jsem pripojeny, tak vyslu event connected, pokud si myslim ze nejsem pripojeny.
-// TODO - "watchdog timer" pro resolve/reject z TC
+import { WEBSOCKET_URL } from "./SpectodaWebSocketsConnector";
+import "./TnglReader";
+import "./TnglWriter";
+import { SpectodaRuntime, allEventsEmitter } from "./src/SpectodaRuntime";
 
 export class Spectoda {
   #parser;
@@ -384,12 +378,15 @@ export class Spectoda {
       this.on("disconnected", () => {
         this.socket.emit("set-connection-data", null);
       }),
+      allEventsEmitter.on("on", ({ name, args }) => {
+        try {
+          // circular json, function ... can be issues, that's why wrapped
+          this.socket.emit("event", { name, args });
+        } catch (err) {
+          console.error(err);
+        }
+      }),
     ];
-
-    allEventsEmitter.on("on", ({ name, args }) => {
-      logging.verbose("on", name, args);
-      this.socket.emit("event", { name, args });
-    });
 
     globalThis.allEventsEmitter = allEventsEmitter;
 
@@ -448,6 +445,24 @@ export class Spectoda {
       });
 
       this.socket.on("connect", async () => {
+        logging.setLogCallback((...e) => {
+          console.log(...e);
+          this.socket.emit("event", { name: "log", args: e });
+        });
+
+        logging.setWarnCallback((...e) => {
+          console.warn(...e);
+          this.socket.emit("event", { name: "log-warn", args: e });
+        });
+
+        logging.setErrorCallback((...e) => {
+          console.error(...e);
+          this.socket.emit("event", { name: "log-error", args: e });
+        });
+
+        // ! this is required for log callbacks to apply
+        logging.setLoggingLevel(logging.level);
+
         if (sessionOnly) {
           // Handle session-only logic
           const response = await this.socket.emitWithAck("join-session", null);
@@ -488,7 +503,11 @@ export class Spectoda {
   }
 
   disableRemoteControl() {
-    logging.debug("> Disonnecting from the Remote Control");
+    logging.setLogCallback(console.log);
+    logging.setWarnCallback(console.warn);
+    logging.setErrorCallback(console.error);
+
+    logging.debug("> Disconnecting from the Remote Control");
 
     this.releaseWakeLock(true);
     this.socket?.disconnect();
@@ -1260,7 +1279,7 @@ export class Spectoda {
 
       let written = 0;
 
-      setLoggingLevel(logging.level - 1);
+      logging.setLoggingLevel(logging.level - 1);
 
       logging.info("OTA UPDATE");
       logging.verbose(firmware);
@@ -1354,7 +1373,7 @@ export class Spectoda {
         });
         this.#updating = false;
 
-        setLoggingLevel(logging.level + 1);
+        logging.setLoggingLevel(logging.level + 1);
       });
   }
 
@@ -1839,7 +1858,7 @@ export class Spectoda {
   }
 
   setDebugLevel(level) {
-    setLoggingLevel(level);
+    logging.setLoggingLevel(level);
   }
 
   getConnectedPeersInfo() {

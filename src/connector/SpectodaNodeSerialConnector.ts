@@ -1009,7 +1009,7 @@ export class SpectodaNodeSerialConnector {
 
       let written = 0;
 
-      setLoggingLevel(logging.level - 1);
+      logging.setLoggingLevel(logging.level - 1);
 
       logging.info("OTA UPDATE");
       logging.verbose(firmware);
@@ -1088,7 +1088,7 @@ export class SpectodaNodeSerialConnector {
       }
     }).finally(() => {
       this.#timeoutMultiplier = 1.2;
-      setLoggingLevel(logging.level + 1);
+      logging.setLoggingLevel(logging.level + 1);
     });
   }
 

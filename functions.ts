@@ -1,4 +1,4 @@
-import { logging, setLoggingLevel } from "./logging";
+import { logging } from "./logging";
 
 export const createNanoEvents = () => ({
   emit(event, ...args) {
@@ -407,8 +407,9 @@ export function czechHackyToEnglish(string) {
 export function enableDebugMode() {
   if (typeof window !== "undefined" && window.eruda) {
     window.eruda.init();
+    logging.setLoggingLevel(4);
   }
-  setLoggingLevel(5);
+  logging.setLoggingLevel(5);
 }
 
 export function deactivateDebugMode() {
@@ -643,8 +644,8 @@ if (typeof window !== "undefined") {
 const Color = detectNode()
   ? require("color")
   : (color: string) => {
-    throw "Color is not supported in browser";
-  };
+      throw "Color is not supported in browser";
+    };
 
 const barvy: { [key: string]: string } = {
   vypnuto: "#000000",
