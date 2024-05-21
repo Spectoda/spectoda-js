@@ -1111,8 +1111,11 @@ export class TnglCompiler {
         }
 
         // === unknown ===
-        logging.warn("Unknown word >", word, "<");
-        break;
+        logging.error("Unknown word >", word, "<");
+        throw new SpectodaError({
+          code: "CompilationError",
+          message: `Unknown word "${word}". Check if the variable is declared and no semicolons are missing.`,
+        });
       }
     }
   }
@@ -1183,12 +1186,18 @@ export class TnglCompiler {
 
     if (origin_value_address === undefined) {
       logging.error(`Failed to find origin variable address [${origin}]`);
-      return;
+      throw new SpectodaError({
+        code: "CompilationError",
+        message: `Variable "${origin}" in operations is not declared`,
+      });
     }
 
     if (destination_variable_address === undefined) {
       logging.error(`Failed to find destination variable address [${destination}]`);
-      return;
+      throw new SpectodaError({
+        code: "CompilationError",
+        message: `Failed to find destination variable address [${destination}]`,
+      });
     }
 
     this.#tnglWriter.writeFlag(OBJECT_TYPE.OPERATION_CONNECTION);
