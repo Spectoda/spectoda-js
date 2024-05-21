@@ -45,14 +45,22 @@ export const logging = {
 
   setLogCallback(callback: (...msg: any) => void) {
     logging.logCallback = callback;
+    //? reassing log function to the new callback
+    logging.info = logging.level >= 3 ? logging.logCallback : () => {};
+    logging.debug = logging.level >= 4 ? logging.logCallback : () => {};
+    logging.verbose = logging.level >= 5 ? logging.logCallback : () => {};
   },
 
   setWarnCallback(callback: (...msg: any) => void) {
     logging.warnCallback = callback;
+    //? reassing warn function to the new callback
+    logging.warn = logging.level >= 2 ? logging.warnCallback : () => {};
   },
 
   setErrorCallback(callback: (...msg: any) => void) {
     logging.errorCallback = callback;
+    //? reassing error function to the new callback
+    logging.error = logging.level >= 1 ? logging.errorCallback : () => {};
   },
 
   error: (...msg: any) => logging.errorCallback(...msg),
