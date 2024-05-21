@@ -457,9 +457,6 @@ export class Spectoda {
           this.socket.emit("event", { name: "log-error", args: e });
         });
 
-        // ! this is required for log callbacks to apply
-        logging.setLoggingLevel(logging.level);
-
         if (sessionOnly) {
           // Handle session-only logic
           const response = await this.socket.emitWithAck("join-session", null);
