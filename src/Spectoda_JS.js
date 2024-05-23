@@ -29,7 +29,6 @@ export const COMMAND_FLAGS = Object.freeze({
   FLAG_REINTERPRET_TNGL: 104,
   FLAG_SET_TIMELINE: 105,
 
-
   FLAG_EMIT_EVENT: 111,
   FLAG_EMIT_TIMESTAMP_EVENT: 112,
   FLAG_EMIT_COLOR_EVENT: 113,
@@ -117,7 +116,6 @@ export const COMMAND_FLAGS = Object.freeze({
 
 // InterfaceWrapper
 export class Spectoda_JS {
-
   #runtimeReference;
 
   #instance;
@@ -148,9 +146,7 @@ export class Spectoda_JS {
     SpectodaWasm.initilize(WASM_VERSION);
 
     return SpectodaWasm.waitForInitilize().then(() => {
-
       const WasmInterfaceImplementation = {
-
         /* Constructor function is optional */
         // __construct: function () {
         //   this.__parent.__construct.call(this);
@@ -169,7 +165,6 @@ export class Spectoda_JS {
           }
 
           if (logging.level >= 3 && event_array.length) {
-
             let debug_log = "";
 
             {
@@ -185,7 +180,6 @@ export class Spectoda_JS {
             logging.info(debug_log);
           }
 
-
           this.#runtimeReference.emit("emitted_global_events", event_array);
         },
 
@@ -197,7 +191,6 @@ export class Spectoda_JS {
           }
 
           if (logging.level >= 4 && event_array.length) {
-
             let debug_log = "";
 
             {
@@ -212,7 +205,6 @@ export class Spectoda_JS {
 
             logging.debug(debug_log);
           }
-
 
           this.#runtimeReference.emit("emitted_events", event_array);
         },
@@ -260,7 +252,6 @@ export class Spectoda_JS {
             logging.error(e);
           }
 
-
           return true;
         },
 
@@ -288,7 +279,6 @@ export class Spectoda_JS {
         },
 
         _onLog: (level, filename, message) => {
-
           if (level - 1 < logging.level) {
             return;
           }
@@ -313,8 +303,7 @@ export class Spectoda_JS {
               logging.error(`<spectoda> [?][${filename}]: ${message}`);
               break;
           }
-        }
-
+        },
       };
 
       this.#instance = SpectodaWasm.Spectoda_WASM.implement(WasmInterfaceImplementation);
@@ -338,9 +327,9 @@ export class Spectoda_JS {
       throw "AlreadyDestructed";
     }
 
-    this.#instance.end();    // end the spectoda stuff
+    this.#instance.end(); // end the spectoda stuff
     this.#instance.delete(); // delete (free) C++ object
-    this.#instance = null;   // remove javascript reference
+    this.#instance = null; // remove javascript reference
   }
 
   /**
@@ -418,7 +407,6 @@ export class Spectoda_JS {
       }
 
       response_bytecode = SpectodaWasm.convertNumberVectorToJSArray(response_bytecode_vector);
-
     } finally {
       response_bytecode_vector.delete();
     }
@@ -427,10 +415,10 @@ export class Spectoda_JS {
   }
 
   /**
-  * @param {number} clock_timestamp
-  * @param {number} source_connection
-  * @return {}
-  * */
+   * @param {number} clock_timestamp
+   * @param {number} source_connection
+   * @return {}
+   * */
   synchronize(clock_timestamp, source_connection) {
     logging.debug("synchronize()");
 
@@ -458,7 +446,6 @@ export class Spectoda_JS {
   }
 
   readVariableAddress(variable_address, device_id) {
-
     if (!this.#instance) {
       throw "NotConstructed";
     }

@@ -193,19 +193,19 @@ const OBJECT_TYPE = Object.freeze({
 });
 
 const ENUMS = Object.freeze({
-    ProviderType: Object.freeze({
-        Invalid: 0,
-        Proximity: 1,
-        Button: 2,
-        Touch: 3,
-        Voltage: 4,
-        PIR: 5,
-        Slider: 6,
-        SonoffTXUltimate: 7,
-        NetworkSync: 8,
-        VEML7700: 9,
-        Event: 10
-    })
+  ProviderType: Object.freeze({
+    Invalid: 0,
+    Proximity: 1,
+    Button: 2,
+    Touch: 3,
+    Voltage: 4,
+    PIR: 5,
+    Slider: 6,
+    SonoffTXUltimate: 7,
+    NetworkSync: 8,
+    VEML7700: 9,
+    Event: 10,
+  }),
 });
 
 export class TnglCompiler {
@@ -1189,13 +1189,15 @@ export class TnglCompiler {
     bytes[2] = number & 0xff;
 
     this.#tnglWriter.writeFlag(TNGL_FLAGS.NUMBER);
-    bytes.forEach((byte) => { this.#tnglWriter.writeUint8(byte); });
+    bytes.forEach(byte => {
+      this.#tnglWriter.writeUint8(byte);
+    });
   }
 
   compileId(id) {
     if (id > 255 || id < 0) {
-        logging.error("Id must be between 0 and 255!");
-        id = 0;
+      logging.error("Id must be between 0 and 255!");
+      id = 0;
     }
 
     this.#tnglWriter.writeFlag(TNGL_FLAGS.ID);
@@ -1231,7 +1233,6 @@ export class TnglCodeParser {
       // logging.debug(element);
 
       switch (element.type) {
-
         case "connection":
           this.#compiler.compileConnection(element.token);
           break;
@@ -1363,7 +1364,7 @@ export class TnglCodeParser {
     word: /[a-z_][\w]*/i,
     whitespace: /\s+/,
     id: /@\b\d+\b/,
-    punctuation: /[^\w\s]/
+    punctuation: /[^\w\s]/,
   };
 
   getVariableDeclarations() {
