@@ -46,7 +46,7 @@ import { SpectodaNodeSerialConnector } from "./connector/SpectodaNodeSerialConne
 /////////////////////////////////////////////////////////////////////////
 export const allEventsEmitter = createNanoEvents();
 
-export function emitHandler(event, args) {
+export function emitHandler({ event, args }) {
   allEventsEmitter.emit("on", { name: event, args });
 }
 

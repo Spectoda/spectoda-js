@@ -26,7 +26,7 @@ export const logging = {
   LOGGING_LEVEL_DEBUG: 4,
   LOGGING_LEVEL_VERBOSE: 5,
 
-  level: 3,
+  level: 5,
 
   logCallback: console.log,
   warnCallback: console.warn,
@@ -41,6 +41,10 @@ export const logging = {
     logging.info = logging.level >= 3 ? logging.logCallback : () => {};
     logging.debug = logging.level >= 4 ? logging.logCallback : () => {};
     logging.verbose = logging.level >= 5 ? logging.logCallback : () => {};
+  },
+
+  setDebugLevel: (level: number) => {
+    logging.setLoggingLevel(level);
   },
 
   setLogCallback(callback: (...msg: any) => void) {
@@ -69,4 +73,9 @@ export const logging = {
   debug: (...msg: any) => logging.logCallback(...msg),
   verbose: (...msg: any) => logging.logCallback(...msg),
 };
+
 logging.setLoggingLevel(3);
+
+if (typeof window !== "undefined") {
+  window.logging = logging;
+}

@@ -14,16 +14,40 @@ export const WEBSOCKET_URL = "https://cloud.host.spectoda.com/";
 
 const eventStream = createNanoEvents();
 
-eventStream.on("log", msgs => {
-  console.log(...msgs);
+eventStream.on("log", (a, b, c, d) => {
+  if (d) {
+    console.log(a, b, c, d);
+  } else if (c) {
+    console.log(a, b, c);
+  } else if (b) {
+    console.log(a, b);
+  } else {
+    console.log(a);
+  }
 });
 
-eventStream.on("log-warn", msgs => {
-  console.warn(...msgs);
+eventStream.on("log-warn", (a, b, c, d) => {
+  if (d) {
+    console.log(a, b, c, d);
+  } else if (c) {
+    console.log(a, b, c);
+  } else if (b) {
+    console.log(a, b);
+  } else {
+    console.log(a);
+  }
 });
 
-eventStream.on("log-error", msgs => {
-  console.error(...msgs);
+eventStream.on("log-error", (a, b, c, d) => {
+  if (d) {
+    console.log(a, b, c, d);
+  } else if (c) {
+    console.log(a, b, c);
+  } else if (b) {
+    console.log(a, b);
+  } else {
+    console.log(a);
+  }
 });
 
 if (typeof window !== "undefined") {
@@ -45,7 +69,13 @@ export function createSpectodaWebsocket() {
   if (typeof window !== "undefined") window.socket = socket;
 
   socket.on("event", data => {
-    eventStream.emit(data.name, data?.args);
+    logging.verbose("event", data);
+
+    if (data.name === "wasm_execute") {
+      eventStream.emit("wasm_execute", data.args[0][1]);
+    }
+
+    eventStream.emit(data.name, ...data.args);
   });
 
   let networkJoinParams = [];
