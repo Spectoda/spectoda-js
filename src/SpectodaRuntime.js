@@ -46,7 +46,7 @@ import { SpectodaNodeSerialConnector } from "./connector/SpectodaNodeSerialConne
 /////////////////////////////////////////////////////////////////////////
 export const allEventsEmitter = createNanoEvents();
 
-export function emitHandler(event, args) {
+export function emitHandler({ event, args }) {
   allEventsEmitter.emit("on", { name: event, args });
 }
 
@@ -228,6 +228,7 @@ export class SpectodaRuntime {
     this.previewControllers = {};
 
     this.#eventEmitter.on("wasm_execute", command => {
+      logging.debug("previewController.execute", command);
       for (const previewController of Object.values(this.previewControllers)) {
         try {
           previewController.execute(command, 123456789);
@@ -244,6 +245,7 @@ export class SpectodaRuntime {
     // });
 
     this.#eventEmitter.on("wasm_clock", timestamp => {
+      logging.debug("previewController.setClock", timestamp);
       for (const previewController of Object.values(this.previewControllers)) {
         try {
           previewController.setClock(timestamp, 123456789);
@@ -1015,8 +1017,8 @@ export class SpectodaRuntime {
     logging.verbose(`controller_config=`, controller_config);
 
     let controller = new PreviewController(controller_mac_address);
-    this.previewControllers[controller_mac_address] = controller;
     controller.construct(controller_config);
+    this.previewControllers[controller_mac_address] = controller;
 
     return controller;
   }

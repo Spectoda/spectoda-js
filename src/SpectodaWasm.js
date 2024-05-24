@@ -1,6 +1,8 @@
 import { TimeTrack } from "../TimeTrack";
 import { logging } from "../logging";
 
+const WASM_VERSION = "DEBUG_DEV_0.10.5_20240523";
+
 let moduleInitilizing = false;
 let moduleInitilized = false;
 let waitingQueue = [];
@@ -40,9 +42,9 @@ function onWasmLoad() {
 
     if (typeof window !== "undefined") {
       // Make a directory other than '/'
-      FS.mkdir('/littlefs');
+      FS.mkdir("/littlefs");
       // Then mount with IDBFS type
-      FS.mount(IDBFS, {}, '/littlefs');
+      FS.mount(IDBFS, {}, "/littlefs");
 
       // Then sync
       FS.syncfs(true, function (err) {
@@ -50,22 +52,18 @@ function onWasmLoad() {
           logging.error("FS.syncfs error:", err);
         }
       });
-
     } else {
       // TODO! implement FS pro NODE
-
       //   // Make a directory other than '/'
       //   Module.FS.mkdir('/littlefs');
       //   // Then mount with IDBFS type
       //   Module.FS.mount(Module.FS.filesystems.NODEFS, {}, '/littlefs');
-
       //   // Then sync
       //   Module.FS.syncfs(true, function (err) {
       //       if (err) {
       //           logging.error("FS.syncfs error:", err);
       //       }
       //   });
-
     }
 
     waitingQueue.forEach(wait => {
@@ -77,17 +75,14 @@ function onWasmLoad() {
 }
 
 function loadWasm(wasmVersion) {
-
   if (moduleInitilizing || moduleInitilized) {
     return;
   }
-
   moduleInitilizing = true;
 
   logging.info("spectoda-js wasm version " + wasmVersion);
 
   if (typeof window !== "undefined") {
-
     // BROWSER enviroment
 
     // First try to load local version
@@ -102,18 +97,14 @@ function loadWasm(wasmVersion) {
             logging.error(error);
           });
       });
-
   } else {
-
     // NODE enviroment
-    
+
     if (!process.env.NEXT_PUBLIC_VERSION) {
       globalThis.Module = require(`./webassembly/${wasmVersion}.js`);
       onWasmLoad();
     }
-
   }
-
 }
 
 // This class binds the JS world with the webassembly's C
@@ -160,7 +151,7 @@ export const SpectodaWasm = {
   },
 
   // wasmVersion might be DEBUG_0.9.2_20230814
-  initilize(wasmVersion) {
+  initilize(wasmVersion = WASM_VERSION) {
     loadWasm(wasmVersion);
   },
 
@@ -176,7 +167,6 @@ export const SpectodaWasm = {
    * @return {Promise<null>}
    */
   waitForInitilize() {
-
     if (moduleInitilized) {
       return Promise.resolve();
     }
@@ -195,7 +185,7 @@ export const SpectodaWasm = {
   },
 
   loadFS() {
-    return Module.FS.syncfs(true, (err) => {
+    return Module.FS.syncfs(true, err => {
       if (err) {
         logging.error("FS.syncfs error:", err);
       }
@@ -203,26 +193,23 @@ export const SpectodaWasm = {
   },
 
   saveFS() {
-    return Module.FS.syncfs(false, (err) => {
+    return Module.FS.syncfs(false, err => {
       if (err) {
         logging.error("FS.syncfs error:", err);
       }
     });
-  }
+  },
 };
 
 if (typeof window !== "undefined") {
   window.SpectodaWasm = SpectodaWasm;
 }
 
-
 export class synchronization_t {
-
   constructor() {
     this.clock = new TimeTrack();
     this.timeline = new TimeTrack();
     this.tnglFingerprint = null;
     this.historyFingerprint = null;
   }
-
 }
