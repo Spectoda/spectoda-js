@@ -119,7 +119,6 @@ const TNGL_FLAGS = Object.freeze({
   PORT: 179,
   CANVAS: 180,
   MARKS: 181,
-  ID: 182,
 
   /* events */
   EVENT_SET_VALUE: 184,
@@ -137,7 +136,7 @@ const TNGL_FLAGS = Object.freeze({
   PIXELS: 192,
   TUPLE: 193,
   NUMBER: 205,
-
+  ID: 182,
 
   // TODO Operations and Providers should be Object values.
   // OBJECT: ???, // Operations and Providers are objects
@@ -268,7 +267,9 @@ export class TnglCompiler {
       logging.error("Failed to compile char");
       return;
     }
+    // TODO deprecate negative char
     if (reg[1] === "-") {
+      console.warn("Negative char is deprecated");
       this.#tnglWriter.writeUint8(-reg[2].charCodeAt(0));
     } else {
       this.#tnglWriter.writeUint8(reg[2].charCodeAt(0));

@@ -1017,8 +1017,8 @@ export class SpectodaRuntime {
     logging.verbose(`controller_config=`, controller_config);
 
     let controller = new PreviewController(controller_mac_address);
-    this.previewControllers[controller_mac_address] = controller;
     controller.construct(controller_config);
+    this.previewControllers[controller_mac_address] = controller;
 
     return controller;
   }
