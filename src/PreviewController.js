@@ -28,7 +28,7 @@ export class PreviewController {
    * @return {Promise<null>}
    */
   construct(config) {
-    logging.debug(`construct(config=${JSON.stringify(config)})`);
+    logging.info(`construct(config=${JSON.stringify(config)})`);
 
     if (this.#instance) {
       throw "AlreadyContructed";

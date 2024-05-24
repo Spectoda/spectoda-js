@@ -228,6 +228,7 @@ export class SpectodaRuntime {
     this.previewControllers = {};
 
     this.#eventEmitter.on("wasm_execute", command => {
+      logging.debug("previewController.execute", command);
       for (const previewController of Object.values(this.previewControllers)) {
         try {
           previewController.execute(command, 123456789);
@@ -244,6 +245,7 @@ export class SpectodaRuntime {
     // });
 
     this.#eventEmitter.on("wasm_clock", timestamp => {
+      logging.debug("previewController.setClock", timestamp);
       for (const previewController of Object.values(this.previewControllers)) {
         try {
           previewController.setClock(timestamp, 123456789);

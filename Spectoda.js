@@ -389,6 +389,7 @@ export class Spectoda {
       }),
       allEventsEmitter.on("on", ({ name, args }) => {
         try {
+          logging.verbose("event", name, args);
           // circular json, function ... can be issues, that's why wrapped
           this.socket.emit("event", { name, args });
         } catch (err) {
