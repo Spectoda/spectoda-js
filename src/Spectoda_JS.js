@@ -2,8 +2,6 @@ import { TextureLoader } from "three";
 import { logging } from "../logging";
 import { SpectodaWasm } from "./SpectodaWasm.js";
 
-const WASM_VERSION = "DEBUG_DEV_0.10.4_20240503";
-
 export const COMMAND_FLAGS = Object.freeze({
   FLAG_UNSUPPORTED_COMMND_RESPONSE: 255, // TODO change FLAG_OTA_BEGIN to not be 255.
 
@@ -143,7 +141,7 @@ export class Spectoda_JS {
     }
 
     // TODO pass WASM version to load
-    SpectodaWasm.initilize(WASM_VERSION);
+    SpectodaWasm.initilize();
 
     return SpectodaWasm.waitForInitilize().then(() => {
       const WasmInterfaceImplementation = {

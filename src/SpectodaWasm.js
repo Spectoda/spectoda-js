@@ -1,6 +1,8 @@
 import { TimeTrack } from "../TimeTrack";
 import { logging } from "../logging";
 
+const WASM_VERSION = "DEBUG_DEV_0.10.5_20240523";
+
 let moduleInitilizing = false;
 let moduleInitilized = false;
 let waitingQueue = [];
@@ -149,7 +151,7 @@ export const SpectodaWasm = {
   },
 
   // wasmVersion might be DEBUG_0.9.2_20230814
-  initilize(wasmVersion) {
+  initilize(wasmVersion = WASM_VERSION) {
     loadWasm(wasmVersion);
   },
 
