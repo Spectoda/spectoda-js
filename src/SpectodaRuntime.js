@@ -46,7 +46,7 @@ import { SpectodaNodeSerialConnector } from "./connector/SpectodaNodeSerialConne
 /////////////////////////////////////////////////////////////////////////
 export const allEventsEmitter = createNanoEvents();
 
-export function emitHandler(event, args) {
+export function emitHandler({ event, args }) {
   allEventsEmitter.emit("on", { name: event, args });
 }
 
@@ -1017,8 +1017,8 @@ export class SpectodaRuntime {
   //   logging.verbose(`controller_config=`, controller_config);
 
   //   let controller = new PreviewController(controller_mac_address);
-  //   this.previewControllers[controller_mac_address] = controller;
   //   controller.construct(controller_config);
+  //   this.previewControllers[controller_mac_address] = controller;
 
   //   return controller;
   // }
