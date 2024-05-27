@@ -33,18 +33,17 @@ function onWasmLoad() {
     moduleInitilized = true;
 
     logging.info("Webassembly runtime initilized");
-    
+
     SpectodaWasm.WasmInterface = Module.WasmInterface;
     SpectodaWasm.Uint8Vector = Module.Uint8Vector;
     SpectodaWasm.evaluate_result_t = Module.evaluate_result_t;
     SpectodaWasm.send_result_t = Module.send_result_t;
 
-
     if (typeof window !== "undefined") {
       // Make a directory other than '/'
-      FS.mkdir('/littlefs');
+      FS.mkdir("/littlefs");
       // Then mount with IDBFS type
-      FS.mount(IDBFS, {}, '/littlefs');
+      FS.mount(IDBFS, {}, "/littlefs");
 
       // Then sync
       FS.syncfs(true, function (err) {
@@ -52,22 +51,18 @@ function onWasmLoad() {
           logging.error("FS.syncfs error:", err);
         }
       });
-
     } else {
       // TODO! implement FS pro NODE
-
       //   // Make a directory other than '/'
       //   Module.FS.mkdir('/littlefs');
       //   // Then mount with IDBFS type
       //   Module.FS.mount(Module.FS.filesystems.NODEFS, {}, '/littlefs');
-
       //   // Then sync
       //   Module.FS.syncfs(true, function (err) {
       //       if (err) {
       //           logging.error("FS.syncfs error:", err);
       //       }
       //   });
-
     }
 
     waitingQueue.forEach(wait => {
@@ -79,7 +74,6 @@ function onWasmLoad() {
 }
 
 function loadWasm(wasmVersion) {
-
   if (moduleInitilizing || moduleInitilized) {
     return;
   }
@@ -89,7 +83,6 @@ function loadWasm(wasmVersion) {
   logging.info("spectoda-js wasm version " + wasmVersion);
 
   if (typeof window !== "undefined") {
-
     // BROWSER enviroment
 
     // First try to load local version
@@ -104,18 +97,14 @@ function loadWasm(wasmVersion) {
             logging.error(error);
           });
       });
-
   } else {
-
     // NODE enviroment
-    
+
     if (!process.env.NEXT_PUBLIC_VERSION) {
       globalThis.Module = require(`./webassembly/${wasmVersion}.js`);
       onWasmLoad();
     }
-
   }
-
 }
 
 // This class binds the JS world with the webassembly's C
@@ -178,7 +167,6 @@ export const SpectodaWasm = {
    * @return {Promise<null>}
    */
   waitForInitilize() {
-
     if (moduleInitilized) {
       return Promise.resolve();
     }
@@ -197,7 +185,7 @@ export const SpectodaWasm = {
   },
 
   loadFS() {
-    return Module.FS.syncfs(true, (err) => {
+    return Module.FS.syncfs(true, err => {
       if (err) {
         logging.error("FS.syncfs error:", err);
       }
@@ -205,26 +193,23 @@ export const SpectodaWasm = {
   },
 
   saveFS() {
-    return Module.FS.syncfs(false, (err) => {
+    return Module.FS.syncfs(false, err => {
       if (err) {
         logging.error("FS.syncfs error:", err);
       }
     });
-  }
+  },
 };
 
 if (typeof window !== "undefined") {
   window.SpectodaWasm = SpectodaWasm;
 }
 
-
 export class synchronization_t {
-
   constructor() {
     this.clock = new TimeTrack();
     this.timeline = new TimeTrack();
     this.tnglFingerprint = null;
     this.historyFingerprint = null;
   }
-
 }

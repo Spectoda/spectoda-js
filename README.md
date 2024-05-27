@@ -41,4 +41,3 @@ spectoda.readConfig("01:23:45:67:78:89");
 ## For Matty and other FW developers
 
 - WASM active development WASM must be build in public/ folder, because most of the transpilers can't use WASM as a dependency
-

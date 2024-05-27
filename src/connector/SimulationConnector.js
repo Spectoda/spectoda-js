@@ -7,8 +7,7 @@ import { COMMAND_FLAGS } from "../Spectoda_JS.js";
 /////////////////////////////////////////////////////////////////////////////////////
 
 class SimulatedConnection {
-  constructor() {
-  }
+  constructor() {}
 }
 
 // Connector connects the application with one Spectoda Device, that is then in a
@@ -23,7 +22,6 @@ export class SimulationConnector extends SimulatedConnection {
 
     this.#interfaceReference = interfaceReference;
   }
-
 
   /*
 
@@ -193,10 +191,10 @@ criteria example:
   destroy() {
     //this.#interfaceReference = null; // dont know if I need to destroy this reference.. But I guess I dont need to?
     return this.disconnect()
-      .catch(() => { })
+      .catch(() => {})
       .then(() => {
         return this.unselect();
       })
-      .catch(() => { });
+      .catch(() => {});
   }
 }
