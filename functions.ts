@@ -18,7 +18,7 @@ export const createNanoEvents = () => ({
 
 export const createNanoEventsWithWrappedEmit = emitHandler => ({
   emit(event, ...args) {
-    emitHandler(event, args);
+    emitHandler({ event, args });
 
     const callbacks = this.events[event] || [];
     for (let i = 0, length = callbacks.length; i < length; i++) {

@@ -2,8 +2,6 @@ import { TextureLoader } from "three";
 import { logging } from "../logging";
 import { SpectodaWasm } from "./SpectodaWasm.js";
 
-const WASM_VERSION = "DEBUG_0.9.13_20240506";
-
 export const COMMAND_FLAGS = Object.freeze({
   FLAG_UNSUPPORTED_COMMND_RESPONSE: 255, // TODO change FLAG_OTA_BEGIN to not be 255.
 
@@ -151,7 +149,7 @@ export class Spectoda_JS {
     }
 
     // TODO pass WASM version to load
-    SpectodaWasm.initilize(WASM_VERSION);
+    SpectodaWasm.initilize();
 
     return SpectodaWasm.waitForInitilize().then(() => {
       const WasmInterfaceImplementation = {
@@ -172,7 +170,7 @@ export class Spectoda_JS {
             event_array[i].timestamp_utc = Date.now();
           }
 
-          if (event_array.length && logging.level >= 3) {
+          if (logging.level >= 3 && event_array.length) {
             let debug_log = "";
 
             {
@@ -188,6 +186,8 @@ export class Spectoda_JS {
             logging.info(debug_log);
           }
 
+          //! refactor event propagating across JS application
+          this.#runtimeReference.emit("emitted_global_events", event_array);
           this.#runtimeReference.emit("emitted_events", event_array);
         },
 
@@ -198,7 +198,7 @@ export class Spectoda_JS {
             event_array[i].timestamp_utc = Date.now();
           }
 
-          if (event_array.length && logging.level >= 4) {
+          if (logging.level >= 4 && event_array.length) {
             let debug_log = "";
 
             {
