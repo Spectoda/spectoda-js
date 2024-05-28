@@ -12,14 +12,13 @@ echo 'overlays=uart3' | sudo tee -a /boot/orangepiEnv.txt
 cat /boot/orangepiEnv.txt
 */
 
-import { logging } from "../../logging";
-import { sleep, toBytes, numberToBytes, crc8, crc32, hexStringToArray, rgbToHex, stringToBytes, convertToByteArray, uint8ArrayToHexString } from "../../functions";
 import { TimeTrack } from "../../TimeTrack.js";
-import { COMMAND_FLAGS } from "../Spectoda_JS.js";
-import { TnglWriter } from "../../TnglWriter.js";
 import { TnglReader } from "../../TnglReader.js";
+import { TnglWriter } from "../../TnglWriter.js";
+import { crc32, numberToBytes, sleep, toBytes, uint8ArrayToHexString } from "../../functions";
+import { logging } from "../../logging";
 import { SpectodaRuntime } from "../SpectodaRuntime";
-import { promises } from "dns";
+import { COMMAND_FLAGS } from "../Spectoda_JS.js";
 
 let { SerialPort, ReadlineParser }: { SerialPort: any; ReadlineParser: any } = { SerialPort: null, ReadlineParser: null };
 
@@ -971,7 +970,7 @@ export class SpectodaNodeSerialConnector {
           await this.#write(CHANNEL_DEVICE, bytes, 10000);
         }
 
-        await sleep(8000); // need to wait 10 seconds to let the ESP erase the flash.
+        await sleep(100);
 
         {
           //===========// WRITE //===========//
@@ -1011,6 +1010,9 @@ export class SpectodaNodeSerialConnector {
         console.log("Firmware written in " + (new Date().getTime() - start_timestamp) / 1000 + " seconds");
 
         await sleep(2000);
+
+        const bytes = [COMMAND_FLAGS.FLAG_DEVICE_REBOOT_REQUEST];
+        await this.#write(CHANNEL_DEVICE, bytes, 10000);
 
         this.#runtimeReference.emit("ota_status", "success");
         resolve(null);

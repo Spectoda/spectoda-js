@@ -37,6 +37,8 @@ export class PreviewController {
     this.#config = config;
     this.#ringLogBuffer = new RingLogBuffer(1000);
 
+    SpectodaWasm.initilize();
+
     return SpectodaWasm.waitForInitilize().then(() => {
       const PreviewControllerImplementation = {
         /* Constructor function is optional */

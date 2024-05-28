@@ -79,7 +79,6 @@ function loadWasm(wasmVersion) {
   if (moduleInitilizing || moduleInitilized) {
     return;
   }
-
   moduleInitilizing = true;
 
   logging.info("spectoda-js wasm version " + wasmVersion);

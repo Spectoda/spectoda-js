@@ -50,18 +50,6 @@ eventStream.on("log-error", (a, b, c, d) => {
   }
 });
 
-eventStream.on("log", msgs => {
-  console.log(...msgs);
-});
-
-eventStream.on("log-warn", msgs => {
-  console.warn(...msgs);
-});
-
-eventStream.on("log-error", msgs => {
-  console.error(...msgs);
-});
-
 if (typeof window !== "undefined") {
   window.sockets = [];
 }
