@@ -4,9 +4,8 @@ export class TnglReader {
     this._index = 0;
   }
 
-  // TODO optimize and test this function 
+  // TODO optimize and test this function
   peekValue(byteCount, unsigned = true) {
-
     if (byteCount > 8) {
       logging.error("ByteCountOutOfRange");
       throw new RangeError("ByteCountOutOfRange");
@@ -26,7 +25,7 @@ export class TnglReader {
     let result = value;
 
     // Check if the sign bit is set
-    if (!unsigned && (value & (1n << (BigInt(byteCount * 8) - 1n)))) {
+    if (!unsigned && value & (1n << (BigInt(byteCount * 8) - 1n))) {
       // Two's complement conversion
       result = value - (1n << BigInt(byteCount * 8));
     }
