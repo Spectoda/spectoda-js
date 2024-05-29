@@ -50,6 +50,44 @@ export function emitHandler({ event, args }) {
   allEventsEmitter.emit("on", { name: event, args });
 }
 
+class BitSet {
+  constructor(size) {
+    this.size = size;
+    this.bitArray = new Uint32Array(Math.ceil(size / 32));
+  }
+
+  setBit(position) {
+    const index = Math.floor(position / 32);
+    const bit = position % 32;
+    this.bitArray[index] |= 1 << bit;
+  }
+
+  clearBit(position) {
+    const index = Math.floor(position / 32);
+    const bit = position % 32;
+    this.bitArray[index] &= ~(1 << bit);
+  }
+
+  toggleBit(position) {
+    const index = Math.floor(position / 32);
+    const bit = position % 32;
+    this.bitArray[index] ^= 1 << bit;
+  }
+
+  isSet(position) {
+    const index = Math.floor(position / 32);
+    const bit = position % 32;
+    return (this.bitArray[index] & (1 << bit)) !== 0;
+  }
+
+  toString() {
+    return Array.from(this.bitArray)
+      .map(num => num.toString(2).padStart(32, "0"))
+      .reverse()
+      .join("");
+  }
+}
+
 // Deffered object
 class Query {
   static TYPE_EXECUTE = 1;
@@ -697,6 +735,7 @@ export class SpectodaRuntime {
       // spawn async function to handle the transmittion one item at the time
       (async () => {
         await this.#inicilize();
+        await this.spectoda.waitForInitilize();
 
         await sleep(0.001); // short delay to let fill up the queue to merge the execute items if possible
 
@@ -1114,6 +1153,112 @@ export class SpectodaRuntime {
     this.execute(command_bytes);
 
     return command_bytes;
+  }
+
+  WIP_previewToJSON() {
+    const segmnet_template = `{
+      "segment": "seg1",
+      "id": 0,
+      "sections": []
+    }`;
+
+    let segment = JSON.parse(segmnet_template);
+
+    const A_ASCII_CODE = "A".charCodeAt(0);
+    const D_ASCII_CODE = "D".charCodeAt(0);
+
+    const PIXEL_ENCODING_CODE = 1;
+
+    let uuidCounter = Math.floor(Math.random() * 0xffffffff);
+
+    const writer = new TnglWriter(65535);
+
+    for (const previewController of Object.values(this.previewControllers)) {
+      for (let portTag = A_ASCII_CODE; portTag <= D_ASCII_CODE; portTag++) {
+        const request_uuid = uuidCounter++;
+        const request_bytes = [COMMAND_FLAGS.FLAG_READ_PORT_PIXELS_REQUEST, ...numberToBytes(request_uuid, 4), portTag, PIXEL_ENCODING_CODE];
+
+        logging.debug("Sending request", uint8ArrayToHexString(request_bytes));
+        const response = previewController.request(new Uint8Array(request_bytes), 123456789);
+
+        logging.debug("Received response", uint8ArrayToHexString(response));
+        const tempReader = new TnglReader(new DataView(response.buffer));
+
+        const response_flag = tempReader.readFlag();
+        if (response_flag !== COMMAND_FLAGS.FLAG_READ_PORT_PIXELS_RESPONSE) {
+          logging.error("InvalidResponse1");
+          continue;
+        }
+
+        const response_uuid = tempReader.readUint32();
+        if (response_uuid !== request_uuid) {
+          logging.error("InvalidResponse2");
+          continue;
+        }
+
+        const error_code = tempReader.readUint8();
+        if (error_code === 0) {
+          // error_code 0 is success
+          const pixelDataSize = tempReader.readUint16();
+          logging.debug("pixelDataSize=", pixelDataSize);
+
+          const pixelData = tempReader.readBytes(pixelDataSize);
+          logging.debug("pixelData=", pixelData);
+
+          let bitset = new BitSet(pixelDataSize * 8);
+          for (let i = 0; i < pixelDataSize; i++) {
+            for (let j = 0; j < 8; j++) {
+              if (pixelData[i] & (1 << j)) {
+                bitset.setBit(i * 8 + j);
+              }
+            }
+          }
+
+          console.log(`Controller ${previewController.label}, Port ${String.fromCharCode(portTag)}:`, bitset.toString());
+
+          const section_template = `{
+            "controller": "con1",
+            "port": "A",
+            "from": 0,
+            "to": 0,
+            "reversed": false
+          }`;
+
+          let section = JSON.parse(section_template);
+          section.controller = previewController.label;
+          section.port = String.fromCharCode(portTag);
+          section.from = undefined;
+          section.to = undefined;
+          section.reversed = false;
+
+          for (let i = 0; i < bitset.size; i++) {
+            if (bitset.isSet(i) && section.from === undefined) {
+              section.from = i;
+            }
+            if (!bitset.isSet(i) && section.from !== undefined) {
+              section.to = i;
+              segment.sections.push(section);
+
+              section = JSON.parse(section_template);
+              section.controller = previewController.label;
+              section.port = String.fromCharCode(portTag);
+              section.from = undefined;
+              section.to = undefined;
+              section.reversed = false;
+            }
+          }
+
+          if (section.from !== undefined) {
+            section.to = bitset.size;
+            segment.sections.push(section);
+          }
+        }
+      }
+    }
+
+    console.log(JSON.stringify(segment));
+
+    return segment;
   }
 
   async WIP_waitForInitilize() {
