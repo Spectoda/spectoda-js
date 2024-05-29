@@ -1237,7 +1237,9 @@ export class SpectodaRuntime {
             }
             if (!bitset.isSet(i) && section.from !== undefined) {
               section.to = i;
-              segment.sections.push(section);
+              if (section.to - section.from > 40) {
+                segment.sections.push(section);
+              }
 
               section = JSON.parse(section_template);
               section.controller = previewController.label;
@@ -1250,7 +1252,10 @@ export class SpectodaRuntime {
 
           if (section.from !== undefined) {
             section.to = bitset.size;
-            segment.sections.push(section);
+
+            if (section.to - section.from > 40) {
+              segment.sections.push(section);
+            }
           }
         }
       }
