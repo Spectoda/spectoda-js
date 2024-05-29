@@ -257,9 +257,10 @@ export class SpectodaRuntime {
   }
 
   #runtimeTask = async () => {
-    const UPS = 2; // updates per second
+    const UPS = 5; // updates per second
 
     try {
+      await this.spectoda.inicilize();
       await this.spectoda.construct("spectoda", "01:23:45:67:89:ab", 0, 255);
 
       await sleep(0.1); // short delay to let fill up the queue to merge the execute items if possible
@@ -277,11 +278,9 @@ export class SpectodaRuntime {
 
   #inicilize() {
     if (!this.#inicilized) {
-      this.#runtimeTask();
       this.#inicilized = true;
+      this.#runtimeTask();
     }
-
-    return this.spectoda.waitForInitilize();
   }
 
   /**
@@ -1115,5 +1114,9 @@ export class SpectodaRuntime {
     this.execute(command_bytes);
 
     return command_bytes;
+  }
+
+  async WIP_waitForInitilize() {
+    return this.spectoda.waitForInitilize();
   }
 }

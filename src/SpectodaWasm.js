@@ -75,12 +75,7 @@ function onWasmLoad() {
 }
 
 function loadWasm(wasmVersion) {
-  if (moduleInitilizing || moduleInitilized) {
-    return;
-  }
-  moduleInitilizing = true;
-
-  logging.info("spectoda-js wasm version " + wasmVersion);
+  logging.info("Loading spectoda-js WASM version " + wasmVersion);
 
   if (typeof window !== "undefined") {
     // BROWSER enviroment
@@ -152,6 +147,10 @@ export const SpectodaWasm = {
 
   // wasmVersion might be DEBUG_0.9.2_20230814
   initilize(wasmVersion = WASM_VERSION) {
+    if (moduleInitilizing || moduleInitilized) {
+      return;
+    }
+    moduleInitilizing = true;
     loadWasm(wasmVersion);
   },
 

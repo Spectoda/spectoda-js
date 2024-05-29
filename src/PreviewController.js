@@ -109,24 +109,19 @@ export class PreviewController {
           return true;
         },
 
-        // _onRequest: () => {
-        //   logging.debug("_onRequest", );
-
-        //   try {
-        //     // dont know how to make Uint8Array in C++ yet. So I am forced to give data out in C++ std::vector
-        //     const commands_bytecode = SpectodaWasm.convertNumberVectorToJSArray(commands_bytecode_vector);
-
-        //     logging.verbose("commands_bytecode", commands_bytecode);
-
-        //     // TODO IMPLEMENT SENDING TO OTHER INTERFACES
-        //   } catch {
-        //     return Module.send_result_t.SEND_ERROR;
-        //   }
-
-        //   return Module.send_result_t.SEND_OK;
-
-        // return true;
-        // },
+        _onRequest: () => {
+          //   logging.debug("_onRequest", );
+          //   try {
+          //     // dont know how to make Uint8Array in C++ yet. So I am forced to give data out in C++ std::vector
+          //     const commands_bytecode = SpectodaWasm.convertNumberVectorToJSArray(commands_bytecode_vector);
+          //     logging.verbose("commands_bytecode", commands_bytecode);
+          //     // TODO IMPLEMENT SENDING TO OTHER INTERFACES
+          //   } catch {
+          //     return Module.send_result_t.SEND_ERROR;
+          //   }
+          //   return Module.send_result_t.SEND_OK;
+          // return true;
+        },
 
         _onSynchronize: synchronization_object => {
           // logging.debug("_onSynchronize", synchronization_object);
@@ -182,7 +177,6 @@ export class PreviewController {
               break;
             default:
               logging.error(`<${this.mac}> [?][${filename}]: ${message}`);
-              this.#eventEmitter.emit("unknown", logEntry);
               break;
           }
         },
@@ -218,7 +212,7 @@ export class PreviewController {
 
   destruct() {
     if (!this.#instance) {
-      throw "AlreadyDestructed";
+      throw "NotConstructed";
     }
 
     this.#instance.end(); // end the spectoda stuff
