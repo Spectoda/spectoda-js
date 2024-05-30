@@ -4,16 +4,15 @@ export class TnglReader {
     this._index = 0;
   }
 
-  // TODO optimize and test this function 
+  // TODO optimize and test this function
   peekValue(byteCount, unsigned = true) {
-
     if (byteCount > 8) {
       logging.error("ByteCountOutOfRange");
       throw new RangeError("ByteCountOutOfRange");
     }
 
     if (this._index + byteCount > this._dataView.byteLength) {
-      console.trace("ReadOutOfRange");
+      console.error("ReadOutOfRange");
       throw new RangeError("ReadOutOfRange");
     }
 
@@ -26,7 +25,7 @@ export class TnglReader {
     let result = value;
 
     // Check if the sign bit is set
-    if (!unsigned && (value & (1n << (BigInt(byteCount * 8) - 1n)))) {
+    if (!unsigned && value & (1n << (BigInt(byteCount * 8) - 1n))) {
       // Two's complement conversion
       result = value - (1n << BigInt(byteCount * 8));
     }
@@ -46,7 +45,7 @@ export class TnglReader {
       this.forward(byteCount);
       return val;
     } catch {
-      console.trace("ReadOutOfRange");
+      console.error("ReadOutOfRange");
       throw "ReadOutOfRange";
     }
   }
@@ -63,7 +62,7 @@ export class TnglReader {
 
       return bytes;
     } else {
-      console.trace("ReadOutOfRange");
+      console.error("ReadOutOfRange");
       throw "ReadOutOfRange";
     }
   }
@@ -85,7 +84,7 @@ export class TnglReader {
 
       return string;
     } else {
-      console.trace("ReadOutOfRange");
+      console.error("ReadOutOfRange");
       throw "ReadOutOfRange";
     }
   }

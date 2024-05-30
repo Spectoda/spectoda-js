@@ -4,7 +4,7 @@ import { TimeTrack } from "../../TimeTrack.js";
 import { TnglReader } from "../../TnglReader.js";
 import { COMMAND_FLAGS } from "../Spectoda_JS.js";
 
-const requireBundlerWorkeround = (moduleName: string) => detectGW() ? require(moduleName) : () => { };
+const requireBundlerWorkeround = (moduleName: string) => (detectGW() ? require(moduleName) : () => {});
 // TODO node-ble on the same level as spectoda-js or node-ble in the spectoda-js repo ? nevíme
 const NodeBle = detectGW() ? requireBundlerWorkeround("../../../node-ble/src/index") : {};
 const { createBluetooth } = NodeBle;
@@ -1306,11 +1306,11 @@ criteria example:
 
     //this.#runtimeReference = null; // dont know if I need to destroy this reference.. But I guess I dont need to?
     return this.disconnect()
-      .catch(() => { })
+      .catch(() => {})
       .then(() => {
         return this.unselect();
       })
-      .catch(() => { })
+      .catch(() => {})
       .finally(() => {
         this.#bluetoothDestroy();
       });

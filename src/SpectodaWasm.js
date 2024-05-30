@@ -1,7 +1,7 @@
 import { TimeTrack } from "../TimeTrack";
 import { logging } from "../logging";
 
-const WASM_VERSION = "DEBUG_DEV_0.10.5_20240523";
+const WASM_VERSION = "DEBUG_DEV_0.10.5_20240529";
 
 let moduleInitilizing = false;
 let moduleInitilized = false;
@@ -22,7 +22,7 @@ function injectScript(src) {
       const script = document.createElement("script");
       script.src = src;
       script.addEventListener("load", resolve);
-      script.addEventListener("error", e => reject(e.error));
+      script.addEventListener("error", reject);
       document.head.appendChild(script);
     }
   });
@@ -75,12 +75,7 @@ function onWasmLoad() {
 }
 
 function loadWasm(wasmVersion) {
-  if (moduleInitilizing || moduleInitilized) {
-    return;
-  }
-  moduleInitilizing = true;
-
-  logging.info("spectoda-js wasm version " + wasmVersion);
+  logging.info("Loading spectoda-js WASM version " + wasmVersion);
 
   if (typeof window !== "undefined") {
     // BROWSER enviroment
@@ -89,12 +84,12 @@ function loadWasm(wasmVersion) {
     injectScript(`http://localhost:5555/builds/${wasmVersion}.js`)
       .then(onWasmLoad)
       .catch(error => {
-        logging.error(error);
+        // logging.error(error);
         // if local version fails, load public file
         injectScript(`https://updates.spectoda.com/subdom/updates/webassembly/daily/${wasmVersion}.js`)
           .then(onWasmLoad)
           .catch(error => {
-            logging.error(error);
+            logging.error("Failed to fetch WASM", error);
           });
       });
   } else {
@@ -152,6 +147,10 @@ export const SpectodaWasm = {
 
   // wasmVersion might be DEBUG_0.9.2_20230814
   initilize(wasmVersion = WASM_VERSION) {
+    if (moduleInitilizing || moduleInitilized) {
+      return;
+    }
+    moduleInitilizing = true;
     loadWasm(wasmVersion);
   },
 

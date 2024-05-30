@@ -1177,18 +1177,39 @@ export class Spectoda {
     }
   }
 
-  syncTimeline() {
-    logging.verbose("syncTimeline()");
+  syncTimelineToDayTime() {
+    logging.verbose(`syncTimelineToDayTime()`);
 
-    logging.debug(`> Synchronizing timeline to device`);
+    const now = new Date();
+    const day = now.getDay();
+    const hours = now.getHours();
+    const minutes = now.getMinutes();
 
-    const flags = this.timeline.paused() ? 0b00010000 : 0b00000000; // flags: [reserved,reserved,reserved,timeline_paused,reserved,reserved,reserved,reserved]
-    const payload = [COMMAND_FLAGS.FLAG_SET_TIMELINE, ...numberToBytes(this.runtime.clock.millis(), 6), ...numberToBytes(this.timeline.millis(), 4), flags];
+    const timestamp = (day * 24 * 60 + hours * 60 + minutes) * 60 * 1000;
+
+    return this.syncTimeline(timestamp, false);
+  }
+
+  syncTimeline(timestamp = undefined, paused = undefined) {
+    logging.verbose(`syncTimeline(timestamp=${timestamp}, paused=${paused})`);
+
+    if (timestamp === undefined) {
+      timestamp = this.timeline.millis();
+    }
+
+    if (paused === undefined) {
+      paused = this.timeline.paused();
+    }
+
+    logging.debug(`> Synchronizing timeline to ${timestamp}...`);
+
+    const flags = paused ? 0b00010000 : 0b00000000; // flags: [reserved,reserved,reserved,timeline_paused,reserved,reserved,reserved,reserved]
+    const payload = [COMMAND_FLAGS.FLAG_SET_TIMELINE, ...numberToBytes(this.runtime.clock.millis(), 6), ...numberToBytes(timestamp, 4), flags];
     return this.runtime.execute(payload, "TMLN");
   }
 
   syncClock() {
-    logging.debug("> Syncing clock from device");
+    logging.debug("> Syncing clock...");
 
     this.#resetClockSyncInterval();
 

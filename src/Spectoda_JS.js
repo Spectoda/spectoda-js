@@ -124,6 +124,13 @@ export class Spectoda_JS {
     this.#instance = null;
   }
 
+  inicilize() {
+    // TODO pass WASM version to load
+    SpectodaWasm.initilize();
+
+    return SpectodaWasm.waitForInitilize();
+  }
+
   waitForInitilize() {
     return SpectodaWasm.waitForInitilize();
   }
@@ -139,9 +146,6 @@ export class Spectoda_JS {
     if (this.#instance) {
       throw "AlreadyContructed";
     }
-
-    // TODO pass WASM version to load
-    SpectodaWasm.initilize();
 
     return SpectodaWasm.waitForInitilize().then(() => {
       const WasmInterfaceImplementation = {
@@ -308,15 +312,6 @@ export class Spectoda_JS {
 
       this.#instance.init(mac_address, `{"controller":{"name": "Spectoda"}}`);
       this.#instance.begin();
-
-      // this.#instance.makePort("A", 1, brightness, 255, true, false);
-      // this.#instance.makePort("B", 1, brightness, 255, true, false);
-      // this.#instance.makePort("C", 1, brightness, 255, true, false);
-      // this.#instance.makePort("D", 1, brightness, 255, true, false);
-      // this.#instance.makePort("E", 1, brightness, 255, true, false);
-      // this.#instance.makePort("F", 1, brightness, 255, true, false);
-      // this.#instance.makePort("G", 1, brightness, 255, true, false);
-      // this.#instance.makePort("H", 1, brightness, 255, true, false);
     });
   }
 
