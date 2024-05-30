@@ -1177,13 +1177,18 @@ export class Spectoda {
     logging.verbose(`syncTimelineToDayTime()`);
 
     const now = new Date();
-    const day = now.getDay();
+
     const hours = now.getHours();
     const minutes = now.getMinutes();
+    const seconds = now.getSeconds();
+    const miliseconds = now.getMilliseconds();
 
-    const timestamp = (day * 24 * 60 + hours * 60 + minutes) * 60 * 1000;
+    const timestamp = hours * 60 * 60 * 1000 + minutes * 60 * 1000 + seconds * 1000 + miliseconds;
 
-    return this.syncTimeline(timestamp, false);
+    this.timeline.unpause();
+    this.timeline.setMillis(timestamp);
+
+    return this.syncTimeline();
   }
 
   syncTimeline(timestamp = undefined, paused = undefined) {
