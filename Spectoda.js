@@ -951,13 +951,13 @@ export class Spectoda {
       tngl_bytes = this.#parser.parseTnglCode(tngl_code);
     }
 
-    const timeline_flags = this.timeline.paused() ? 0b00010000 : 0b00000000; // flags: [reserved,reserved,reserved,timeline_paused,reserved,reserved,reserved,reserved]
-    const timeline_bytecode = [COMMAND_FLAGS.FLAG_SET_TIMELINE, ...numberToBytes(this.runtime.clock.millis(), 6), ...numberToBytes(this.timeline.millis(), 4), timeline_flags];
+    // const timeline_flags = this.timeline.paused() ? 0b00010000 : 0b00000000; // flags: [reserved,reserved,reserved,timeline_paused,reserved,reserved,reserved,reserved]
+    // const timeline_bytecode = [COMMAND_FLAGS.FLAG_SET_TIMELINE, ...numberToBytes(this.runtime.clock.millis(), 6), ...numberToBytes(this.timeline.millis(), 4), timeline_flags];
 
     const reinterpret_bytecode = [COMMAND_FLAGS.FLAG_REINTERPRET_TNGL, ...numberToBytes(this.runtime.clock.millis(), 6), 0, ...numberToBytes(tngl_bytes.length, 4), ...tngl_bytes];
 
-    const payload = [...timeline_bytecode, ...reinterpret_bytecode];
-    return this.runtime.execute(payload, "TNGL").then(() => {
+    // const payload = [...timeline_bytecode, ...reinterpret_bytecode];
+    return this.runtime.execute(reinterpret_bytecode, "TNGL").then(() => {
       // logging.debug("Written");
     });
   }
