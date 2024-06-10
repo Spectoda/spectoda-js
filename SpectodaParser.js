@@ -137,6 +137,7 @@ const TNGL_FLAGS = Object.freeze({
   TUPLE: 193,
   NUMBER: 205,
   ID: 182,
+  BERRY_CODE: 183,
 
   // TODO Operations and Providers should be Object values.
   // OBJECT: ???, // Operations and Providers are objects
@@ -1205,6 +1206,27 @@ export class TnglCompiler {
     this.#tnglWriter.writeUint8(id);
   }
 
+  compileBerryCode(berry_code) {
+    // TODO: Get bytes in WASM and then only send Berry bytecode
+    let reg = berry_code.match(/execBerry\(\s*[\s\S]*?\s*\);/);
+    if (!reg) {
+      logging.error("Failed to compile berry code");
+      return;
+    }
+
+    let code = reg[0].slice(10, -2);
+    // one line it, but keep spaces
+    code = code.replace(/\s+/g, " ");
+    
+    let bytes = new TextEncoder().encode(code);
+    console.log(bytes);
+    this.#tnglWriter.writeFlag(TNGL_FLAGS.BERRY_CODE);
+    this.#tnglWriter.writeUint16(bytes.length);
+    for (let i = 0; i < bytes.length; i++) {
+      this.#tnglWriter.writeUint8(bytes[i]);
+    }
+  }
+
   get tnglBytes() {
     return new Uint8Array(this.#tnglWriter.bytes.buffer, 0, this.#tnglWriter.written);
   }
@@ -1230,8 +1252,6 @@ export class TnglCodeParser {
 
     for (let index = 0; index < tokens.length; index++) {
       const element = tokens[index];
-
-      // logging.debug(element);
 
       switch (element.type) {
         case "connection":
@@ -1322,6 +1342,10 @@ export class TnglCodeParser {
           this.#compiler.compileId(parseInt(element.token.slice(1)));
           break;
 
+        case "berry_code":
+          this.#compiler.compileBerryCode(element.token);
+          break;
+
         default:
           logging.warn("Unknown token type >", element.type, "<");
           break;
@@ -1342,6 +1366,7 @@ export class TnglCodeParser {
   }
 
   static #parses = {
+    berry_code: /execBerry\(\s*[\s\S]*?\s*\);/,
     connection: /[\w]+\[\w*\]->\[\w*\][\w]+\s*;/,
     undefined: /undefined/,
     var_declaration: /var +[A-Za-z_][\w]* *=/,
