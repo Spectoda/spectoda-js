@@ -1,6 +1,6 @@
 import { TnglWriter } from "./TnglWriter.js";
 import { mapValue, uint8ArrayToHexString } from "./functions";
-import { logging, LOGGING_LEVEL_DEBUG } from "./logging";
+import { logging } from "./logging";
 
 // ! must stay this order VAR_VALUE_ADDRESS_OFFSET < CONST_VALUE_ADDRESS_OFFSET < LET_VALUE_ADDRESS_OFFSET
 const VAR_VALUE_ADDRESS_OFFSET = 0x0000;
