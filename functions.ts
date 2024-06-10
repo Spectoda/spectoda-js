@@ -1,3 +1,4 @@
+import { TnglCodeParser } from "./SpectodaParser";
 import { logging } from "./logging";
 
 export const createNanoEvents = () => ({
@@ -302,51 +303,27 @@ export function detectSafari() {
 }
 
 //////////////////////////////////////////////////////
+export function computeTnglFingerprint(tngl_bytes: Uint8Array | ArrayBuffer, tngl_label = "fingerprint") {
+  let enc = new TextEncoder();
+  let algorithm = { name: "HMAC", hash: "SHA-256" };
+  let body = new Uint8Array(tngl_bytes);
 
-export function computeTnglFingerprint(tngl_bytes, tngl_label) {
-  if (detectNode()) {
-    const hackyRequire = require;
-
-    const crypto = hackyRequire("crypto");
-
-    return new Promise((resolve, reject) => {
-      try {
-        const hash = crypto.createHmac("sha256", tngl_label);
-        hash.update(tngl_bytes);
-        const fingerprint = hash.digest();
-
-        logging.info("TNGL Fingerprint:", uint8ArrayToHexString(fingerprint));
-
-        // If you want the result as Uint8Array like your browser example:
-        resolve(new Uint8Array(fingerprint));
-        return;
-      } catch (error) {
-        reject(error);
-        return;
-      }
-
-      // If you want the result as a base64 string (like the commented out line in your example):
-      // resolve(signature.toString('base64'));
+  return crypto.subtle
+    .importKey("raw", enc.encode(tngl_label), algorithm, false, ["sign", "verify"])
+    .then(key => {
+      return crypto.subtle.sign(algorithm.name, key, body);
+    })
+    .then(signature => {
+      return new Uint8Array(signature);
     });
-  } else {
-    const enc = new TextEncoder();
-    const algorithm = { name: "HMAC", hash: "SHA-256" };
-    const body = new Uint8Array(tngl_bytes);
+}
 
-    return crypto.subtle
-      .importKey("raw", enc.encode(tngl_label), algorithm, false, ["sign", "verify"])
-      .then(key => {
-        return crypto.subtle.sign(algorithm.name, key, body);
-      })
-      .then(signature => {
-        // let digest = btoa(String.fromCharCode(...new Uint8Array(signature)));
-        // console.info(digest);
+export async function computeTnglCodeFingerprint(tnglCode: string) {
+  const newTnglBytecode = new TnglCodeParser().parseTnglCode(tnglCode);
+  const newTnglFingerprint = await computeTnglFingerprint(newTnglBytecode, "fingerprint");
+  const newTnglFingerprintHex = uint8ArrayToHexString(newTnglFingerprint);
 
-        logging.info("TNGL Fingerprint:", uint8ArrayToHexString(fingerprint));
-
-        return new Uint8Array(signature);
-      });
-  }
+  return newTnglFingerprintHex;
 }
 
 export function hexStringToUint8Array(hexString, arrayLength) {

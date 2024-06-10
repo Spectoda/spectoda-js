@@ -1334,10 +1334,8 @@ export class TnglCodeParser {
 
     logging.verbose(tnglBytes);
 
-    if (logging.level >= LOGGING_LEVEL_DEBUG) {
-      logging.debug("TNGL_BYTECODE:");
-      logging.debug(uint8ArrayToHexString(tnglBytes));
-    }
+    logging.debug("TNGL_BYTECODE:");
+    logging.debug(uint8ArrayToHexString(tnglBytes));
 
     logging.info("Compiled tnglbytes length:", tnglBytes.length);
     return tnglBytes;
