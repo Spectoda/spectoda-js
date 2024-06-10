@@ -66,7 +66,11 @@ export class Spectoda {
     this.runtime = new SpectodaRuntime(this);
 
     if (connectorType) {
-      this.runtime.assignConnector(connectorType);
+      try {
+        this.runtime.assignConnector(connectorType);
+      } catch (e) {
+        logging.error(e);
+      }
     }
 
     this.#adopting = false;
@@ -1780,7 +1784,7 @@ export class Spectoda {
       );
 
       logging.info("Controller TNGL Fingerprint: " + uint8ArrayToHexString(fingerprint));
-
+      console.log("fingerprinting", fingerprint);
       return new Uint8Array(fingerprint);
     });
   }
