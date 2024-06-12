@@ -1219,7 +1219,6 @@ export class TnglCompiler {
     code = code.replace(/\s+/g, " ");
     
     let bytes = new TextEncoder().encode(code);
-    console.log(bytes);
     this.#tnglWriter.writeFlag(TNGL_FLAGS.BERRY_CODE);
     this.#tnglWriter.writeUint16(bytes.length);
     for (let i = 0; i < bytes.length; i++) {
