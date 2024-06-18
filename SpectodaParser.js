@@ -1215,8 +1215,20 @@ export class TnglCompiler {
     }
 
     let code = reg[0].slice(10, -2);
-    // one line it, but keep spaces
-    code = code.replace(/\s+/g, " ");
+    
+    // remove all empty lines
+    code = code.replace(/^\s*[\r\n]/gm, "");
+
+    let linesAr = code.split("\n");
+
+    for (let i = 0; i < linesAr.length; i++) {
+        linesAr[i] = linesAr[i].trim();
+    }
+
+    // if any lines start with "#", remove them
+    linesAr = linesAr.filter(line => !line.startsWith("#"));
+
+    code = linesAr.join(" ");
     
     let bytes = new TextEncoder().encode(code);
     this.#tnglWriter.writeFlag(TNGL_FLAGS.BERRY_CODE);
