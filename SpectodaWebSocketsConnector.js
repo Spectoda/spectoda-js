@@ -10,7 +10,8 @@ import { logging } from "./logging";
 // TODO rewrite this to initiate connect only when needed
 
 // const WEBSOCKET_URL = "https://tangle-remote-control.glitch.me/"
-export const WEBSOCKET_URL = "https://cloud.host.spectoda.com:9443/";
+export const WEBSOCKET_URL = process.env?.NODE_ENV === "development" ? "https://cloud.host.spectoda.com:9443/" : "http://10.0.18.106:4001";
+console.log("REMOTE WEBSOCKET_URL", WEBSOCKET_URL);
 
 const eventStream = createNanoEvents();
 
