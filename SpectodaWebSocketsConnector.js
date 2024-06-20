@@ -65,8 +65,6 @@ export function createSpectodaWebsocket() {
     parser: customParser,
   });
 
-  window.sockets.push(socket);
-
   if (typeof window !== "undefined") window.socket = socket;
 
   socket.on("event", data => {
