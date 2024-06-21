@@ -891,7 +891,7 @@ export class Spectoda {
     }
 
     //3rd stage handle #define replacing
-    const defineRegex = new RegExp(`#define\\s+(\\w+)\\s+(\\w+)`, "g");
+    const defineRegex = new RegExp(`#define\\s+(\\w+)(?:\\s+(.*))?`, "g");
 
     // list all defines [{name: "NAME", value: "VALUE"}, ...]
     let defines = [];
