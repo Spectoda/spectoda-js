@@ -371,6 +371,10 @@ export class Spectoda {
 
     this.socket = io(WEBSOCKET_URL, {
       parser: customParser,
+      extraHeaders: {
+        "Host": "cloud.host.spectoda.com"
+      },
+      rejectUnauthorized: false
     });
 
     this.socket.connect();
