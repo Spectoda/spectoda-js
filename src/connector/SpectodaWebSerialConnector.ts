@@ -272,6 +272,14 @@ export class SpectodaWebSerialConnector {
                 return { value: null, done: false };
               }
 
+              if (e.toString().includes("Buffer overrun")) {
+                logging.warn("> Buffer overrun detected");
+
+                this.#reader = this.#serialPort?.readable?.getReader();
+
+                return { value: null, done: false };
+              }
+
               this.disconnect().catch(() => {});
               return { value: null, done: true };
             });
