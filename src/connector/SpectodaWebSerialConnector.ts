@@ -19,7 +19,7 @@ if (typeof window === "undefined" && !isNode()) {
 
 ///////////////////////////////////////////////////////////////////////////////////
 
-const PORT_OPTIONS: SerialOptions = { baudRate: 1500000, dataBits: 8, stopBits: 1, parity: "none", bufferSize: 65535, flowControl: "none" };
+const PORT_OPTIONS: SerialOptions = { baudRate: 1500000, dataBits: 8, stopBits: 1, parity: "none", bufferSize: 1048576, flowControl: "none" };
 
 const CODE_WRITE = 100;
 const CODE_READ = 200;
