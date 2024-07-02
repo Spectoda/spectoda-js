@@ -1747,8 +1747,19 @@ export class Spectoda {
     return this.runtime.execute(payload, null);
   }
 
-  writeOwner(ownerSignature = "00000000000000000000000000000000", ownerKey = "00000000000000000000000000000000") {
-    logging.debug("> Writing owner to device...", ownerSignature, ownerKey);
+  writeOwner(ownerSignature, ownerKey) {
+    logging.debug(`writeOwner(ownerSignature=${ownerSignature}, ownerKey=${ownerKey})`);
+
+    logging.info("> Writing owner to device...");
+
+    if (!ownerSignature || !ownerKey) {
+      throw "InvalidParameters";
+    }
+
+    if (ownerSignature == "00000000000000000000000000000000" && ownerKey == "00000000000000000000000000000000") {
+      logging.warn("> Removing owner instead of writing all zero owner");
+      return this.removeOwner();
+    }
 
     const owner_signature_bytes = hexStringToUint8Array(ownerSignature, 16);
     const owner_key_bytes = hexStringToUint8Array(ownerKey, 16);
@@ -1813,8 +1824,19 @@ export class Spectoda {
       });
   }
 
-  writeNetworkOwner(ownerSignature = "00000000000000000000000000000000", ownerKey = "00000000000000000000000000000000") {
-    logging.debug("> Writing owner to network...");
+  writeNetworkOwner(ownerSignature, ownerKey) {
+    logging.debug(`writeNetworkOwner(ownerSignature=${ownerSignature}, ownerKey=${ownerKey})`);
+
+    logging.info("> Writing owner to network...");
+
+    if (!ownerSignature || !ownerKey) {
+      throw "InvalidParameters";
+    }
+
+    if (ownerSignature == "00000000000000000000000000000000" && ownerKey == "00000000000000000000000000000000") {
+      logging.warn("> Removing owner instead of writing all zero owner");
+      return this.removeNetworkOwner();
+    }
 
     const owner_signature_bytes = hexStringToUint8Array(ownerSignature, 16);
     const owner_key_bytes = hexStringToUint8Array(ownerKey, 16);
