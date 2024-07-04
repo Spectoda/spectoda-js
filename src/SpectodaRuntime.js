@@ -142,6 +142,7 @@ export class SpectodaRuntime {
   #inicilized;
 
   #assignedConnector;
+  #assignedConnectorParameter;
 
   constructor(spectodaReference) {
     this.#spectodaReference = spectodaReference;
@@ -168,6 +169,7 @@ export class SpectodaRuntime {
     this.#lastUpdatePercentage = 0;
 
     this.#assignedConnector = "none";
+    this.#assignedConnectorParameter = undefined;
 
     this.onConnected = e => {};
     this.onDisconnected = e => {};
@@ -348,7 +350,7 @@ export class SpectodaRuntime {
     this.#eventEmitter.emit(event, ...arg);
   }
 
-  assignConnector(desired_connector = "default") {
+  assignConnector(desired_connector = "default", connector_parameter = undefined) {
     logging.verbose(`assignConnector(desired_connector=${desired_connector})`);
 
     let choosen_connector = undefined;
@@ -400,8 +402,9 @@ export class SpectodaRuntime {
     }
 
     // leave this at info, for faster debug
-    logging.info(`> Assigning ${choosen_connector} connector...`);
+    logging.info(`> Assigning ${choosen_connector} connector with parameter:`, connector_parameter);
     this.#assignedConnector = choosen_connector;
+    this.#assignedConnectorParameter = connector_parameter;
   }
 
   async #updateConnector() {
@@ -420,7 +423,8 @@ export class SpectodaRuntime {
         break;
 
       case "simulated":
-        this.connector = new SpectodaDummyConnector(this); // TODO! implement SpectodaSimulatedConnector with WASM
+        this.connector = new SpectodaSimulatedConnector(this);
+        this.connector.init(this.#assignedConnectorParameter);
         break;
 
       case "dummy":

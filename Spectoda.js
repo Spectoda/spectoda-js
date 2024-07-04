@@ -314,15 +314,15 @@ export class Spectoda {
     }
   }
 
-  setConnector(connector_type) {
-    return this.runtime.assignConnector(connector_type);
+  setConnector(connector_type, connector_param = undefined) {
+    return this.runtime.assignConnector(connector_type, connector_param);
   }
 
   /**
    * @alias this.setConnector
    */
-  assignConnector(connector_type) {
-    return this.setConnector(connector_type);
+  assignConnector(connector_type, connector_param = undefined) {
+    return this.setConnector(connector_type, connector_param);
   }
 
   assignOwnerSignature(ownerSignature) {
