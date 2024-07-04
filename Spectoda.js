@@ -2412,3 +2412,9 @@ export class Spectoda {
     // }
   }
 }
+
+// ====== NEW PARADIAGM FUNCTIONS ====== //
+
+if (typeof window !== "undefined") {
+  window.Spectoda = Spectoda;
+}

@@ -13,6 +13,10 @@ export class PreviewController {
   #ringLogBuffer;
   #eventEmitter;
 
+  /**
+   * @param {string} controller_mac_address
+   * @return {Promise<null>}
+   */
   constructor(controller_mac_address) {
     this.#macAddress = controller_mac_address;
 
@@ -24,17 +28,18 @@ export class PreviewController {
   }
 
   /**
-   * @param {string} controller_mac_address
+   * @param {object} config
    * @return {Promise<null>}
    */
   construct(config) {
-    logging.info(`construct(config=${JSON.stringify(config)})`);
+    logging.info(`construct(config=${JSON.stringify(config)}`);
 
     if (this.#instance) {
       throw "AlreadyContructed";
     }
 
     this.#config = config;
+
     this.#ringLogBuffer = new RingLogBuffer(1000);
 
     SpectodaWasm.initilize();

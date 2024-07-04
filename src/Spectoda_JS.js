@@ -140,9 +140,12 @@ export class Spectoda_JS {
    * @param {string} label
    * @param {string} mac_address
    * @param {number} id_offset
+   * @param {number} brightness
    * @return {Promise<null>}
    */
-  construct(label, mac_address, id_offset, brightness) {
+  construct(controller_name, mac_address, id_offset, brightness) {
+    logging.debug(`construct(controller_name=${controller_name}, mac_address=${mac_address}, id_offset=${id_offset}, brightness=${brightness})`);
+
     if (this.#instance) {
       throw "AlreadyContructed";
     }
@@ -158,6 +161,19 @@ export class Spectoda_JS {
         // __destruct: function () {
         //   this.__parent.__destruct.call(this);
         // },
+
+        _onTngl: tngl_bytes_vector => {
+          logging.verbose("_onTngl", tngl_bytes_vector);
+
+          try {
+            // dont know how to make Uint8Array in C++ yet. So I am forced to give data out in C++ std::vector
+            const tngl_bytes = SpectodaWasm.convertNumberVectorToJSArray(tngl_bytes_vector);
+
+            this.#runtimeReference.emit("written_tngl", tngl_bytes);
+          } catch {
+            //
+          }
+        },
 
         _onEvents: event_array => {
           logging.verbose("_onEvents", event_array);
@@ -227,21 +243,20 @@ export class Spectoda_JS {
           return true;
         },
 
-        // _onRequest: () => {
-        //   logging.debug("_onRequest", );
+        _onRequest: () => {
+          logging.debug("_onRequest");
 
-        //   try {
-        //     // dont know how to make Uint8Array in C++ yet. So I am forced to give data out in C++ std::vector
-        //     const commands_bytecode = SpectodaWasm.convertNumberVectorToJSArray(commands_bytecode_vector);
+          try {
+            // dont know how to make Uint8Array in C++ yet. So I am forced to give data out in C++ std::vector
+            const commands_bytecode = SpectodaWasm.convertNumberVectorToJSArray(commands_bytecode_vector);
 
-        //     logging.verbose("commands_bytecode", commands_bytecode);
+            logging.verbose("commands_bytecode", commands_bytecode);
 
-        //     // TODO IMPLEMENT SENDING TO OTHER INTERFACES
-        //   } catch {
-        //   }
+            // TODO IMPLEMENT SENDING TO OTHER INTERFACES
+          } catch {}
 
-        // return true;
-        // },
+          return true;
+        },
 
         _onSynchronize: synchronization_object => {
           logging.verbose("_onSynchronize", synchronization_object);
@@ -255,6 +270,35 @@ export class Spectoda_JS {
           }
 
           return true;
+        },
+
+        _onLog: (level, filename, message) => {
+          // if (level - 1 < logging.level) {
+          //   return;
+          // }
+
+          const name = this.#runtimeReference.WIP_name ? this.#runtimeReference.WIP_name : "Spectoda";
+
+          switch (level) {
+            case 5:
+              logging.verbose(`<${name}> [V][${filename}]: ${message}`);
+              break;
+            case 4:
+              logging.debug(`<${name}> [D][${filename}]: ${message}`);
+              break;
+            case 3:
+              logging.info(`<${name}> [I][${filename}]: ${message}`);
+              break;
+            case 2:
+              logging.warn(`<${name}> [W][${filename}]: ${message}`);
+              break;
+            case 1:
+              logging.error(`<${name}> [E][${filename}]: ${message}`);
+              break;
+            default:
+              logging.error(`<${name}> [?][${filename}]: ${message}`);
+              break;
+          }
         },
 
         _handlePeerConnected: peer_mac => {
@@ -279,38 +323,14 @@ export class Spectoda_JS {
 
           return Module.interface_error_t.SUCCESS;
         },
-
-        _onLog: (level, filename, message) => {
-          if (level - 1 < logging.level) {
-            return;
-          }
-
-          switch (level) {
-            case 5:
-              logging.verbose(`<spectoda> [V][${filename}]: ${message}`);
-              break;
-            case 4:
-              logging.debug(`<spectoda> [D][${filename}]: ${message}`);
-              break;
-            case 3:
-              logging.info(`<spectoda> [I][${filename}]: ${message}`);
-              break;
-            case 2:
-              logging.warn(`<spectoda> [W][${filename}]: ${message}`);
-              break;
-            case 1:
-              logging.error(`<spectoda> [E][${filename}]: ${message}`);
-              break;
-            default:
-              logging.error(`<spectoda> [?][${filename}]: ${message}`);
-              break;
-          }
-        },
       };
 
       this.#instance = SpectodaWasm.Spectoda_WASM.implement(WasmInterfaceImplementation);
 
-      this.#instance.init(mac_address, `{"controller":{"name": "Spectoda"}}`);
+      const config = `{"controller": {"name": "${controller_name}", "brightness": ${brightness}, "id": ${id_offset}}}`;
+      logging.verbose(config);
+
+      this.#instance.init(mac_address, config);
       this.#instance.begin();
     });
   }
@@ -330,6 +350,8 @@ export class Spectoda_JS {
    * @return {Uint8Vector}
    */
   makePort(port_char = "A", port_size = 144, port_brightness = 255, port_power = 255, port_visible = true, port_reversed = false) {
+    logging.warn(`makePort(port_char=${port_char}, port_size=${port_size}, port_brightness=${port_brightness}, port_power=${port_power}, port_visible=${port_visible}, port_reversed=${port_reversed})`);
+
     if (!this.#instance) {
       throw "NotConstructed";
     }
@@ -446,17 +468,3 @@ export class Spectoda_JS {
     return this.#instance.readVariableAddress(variable_address, device_id);
   }
 }
-
-// if (typeof window !== "undefined") {
-//   window.Spectoda_JS = Spectoda_JS;
-
-//   window.test_wasm = function () {
-//     window.instance = new Spectoda_JS();
-//     window.instance.construct("con1", "ff:ff:ff:ff:ff:ff", 0).then(() => {
-//       logging.verbose(window.instance.makePort("A", 144, 255, 255, true, false));
-//       window.instance.execute([0x69, 0xaf, 0x06, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x10, 0x68, 0xaf, 0x06, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0xff], 0xffff);
-//       window.instance.execute([0x72, 0xff, 0xff, 0xff, 0x0f, 0x65, 0x76, 0x74, 0x00, 0x00, 0x6e, 0x40, 0x00, 0x00, 0x00, 0x00, 0xff], 0xffff);
-//       window.instance.compute();
-//     });
-//   };
-// }

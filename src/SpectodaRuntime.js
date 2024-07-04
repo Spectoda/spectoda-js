@@ -14,6 +14,7 @@ import { TnglReader } from "../TnglReader.js";
 import { TnglWriter } from "../TnglWriter.js";
 import { SpectodaNodeBluetoothConnector } from "./connector/SpectodaNodeBleConnector";
 import { SpectodaNodeSerialConnector } from "./connector/SpectodaNodeSerialConnector";
+import { SpectodaSimulatedConnector } from "./connector/SpectodaSimulatedConnector";
 
 // Spectoda.js -> SpectodaRuntime.js -> | SpectodaXXXConnector.js ->
 
@@ -144,6 +145,9 @@ export class SpectodaRuntime {
   #assignedConnector;
   #assignedConnectorParameter;
 
+  #ups;
+  #fps;
+
   constructor(spectodaReference) {
     this.#spectodaReference = spectodaReference;
 
@@ -268,7 +272,7 @@ export class SpectodaRuntime {
     this.previewControllers = {};
 
     this.#eventEmitter.on("wasm_execute", command => {
-      logging.debug("previewController.execute", command);
+      logging.debug("wasm_execute", command);
       for (const previewController of Object.values(this.previewControllers)) {
         try {
           previewController.execute(command, 123456789);
@@ -285,7 +289,7 @@ export class SpectodaRuntime {
     // });
 
     this.#eventEmitter.on("wasm_clock", timestamp => {
-      logging.debug("previewController.setClock", timestamp);
+      logging.debug("wasm_clock", timestamp);
       for (const previewController of Object.values(this.previewControllers)) {
         try {
           previewController.setClock(timestamp, 123456789);
@@ -294,23 +298,30 @@ export class SpectodaRuntime {
         }
       }
     });
+
+    this.#ups = 5;
+    this.#fps = 5;
   }
 
   #runtimeTask = async () => {
-    const UPS = 5; // updates per second
-
     try {
       await this.spectoda.inicilize();
-      await this.spectoda.construct("spectoda", "01:23:45:67:89:ab", 0, 255);
+      await this.spectoda.construct(this.WIP_name ? this.WIP_name : "Spectoda", "01:23:45:67:89:ab", 0, 255);
 
       await sleep(0.1); // short delay to let fill up the queue to merge the execute items if possible
 
-      const f = async () => {
-        await this.spectoda.compute(); // for non visual mode compute is sufficient
-        setTimeout(f, 1000 / UPS);
+      // TODO figure out #fps (render) vs #ups (compute) for non visual processing (a.k.a event handling for example)
+
+      const __render = async () => {
+        await this.spectoda.render(); // for non visual mode compute is sufficient
+
+        // TODO if the fps was set to 0 and then back to some value, then the render loop should be started again
+        if (this.#fps !== 0) {
+          setTimeout(__render, 1000 / this.#fps);
+        }
       };
 
-      f();
+      __render();
     } catch (e) {
       logging.error(e);
     }
@@ -1272,5 +1283,25 @@ export class SpectodaRuntime {
 
   async WIP_waitForInitilize() {
     return this.spectoda.waitForInitilize();
+  }
+
+  WIP_setFPS(fps) {
+    this.#fps = fps;
+  }
+
+  WIP_makePort(port_char = "A", port_size = 1, port_brightness = 255, port_power = 255, port_visible = true, port_reversed = false) {
+    return this.spectoda.makePort(port_char, port_size, port_brightness, port_power, port_visible, port_reversed);
+  }
+
+  WIP_compute() {
+    return this.spectoda.compute();
+  }
+
+  WIP_render() {
+    return this.spectoda.render();
+  }
+
+  WIP_setName(name) {
+    this.WIP_name = name;
   }
 }
