@@ -56,6 +56,10 @@ export class PreviewController {
         //   this.__parent.__destruct.call(this);
         // },
 
+        _onTngl: tngl_bytes_vector => {
+          // logging.verbose("_onTngl", tngl_bytes_vector);
+        },
+
         _onEvents: event_array => {
           // logging.verbose("_onEvents", event_array);
           // for (let i = 0; i < event_array.length; i++) {
