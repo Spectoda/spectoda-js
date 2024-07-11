@@ -1091,8 +1091,12 @@ export class SpectodaRuntime {
   WIP_renderPreview() {
     // logging.verbose(`> Rendering preview...`);
 
-    for (const previewController of Object.values(this.previewControllers)) {
-      previewController.bakeTnglFrame();
+    try {
+      for (const previewController of Object.values(this.previewControllers)) {
+        previewController.bakeTnglFrame();
+      }
+    } catch (e) {
+      console.error(e);
     }
   }
 
