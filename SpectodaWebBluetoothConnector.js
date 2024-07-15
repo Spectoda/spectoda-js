@@ -2,7 +2,7 @@
 /// <reference types="web-bluetooth" />
 
 import { logging } from "./logging";
-import { detectAndroid, detectSafari, hexStringToUint8Array, numberToBytes, sleep, toBytes } from "./functions";
+import { detectAndroid, detectSafari, hexStringToUint8Array, numberToBytes, sleep, toBytes, uint8ArrayToHexString } from "./functions";
 import { COMMAND_FLAGS } from "./src/Spectoda_JS.js";
 import { TimeTrack } from "./TimeTrack.js";
 import { TnglReader } from "./TnglReader.js";
@@ -152,7 +152,11 @@ export class WebBLEConnection {
   #onNetworkNotification(event) {
     logging.verbose("#onNetworkNotification", event);
 
-    this.#runtimeReference.spectoda.execute(new Uint8Array(event.target.value.buffer), 0x01);
+    const command_bytes = new Uint8Array(event.target.value.buffer);
+    logging.verbose(`command_bytes: ${uint8ArrayToHexString(command_bytes)}`);
+
+    //! Here is a bug, where if the command is too long, it will be split into multiple notifications
+    this.#runtimeReference.spectoda.execute(command_bytes, 0x01);
   }
 
   // WIP
