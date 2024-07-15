@@ -31,7 +31,7 @@ declare global {
   }
 }
 
-export interface Criterion {
+export interface DeviceConnectionCriteria {
   name?: string | undefined;
   namePrefix?: string | undefined;
   fwVersion?: string | undefined;
