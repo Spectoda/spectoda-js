@@ -1978,6 +1978,9 @@ export class Spectoda {
         const historic_events_bytecode = reader.readBytes(historic_events_bytecode_size);
         logging.verbose(`historic_events_bytecode=[${historic_events_bytecode}]`);
 
+        // this.runtime.spectoda.clearHistory();
+        const erase_history_command = [COMMAND_FLAGS.FLAG_ERASE_EVENT_HISTORY_REQUEST, ...numberToBytes(request_uuid, 4)];
+        this.runtime.evaluate(new Uint8Array(erase_history_command), 0x01);
         this.runtime.evaluate(new Uint8Array(historic_events_bytecode), 0x01);
       } else {
         throw "Fail";
@@ -2382,13 +2385,16 @@ export class Spectoda {
   }
 
   reload() {
-    if (detectNode()) {
-      process.exit(1);
-    } else {
-      if (window && window.location) {
-        window.location.reload();
+    return new Promise ((reject, resolve)=> {
+      if (detectNode()) {
+        process.exit(1);
+      } else {
+        if (window && window.location) {
+          window.location.reload();
+        }
       }
-    }
+      resolve(null);
+    });
   }
 
   update() {
