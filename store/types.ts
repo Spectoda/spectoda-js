@@ -1,3 +1,4 @@
+import { z } from "zod";
 import { DeviceConnectionCriteria } from "../types";
 
 export const CONNECTION = {
@@ -23,61 +24,17 @@ export const CONNECTORS = [
 
 export type ConnectorType = (typeof CONNECTORS)[number]["key"];
 
-export interface MacObject {
-  mac: string;
-}
+export type TFwVersion = z.infer<typeof FwVersionSchema>;
+export const FwVersionSchema = z.string();
 
-export type SpectodaConnectionMethods = {
-  loadData: () => Promise<void>;
-  //   connect: (params?: ConnectOptions) => Promise<unknown>;
-  //   disconnect: () => Promise<void>;
-  //   upload: (tngl: string) => Promise<void>;
-  //   assignConnector: (mac: ConnectorType) => Promise<void>;
-  //   activateFakeDevice: (mac: string[]) => void;
-  //   isActiveMac: (mac: string | string[] | undefined) => boolean;
-  //   getAndSetPeers: () => Promise<void>;
-  //   getConnectedPeersInfo: () => Promise<unknown>;
-  //   setIsUploading: (isUploading: boolean) => void;
-  //   setFakeConnection: (fakeConnection: boolean) => void;
-};
+export type TControllerName = z.infer<typeof ControllerNameSchema>;
+export const ControllerNameSchema = z.string();
 
-export type SpectodaStoreState = {
-  controller: {
-    fwVersion: string;
-    mac: string;
-    name: string;
-    configString: string;
-  };
-  // network: {
-  //     signature: string;
-  // }
-  //   connectionStatus: ConnectionStatus;
-  //   connectedMacs: MacObject[];
-  //   directlyConnectedMac: string;
-  //   lastDirectlyConnectedMac: string;
-  //   disconnectedMacs: MacObject[];
-  //   connector: ConnectorType;
-
-  //   isConnecting: boolean;
-  //   isUploading: boolean;
-  //   isConnected: boolean;
-
-  //   version: string;
-  //   fullVersion: string;
-  //   versionAvailable: boolean;
-  //   isLimitedMode: boolean;
-  //   connectedName: string | undefined;
-  //   connectedController: any;
-  //   connectedNetworkSignature: string | undefined;
-  //   isUnknownNetwork: boolean;
-  //   fakeConnection: boolean;
-
-  //   isWebsocketConnected: boolean;
-  //   websocketConnectionStatus: ConnectionStatus;
-  //   pcbCode: number;
-  //   productCode: number;
-  //   network: Network | null | undefined;
-};
+export type TMacObject = z.infer<typeof MacObjectSchema>;
+export const MacObjectSchema = z.object({
+  mac: z.string(),
+  rssi: z.number(),
+});
 
 type ConnectOptions = {
   devices?: DeviceConnectionCriteria[] | null;
