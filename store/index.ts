@@ -46,178 +46,16 @@ import { MacObjectSchema, TStringSchema } from "./types";
 //   network: Network | null | undefined;
 // };
 
-/** TOdo: co potřebuju?
- * - GOAL: mít cached informace o aktuálním FW, MAC, name, config
- *
- * 1. Po připojení nacachovat (vlastní funkcí)
- *     - Udělat funkci loadData
- *     - Vystavit FW, MAC, name, config ve statu
- *     - Umět tyto informace vyčíst z Storu
- * 2. Umět tyto informace mutovat
- * 3. Refactor Connection Contextu + Hooky
- */
+const SHOW_LOGS = false;
 
-// type SpectodaStoreState = typeof state;
-// const state = {
-//   queries: {},
-//   connectedMacs: [] as TMacObject[],
-//   disconnectedMacs: [] as TMacObject[],
-//   configString: null as string | null,
-//   fwVersion: null as TFwVersion | null,
-//   mac: null as TMacObject["mac"] | null,
-//   name: null as TControllerName | null,
-// };
-
-// at se zbytecne tahaji data ktere jsou irelevantni pro Appku
-// napr getConnectedPeers jsou naprd
-// data vytahuju v moment kdy je chci getnout, ne kdy je menim
-
-// export type SpectodaConnectionMethods = {
-//   // getdata: () => Promise<void>;
-//   //   fwVersion: () => Promise<SpectodaStoreState["fwVersion"]>;
-//   //   peersAndMacs: () => Promise<SpectodaStoreState["connectedMacs"]>;
-//   //   name: () => Promise<SpectodaStoreState["name"]>;
-//   // };
-//   //   connect: (params?: ConnectOptions) => Promise<unknown>;
-//   //   disconnect: () => Promise<void>;
-//   //   upload: (tngl: string) => Promise<void>;
-//   //   assignConnector: (mac: ConnectorType) => Promise<void>;
-//   //   activateFakeDevice: (mac: string[]) => void;
-//   //   isActiveMac: (mac: string | string[] | undefined) => boolean;
-//   //   getAndSetPeers: () => Promise<void>;
-//   //   getConnectedPeersInfo: () => Promise<unknown>;
-//   //   setIsUploading: (isUploading: boolean) => void;
-//   //   setFakeConnection: (fakeConnection: boolean) => void;
-// };
-
-// const methods = (set, get) => {
-//   return {
-//     // po write config musim invalidovat vsechny relevantni veci v cache
-//     // tyhle data uz nejsou nejsou fresh?? odkud to fetchnout
-
-//     // ?
-//     // jak delat timeout pro posilani do DB - je to vubec potreba?
-
-//     /**
-//      *
-//      */
-//     getFwVersion: async () => {
-//       const fwVersionData = await spectoda.getFwVersion();
-//       const fwVersionValidation = FwVersionSchema.safeParse(fwVersionData);
-//       if (!fwVersionValidation.success) {
-//         console.error("getFwVersion failed due to validation error:", fwVersionValidation.error.errors[0]);
-//         return null;
-//       }
-
-//       set({
-//         ...get(),
-//         fwVersion: fwVersionValidation.data,
-//       });
-
-//       return fwVersionValidation.data;
-//     },
-
-//     /**
-//      *
-//      */
-//     getPeersAndMacs: async () => {
-//       const peersData = await spectoda.getConnectedPeersInfo();
-//       const peersValidation = z.array(MacObjectSchema).safeParse(peersData);
-//       if (!peersValidation.success) {
-//         console.error("getPeersAndMacs failed due to validation error:", peersValidation.error.errors[0]);
-//         return [];
-//       }
-
-//       const peers = peersValidation.data;
-//       const mac = peers[0].mac;
-
-//       set({
-//         ...get(),
-//         connectedMacs: peers,
-//         mac,
-//       });
-
-//       return peers;
-//     },
-
-//     /**
-//      *
-//      */
-//     name: async () => {
-//       data: "value";
-//       isStale: false; // boolean value saying if cache is valid
-//       get: () => {
-//         // If isStale, will refetch
-//         // otherwise return data
-//       };
-//       set: () => {
-//         // Sets new data
-//         // Calls invalidate + get
-//       };
-//       invalidate: () => {
-//         // Turns cache to stale
-//       };
-//     },
-//     getName: async () => {
-//       const state = get();
-
-//       if (state.name) {
-//         return state.name;
-//       }
-
-//       const name = await spectoda.readControllerName();
-//       const nameValidation = ControllerNameSchema.safeParse(name);
-
-//       if (!nameValidation.success) {
-//         console.error("getName failed due to validation error:", nameValidation.error.errors[0]);
-//         return null;
-//       }
-
-//       set({
-//         ...get(),
-//         name: nameValidation.data,
-//       });
-
-//       return nameValidation.data;
-//     },
-
-//     invalidateName: () => {
-//       set({
-//         ...get(),
-//         name: null,
-//       });
-//     },
-
-//     /**
-//      *
-//      */
-//     loadData: async () => {
-//       try {
-//         await Promise.all([
-//           // get().getFwVersion(), get().getPeersAndMacs(),
-//           get().getName(),
-//         ]);
-//         return;
-//       } catch (error) {
-//         if (error instanceof Error) {
-//           console.error("Load data failed due. Reason:", error.message);
-//         } else if (typeof error === "string") {
-//           console.error(`Load data failed. Reason: ${error}`);
-//         } else {
-//           console.error(`Load data failed for unknown reason.`, error);
-//         }
-//       }
-//     },
-//   };
-// };
-
-// const spectodaStore = createStore<SpectodaStore>()((set, get, rest) => ({
-//   ...methods(set, get, rest),
-//   ...state,
-// }));
+const log = (...args: any[]) => {
+  if (SHOW_LOGS) {
+    console.log(...args);
+  }
+};
 
 type Query<T extends any = string, HasSet extends boolean = true> = {
-  data: T | null;
+  data: T;
   isStale: boolean;
   get: () => Promise<T | null>;
   invalidate: () => void;
@@ -257,7 +95,12 @@ type Queries = {
   >;
 };
 
-type SpectodaStore = Queries & CustomMethods;
+type SpectodaStore = Queries &
+  CustomMethods & {
+    data: {
+      [key in keyof Queries]: Queries[key]["data"];
+    };
+  };
 
 // ?? How to use this with different spectoda objects?
 
@@ -268,6 +111,21 @@ const spectodaStore = createStore<SpectodaStore>()((set, get) => {
       [key]: {
         ...state[key],
         isStale: true,
+      },
+    }));
+  };
+
+  const setQueryItem = (key: keyof SpectodaStore, value: any) => {
+    set(state => ({
+      ...state,
+      [key]: {
+        ...state[key],
+        isStale: false,
+        data: value,
+      },
+      data: {
+        ...state.data,
+        [key]: value,
       },
     }));
   };
@@ -298,17 +156,17 @@ const spectodaStore = createStore<SpectodaStore>()((set, get) => {
       }
   )): Record<Key, Query<DataType, typeof setFunction extends undefined ? false : true>> => {
     const storeItem = {
-      data: null,
+      data: defaultReturn,
       isStale: true,
       get: async () => {
         const state = get();
 
         if (!state[key].isStale) {
-          console.log(`✅ Got ${key} from cache`);
+          log(`✅ Got ${key} from cache`);
           return state[key].data as DataType;
         }
 
-        console.log(`👀 Reading ${key}...`);
+        log(`👀 Reading ${key}...`);
 
         const fetchedData = await fetchFunction();
         const fetchedDataValidation = FetchedDataSchema.safeParse(fetchedData);
@@ -334,26 +192,19 @@ const spectodaStore = createStore<SpectodaStore>()((set, get) => {
           output = fetchedDataValidation.data as unknown as DataType;
         }
 
-        console.log(`✅ Got valid ${key} from controller + value set`, output);
+        log(`✅ Got valid ${key} from controller + value set`, output);
 
-        set({
-          ...state,
-          [key]: {
-            ...state[key],
-            isStale: false,
-            data: output,
-          },
-        });
+        setQueryItem(key, output);
 
         return output as DataType;
       },
       set: async (newData: DataType) => {
         if (typeof setFunction === "function") {
           await setFunction(newData);
-          console.log(`📝 Writing new ${key} to controller...`);
+          log(`📝 Writing new ${key} to controller...`);
         }
 
-        console.log(`📝 Setting ${key}`);
+        log(`📝 Setting ${key}`);
 
         set(state => ({
           ...state,
@@ -461,7 +312,7 @@ const spectodaStore = createStore<SpectodaStore>()((set, get) => {
         connected: z.array(MacObjectSchema),
       }),
       dataTransform: (input: MacObject[]) => {
-        console.log(input);
+        log(input);
         const thisMac = input[0].mac;
         const payload = {
           this: thisMac,
