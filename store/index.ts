@@ -228,18 +228,30 @@ type CustomMethods = {
 };
 
 type Queries = {
-  name: Query<string>;
-  fwVersion: Query<string>;
+  name: Query;
+  fwVersion: Query;
+  signature: Query;
 
-  config: Query<{
-    string: string | null;
-    object: Record<string, any>;
-  }>;
+  codes: Query<
+    {
+      pcbCode: number | null;
+      productCode: number | null;
+    },
+    false
+  >;
+
+  config: Query<
+    {
+      string: string | null;
+      object: Record<string, any>;
+    },
+    false
+  >;
 
   macs: Query<
     {
       this: string | null;
-      connected: string[];
+      connected: MacObject[];
     },
     false
   >;
@@ -267,8 +279,10 @@ const spectodaStore = createStore<SpectodaStore>()((set, get) => {
     dataTransform,
     DataSchema,
     setFunction,
+    defaultReturn = null,
   }: {
     key: Key;
+    defaultReturn?: DataType;
     fetchFunction: () => Promise<FetchedDataType>;
     FetchedDataSchema: z.ZodType<FetchedDataType>;
     setFunction?: (newData: DataType) => Promise<void>;
@@ -295,12 +309,13 @@ const spectodaStore = createStore<SpectodaStore>()((set, get) => {
         }
 
         console.log(`👀 Reading ${key}...`);
+
         const fetchedData = await fetchFunction();
         const fetchedDataValidation = FetchedDataSchema.safeParse(fetchedData);
 
         if (!fetchedDataValidation.success) {
           console.error(`Validating ${key} failed:`, fetchedDataValidation.error.errors[0]);
-          return null as DataType;
+          return defaultReturn as DataType;
         }
 
         let output: DataType;
@@ -311,7 +326,7 @@ const spectodaStore = createStore<SpectodaStore>()((set, get) => {
 
           if (!transformedDataValidation.success) {
             console.error(`Validating ${key} failed:`, transformedDataValidation.error.errors[0]);
-            return null as DataType;
+            return defaultReturn as DataType;
           }
 
           output = transformedDataValidation.data;
@@ -362,6 +377,8 @@ const spectodaStore = createStore<SpectodaStore>()((set, get) => {
         await get().macs.get();
         await get().name.get();
         await get().config.get();
+        await get().signature.get();
+        await get().codes.get();
         return;
       } catch (error) {
         if (error instanceof Error) {
@@ -379,7 +396,7 @@ const spectodaStore = createStore<SpectodaStore>()((set, get) => {
     ...createQuery({
       key: "name",
       FetchedDataSchema: TStringSchema,
-      DataSchema: TStringSchema,
+
       fetchFunction: () => spectoda.readControllerName(),
       setFunction: (...args) => spectoda.writeControllerName(...args),
     }),
@@ -388,6 +405,35 @@ const spectodaStore = createStore<SpectodaStore>()((set, get) => {
       key: "fwVersion",
       FetchedDataSchema: TStringSchema,
       fetchFunction: () => spectoda.getFwVersion(),
+    }),
+
+    ...createQuery({
+      key: "codes",
+      defaultReturn: {
+        pcbCode: null,
+        productCode: null,
+      },
+      FetchedDataSchema: z.object({
+        pcb_code: z.number().nullable(),
+        product_code: z.number().nullable(),
+      }),
+      fetchFunction: () => spectoda.readControllerCodes(),
+      DataSchema: z.object({
+        pcbCode: z.number().nullable(),
+        productCode: z.number().nullable(),
+      }),
+      dataTransform: (data: { pcb_code: number; product_code: number }) => {
+        return {
+          productCode: data.product_code,
+          pcbCode: data.pcb_code,
+        };
+      },
+    }),
+
+    ...createQuery({
+      key: "signature",
+      FetchedDataSchema: TStringSchema,
+      fetchFunction: () => spectoda.readNetworkSignature(),
     }),
 
     ...createQuery({
@@ -409,17 +455,17 @@ const spectodaStore = createStore<SpectodaStore>()((set, get) => {
     ...createQuery({
       key: "macs",
       FetchedDataSchema: z.array(MacObjectSchema),
+      fetchFunction: () => spectoda.getConnectedPeersInfo(),
       DataSchema: z.object({
         this: z.string(),
-        connected: z.array(z.string()),
+        connected: z.array(MacObjectSchema),
       }),
-      fetchFunction: () => spectoda.getConnectedPeersInfo(),
       dataTransform: (input: MacObject[]) => {
         console.log(input);
         const thisMac = input[0].mac;
         const payload = {
           this: thisMac,
-          connected: input.map(peer => peer.mac),
+          connected: input,
         };
 
         return payload;
