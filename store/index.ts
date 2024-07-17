@@ -62,13 +62,13 @@ type Query<T extends any = string, HasSet extends boolean = true> = {
 } & (HasSet extends true ? { set: (newData: T) => Promise<void> } : {});
 
 type CustomMethods = {
-  loadData: () => Promise<void>;
+  loadData: () => Promise<DataObject>;
 };
 
 type Queries = {
-  name: Query;
-  fwVersion: Query;
-  signature: Query;
+  name: Query<string, true>;
+  fwVersion: Query<string, true>;
+  signature: Query<string, true>;
 
   codes: Query<
     {
@@ -95,12 +95,10 @@ type Queries = {
   >;
 };
 
-type SpectodaStore = Queries &
-  CustomMethods & {
-    data: {
-      [key in keyof Queries]: Queries[key]["data"];
-    };
-  };
+type SpectodaStore = Queries & CustomMethods & Record<"data", DataObject>;
+type DataObject = {
+  [key in keyof Queries]: Queries[key]["data"] | null;
+};
 
 // ?? How to use this with different spectoda objects?
 
@@ -224,13 +222,23 @@ const spectodaStore = createStore<SpectodaStore>()((set, get) => {
   const loadData = {
     loadData: async () => {
       try {
-        await get().fwVersion.get();
-        await get().macs.get();
-        await get().name.get();
-        await get().config.get();
-        await get().signature.get();
-        await get().codes.get();
-        return;
+        const results: DataObject = {
+          fwVersion: null,
+          macs: null,
+          name: null,
+          config: null,
+          signature: null,
+          codes: null,
+        };
+
+        results.fwVersion = await get().fwVersion.get();
+        results.macs = await get().macs.get();
+        results.name = await get().name.get();
+        results.config = await get().config.get();
+        results.signature = await get().signature.get();
+        results.codes = await get().codes.get();
+
+        return results;
       } catch (error) {
         if (error instanceof Error) {
           console.error("Load data failed due. Reason:", error.message);
@@ -243,7 +251,7 @@ const spectodaStore = createStore<SpectodaStore>()((set, get) => {
     },
   };
 
-  return {
+  const queries = {
     ...createQuery({
       key: "name",
       FetchedDataSchema: TStringSchema,
@@ -322,6 +330,23 @@ const spectodaStore = createStore<SpectodaStore>()((set, get) => {
         return payload;
       },
     }),
+  };
+
+  const defaultQueryValues = {
+    data: Object.keys(queries).reduce(
+      (acc, key) => {
+        return {
+          ...acc,
+          [key]: queries[key as keyof typeof queries].data,
+        };
+      },
+      {} as SpectodaStore["data"],
+    ),
+  };
+
+  return {
+    ...queries,
+    ...defaultQueryValues,
     ...loadData,
   } satisfies SpectodaStore;
 });
