@@ -1,7 +1,8 @@
 import { z } from "zod";
 import { createStore } from "zustand/vanilla";
 
-import { spectoda } from "@spectoda/spectoda-utils";
+import { safeJSONParse, spectoda } from "@spectoda/spectoda-utils";
+import { MacObject } from "@spectoda/spectoda-utils/utils/SpectodaConnectionContext";
 import { MacObjectSchema, TStringSchema } from "./types";
 
 // type SpectodaStore = SpectodaStoreState & SpectodaConnectionMethods;
@@ -227,9 +228,14 @@ type CustomMethods = {
 };
 
 type Queries = {
-  name: Query;
-  fwVersion: Query;
-  config: Query;
+  name: Query<string>;
+  fwVersion: Query<string>;
+
+  config: Query<{
+    string: string | null;
+    object: Record<string, any>;
+  }>;
+
   macs: Query<
     {
       this: string | null;
@@ -254,17 +260,29 @@ const spectodaStore = createStore<SpectodaStore>()((set, get) => {
     }));
   };
 
-  const createQuery = <T, K extends keyof Queries>({
+  const createQuery = <FetchedDataType, Key extends keyof Queries, DataType>({
     key,
-    getFunction,
-    dataSchema: DataSchema,
+    fetchFunction,
+    FetchedDataSchema,
+    dataTransform,
+    DataSchema,
     setFunction,
   }: {
-    key: K;
-    getFunction: () => Promise<T>;
-    dataSchema: z.Schema<T>;
-    setFunction?: (newData: T) => Promise<void>;
-  }): Record<K, Query<T, typeof setFunction extends undefined ? false : true>> => {
+    key: Key;
+    fetchFunction: () => Promise<FetchedDataType>;
+    FetchedDataSchema: z.ZodType<FetchedDataType>;
+    setFunction?: (newData: DataType) => Promise<void>;
+  } & (
+    | {
+        dataTransform: (fetchedData: FetchedDataType) => DataType;
+        DataSchema: z.ZodType<DataType>;
+      }
+    | {
+        // If DataSchema is not defined, DataSchema = FetchedDataSchema
+        dataTransform?: undefined;
+        DataSchema?: undefined;
+      }
+  )): Record<Key, Query<DataType, typeof setFunction extends undefined ? false : true>> => {
     const storeItem = {
       data: null,
       isStale: true,
@@ -273,34 +291,48 @@ const spectodaStore = createStore<SpectodaStore>()((set, get) => {
 
         if (!state[key].isStale) {
           console.log(`✅ Got ${key} from cache`);
-          return state[key].data as T;
+          return state[key].data as DataType;
         }
 
         console.log(`👀 Reading ${key}...`);
-        const data = await getFunction();
-        const dataValidation = DataSchema.safeParse(data);
+        const fetchedData = await fetchFunction();
+        const fetchedDataValidation = FetchedDataSchema.safeParse(fetchedData);
 
-        if (!dataValidation.success) {
-          console.error(`Validating ${key} failed:`, dataValidation.error.errors[0]);
-          return null as T;
+        if (!fetchedDataValidation.success) {
+          console.error(`Validating ${key} failed:`, fetchedDataValidation.error.errors[0]);
+          return null as DataType;
         }
 
-        console.log(`✅ Got valid ${key} from controller + value set`, dataValidation.data);
+        let output: DataType;
+
+        if (typeof dataTransform === "function" && DataSchema) {
+          const transformed = dataTransform(fetchedDataValidation.data);
+          const transformedDataValidation = DataSchema.safeParse(transformed);
+
+          if (!transformedDataValidation.success) {
+            console.error(`Validating ${key} failed:`, transformedDataValidation.error.errors[0]);
+            return null as DataType;
+          }
+
+          output = transformedDataValidation.data;
+        } else {
+          output = fetchedDataValidation.data as unknown as DataType;
+        }
+
+        console.log(`✅ Got valid ${key} from controller + value set`, output);
 
         set({
           ...state,
           [key]: {
             ...state[key],
             isStale: false,
-            data: dataValidation.data,
+            data: output,
           },
         });
 
-        return dataValidation.data as T;
+        return output as DataType;
       },
-      set: async (newData: T) => {
-        console.log({ newData, a: typeof setFunction });
-
+      set: async (newData: DataType) => {
         if (typeof setFunction === "function") {
           await setFunction(newData);
           console.log(`📝 Writing new ${key} to controller...`);
@@ -320,57 +352,7 @@ const spectodaStore = createStore<SpectodaStore>()((set, get) => {
       invalidate: invalidateItem(key),
     };
 
-    return { [key]: storeItem } as Record<K, typeof storeItem>;
-  };
-
-  const peersAndMacs = {
-    macs: {
-      data: {
-        this: null,
-        connected: [],
-      },
-      isStale: true,
-      get: async () => {
-        const state = get();
-
-        if (!state.macs.isStale) {
-          console.log("✅ Got macs from cache");
-          return state.macs.data;
-        }
-
-        console.log("👀 Reading peers...");
-        const peers = await spectoda.getConnectedPeersInfo();
-        const peersValidation = z.array(MacObjectSchema).safeParse(peers);
-
-        if (!peersValidation.success) {
-          console.error("Peers data validation failed:", peersValidation.error.errors[0]);
-          return {
-            this: null,
-            connected: [],
-          };
-        }
-
-        const thisMac = peersValidation.data[0].mac;
-        const payload = {
-          this: thisMac,
-          connected: peersValidation.data.map(peer => peer.mac),
-        };
-
-        console.log("✅ Got valid macs from controller + value set", peersValidation.data);
-
-        set({
-          ...state,
-          macs: {
-            ...state.macs,
-            isStale: false,
-            data: payload,
-          },
-        });
-
-        return payload;
-      },
-      invalidate: invalidateItem("macs"),
-    },
+    return { [key]: storeItem } as Record<Key, typeof storeItem>;
   };
 
   const loadData = {
@@ -396,21 +378,53 @@ const spectodaStore = createStore<SpectodaStore>()((set, get) => {
   return {
     ...createQuery({
       key: "name",
-      dataSchema: TStringSchema,
-      getFunction: () => spectoda.readControllerName(),
+      FetchedDataSchema: TStringSchema,
+      DataSchema: TStringSchema,
+      fetchFunction: () => spectoda.readControllerName(),
       setFunction: (...args) => spectoda.writeControllerName(...args),
     }),
+
     ...createQuery({
       key: "fwVersion",
-      dataSchema: TStringSchema,
-      getFunction: () => spectoda.getFwVersion(),
+      FetchedDataSchema: TStringSchema,
+      fetchFunction: () => spectoda.getFwVersion(),
     }),
+
     ...createQuery({
       key: "config",
-      dataSchema: TStringSchema,
-      getFunction: () => spectoda.readDeviceConfig(),
+      FetchedDataSchema: TStringSchema,
+      DataSchema: z.object({
+        string: z.string(),
+        object: z.object({}).catchall(z.unknown()),
+      }),
+      fetchFunction: () => spectoda.readDeviceConfig(),
+      dataTransform: (input: string) => {
+        return {
+          string: input,
+          object: safeJSONParse(input),
+        };
+      },
     }),
-    ...peersAndMacs,
+
+    ...createQuery({
+      key: "macs",
+      FetchedDataSchema: z.array(MacObjectSchema),
+      DataSchema: z.object({
+        this: z.string(),
+        connected: z.array(z.string()),
+      }),
+      fetchFunction: () => spectoda.getConnectedPeersInfo(),
+      dataTransform: (input: MacObject[]) => {
+        console.log(input);
+        const thisMac = input[0].mac;
+        const payload = {
+          this: thisMac,
+          connected: input.map(peer => peer.mac),
+        };
+
+        return payload;
+      },
+    }),
     ...loadData,
   } satisfies SpectodaStore;
 });
