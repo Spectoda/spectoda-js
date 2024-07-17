@@ -293,6 +293,7 @@ const spectodaStore = createStore<SpectodaStore>()((set, get) => {
       key: "signature",
       FetchedDataSchema: TStringSchema,
       fetchFunction: () => spectoda.readNetworkSignature(),
+      setFunction: () => Promise.resolve(),
     }),
 
     ...createQuery({
