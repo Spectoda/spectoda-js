@@ -1208,10 +1208,39 @@ export class TnglCompiler {
 
   compileBerryCode(berry_code) {
     // TODO: Get bytes in WASM and then only send Berry bytecode
+
     let reg = berry_code.match(/execBerry\(\s*[\s\S]*?\s*\);/);
     if (!reg) {
       logging.error("Failed to compile berry code");
       return;
+    }
+
+    // First we match all values addresses
+    let value_addresses = reg[0].match(/&[a-z_][\w]*/gi);
+    console.log(value_addresses);
+
+    // We search for in the declarations stack
+
+    if (value_addresses != null) {
+        for (let variable_name of value_addresses) {
+            let address = -1;
+            variable_name = variable_name.slice(1);
+            for (let i = this.#var_declarations.length - 1; i >= 0; i--) {
+                const declaration = this.#var_declarations[i];
+                if (declaration.name === variable_name) {
+                  address = declaration.address;
+                  break;
+                }
+            }
+    
+            if (address === -1) {
+              logging.error(`Failed to find variable address [${variable_name}] in Berry code.`);
+              return;
+            }
+    
+            reg[0] = reg[0].replace(`&${variable_name}`, address);
+            console.log("Replaced", `&${variable_name}`, "with", address);
+        }
     }
 
     let code = reg[0].slice(10, -2);
