@@ -2,7 +2,7 @@ import { z } from "zod";
 import { createStore } from "zustand/vanilla";
 
 import { spectoda } from "@spectoda/spectoda-utils";
-import { ControllerNameSchema, FwVersionSchema, MacObjectSchema } from "./types";
+import { MacObjectSchema, TStringSchema } from "./types";
 
 // type SpectodaStore = SpectodaStoreState & SpectodaConnectionMethods;
 // type MethodsFunction = (...params: Parameters<StateCreator<SpectodaStore>>) => SpectodaConnectionMethods;
@@ -222,9 +222,14 @@ type Query<T extends any = string, HasSet extends boolean = true> = {
   invalidate: () => void;
 } & (HasSet extends true ? { set: (newData: T) => Promise<void> } : {});
 
+type CustomMethods = {
+  loadData: () => Promise<void>;
+};
+
 type Queries = {
   name: Query;
   fwVersion: Query;
+  config: Query;
   macs: Query<
     {
       this: string | null;
@@ -232,15 +237,9 @@ type Queries = {
     },
     false
   >;
-
-  // todo: config
 };
 
-type Methods = {
-  loadData: () => Promise<void>;
-};
-
-type SpectodaStore = Queries & Methods;
+type SpectodaStore = Queries & CustomMethods;
 
 // ?? How to use this with different spectoda objects?
 
@@ -286,7 +285,7 @@ const spectodaStore = createStore<SpectodaStore>()((set, get) => {
           return null as T;
         }
 
-        console.log(`✅ Got valid ${key} from controller + value set`);
+        console.log(`✅ Got valid ${key} from controller + value set`, dataValidation.data);
 
         set({
           ...state,
@@ -380,6 +379,7 @@ const spectodaStore = createStore<SpectodaStore>()((set, get) => {
         await get().fwVersion.get();
         await get().macs.get();
         await get().name.get();
+        await get().config.get();
         return;
       } catch (error) {
         if (error instanceof Error) {
@@ -396,14 +396,19 @@ const spectodaStore = createStore<SpectodaStore>()((set, get) => {
   return {
     ...createQuery({
       key: "name",
-      dataSchema: ControllerNameSchema,
+      dataSchema: TStringSchema,
       getFunction: () => spectoda.readControllerName(),
       setFunction: (...args) => spectoda.writeControllerName(...args),
     }),
     ...createQuery({
       key: "fwVersion",
-      dataSchema: FwVersionSchema,
+      dataSchema: TStringSchema,
       getFunction: () => spectoda.getFwVersion(),
+    }),
+    ...createQuery({
+      key: "config",
+      dataSchema: TStringSchema,
+      getFunction: () => spectoda.readDeviceConfig(),
     }),
     ...peersAndMacs,
     ...loadData,

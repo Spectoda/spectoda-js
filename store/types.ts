@@ -24,11 +24,8 @@ export const CONNECTORS = [
 
 export type ConnectorType = (typeof CONNECTORS)[number]["key"];
 
-export type TFwVersion = z.infer<typeof FwVersionSchema>;
-export const FwVersionSchema = z.string();
-
-export type TControllerName = z.infer<typeof ControllerNameSchema>;
-export const ControllerNameSchema = z.string();
+export type TString = z.infer<typeof TStringSchema>;
+export const TStringSchema = z.string();
 
 export type TMacObject = z.infer<typeof MacObjectSchema>;
 export const MacObjectSchema = z.object({
