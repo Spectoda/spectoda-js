@@ -96,7 +96,7 @@ type Queries = {
 };
 
 type SpectodaStore = Queries & CustomMethods & Record<"data", DataObject>;
-type DataObject = {
+export type DataObject = {
   [key in keyof Queries]: Queries[key]["data"] | null;
 };
 
