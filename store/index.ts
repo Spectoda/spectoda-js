@@ -100,8 +100,6 @@ export type DataObject = {
   [key in keyof Queries]: Queries[key]["data"] | null;
 };
 
-// ?? How to use this with different spectoda objects?
-
 const spectodaStore = createStore<SpectodaStore>()((set, get) => {
   const invalidateItem = (key: keyof SpectodaStore) => () => {
     set(state => ({
@@ -135,7 +133,7 @@ const spectodaStore = createStore<SpectodaStore>()((set, get) => {
     dataTransform,
     DataSchema,
     setFunction,
-    defaultReturn = null,
+    defaultReturn = null as DataType,
   }: {
     key: Key;
     defaultReturn?: DataType;
