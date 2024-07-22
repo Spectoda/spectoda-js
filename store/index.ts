@@ -3,8 +3,7 @@ import { devtools } from "zustand/middleware";
 import { createStore } from "zustand/vanilla";
 
 import { safeJSONParse, spectoda } from "@spectoda/spectoda-utils";
-import { MacObject } from "@spectoda/spectoda-utils/utils/SpectodaConnectionContext";
-import { MacObjectSchema, TStringSchema } from "./types";
+import { MacObjectSchema, TMacObject, TStringSchema } from "./types";
 
 // type SpectodaStore = SpectodaStoreState & SpectodaConnectionMethods;
 // type MethodsFunction = (...params: Parameters<StateCreator<SpectodaStore>>) => SpectodaConnectionMethods;
@@ -62,10 +61,6 @@ type Query<T extends any = string, HasSet extends boolean = true> = {
   invalidate: () => void;
 } & (HasSet extends true ? { set: (newData: T) => Promise<void> } : {});
 
-type CustomMethods = {
-  loadData: () => Promise<DataObject>;
-};
-
 type Queries = {
   name: Query<string, true>;
   fwVersion: Query<string, true>;
@@ -91,13 +86,14 @@ type Queries = {
   macs: Query<
     {
       this: string | null;
-      connected: MacObject[];
+      connected: TMacObject[];
     },
     false
   >;
 };
 
 type SpectodaStore = Queries & CustomMethods & Record<"data", DataObject>;
+
 export type DataObject = {
   [key in keyof Queries]: Queries[key]["data"] | null;
 };
@@ -216,8 +212,6 @@ const spectodaStore = createStore<SpectodaStore>()(
 
       const loadData = {
         loadData: async () => {
-          console.log("TRIGGERED LOADDATA");
-
           try {
             const results: DataObject = {
               fwVersion: null,
@@ -252,7 +246,6 @@ const spectodaStore = createStore<SpectodaStore>()(
         ...createQuery({
           key: "name",
           FetchedDataSchema: TStringSchema,
-
           fetchFunction: () => spectoda.readControllerName(),
           setFunction: (...args) => spectoda.writeControllerName(...args),
         }),
@@ -314,12 +307,16 @@ const spectodaStore = createStore<SpectodaStore>()(
         ...createQuery({
           key: "macs",
           FetchedDataSchema: z.array(MacObjectSchema),
+          defaultReturn: {
+            this: "",
+            connected: [],
+          },
           fetchFunction: () => spectoda.getConnectedPeersInfo(),
           DataSchema: z.object({
             this: z.string(),
             connected: z.array(MacObjectSchema),
           }),
-          dataTransform: (input: MacObject[]) => {
+          dataTransform: (input: TMacObject[]) => {
             log(input);
             const thisMac = input[0].mac;
             const payload = {
@@ -344,7 +341,23 @@ const spectodaStore = createStore<SpectodaStore>()(
         ),
       };
 
+      // ! TODO when Spectoda Runtime will have a way to cleanup listeners
+      // const initializeSpectoda = (spectodaObject)=>{
+      //   // initialize spectoda.on("connected" | "disconnected" | ...
+      // }
+
+      // const cleanupSpectoda = () => {
+      //   // cleanup listeners
+      // }
+
+      const invalidateAll = () => {
+        Object.keys(queries).forEach(key => {
+          queries[key as keyof typeof queries].invalidate();
+        });
+      };
+
       return {
+        invalidateAll: invalidateAll,
         ...queries,
         ...defaultQueryValues,
         ...loadData,
@@ -355,5 +368,12 @@ const spectodaStore = createStore<SpectodaStore>()(
     },
   ),
 );
+
+type CustomMethods = {
+  invalidateAll: () => void;
+  loadData: () => Promise<DataObject>;
+  // initializeSpectoda: ()=>void;
+  // cleanupSpectoda: ()=>void;
+};
 
 export { spectodaStore };
