@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { devtools } from "zustand/middleware";
+import { devtools, subscribeWithSelector } from "zustand/middleware";
 import { createStore } from "zustand/vanilla";
 
 import { safeJSONParse, spectoda } from "@spectoda/spectoda-utils";
@@ -92,15 +92,15 @@ type Queries = {
   >;
 };
 
-type SpectodaStore = Queries & CustomMethods & Record<"data", DataObject>;
+type SpectodaStore = Queries & CustomMethods & Record<"data", SpectodaDataObject>;
 
-export type DataObject = {
+export type SpectodaDataObject = {
   [key in keyof Queries]: Queries[key]["data"] | null;
 };
 
 const spectodaStore = createStore<SpectodaStore>()(
   devtools(
-    (set, get) => {
+    subscribeWithSelector((set, get) => {
       const invalidateItem = (key: keyof SpectodaStore) => () => {
         set(state => ({
           ...state,
@@ -212,8 +212,10 @@ const spectodaStore = createStore<SpectodaStore>()(
 
       const loadData = {
         loadData: async () => {
+          get().startBatching();
+
           try {
-            const results: DataObject = {
+            const results: SpectodaDataObject = {
               fwVersion: null,
               macs: null,
               name: null,
@@ -238,6 +240,8 @@ const spectodaStore = createStore<SpectodaStore>()(
             } else {
               console.error(`Load data failed for unknown reason.`, error);
             }
+          } finally {
+            get().endBatching();
           }
         },
       };
@@ -357,12 +361,16 @@ const spectodaStore = createStore<SpectodaStore>()(
       };
 
       return {
-        invalidateAll: invalidateAll,
+        invalidateAll,
         ...queries,
         ...defaultQueryValues,
         ...loadData,
+
+        isBatching: false,
+        startBatching: () => set({ isBatching: true }),
+        endBatching: () => set({ isBatching: false }),
       } satisfies SpectodaStore;
-    },
+    }),
     {
       name: "Spectoda object store v1",
     },
@@ -371,9 +379,13 @@ const spectodaStore = createStore<SpectodaStore>()(
 
 type CustomMethods = {
   invalidateAll: () => void;
-  loadData: () => Promise<DataObject>;
+  loadData: () => Promise<SpectodaDataObject>;
   // initializeSpectoda: ()=>void;
   // cleanupSpectoda: ()=>void;
+
+  isBatching: boolean;
+  startBatching: () => void;
+  endBatching: () => void;
 };
 
 export { spectodaStore };
