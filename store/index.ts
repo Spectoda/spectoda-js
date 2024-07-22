@@ -83,6 +83,7 @@ type Queries = {
     {
       string: string | null;
       object: Record<string, any>;
+      lastReadTime: Date | null;
     },
     false
   >;
@@ -269,8 +270,8 @@ const spectodaStore = createStore<SpectodaStore>()(
             productCode: null,
           },
           FetchedDataSchema: z.object({
-            pcb_code: z.number().nullable(),
-            product_code: z.number().nullable(),
+            pcb_code: z.number(),
+            product_code: z.number(),
           }),
           fetchFunction: () => spectoda.readControllerCodes(),
           DataSchema: z.object({
@@ -297,12 +298,14 @@ const spectodaStore = createStore<SpectodaStore>()(
           FetchedDataSchema: TStringSchema,
           DataSchema: z.object({
             string: z.string(),
+            lastReadTime: z.date(),
             object: z.object({}).catchall(z.unknown()),
           }),
           fetchFunction: () => spectoda.readDeviceConfig(),
           dataTransform: (input: string) => {
             return {
               string: input,
+              lastReadTime: new Date(),
               object: safeJSONParse(input),
             };
           },
