@@ -47,7 +47,7 @@ import { MacObjectSchema, TStringSchema } from "./types";
 //   network: Network | null | undefined;
 // };
 
-const SHOW_LOGS = true;
+const SHOW_LOGS = false;
 
 const log = (...args: any[]) => {
   if (SHOW_LOGS) {
