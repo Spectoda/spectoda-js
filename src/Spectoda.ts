@@ -28,6 +28,8 @@ import { SpectodaRuntime, allEventsEmitter } from "./SpectodaRuntime";
 import { BROADCAST_ID, MAX_UNSIGNED_NUMBER } from "./constants";
 import { WEBSOCKET_URL } from "./remote-control";
 
+// for FW verion 0.12.X and up
+
 // should not create more than one object!
 // the destruction of the Spectoda is not well implemented
 
