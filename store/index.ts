@@ -214,24 +214,22 @@ const spectodaStore = createStore<SpectodaStore>()(
         loadData: async () => {
           get().startBatching();
 
-          try {
-            const results: SpectodaDataObject = {
-              fwVersion: null,
-              macs: null,
-              name: null,
-              config: null,
-              signature: null,
-              codes: null,
-            };
+          const results: SpectodaDataObject = {
+            fwVersion: null,
+            macs: null,
+            name: null,
+            config: null,
+            signature: null,
+            codes: null,
+          };
 
+          try {
             results.fwVersion = await get().fwVersion.get();
             results.macs = await get().macs.get();
             results.name = await get().name.get();
             results.config = await get().config.get();
             results.signature = await get().signature.get();
             results.codes = await get().codes.get();
-
-            return results;
           } catch (error) {
             if (error instanceof Error) {
               console.error("Load data failed due. Reason:", error.message);
@@ -242,6 +240,7 @@ const spectodaStore = createStore<SpectodaStore>()(
             }
           } finally {
             get().endBatching();
+            return results;
           }
         },
       };
