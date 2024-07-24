@@ -321,7 +321,7 @@ const spectodaStore = createStore<SpectodaStore>()(
           }),
           dataTransform: (input: TMacObject[]) => {
             log(input);
-            const thisMac = input[0].mac;
+            const thisMac = input[0]?.mac;
             const payload = {
               this: thisMac,
               connected: input,
