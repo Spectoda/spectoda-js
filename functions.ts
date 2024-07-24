@@ -1,3 +1,5 @@
+// @ts-nocheck TODO REFACTOR SPECTODA-JS IN THE NEXT MAJOR VERSION
+
 import { createNanoEvents } from "nanoevents";
 import { TnglCodeParser } from "./SpectodaParser";
 import { PERCENTAGE_MAX, PERCENTAGE_MIN } from "./constants";

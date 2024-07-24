@@ -1,12 +1,13 @@
+// @ts-nocheck TODO REFACTOR SPECTODA-JS IN THE NEXT MAJOR VERSION
 // npm install --save @types/w3c-web-serial
 /// <reference types="w3c-web-serial" />
 
+import { crc32, isNode, numberToBytes, sleep, stringToBytes, toBytes } from "../../functions";
 import { logging } from "../../logging";
-import { sleep, toBytes, numberToBytes, crc32, stringToBytes, isNode } from "../../functions";
-import { TimeTrack } from "../../TimeTrack.js";
 import { COMMAND_FLAGS, NULL_VALUE, SpectodaRuntime } from "../../SpectodaRuntime";
-import { TnglWriter } from "../../TnglWriter.js";
+import { TimeTrack } from "../../TimeTrack.js";
 import { TnglReader } from "../../TnglReader.js";
+import { TnglWriter } from "../../TnglWriter.js";
 
 let { SerialPort, ReadlineParser }: { SerialPort: any; ReadlineParser: any } = { SerialPort: null, ReadlineParser: null };
 
