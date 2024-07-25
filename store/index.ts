@@ -55,7 +55,7 @@ const log = (...args: any[]) => {
 };
 
 type Query<T extends any = string, HasSet extends boolean = true> = {
-  data: T;
+  data: T | null;
   isStale: boolean;
   get: () => Promise<T | null>;
   invalidate: () => void;
@@ -101,7 +101,7 @@ export type SpectodaDataObject = {
 const spectodaStore = createStore<SpectodaStore>()(
   devtools(
     subscribeWithSelector((set, get) => {
-      const invalidateItem = (key: keyof SpectodaStore) => () => {
+      const invalidateItem = (key: keyof Queries) => () => {
         set(state => ({
           ...state,
           [key]: {
@@ -111,7 +111,7 @@ const spectodaStore = createStore<SpectodaStore>()(
         }));
       };
 
-      const setQueryItem = (key: keyof SpectodaStore, value: any) => {
+      const setQueryItem = (key: keyof Queries, value: any) => {
         set(state => ({
           ...state,
           [key]: {
@@ -126,7 +126,7 @@ const spectodaStore = createStore<SpectodaStore>()(
         }));
       };
 
-      const createQuery = <FetchedDataType, Key extends keyof Queries, DataType>({
+      const createQuery = <Key extends keyof Queries, FetchedType, DataType extends Queries[Key]["data"]>({
         key,
         fetchFunction,
         FetchedDataSchema,
@@ -137,21 +137,13 @@ const spectodaStore = createStore<SpectodaStore>()(
       }: {
         key: Key;
         defaultReturn?: DataType;
-        fetchFunction: () => Promise<FetchedDataType>;
-        FetchedDataSchema: z.ZodType<FetchedDataType>;
+        fetchFunction: () => Promise<FetchedType>;
+        FetchedDataSchema: z.ZodType<FetchedType>;
+        dataTransform?: (fetchedData: FetchedType) => DataType | null;
+        DataSchema?: z.ZodType<DataType>;
         setFunction?: (newData: DataType) => Promise<void>;
-      } & (
-        | {
-            dataTransform: (fetchedData: FetchedDataType) => DataType;
-            DataSchema: z.ZodType<DataType>;
-          }
-        | {
-            // If DataSchema is not defined, DataSchema = FetchedDataSchema
-            dataTransform?: undefined;
-            DataSchema?: undefined;
-          }
-      )): Record<Key, Query<DataType, typeof setFunction extends undefined ? false : true>> => {
-        const storeItem = {
+      }): Record<Key, Query<DataType, typeof setFunction extends undefined ? false : true>> => {
+        const storeItem: Query<DataType, typeof setFunction extends undefined ? false : true> = {
           data: defaultReturn,
           isStale: true,
           get: async () => {
@@ -194,6 +186,7 @@ const spectodaStore = createStore<SpectodaStore>()(
 
             return output as DataType;
           },
+          invalidate: invalidateItem(key),
           set: async (newData: DataType) => {
             if (typeof setFunction === "function") {
               await setFunction(newData);
@@ -204,7 +197,6 @@ const spectodaStore = createStore<SpectodaStore>()(
 
             setQueryItem(key, newData);
           },
-          invalidate: invalidateItem(key),
         };
 
         return { [key]: storeItem } as Record<Key, typeof storeItem>;
@@ -302,7 +294,7 @@ const spectodaStore = createStore<SpectodaStore>()(
             return {
               string: input,
               lastReadTime: new Date(),
-              object: safeJSONParse(input),
+              object: z.object({}).safeParse(safeJSONParse(input)).data ?? {},
             };
           },
         }),
@@ -321,7 +313,7 @@ const spectodaStore = createStore<SpectodaStore>()(
           }),
           dataTransform: (input: TMacObject[]) => {
             log(input);
-            const thisMac = input[0]?.mac;
+            const thisMac = input[0]?.mac ?? null;
             const payload = {
               this: thisMac,
               connected: input,
