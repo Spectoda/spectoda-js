@@ -208,20 +208,20 @@ export class Spectoda_JS {
             event_array[i].timestamp_utc = Date.now();
           }
 
-          if (logging.level >= 4 && event_array.length) {
+          if (logging.level >= 2 && event_array.length) {
             let debug_log = "";
 
             {
               const e = event_array[0];
-              debug_log += `${e.id} -> $${e.label}: ${e.value} [${e.timestamp}ms] (local)`;
+              debug_log += `@${e.id} -> 🕹️$${e.label}: ${e.value} [🕒 ${e.timestamp}ms]`;
             }
 
             for (let i = 1; i < event_array.length; i++) {
               const e = event_array[i];
-              debug_log += `\n${e.id} -> $${e.label}: ${e.value} [${e.timestamp}ms] (local)`;
+              debug_log += `\n@${e.id} -> 🕹️$${e.label}: ${e.value} [🕒 ${e.timestamp}ms]`;
             }
 
-            logging.debug(debug_log);
+            console.log(debug_log);
           }
 
           this.#runtimeReference.emit("emitted_events", event_array);
@@ -277,26 +277,26 @@ export class Spectoda_JS {
           //   return;
           // }
 
-          const name = this.#runtimeReference.WIP_name ? this.#runtimeReference.WIP_name : "Spectoda";
+          const name = (this.#runtimeReference.WIP_name ? this.#runtimeReference.WIP_name : "APP").substring(0, 5);
 
           switch (level) {
             case 5:
-              logging.verbose(`<${name}> [V][${filename}]: ${message}`);
+              logging.verbose(`🖥️ $${name}: \t[V][${filename}]: ${message}`);
               break;
             case 4:
-              logging.debug(`<${name}> [D][${filename}]: ${message}`);
+              logging.debug(`🖥️ $${name}: \t[D][${filename}]: ${message}`);
               break;
             case 3:
-              logging.info(`<${name}> [I][${filename}]: ${message}`);
+              logging.info(`🖥️ $${name}: \t[I][${filename}]: ${message}`);
               break;
             case 2:
-              logging.warn(`<${name}> [W][${filename}]: ${message}`);
+              logging.warn(`🖥️ $${name}: \t[W][${filename}]: ${message}`);
               break;
             case 1:
-              logging.error(`<${name}> [E][${filename}]: ${message}`);
+              logging.error(`🖥️ $${name}: \t[E][${filename}]: ${message}`);
               break;
             default:
-              logging.error(`<${name}> [?][${filename}]: ${message}`);
+              logging.error(`🖥️ $${name}: \t[?][${filename}]: ${message}`);
               break;
           }
         },

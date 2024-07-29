@@ -597,6 +597,8 @@ export class SpectodaRuntime {
   };
 
   disconnect() {
+    logging.verbose("disconnect()");
+
     const item = new Query(Query.TYPE_DISCONNECT);
     this.#process(item);
     return item.promise;
@@ -618,6 +620,8 @@ export class SpectodaRuntime {
   };
 
   connected() {
+    logging.verbose("connected()");
+
     const item = new Query(Query.TYPE_CONNECTED);
     this.#process(item);
     return item.promise;
@@ -630,6 +634,8 @@ export class SpectodaRuntime {
   }
 
   execute(bytes, bytes_label, timeout = 5000) {
+    logging.verbose("execute", { bytes, bytes_label, timeout });
+
     if (timeout < 100) {
       logging.error("Timeout is too short.");
       return Promise.reject("InvalidTimeout");
@@ -658,6 +664,8 @@ export class SpectodaRuntime {
   }
 
   request(bytes, read_response = true, timeout = 5000) {
+    logging.verbose("request", { bytes, read_response, timeout });
+
     if (timeout < 100) {
       logging.error("Timeout is too short.");
       return Promise.reject("InvalidTimeout");
@@ -670,6 +678,8 @@ export class SpectodaRuntime {
   }
 
   syncClock() {
+    logging.verbose("syncClock()");
+
     const item = new Query(Query.TYPE_GET_CLOCK, this.clock);
 
     for (let i = 0; i < this.#queue.length; i++) {
@@ -688,6 +698,8 @@ export class SpectodaRuntime {
   }
 
   setClock() {
+    logging.verbose("setClock()");
+
     const item = new Query(Query.TYPE_SET_CLOCK, this.clock);
     this.#process(item);
     return item.promise;
@@ -709,6 +721,8 @@ export class SpectodaRuntime {
   // }
 
   updateFW(firmware_bytes) {
+    logging.verbose("updateFW()");
+
     const item = new Query(Query.TYPE_FIRMWARE_UPDATE, firmware_bytes);
 
     for (let i = 0; i < this.#queue.length; i++) {
@@ -724,6 +738,8 @@ export class SpectodaRuntime {
   }
 
   destroyConnector() {
+    logging.verbose("destroyConnector()");
+
     const item = new Query(Query.TYPE_DESTROY);
 
     for (let i = 0; i < this.#queue.length; i++) {
@@ -748,6 +764,7 @@ export class SpectodaRuntime {
       this.#processing = true;
 
       // spawn async function to handle the transmittion one item at the time
+
       (async () => {
         await this.#inicilize();
         await this.spectoda.waitForInitilize();
@@ -1056,7 +1073,8 @@ export class SpectodaRuntime {
   }
 
   readVariableAddress(variable_address, device_id) {
-    logging.verbose("readVariableAddress", { variable_address, device_id });
+    logging.verbose("readVariableAddress()", { variable_address, device_id });
+
     return this.spectoda.readVariableAddress(variable_address, device_id);
   }
 

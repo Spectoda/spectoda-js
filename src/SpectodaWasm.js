@@ -1,3 +1,6 @@
+// TODO: Get this typescript types working
+/// <reference path="../../../../webassembly/builds/DEBUG_DEV_0.11.0_20240728.d.ts" />
+
 import { TimeTrack } from "../TimeTrack";
 import { logging } from "../logging";
 

@@ -1,7 +1,7 @@
-import { createNanoEvents } from "../functions";
+import { createNanoEvents, sleep } from "../functions";
 import { logging } from "../logging";
 import { LogEntry, RingLogBuffer } from "./LogBuffer";
-import { SpectodaWasm } from "./SpectodaWasm.js";
+import { SpectodaWasm } from "./SpectodaWasm";
 
 export class PreviewController {
   #macAddress;
@@ -133,7 +133,7 @@ export class PreviewController {
         },
 
         _onSynchronize: synchronization_object => {
-          // logging.debug("_onSynchronize", synchronization_object);
+          logging.debug("_onSynchronize", synchronization_object);
 
           return true;
         },
@@ -168,24 +168,24 @@ export class PreviewController {
 
           switch (level) {
             case 5:
-              logging.verbose(`<${this.mac}> [V][${filename}]: ${message}`);
+              logging.verbose(`🖥️ $${this.label}: \t[V][${filename}]: ${message}`);
               break;
             case 4:
-              logging.debug(`<${this.mac}> [D][${filename}]: ${message}`);
+              logging.debug(`🖥️ $${this.label}: \t[D][${filename}]: ${message}`);
               break;
             case 3:
-              logging.info(`<${this.mac}> [I][${filename}]: ${message}`);
+              logging.info(`🖥️ $${this.label}: \t[I][${filename}]: ${message}`);
               break;
             case 2:
-              logging.warn(`<${this.mac}> [W][${filename}]: ${message}`);
+              logging.warn(`🖥️ $${this.label}:\t[W][${filename}]: ${message}`);
               this.#eventEmitter.emit("warn", logEntry);
               break;
             case 1:
-              logging.error(`<${this.mac}> [E][${filename}]: ${message}`);
+              logging.error(`🖥️ $${this.label}: \t[E][${filename}]: ${message}`);
               this.#eventEmitter.emit("error", logEntry);
               break;
             default:
-              logging.error(`<${this.mac}> [?][${filename}]: ${message}`);
+              logging.error(`🖥️ $${this.label}: \t[?][${filename}]: ${message}`);
               break;
           }
         },
@@ -227,10 +227,6 @@ export class PreviewController {
       };
 
       this.#instance = SpectodaWasm.Spectoda_WASM.implement(PreviewControllerImplementation);
-
-      // const label = this.#config.controller?.label ? this.#config.controller?.label : "Spect";
-      // const id_offset = this.#config.controller?.id_offset ? this.#config.controller?.id_offset : 0;
-      // const brightness = this.#config.controller?.brightness ? this.#config.controller?.brightness : 255;
 
       this.#instance.init(this.#macAddress, JSON.stringify(this.#config));
       this.#instance.begin();
