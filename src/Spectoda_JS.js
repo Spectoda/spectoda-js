@@ -175,30 +175,31 @@ export class Spectoda_JS {
           }
         },
 
+        // ! Deprecate
         _onEvents: event_array => {
           logging.verbose("_onEvents", event_array);
 
-          for (let i = 0; i < event_array.length; i++) {
-            event_array[i].timestamp_utc = Date.now();
-          }
+          // for (let i = 0; i < event_array.length; i++) {
+          //   event_array[i].timestamp_utc = Date.now();
+          // }
 
-          if (logging.level >= 3 && event_array.length) {
-            let debug_log = "";
+          // if (logging.level >= 3 && event_array.length) {
+          //   let debug_log = "";
 
-            {
-              const e = event_array[0];
-              debug_log += `${e.id} -> $${e.label}: ${e.value} [${e.timestamp}ms]`;
-            }
+          //   {
+          //     const e = event_array[0];
+          //     debug_log += `@${e.id} -> 🕹️$${e.label}: ${e.value} [🕒 ${e.timestamp}ms]`;
+          //   }
 
-            for (let i = 1; i < event_array.length; i++) {
-              const e = event_array[i];
-              debug_log += `\n${e.id} -> $${e.label}: ${e.value} [${e.timestamp}ms]`;
-            }
+          //   for (let i = 1; i < event_array.length; i++) {
+          //     const e = event_array[i];
+          //     debug_log += `\n@${e.id} -> 🕹️$${e.label}: ${e.value} [🕒 ${e.timestamp}ms]`;
+          //   }
 
-            logging.info(debug_log);
-          }
+          //   logging.info(debug_log);
+          // }
 
-          this.#runtimeReference.emit("emitted_global_events", event_array);
+          // this.#runtimeReference.emit("emitted_global_events", event_array);
         },
 
         _onLocalEvents: event_array => {
