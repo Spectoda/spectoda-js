@@ -37,7 +37,7 @@ export class SpectodaSimulatedConnector {
 
   // declare TS type
 
-  init(networkDefinition: any) {
+  initilize(networkDefinition: any) {
     logging.verbose(`construct(networkDefinition=${networkDefinition})`);
 
     // let networkDefinition = JSON.parse(networkJsonDefinition);
@@ -53,7 +53,21 @@ export class SpectodaSimulatedConnector {
       clearInterval(this.#renderIntervalHandle);
     }
 
-    if (networkDefinition.controllers) {
+    if (!networkDefinition) {
+      const controller = new PreviewController("00:00:23:34:45:56");
+      controller.construct({
+        controller: { name: "SIMULATED" },
+        ports: [
+          { tag: "A", size: 100 },
+          { tag: "B", size: 100 },
+          { tag: "C", size: 100 },
+          { tag: "D", size: 100 },
+        ],
+      });
+      this.controllers.push(controller);
+    }
+    //
+    else if (networkDefinition?.controllers) {
       for (let controllerDefinition of networkDefinition.controllers) {
         let configObject: any;
         let mac: string;
