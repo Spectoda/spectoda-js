@@ -306,7 +306,7 @@ export class SpectodaRuntime {
   #runtimeTask = async () => {
     try {
       await this.spectoda.inicilize();
-      await this.spectoda.construct(this.WIP_name ? this.WIP_name : "Spectoda", "01:23:45:67:89:ab", 0, 255);
+      await this.spectoda.construct(this.WIP_name ? this.WIP_name : "APP", "00:00:45:67:89:ab", 0, 255);
 
       await sleep(0.1); // short delay to let fill up the queue to merge the execute items if possible
 
