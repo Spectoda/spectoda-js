@@ -189,6 +189,41 @@ export class PreviewController {
               break;
           }
         },
+
+        _handleReboot: () => {
+          logging.debug("_handleReboot");
+
+          setTimeout(async () => {
+            await sleep(1);
+
+            this.#instance?.end();
+            {
+              this.#instance = SpectodaWasm.Spectoda_WASM.implement(PreviewControllerImplementation);
+
+              this.#instance.init(this.#macAddress, JSON.stringify(this.#config));
+              this.#instance.begin();
+
+              let current_tag = "A";
+
+              if (this.#config.ports) {
+                for (const port of this.#config.ports) {
+                  const port_tag = port.tag ? port.tag : current_tag;
+                  current_tag = String.fromCharCode(port_tag.charCodeAt(0) + 1);
+
+                  const port_size = port.size ? port.size : 1;
+                  const port_brightness = port.brightness ? port.brightness : 255;
+                  const port_power = port.power ? port.power : 255;
+                  const port_visible = port.visible ? port.visible : true;
+                  const port_reversed = port.reversed ? port.reversed : false;
+
+                  this.#ports[port_tag] = this.#instance.makePort(port_tag, port_size, port_brightness, port_power, port_visible, port_reversed);
+                }
+              }
+            }
+          }, 1000);
+
+          return Module.interface_error_t.SUCCESS;
+        },
       };
 
       this.#instance = SpectodaWasm.Spectoda_WASM.implement(PreviewControllerImplementation);

@@ -323,6 +323,28 @@ export class Spectoda_JS {
 
           return Module.interface_error_t.SUCCESS;
         },
+
+        _handleReboot: () => {
+          logging.debug("_handleReboot");
+
+          setTimeout(async () => {
+            this.#runtimeReference.emit("#disconnected");
+
+            await sleep(1);
+
+            this.#instance?.end();
+
+            this.#instance = SpectodaWasm.Spectoda_WASM.implement(WasmInterfaceImplementation);
+
+            const config = `{"controller": {"name": "${controller_name}", "brightness": ${brightness}, "id": ${id_offset}}}`;
+            logging.verbose(config);
+
+            this.#instance.init(mac_address, config);
+            this.#instance.begin();
+          }, 1000);
+
+          return Module.interface_error_t.SUCCESS;
+        },
       };
 
       this.#instance = SpectodaWasm.Spectoda_WASM.implement(WasmInterfaceImplementation);
