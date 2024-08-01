@@ -189,12 +189,12 @@ export class Spectoda_JS {
 
           //   {
           //     const e = event_array[0];
-          //     debug_log += `@${e.id} -> 🕹️$${e.label}: ${e.value} [🕒 ${e.timestamp}ms]`;
+          //     debug_log += `🕹️ @${e.id} -> $${e.label}: ${e.value}\ [🕒 ${e.timestamp}ms]`;
           //   }
 
           //   for (let i = 1; i < event_array.length; i++) {
           //     const e = event_array[i];
-          //     debug_log += `\n@${e.id} -> 🕹️$${e.label}: ${e.value} [🕒 ${e.timestamp}ms]`;
+          //     debug_log += `\n🕹️ @${e.id} -> $${e.label}: ${e.value} [🕒 ${e.timestamp}ms]`;
           //   }
 
           //   logging.info(debug_log);
@@ -213,14 +213,16 @@ export class Spectoda_JS {
           if (logging.level >= 2 && event_array.length) {
             let debug_log = "";
 
+            const name = this.#instance.getLabel();
+
             {
               const e = event_array[0];
-              debug_log += `@${e.id} -> 🕹️$${e.label}: ${e.value} [🕒 ${e.timestamp}ms]`;
+              debug_log += `🖥️ $${name}: \t🕹️ @${e.id} -> $${e.label}: ${e.value} [🕒 ${e.timestamp}ms]`;
             }
 
             for (let i = 1; i < event_array.length; i++) {
               const e = event_array[i];
-              debug_log += `\n@${e.id} -> 🕹️$${e.label}: ${e.value} [🕒 ${e.timestamp}ms]`;
+              debug_log += `\n🖥️ $${name}: \t🕹️ @${e.id} -> $${e.label}: ${e.value} [🕒 ${e.timestamp}ms]`;
             }
 
             console.log(debug_log);
@@ -279,7 +281,7 @@ export class Spectoda_JS {
           //   return;
           // }
 
-          const name = (this.#runtimeReference.WIP_name ? this.#runtimeReference.WIP_name : "APP").substring(0, 5);
+          const name = this.#instance.getLabel();
 
           switch (level) {
             case 5:

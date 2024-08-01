@@ -4,7 +4,7 @@
 import { TimeTrack } from "../TimeTrack";
 import { logging } from "../logging";
 
-const WASM_VERSION = "DEBUG_DEV_0.11.0_20240728";
+const WASM_VERSION = "DEBUG_DEV_0.11.0_20240801";
 
 let moduleInitilizing = false;
 let moduleInitilized = false;
