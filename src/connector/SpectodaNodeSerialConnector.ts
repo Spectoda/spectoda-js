@@ -18,7 +18,7 @@ import { TnglWriter } from "../../TnglWriter.js";
 import { crc32, numberToBytes, sleep, toBytes, uint8ArrayToHexString } from "../../functions";
 import { logging } from "../../logging";
 import { SpectodaRuntime } from "../SpectodaRuntime";
-import { COMMAND_FLAGS } from "../Spectoda_JS.js";
+import { COMMAND_FLAGS } from "../Spectoda_JS";
 
 let { SerialPort, ReadlineParser }: { SerialPort: any; ReadlineParser: any } = { SerialPort: null, ReadlineParser: null };
 

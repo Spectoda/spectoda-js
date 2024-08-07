@@ -3,7 +3,7 @@
 
 import { logging } from "./logging";
 import { detectAndroid, detectSafari, hexStringToUint8Array, numberToBytes, sleep, toBytes, uint8ArrayToHexString } from "./functions";
-import { COMMAND_FLAGS } from "./src/Spectoda_JS.js";
+import { COMMAND_FLAGS } from "./src/Spectoda_JS";
 import { TimeTrack } from "./TimeTrack.js";
 import { TnglReader } from "./TnglReader.js";
 

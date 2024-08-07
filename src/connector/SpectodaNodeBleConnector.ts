@@ -2,7 +2,8 @@ import { logging } from "../../logging";
 import { numberToBytes, sleep, toBytes, detectGW } from "../../functions";
 import { TimeTrack } from "../../TimeTrack.js";
 import { TnglReader } from "../../TnglReader.js";
-import { COMMAND_FLAGS } from "../Spectoda_JS.js";
+import { COMMAND_FLAGS } from "../Spectoda_JS";
+import { SpectodaWasm } from "../SpectodaWasm";
 
 const requireBundlerWorkeround = (moduleName: string) => (detectGW() ? require(moduleName) : () => {});
 // TODO node-ble on the same level as spectoda-js or node-ble in the spectoda-js repo ? nevíme

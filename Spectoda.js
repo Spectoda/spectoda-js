@@ -20,7 +20,7 @@ import {
 } from "./functions";
 import { changeLanguage, t } from "./i18n.js";
 import { logging } from "./logging";
-import { COMMAND_FLAGS } from "./src/Spectoda_JS.js";
+import { COMMAND_FLAGS } from "./src/Spectoda_JS";
 
 import { io } from "socket.io-client";
 import customParser from "socket.io-msgpack-parser";
