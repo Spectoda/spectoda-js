@@ -1,6 +1,7 @@
 export const VALUE_TYPE = {
+  LABEL: 33,
   TIMESTAMP: 32,
-  LABEL: 31,
+  IDENTIFIER: 31,
   PERCENTAGE: 30,
   NUMBER: 29,
   VALUE_ARRAY: 27,
