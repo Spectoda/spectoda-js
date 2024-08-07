@@ -52,6 +52,9 @@ const TNGL_FLAGS = Object.freeze({
   /* definitions scoped */
   DECLARE_VALUE_ADDRESS: 18,
 
+  /* event state */
+  EVENTSTATE_OVERLOAD: 19,
+
   // ======================
 
   /* definitions global */
@@ -91,11 +94,12 @@ const TNGL_FLAGS = Object.freeze({
   MODIFIER_TIME_CHANGE: 136,
   MODIFIER_TIME_SET: 137,
 
-  /* events */
+  /* state operations */
   GENERATOR_LAST_EVENT_VALUE: 144,
   GENERATOR_SMOOTHOUT: 145,
   GENERATOR_LAG_VALUE: 146,
-  // RESERVED
+
+  /* generators */
   GENERATOR_SINE: 150,
   GENERATOR_SAW: 151,
   GENERATOR_TRIANGLE: 152,
@@ -858,11 +862,22 @@ export class TnglCompiler {
       case "randomChoice":
         this.#tnglWriter.writeFlag(TNGL_FLAGS.EVENT_RANDOM_CHOICE);
         break;
+      case "overloadEventState":
+        this.#tnglWriter.writeFlag(TNGL_FLAGS.EVENTSTATE_OVERLOAD);
+        break;
 
-      // === generators ===
+      // === event state operations ===
       case "genLastEventParam":
         this.#tnglWriter.writeFlag(TNGL_FLAGS.GENERATOR_LAST_EVENT_VALUE);
         break;
+      case "genSmoothOut":
+        this.#tnglWriter.writeFlag(TNGL_FLAGS.GENERATOR_SMOOTHOUT);
+        break;
+      case "genLagValue":
+        this.#tnglWriter.writeFlag(TNGL_FLAGS.GENERATOR_LAG_VALUE);
+        break;
+
+      // === generators ===
       case "genSine":
         this.#tnglWriter.writeFlag(TNGL_FLAGS.GENERATOR_SINE);
         break;
@@ -877,12 +892,6 @@ export class TnglCompiler {
         break;
       case "genPerlinNoise":
         this.#tnglWriter.writeFlag(TNGL_FLAGS.GENERATOR_PERLIN_NOISE);
-        break;
-      case "genSmoothOut":
-        this.#tnglWriter.writeFlag(TNGL_FLAGS.GENERATOR_SMOOTHOUT);
-        break;
-      case "genLagValue":
-        this.#tnglWriter.writeFlag(TNGL_FLAGS.GENERATOR_LAG_VALUE);
         break;
 
       /* === variable operations === */
@@ -1222,25 +1231,25 @@ export class TnglCompiler {
     // We search for in the declarations stack
 
     if (value_addresses != null) {
-        for (let variable_name of value_addresses) {
-            let address = -1;
-            variable_name = variable_name.slice(1);
-            for (let i = this.#var_declarations.length - 1; i >= 0; i--) {
-                const declaration = this.#var_declarations[i];
-                if (declaration.name === variable_name) {
-                  address = declaration.address;
-                  break;
-                }
-            }
-    
-            if (address === -1) {
-              logging.error(`Failed to find variable address [${variable_name}] in Berry code.`);
-              return;
-            }
-    
-            reg[0] = reg[0].replace(`&${variable_name}`, address);
-            console.log("Replaced", `&${variable_name}`, "with", address);
+      for (let variable_name of value_addresses) {
+        let address = -1;
+        variable_name = variable_name.slice(1);
+        for (let i = this.#var_declarations.length - 1; i >= 0; i--) {
+          const declaration = this.#var_declarations[i];
+          if (declaration.name === variable_name) {
+            address = declaration.address;
+            break;
+          }
         }
+
+        if (address === -1) {
+          logging.error(`Failed to find variable address [${variable_name}] in Berry code.`);
+          return;
+        }
+
+        reg[0] = reg[0].replace(`&${variable_name}`, address);
+        console.log("Replaced", `&${variable_name}`, "with", address);
+      }
     }
 
     let code = reg[0].slice(10, -2);
