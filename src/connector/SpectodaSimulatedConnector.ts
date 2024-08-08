@@ -6,6 +6,7 @@ import { SpectodaRuntime } from "../SpectodaRuntime";
 import { TnglReader } from "../../TnglReader";
 import { TnglWriter } from "../../TnglWriter";
 import { PreviewController } from "../PreviewController";
+import { SpectodaWasm } from "../SpectodaWasm";
 
 /////////////////////////////////////////////////////////////////////////////////////
 
@@ -18,7 +19,11 @@ export class SpectodaSimulatedConnector {
 
   #clock: TimeTrack;
 
-  #renderIntervalHandle: any;
+  #processIntervalHandle: NodeJS.Timeout | null;
+  #renderIntervalHandle: NodeJS.Timeout | null;
+
+  #ups;
+  #fps;
 
   type: string;
   controllers: PreviewController[];
@@ -27,6 +32,12 @@ export class SpectodaSimulatedConnector {
     this.type = "simulated";
 
     this.#runtimeReference = runtimeReference;
+
+    this.#processIntervalHandle = null;
+    this.#renderIntervalHandle = null;
+
+    this.#ups = 0;
+    this.#fps = 0;
 
     this.#selected = false;
     this.#connected = false;
@@ -49,8 +60,13 @@ export class SpectodaSimulatedConnector {
       this.controllers = [];
     }
 
+    if (this.#processIntervalHandle) {
+      clearTimeout(this.#processIntervalHandle);
+      this.#processIntervalHandle = null;
+    }
     if (this.#renderIntervalHandle) {
-      clearInterval(this.#renderIntervalHandle);
+      clearTimeout(this.#renderIntervalHandle);
+      this.#renderIntervalHandle = null;
     }
 
     if (!networkDefinition) {
@@ -95,6 +111,29 @@ export class SpectodaSimulatedConnector {
         controller.construct(configObject);
         this.controllers.push(controller);
       }
+    }
+
+    // ? This can be offloaded to different thread
+    {
+      this.#ups = 1;
+      this.#fps = 2;
+
+      const __process = async () => {
+        for (let controller of this.controllers) {
+          controller.process();
+        }
+      };
+
+      const __render = async () => {
+        for (let controller of this.controllers) {
+          controller.render();
+        }
+      };
+
+      // TODO if the ups was set to 0 and then back to some value, then the render loop should be started again
+      this.#processIntervalHandle = setInterval(__process, 1000 / this.#ups);
+      // TODO if the fps was set to 0 and then back to some value, then the render loop should be started again
+      this.#renderIntervalHandle = setInterval(__render, 1000 / this.#fps);
     }
   }
   /*
@@ -277,7 +316,7 @@ criteria example:
       }
 
       for (let controller of this.controllers) {
-        await controller.execute(new Uint8Array(payload), 0x01);
+        await controller.execute(new Uint8Array(payload), new SpectodaWasm.Connection("00:00:12:34:56:78", SpectodaWasm.connector_type_t.CONNECTOR_UNDEFINED, SpectodaWasm.connection_rssi_t.RSSI_MAX));
       }
 
       await sleep(25); // delivering logic
@@ -298,7 +337,7 @@ criteria example:
       }
 
       for (let controller of this.controllers) {
-        await controller.execute(new Uint8Array(payload), 0x01);
+        await controller.execute(new Uint8Array(payload), new SpectodaWasm.Connection("00:00:12:34:56:78", SpectodaWasm.connector_type_t.CONNECTOR_UNDEFINED, SpectodaWasm.connection_rssi_t.RSSI_MAX));
       }
 
       await sleep(10); // transmiting logic
@@ -320,7 +359,9 @@ criteria example:
 
       // TODO choose the controller I am connected to choosen in userSelect() or autoSelect()
 
-      const response = this.controllers.length ? this.controllers[0].request(new Uint8Array(payload), 0x01) : new Uint8Array();
+      const response = this.controllers.length
+        ? this.controllers[0].request(new Uint8Array(payload), new SpectodaWasm.Connection("00:00:12:34:56:78", SpectodaWasm.connector_type_t.CONNECTOR_UNDEFINED, SpectodaWasm.connection_rssi_t.RSSI_MAX))
+        : new Uint8Array();
 
       if (read_response) {
         await sleep(50); // requesting logic
@@ -415,8 +456,13 @@ criteria example:
       })
       .catch(() => {})
       .finally(() => {
+        if (this.#processIntervalHandle) {
+          clearTimeout(this.#processIntervalHandle);
+          this.#processIntervalHandle = null;
+        }
         if (this.#renderIntervalHandle) {
-          clearInterval(this.#renderIntervalHandle);
+          clearTimeout(this.#renderIntervalHandle);
+          this.#renderIntervalHandle = null;
         }
         if (this.controllers.length) {
           for (let controller of this.controllers) {

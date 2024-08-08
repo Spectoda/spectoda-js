@@ -1,7 +1,7 @@
-import { TextureLoader } from "three";
 import { logging } from "../logging";
-import { SpectodaWasm } from "./SpectodaWasm";
+import { Connection, SpectodaWasm, Spectoda_WASM, Spectoda_WASMImplementation } from "./SpectodaWasm";
 import { sleep } from "../functions";
+import { SpectodaRuntime } from "./SpectodaRuntime";
 
 export const COMMAND_FLAGS = Object.freeze({
   FLAG_UNSUPPORTED_COMMND_RESPONSE: 255, // TODO change FLAG_OTA_BEGIN to not be 255.
@@ -117,18 +117,17 @@ export const COMMAND_FLAGS = Object.freeze({
 export class Spectoda_JS {
   #runtimeReference;
 
-  #instance;
+  #instance: Spectoda_WASM | undefined;
 
-  constructor(runtimeReference) {
+  constructor(runtimeReference: SpectodaRuntime) {
     this.#runtimeReference = runtimeReference;
 
-    this.#instance = null;
+    this.#instance = undefined;
   }
 
   inicilize() {
     // TODO pass WASM version to load
     SpectodaWasm.initilize();
-
     return SpectodaWasm.waitForInitilize();
   }
 
@@ -136,15 +135,7 @@ export class Spectoda_JS {
     return SpectodaWasm.waitForInitilize();
   }
 
-  // controller_identifier, controller_mac, controller_id_offset, controller_brightness
-  /**
-   * @param {string} label
-   * @param {string} mac_address
-   * @param {number} id_offset
-   * @param {number} brightness
-   * @return {Promise<null>}
-   */
-  construct(controller_name, mac_address, id_offset, brightness) {
+  construct(controller_name: string, mac_address: string, id_offset: number, brightness: number) {
     logging.debug(`construct(controller_name=${controller_name}, mac_address=${mac_address}, id_offset=${id_offset}, brightness=${brightness})`);
 
     if (this.#instance) {
@@ -152,7 +143,7 @@ export class Spectoda_JS {
     }
 
     return SpectodaWasm.waitForInitilize().then(() => {
-      const WasmInterfaceImplementation = {
+      const WasmInterfaceImplementation: Spectoda_WASMImplementation = {
         /* Constructor function is optional */
         // __construct: function () {
         //   this.__parent.__construct.call(this);
@@ -163,8 +154,8 @@ export class Spectoda_JS {
         //   this.__parent.__destruct.call(this);
         // },
 
-        _onTngl: tngl_bytes_vector => {
-          logging.verbose("_onTngl", tngl_bytes_vector);
+        _onTnglUpdate: tngl_bytes_vector => {
+          logging.verbose("_onTnglUpdate", tngl_bytes_vector);
 
           try {
             // dont know how to make Uint8Array in C++ yet. So I am forced to give data out in C++ std::vector
@@ -174,61 +165,63 @@ export class Spectoda_JS {
           } catch {
             //
           }
+
+          return true;
         },
 
-        // ! Deprecate
         _onEvents: event_array => {
           logging.verbose("_onEvents", event_array);
 
-          // for (let i = 0; i < event_array.length; i++) {
-          //   event_array[i].timestamp_utc = Date.now();
-          // }
-
-          // if (logging.level >= 3 && event_array.length) {
-          //   let debug_log = "";
-
-          //   {
-          //     const e = event_array[0];
-          //     debug_log += `🕹️ @${e.id} -> $${e.label}: ${e.value}\ [🕒 ${e.timestamp}ms]`;
-          //   }
-
-          //   for (let i = 1; i < event_array.length; i++) {
-          //     const e = event_array[i];
-          //     debug_log += `\n🕹️ @${e.id} -> $${e.label}: ${e.value} [🕒 ${e.timestamp}ms]`;
-          //   }
-
-          //   logging.info(debug_log);
-          // }
-
-          // this.#runtimeReference.emit("emitted_global_events", event_array);
-        },
-
-        _onLocalEvents: event_array => {
-          logging.verbose("_onLocalEvents", event_array);
-
-          for (let i = 0; i < event_array.length; i++) {
-            event_array[i].timestamp_utc = Date.now();
-          }
-
-          if (logging.level >= 2 && event_array.length) {
+          if (logging.level >= 1 && event_array.length) {
             let debug_log = "";
 
-            const name = this.#instance.getLabel();
+            const name = this.#instance?.getLabel();
 
             {
               const e = event_array[0];
-              debug_log += `🖥️ $${name}: \t🕹️ @${e.id} -> $${e.label}: ${e.value} [🕒 ${e.timestamp}ms]`;
+              debug_log += `🕹️ @${e.id} -> $${e.label}: ${e.value}\ [🕒 ${e.timestamp}ms]`;
             }
 
             for (let i = 1; i < event_array.length; i++) {
               const e = event_array[i];
-              debug_log += `\n🖥️ $${name}: \t🕹️ @${e.id} -> $${e.label}: ${e.value} [🕒 ${e.timestamp}ms]`;
+              debug_log += `\n🕹️ @${e.id} -> $${e.label}: ${e.value} [🕒 ${e.timestamp}ms]`;
             }
 
             console.log(debug_log);
           }
 
-          this.#runtimeReference.emit("emitted_events", event_array);
+          return true;
+        },
+
+        _onEventStateUpdates: event_state_updates_array => {
+          logging.verbose("_onEventStateUpdates", event_state_updates_array);
+
+          if (logging.level >= 1 && event_state_updates_array.length) {
+            let debug_log = "";
+
+            const name = this.#instance?.getLabel();
+
+            {
+              const e = event_state_updates_array[0];
+              debug_log += `🖥️ $${name}: \t🕹️ $${e.label}[@${e.id}]: ${e.value} [🕒 ${e.timestamp}ms]`;
+            }
+
+            for (let i = 1; i < event_state_updates_array.length; i++) {
+              const e = event_state_updates_array[i];
+              debug_log += `\n🖥️ $${name}: \t🕹️ $${e.label}[@${e.id}]: ${e.value} [🕒 ${e.timestamp}ms]`;
+            }
+
+            console.log(debug_log);
+          }
+
+          // TODO! refactor "emitted_events" for the needs of the Store
+          for (let i = 0; i < event_state_updates_array.length; i++) {
+            // ! This will be removed after Store is implemented
+            event_state_updates_array[i].timestamp_utc = Date.now();
+          }
+          this.#runtimeReference.emit("emitted_events", event_state_updates_array);
+
+          return true;
         },
 
         _onExecute: (commands_bytecode_vector, source_connection) => {
@@ -238,7 +231,7 @@ export class Spectoda_JS {
           // dont know how to make Uint8Array in C++ yet. So I am forced to give data out in C++ std::vector
           // const commands_bytecode = SpectodaWasm.convertNumberVectorToJSArray(commands_bytecode_vector);
 
-          // TODO IMPLEMENT SENDING TO OTHER INTERFACES
+          // TODO IMPLEMENT SENDING TO OTHER CONNECTIONS
 
           // } catch {
 
@@ -252,27 +245,24 @@ export class Spectoda_JS {
 
           try {
             // dont know how to make Uint8Array in C++ yet. So I am forced to give data out in C++ std::vector
-            const commands_bytecode = SpectodaWasm.convertNumberVectorToJSArray(commands_bytecode_vector);
-
-            logging.verbose("commands_bytecode", commands_bytecode);
-
-            // TODO IMPLEMENT SENDING TO OTHER INTERFACES
+            // const commands_bytecode = SpectodaWasm.convertNumberVectorToJSArray(commands_bytecode_vector);
+            // logging.verbose("commands_bytecode", commands_bytecode);
+            // TODO IMPLEMENT SENDING TO OTHER CONNECTIONS
           } catch {}
 
           return true;
         },
 
         _onSynchronize: synchronization_object => {
-          logging.verbose("_onSynchronize", synchronization_object);
+          logging.debug("_onSynchronize", synchronization_object);
 
           try {
-            this.#runtimeReference.setClock(synchronization_object.clock_timestamp).catch(e => {
-              logging.error(e);
-            });
+            this.#runtimeReference.clock.setMillis(synchronization_object.clock_timestamp);
           } catch (e) {
             logging.error(e);
           }
 
+          // TODO IMPLEMENT SENDING TO OTHER CONNECTIONS
           return true;
         },
 
@@ -281,7 +271,7 @@ export class Spectoda_JS {
           //   return;
           // }
 
-          const name = this.#instance.getLabel();
+          const name = this.#instance?.getLabel();
 
           switch (level) {
             case 5:
@@ -310,7 +300,7 @@ export class Spectoda_JS {
 
           this.#runtimeReference.emit("peer_connected", peer_mac);
 
-          return Module.interface_error_t.SUCCESS;
+          return SpectodaWasm.interface_error_t.SUCCESS;
         },
 
         _handlePeerDisconnected: peer_mac => {
@@ -318,14 +308,14 @@ export class Spectoda_JS {
 
           this.#runtimeReference.emit("peer_disconnected", peer_mac);
 
-          return Module.interface_error_t.SUCCESS;
+          return SpectodaWasm.interface_error_t.SUCCESS;
         },
 
         // virtual interface_error_t _handleTimelineManipulation(const int32_t timeline_timestamp, const bool timeline_paused, const double clock_timestamp) = 0;
         _handleTimelineManipulation: (timeline_timestamp, timeline_paused, clock_timestamp) => {
           logging.debug("_handleTimelineManipulation", timeline_timestamp, timeline_paused, clock_timestamp);
 
-          return Module.interface_error_t.SUCCESS;
+          return SpectodaWasm.interface_error_t.SUCCESS;
         },
 
         _handleReboot: () => {
@@ -333,21 +323,18 @@ export class Spectoda_JS {
 
           setTimeout(async () => {
             this.#runtimeReference.emit("#disconnected");
-
             await sleep(1);
 
-            this.#instance?.end();
+            try {
+              this.destruct();
+            } catch (e) {
+              logging.error(e);
+            }
 
-            this.#instance = SpectodaWasm.Spectoda_WASM.implement(WasmInterfaceImplementation);
-
-            const config = `{"controller": {"name": "${controller_name}", "brightness": ${brightness}, "id": ${id_offset}}}`;
-            logging.verbose(config);
-
-            this.#instance.init(mac_address, config);
-            this.#instance.begin();
+            this.construct(controller_name, mac_address, id_offset, brightness);
           }, 1000);
 
-          return Module.interface_error_t.SUCCESS;
+          return SpectodaWasm.interface_error_t.SUCCESS;
         },
       };
 
@@ -357,6 +344,9 @@ export class Spectoda_JS {
       logging.verbose(config);
 
       this.#instance.init(mac_address, config);
+
+      // this.#instance.registerConnector();
+
       this.#instance.begin();
     });
   }
@@ -368,15 +358,15 @@ export class Spectoda_JS {
 
     this.#instance.end(); // end the spectoda stuff
     this.#instance.delete(); // delete (free) C++ object
-    this.#instance = null; // remove javascript reference
+    this.#instance = undefined; // remove javascript reference
+
+    // for (let i = 0; i < this.#connectors.length; i++) {
+    //   this.#connectors[i].delete();
+    // }
   }
 
-  /**
-   * @param {number} clock_timestamp
-   * @return {Uint8Vector}
-   */
   makePort(port_char = "A", port_size = 144, port_brightness = 255, port_power = 255, port_visible = true, port_reversed = false) {
-    logging.warn(`makePort(port_char=${port_char}, port_size=${port_size}, port_brightness=${port_brightness}, port_power=${port_power}, port_visible=${port_visible}, port_reversed=${port_reversed})`);
+    logging.info(`makePort(port_char=${port_char}, port_size=${port_size}, port_brightness=${port_brightness}, port_power=${port_power}, port_visible=${port_visible}, port_reversed=${port_reversed})`);
 
     if (!this.#instance) {
       throw "NotConstructed";
@@ -386,11 +376,7 @@ export class Spectoda_JS {
     return this.#instance.makePort(port_char, port_size, port_brightness, port_power, port_visible, port_reversed);
   }
 
-  /**
-   * @param {number} clock_timestamp
-   * @return {null}
-   */
-  setClock(clock_timestamp) {
+  setClock(clock_timestamp: number) {
     if (!this.#instance) {
       throw "NotConstructed";
     }
@@ -398,9 +384,6 @@ export class Spectoda_JS {
     this.#instance.setClockTimestamp(clock_timestamp);
   }
 
-  /**
-   * @return {number}
-   */
   getClock() {
     if (!this.#instance) {
       throw "NotConstructed";
@@ -409,12 +392,9 @@ export class Spectoda_JS {
     return this.#instance.getClockTimestamp();
   }
 
-  /**
-   * @param {Uint8Array} execute_bytecode
-   * @param {number} source_connection
-   * @return {}
-   */
-  execute(execute_bytecode, source_connection) {
+  execute(execute_bytecode: Uint8Array, source_connection: Connection) {
+    logging.debug(`execute(execute_bytecode=${execute_bytecode}, source_connection=${source_connection})`);
+
     if (!this.#instance) {
       throw "NotConstructed";
     }
@@ -426,13 +406,9 @@ export class Spectoda_JS {
     }
   }
 
-  /**
-   * If request_evaluate_result is not SUCCESS the promise is rejected with an exception
-   * @param {Uint8Array} request_bytecode
-   * @param {number} source_connection
-   * @return {Uint8Array}
-   */
-  request(request_bytecode, source_connection) {
+  request(request_bytecode: Uint8Array, source_connection: Connection) {
+    logging.debug(`request(request_bytecode=${request_bytecode}, source_connection=${source_connection})`);
+
     if (!this.#instance) {
       throw "NotConstructed";
     }
@@ -455,13 +431,8 @@ export class Spectoda_JS {
     return response_bytecode;
   }
 
-  /**
-   * @param {number} clock_timestamp
-   * @param {number} source_connection
-   * @return {}
-   * */
-  synchronize(clock_timestamp, source_connection) {
-    logging.debug("synchronize()");
+  synchronize(clock_timestamp: number, source_connection: Connection) {
+    logging.debug(`synchronize(clock_timestamp=${clock_timestamp}, source_connection=${source_connection})`);
 
     if (!this.#instance) {
       throw "NotConstructed";
@@ -470,15 +441,19 @@ export class Spectoda_JS {
     this.#instance.synchronize(clock_timestamp, source_connection);
   }
 
-  compute() {
+  process() {
+    logging.verbose("process()");
+
     if (!this.#instance) {
       throw "NotConstructed";
     }
 
-    this.#instance.compute();
+    this.#instance.process();
   }
 
   render() {
+    logging.verbose("render()");
+
     if (!this.#instance) {
       throw "NotConstructed";
     }
@@ -486,7 +461,9 @@ export class Spectoda_JS {
     this.#instance.render();
   }
 
-  readVariableAddress(variable_address, device_id) {
+  readVariableAddress(variable_address: number, device_id: number) {
+    logging.verbose(`readVariableAddress(variable_address=${variable_address}, device_id=${device_id})`);
+
     if (!this.#instance) {
       throw "NotConstructed";
     }

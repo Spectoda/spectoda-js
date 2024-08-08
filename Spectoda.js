@@ -134,18 +134,17 @@ export class Spectoda {
         // });
 
         if (this.#getConnectionState() === "connected") {
-          return (
-            this.syncClock()
-              // .then(() => {
-              //   return this.syncTimeline();
-              // })
-              // .then(() => {
-              //   return this.syncEventHistory(); // ! this might slow down stuff for Bukanyr
-              // })
-              .catch(error => {
-                logging.warn(error);
-              })
-          );
+          return;
+          // this.syncClock()
+          //   // .then(() => {
+          //   //   return this.syncTimeline();
+          //   // })
+          //   // .then(() => {
+          //   //   return this.syncEventHistory(); // ! this might slow down stuff for Bukanyr
+          //   // })
+          //   .catch(error => {
+          //     logging.warn(error);
+          //   });
         } else if (this.#getConnectionState() === "disconnected" && this.#autonomousConnection) {
           return this.#connect(true).catch(error => {
             logging.warn(error);
@@ -1976,7 +1975,7 @@ export class Spectoda {
         const historic_events_bytecode = reader.readBytes(historic_events_bytecode_size);
         logging.verbose(`historic_events_bytecode=[${historic_events_bytecode}]`);
 
-        this.runtime.evaluate(new Uint8Array(historic_events_bytecode), 0x01);
+        this.runtime.evaluate(new Uint8Array(historic_events_bytecode), new SpectodaWasm.Connection("00:00:00:00:00:00", SpectodaWasm.connector_type_t.CONNECTOR_UNDEFINED, SpectodaWasm.connection_rssi_t.RSSI_MAX));
       } else {
         throw "Fail";
       }

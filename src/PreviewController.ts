@@ -1,37 +1,31 @@
 import { createNanoEvents, sleep } from "../functions";
 import { logging } from "../logging";
 import { LogEntry, RingLogBuffer } from "./LogBuffer";
-import { SpectodaWasm } from "./SpectodaWasm";
+import { Connection, Spectoda_WASM, Spectoda_WASMImplementation, SpectodaWasm } from "./SpectodaWasm";
 
 export class PreviewController {
   #macAddress;
 
-  #instance;
-  #config;
+  #instance: Spectoda_WASM | undefined;
+  #config: { controller?: { name?: string }; ports?: [{ tag?: string; size?: number; brightness?: number; power?: number; visible?: boolean; reversed?: boolean }] } | undefined;
 
-  #ports;
-  #ringLogBuffer;
+  #ports: { [key: string]: Uint8Array };
+  #ringLogBuffer: RingLogBuffer;
   #eventEmitter;
 
-  /**
-   * @param {string} controller_mac_address
-   * @return {Promise<null>}
-   */
-  constructor(controller_mac_address) {
+  constructor(controller_mac_address: string) {
     this.#macAddress = controller_mac_address;
 
-    this.#instance = null;
+    this.#instance = undefined;
     this.#config = undefined;
 
     this.#ports = {};
     this.#eventEmitter = createNanoEvents();
+
+    this.#ringLogBuffer = new RingLogBuffer(1000);
   }
 
-  /**
-   * @param {object} config
-   * @return {Promise<null>}
-   */
-  construct(config) {
+  construct(config: object) {
     logging.info(`construct(config=${JSON.stringify(config)}`);
 
     if (this.#instance) {
@@ -40,24 +34,24 @@ export class PreviewController {
 
     this.#config = config;
 
-    this.#ringLogBuffer = new RingLogBuffer(1000);
-
     SpectodaWasm.initilize();
 
     return SpectodaWasm.waitForInitilize().then(() => {
-      const PreviewControllerImplementation = {
+      const PreviewControllerImplementation: Spectoda_WASMImplementation = {
         /* Constructor function is optional */
         // __construct: function () {
         //   this.__parent.__construct.call(this);
-        // },
+        // }
 
         /* Destructor function is optional */
         // __destruct: function () {
         //   this.__parent.__destruct.call(this);
         // },
 
-        _onTngl: tngl_bytes_vector => {
-          // logging.verbose("_onTngl", tngl_bytes_vector);
+        _onTnglUpdate: tngl_bytes_vector => {
+          // logging.verbose("_onTnglUpdate", tngl_bytes_vector);
+
+          return true;
         },
 
         _onEvents: event_array => {
@@ -78,26 +72,31 @@ export class PreviewController {
           //     logging.info(debug_log);
           // }
           // this.#runtimeReference.emit("emitted_events", event_array);
+
+          return true;
         },
 
-        _onLocalEvents: event_array => {
-          // logging.verbose("_onLocalEvents", event_array);
-          // for (let i = 0; i < event_array.length; i++) {
-          //     event_array[i].timestamp_utc = Date.now();
-          // }
-          // if (event_array.length) {
-          //     let debug_log = "";
-          //     {
-          //         const e = event_array[0];
-          //         debug_log += `${e.id} -> $${e.label}: ${e.value} [${e.timestamp}ms] (local)`;
-          //     }
-          //     for (let i = 1; i < event_array.length; i++) {
-          //         const e = event_array[i];
-          //         debug_log += `\n${e.id} -> $${e.label}: ${e.value} [${e.timestamp}ms] (local)`;
-          //     }
-          //     logging.info(debug_log);
-          // }
-          // this.#runtimeReference.emit("emitted_local_events", event_array);
+        _onEventStateUpdates: event_state_updates_array => {
+          logging.verbose("_onEventStateUpdates", event_state_updates_array);
+
+          if (logging.level >= 3 && event_state_updates_array.length) {
+            let debug_log = "";
+
+            const name = this.#instance?.getLabel();
+
+            {
+              const e = event_state_updates_array[0];
+              debug_log += `🖥️ $${name}: \t🕹️ $${e.label}[@${e.id}]: ${e.value} [🕒 ${e.timestamp}ms]`;
+            }
+
+            for (let i = 1; i < event_state_updates_array.length; i++) {
+              const e = event_state_updates_array[i];
+              debug_log += `\n🖥️ $${name}: \t🕹️ $${e.label}[@${e.id}]: ${e.value} [🕒 ${e.timestamp}ms]`;
+            }
+
+            console.log(debug_log);
+          }
+          return true;
         },
 
         _onExecute: (commands_bytecode_vector, source_connection) => {
@@ -129,7 +128,8 @@ export class PreviewController {
           //     return Module.send_result_t.SEND_ERROR;
           //   }
           //   return Module.send_result_t.SEND_OK;
-          // return true;
+
+          return false;
         },
 
         _onSynchronize: synchronization_object => {
@@ -143,7 +143,7 @@ export class PreviewController {
 
           // this.#runtimeReference.emit("peer_connected", peer_mac);
 
-          return Module.interface_error_t.SUCCESS;
+          return SpectodaWasm.interface_error_t.SUCCESS;
         },
 
         _handlePeerDisconnected: peer_mac => {
@@ -151,41 +151,43 @@ export class PreviewController {
 
           // this.#runtimeReference.emit("peer_disconnected", peer_mac);
 
-          return Module.interface_error_t.SUCCESS;
+          return SpectodaWasm.interface_error_t.SUCCESS;
         },
 
         // virtual interface_error_t _handleTimelineManipulation(const int32_t timeline_timestamp, const bool timeline_paused, const double clock_timestamp) = 0;
         _handleTimelineManipulation: (timeline_timestamp, timeline_paused, clock_timestamp) => {
           logging.debug("_handleTimelineManipulation", timeline_timestamp, timeline_paused, clock_timestamp);
 
-          return Module.interface_error_t.SUCCESS;
+          return SpectodaWasm.interface_error_t.SUCCESS;
         },
 
         _onLog: (level, filename, message) => {
           const logEntry = new LogEntry(level, filename, message);
           this.#ringLogBuffer.push(logEntry);
-          this.#eventEmitter.emit("log", logEntry);
+          // this.#eventEmitter.emit("log", logEntry);
+
+          const name = this.#instance?.getLabel();
 
           switch (level) {
             case 5:
-              logging.verbose(`🖥️ $${this.label}: \t[V][${filename}]: ${message}`);
+              logging.verbose(`🖥️ $${name}: \t[V][${filename}]: ${message}`);
               break;
             case 4:
-              logging.debug(`🖥️ $${this.label}: \t[D][${filename}]: ${message}`);
+              logging.debug(`🖥️ $${name}: \t[D][${filename}]: ${message}`);
               break;
             case 3:
-              logging.info(`🖥️ $${this.label}: \t[I][${filename}]: ${message}`);
+              logging.info(`🖥️ $${name}: \t[I][${filename}]: ${message}`);
               break;
             case 2:
-              logging.warn(`🖥️ $${this.label}:\t[W][${filename}]: ${message}`);
-              this.#eventEmitter.emit("warn", logEntry);
+              logging.warn(`🖥️ $${name}:\t[W][${filename}]: ${message}`);
+              // this.#eventEmitter.emit("warn", logEntry);
               break;
             case 1:
-              logging.error(`🖥️ $${this.label}: \t[E][${filename}]: ${message}`);
-              this.#eventEmitter.emit("error", logEntry);
+              logging.error(`🖥️ $${name}: \t[E][${filename}]: ${message}`);
+              // this.#eventEmitter.emit("error", logEntry);
               break;
             default:
-              logging.error(`🖥️ $${this.label}: \t[?][${filename}]: ${message}`);
+              logging.error(`🖥️ $${name}: \t[?][${filename}]: ${message}`);
               break;
           }
         },
@@ -205,7 +207,7 @@ export class PreviewController {
 
               let current_tag = "A";
 
-              if (this.#config.ports) {
+              if (this.#config?.ports) {
                 for (const port of this.#config.ports) {
                   const port_tag = port.tag ? port.tag : current_tag;
                   current_tag = String.fromCharCode(port_tag.charCodeAt(0) + 1);
@@ -222,7 +224,7 @@ export class PreviewController {
             }
           }, 1000);
 
-          return Module.interface_error_t.SUCCESS;
+          return SpectodaWasm.interface_error_t.SUCCESS;
         },
       };
 
@@ -233,7 +235,7 @@ export class PreviewController {
 
       let current_tag = "A";
 
-      if (this.#config.ports) {
+      if (this.#config?.ports) {
         for (const port of this.#config.ports) {
           const port_tag = port.tag ? port.tag : current_tag;
           current_tag = String.fromCharCode(port_tag.charCodeAt(0) + 1);
@@ -257,7 +259,7 @@ export class PreviewController {
 
     this.#instance.end(); // end the spectoda stuff
     this.#instance.delete(); // delete (free) C++ object
-    this.#instance = null; // remove javascript reference
+    this.#instance = undefined; // remove javascript reference
   }
 
   // /**
@@ -273,7 +275,7 @@ export class PreviewController {
   //     return this.#instance.makePort(port_tag, port_size, port_brightness, port_power, port_visible, port_reversed);
   // }
 
-  getPort(port_tag) {
+  getPort(port_tag: string) {
     if (!this.#instance) {
       throw "NotConstructed";
     }
@@ -293,7 +295,7 @@ export class PreviewController {
    * @param {number} clock_timestamp
    * @return {null}
    */
-  setClock(clock_timestamp) {
+  setClock(clock_timestamp: number) {
     if (!this.#instance) {
       throw "NotConstructed";
     }
@@ -312,12 +314,7 @@ export class PreviewController {
     return this.#instance.getClockTimestamp();
   }
 
-  /**
-   * @param {Uint8Array} execute_bytecode
-   * @param {number} source_connection
-   * @return {}
-   */
-  execute(execute_bytecode, source_connection) {
+  execute(execute_bytecode: Uint8Array, source_connection: Connection) {
     if (!this.#instance) {
       throw "NotConstructed";
     }
@@ -329,13 +326,7 @@ export class PreviewController {
     }
   }
 
-  /**
-   * If request_evaluate_result is not SUCCESS the promise is rejected with an exception
-   * @param {Uint8Array} request_bytecode
-   * @param {number} source_connection
-   * @return {Uint8Array}
-   */
-  request(request_bytecode, source_connection) {
+  request(request_bytecode: Uint8Array, source_connection: Connection) {
     if (!this.#instance) {
       throw "NotConstructed";
     }
@@ -363,7 +354,7 @@ export class PreviewController {
    * @param {number} source_connection
    * @return {}
    * */
-  synchronize(clock_timestamp, source_connection) {
+  synchronize(clock_timestamp: number, source_connection: Connection) {
     logging.debug("synchronize()");
 
     if (!this.#instance) {
@@ -373,15 +364,15 @@ export class PreviewController {
     this.#instance.synchronize(clock_timestamp, source_connection);
   }
 
-  compute() {
+  process() {
     if (!this.#instance) {
       throw "NotConstructed";
     }
 
-    this.#instance.compute();
+    this.#instance.process();
   }
 
-  bakeTnglFrame() {
+  render() {
     if (!this.#instance) {
       throw "NotConstructed";
     }
@@ -389,7 +380,7 @@ export class PreviewController {
     this.#instance.render();
   }
 
-  readVariableAddress(variable_address, device_id) {
+  readVariableAddress(variable_address: number, device_id: number) {
     if (!this.#instance) {
       throw "NotConstructed";
     }
@@ -406,7 +397,7 @@ export class PreviewController {
     this.#eventEmitter.emit("clear_logs");
   }
 
-  on(event, callback) {
+  on(event: string, callback: Function) {
     return this.#eventEmitter.on(event, callback);
   }
 

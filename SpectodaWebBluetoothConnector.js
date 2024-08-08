@@ -6,6 +6,7 @@ import { detectAndroid, detectSafari, hexStringToUint8Array, numberToBytes, slee
 import { COMMAND_FLAGS } from "./src/Spectoda_JS";
 import { TimeTrack } from "./TimeTrack.js";
 import { TnglReader } from "./TnglReader.js";
+import { SpectodaWasm } from "./src/SpectodaWasm";
 
 // od 0.8.0 maji vsechny spectoda enabled BLE zarizeni jednotne SPECTODA_DEVICE_UUID.
 // kazdy typ (produkt) Spectoda Zarizeni ma svuj kod v manufacturer data
@@ -15,6 +16,8 @@ import { TnglReader } from "./TnglReader.js";
 // jedním zařízením v jednu chvíli
 
 //////////////////////////////////////////////////////////////////////////
+
+export const DUMMY_WEBBLE_CONNECTION = new SpectodaWasm.Connection("00:00:11:11:11:11", SpectodaWasm.connector_type_t.CONNECTOR_BLE, SpectodaWasm.connection_rssi_t.RSSI_MAX);
 
 /*
     is renamed Transmitter. Helper class for WebBluetoothConnector.js
@@ -156,7 +159,7 @@ export class WebBLEConnection {
     logging.verbose(`command_bytes: ${uint8ArrayToHexString(command_bytes)}`);
 
     //! Here is a bug, where if the command is too long, it will be split into multiple notifications
-    this.#runtimeReference.spectoda.execute(command_bytes, 0x01);
+    this.#runtimeReference.spectoda.execute(command_bytes, DUMMY_WEBBLE_CONNECTION);
   }
 
   // WIP
@@ -172,7 +175,7 @@ export class WebBLEConnection {
     // this.#runtimeReference.process(event.target.value);
 
     // TODO process request
-    // this.#runtimeReference.spectoda.request(new Uint8Array(event.target.value.buffer), 0x01);
+    // this.#runtimeReference.spectoda.request(new Uint8Array(event.target.value.buffer), DUMMY_WEBBLE_CONNECTION);
   }
 
   // WIP
@@ -187,11 +190,38 @@ export class WebBLEConnection {
     // logging.debug("> " + a.join(" "));
     // this.#runtimeReference.process(event.target.value);
 
+    // uint64_t clock_timestamp_ms;
+    // uint64_t origin_address_handle;
+    // uint32_t history_fingerprint;
+    // uint32_t tngl_fingerprint;
+    // uint64_t timeline_clock_timestamp_ms;
+    // uint64_t tngl_clock_timestamp_ms;
+
     let reader = new TnglReader(new DataView(new Uint8Array(event.target.value.buffer).buffer));
-    const timestamp = reader.readUint64();
+    const clock_timestamp_ms = reader.readUint64();
+    const origin_address_handle = reader.readUint64();
+    const history_fingerprint = reader.readUint32();
+    const tngl_fingerprint = reader.readUint32();
+    const timeline_clock_timestamp_ms = reader.readUint64();
+    const tngl_clock_timestamp_ms = reader.readUint64();
+
+    logging.verbose(
+      "clock_timestamp_ms=",
+      clock_timestamp_ms,
+      "origin_address_handle=",
+      origin_address_handle,
+      "history_fingerprint=",
+      history_fingerprint,
+      "tngl_fingerprint=",
+      tngl_fingerprint,
+      "timeline_clock_timestamp_ms=",
+      timeline_clock_timestamp_ms,
+      "tngl_clock_timestamp_ms=",
+      tngl_clock_timestamp_ms,
+    );
 
     // TODO process synchronize
-    this.#runtimeReference.spectoda.synchronize(timestamp, 0x01);
+    this.#runtimeReference.spectoda.synchronize(clock_timestamp_ms, DUMMY_WEBBLE_CONNECTION);
   }
 
   attach(service, networkUUID, clockUUID, deviceUUID) {
