@@ -17,8 +17,6 @@ import { SpectodaWasm } from "./src/SpectodaWasm";
 
 //////////////////////////////////////////////////////////////////////////
 
-export const DUMMY_WEBBLE_CONNECTION = new SpectodaWasm.Connection("00:00:11:11:11:11", SpectodaWasm.connector_type_t.CONNECTOR_BLE, SpectodaWasm.connection_rssi_t.RSSI_MAX);
-
 /*
     is renamed Transmitter. Helper class for WebBluetoothConnector.js
 */
@@ -159,7 +157,7 @@ export class WebBLEConnection {
     logging.verbose(`command_bytes: ${uint8ArrayToHexString(command_bytes)}`);
 
     //! Here is a bug, where if the command is too long, it will be split into multiple notifications
-    this.#runtimeReference.spectoda.execute(command_bytes, DUMMY_WEBBLE_CONNECTION);
+    this.#runtimeReference.spectoda.execute(command_bytes, SpectodaWasm.DUMMY_WEBBLE_CONNECTION);
   }
 
   // WIP
@@ -175,7 +173,7 @@ export class WebBLEConnection {
     // this.#runtimeReference.process(event.target.value);
 
     // TODO process request
-    // this.#runtimeReference.spectoda.request(new Uint8Array(event.target.value.buffer), DUMMY_WEBBLE_CONNECTION);
+    // this.#runtimeReference.spectoda.request(new Uint8Array(event.target.value.buffer), SpectodaWasm.DUMMY_WEBBLE_CONNECTION);
   }
 
   // WIP
@@ -221,7 +219,7 @@ export class WebBLEConnection {
     );
 
     // TODO process synchronize
-    this.#runtimeReference.spectoda.synchronize(clock_timestamp_ms, DUMMY_WEBBLE_CONNECTION);
+    this.#runtimeReference.spectoda.synchronize(clock_timestamp_ms, SpectodaWasm.DUMMY_WEBBLE_CONNECTION);
   }
 
   attach(service, networkUUID, clockUUID, deviceUUID) {

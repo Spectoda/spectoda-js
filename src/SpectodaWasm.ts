@@ -439,6 +439,8 @@ function onWasmLoad() {
     SpectodaWasm.IConnector_WASM = Module.IConnector_WASM;
     // @ts-ignore - Module is a global object of Emscripten
 
+    SpectodaWasm.DUMMY_WEBBLE_CONNECTION = new SpectodaWasm.Connection("00:00:11:11:11:11", SpectodaWasm.connector_type_t.CONNECTOR_BLE, SpectodaWasm.connection_rssi_t.RSSI_MAX);
+
     if (typeof window !== "undefined") {
       // @ts-ignore - FS is a global object of Emscripten
       FS.mkdir("/littlefs");
