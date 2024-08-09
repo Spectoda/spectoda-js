@@ -215,20 +215,32 @@ const spectodaStore = createStore<SpectodaStore>()(
             codes: null,
           };
 
+          let resource;
           try {
+            resource = "fwVersion";
             results.fwVersion = await get().fwVersion.get();
+
+            resource = "macs";
             results.macs = await get().macs.get();
+
+            resource = "name";
             results.name = await get().name.get();
+
+            resource = "config";
             results.config = await get().config.get();
+
+            resource = "signature";
             results.signature = await get().signature.get();
+
+            resource = "codes";
             results.codes = await get().codes.get();
           } catch (error) {
             if (error instanceof Error) {
-              console.error("Load data failed due. Reason:", error.message);
+              console.error(`Load data failed while getting ${resource} due. Reason:`, error.message);
             } else if (typeof error === "string") {
-              console.error(`Load data failed. Reason: ${error}`);
+              console.error(`Load data failed while getting ${resource}. Reason: ${error}`);
             } else {
-              console.error(`Load data failed for unknown reason.`, error);
+              console.error(`Load data failed while getting ${resource} for unknown reason.`, error);
             }
           } finally {
             get().endBatching();
