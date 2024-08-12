@@ -135,8 +135,8 @@ export class Spectoda_JS {
     return SpectodaWasm.waitForInitilize();
   }
 
-  construct(controller_name: string, mac_address: string, id_offset: number, brightness: number) {
-    logging.debug(`construct(controller_name=${controller_name}, mac_address=${mac_address}, id_offset=${id_offset}, brightness=${brightness})`);
+  construct(controller_config: object, constroller_mac_address: string) {
+    logging.debug(`construct(controller_config=${JSON.stringify(controller_config)}, constroller_mac_address=${constroller_mac_address})`);
 
     if (this.#instance) {
       throw "AlreadyContructed";
@@ -234,7 +234,11 @@ export class Spectoda_JS {
           // TODO IMPLEMENT SENDING TO OTHER CONNECTIONS
 
           // } catch {
-
+          // ! temporary solution
+          if (source_connection.address_string === "00:00:00:00:00:00") {
+            const array = SpectodaWasm.convertNumberVectorToJSArray(commands_bytecode_vector);
+            this.#runtimeReference.connector?.deliver(array, source_connection);
+          }
           // }
 
           return true;
@@ -290,9 +294,11 @@ export class Spectoda_JS {
               logging.error(`🖥️ $${name}: \t[E][${filename}]: ${message}`);
               break;
             default:
-              logging.error(`🖥️ $${name}: \t[?][${filename}]: ${message}`);
+              console.warn(`🖥️ $${name}: \t[?][${filename}]: ${message}`);
               break;
           }
+
+          // this.#runtimeReference.emit("controller-log", `🖥️ $${name}: \t[?][${filename}]: ${message}`);
         },
 
         _handlePeerConnected: peer_mac => {
@@ -331,7 +337,7 @@ export class Spectoda_JS {
               logging.error(e);
             }
 
-            this.construct(controller_name, mac_address, id_offset, brightness);
+            this.construct(controller_config, constroller_mac_address);
           }, 1000);
 
           return SpectodaWasm.interface_error_t.SUCCESS;
@@ -340,10 +346,10 @@ export class Spectoda_JS {
 
       this.#instance = SpectodaWasm.Spectoda_WASM.implement(WasmInterfaceImplementation);
 
-      const config = `{"controller": {"name": "${controller_name}", "brightness": ${brightness}, "id": ${id_offset}}}`;
-      logging.verbose(config);
+      const cosntroller_config_json = JSON.stringify(controller_config);
+      logging.verbose(`cosntroller_config_json=${cosntroller_config_json}`);
 
-      this.#instance.init(mac_address, config);
+      this.#instance.init(constroller_mac_address, cosntroller_config_json);
 
       // this.#instance.registerConnector();
 
@@ -469,5 +475,18 @@ export class Spectoda_JS {
     }
 
     return this.#instance.readVariableAddress(variable_address, device_id);
+  }
+
+  emitPercentageEvent(event_label: string, event_percentage_value: number, event_id: number) {
+    logging.verbose(`emitPercentageEvent(event_label=${event_label}, event_percentage_value=${event_percentage_value}, event_id=${event_id})`);
+
+    if (!this.#instance) {
+      throw "NotConstructed";
+    }
+
+    const event_value = new SpectodaWasm.Value();
+    event_value.setPercentage(event_percentage_value);
+
+    this.#instance.emitEvent(event_label, event_value, event_id, true);
   }
 }

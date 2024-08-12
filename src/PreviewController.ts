@@ -109,7 +109,10 @@ export class PreviewController {
           //     // TODO IMPLEMENT SENDING TO OTHER INTERFACES
 
           // } catch {
-          //     return Module.send_result_t.SEND_ERROR;
+          // if (source_connection.address_string === "00:00:00:00:00:00") {
+          //   const array = SpectodaWasm.convertNumberVectorToJSArray(commands_bytecode_vector);
+          //   this.#runtimeReference.connector?.deliver(array, source_connection);
+          // }
           // }
 
           // return Module.send_result_t.SEND_OK;
@@ -187,7 +190,7 @@ export class PreviewController {
               // this.#eventEmitter.emit("error", logEntry);
               break;
             default:
-              logging.error(`🖥️ $${name}: \t[?][${filename}]: ${message}`);
+              console.warn(`🖥️ $${name}: \t[?][${filename}]: ${message}`);
               break;
           }
         },

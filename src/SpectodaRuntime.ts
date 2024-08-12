@@ -339,13 +339,24 @@ export class SpectodaRuntime {
     });
 
     this.#ups = 2; // TODO increase to 10 when the performance is good
-    this.#fps = 1;
+    this.#fps = 1; // TODO increase to 2 when the performance is good
   }
 
   #runtimeTask = async () => {
     try {
       await this.spectoda.inicilize();
-      await this.spectoda.construct(this.WIP_name ? this.WIP_name : "APP", "00:00:45:67:89:ab", 0, 255);
+
+      // ? "APP" controller config
+      const app_controller_config = {
+        controller: {
+          name: this.WIP_name,
+        },
+        console: {
+          debug: 4,
+        },
+      };
+
+      await this.spectoda.construct(app_controller_config, "00:00:45:67:89:ab");
 
       await sleep(0.1); // short delay to let fill up the queue to merge the execute items if possible
 

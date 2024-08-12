@@ -1,6 +1,6 @@
 import { logging } from "../logging";
 
-const WASM_VERSION = "DEBUG_DEV_0.11.0_20240807";
+const WASM_VERSION = "DEBUG_DEV_0.11.0_20240811";
 
 /// ========== DEBUG_DEV_0.11.0_20240807.d.ts ========== ///
 export interface interface_error_tValue<T extends number> {
@@ -25,6 +25,13 @@ export interface Connection {
   delete(): void;
 }
 
+export interface Value {
+  isPercentage(): boolean;
+  setPercentage(_0: number): void;
+  asPercentage(): number;
+  delete(): void;
+}
+
 export interface Uint8Vector {
   push_back(_0: number): void;
   resize(_0: number, _1: number): void;
@@ -40,6 +47,7 @@ export interface Spectoda_WASM {
   end(): void;
   process(): void;
   render(): void;
+  registerConnector(): void;
   _onTnglUpdate(_0: Uint8Vector): boolean;
   _onExecute(_0: Uint8Vector, _1: Connection): boolean;
   _onRequest(): boolean;
@@ -56,6 +64,7 @@ export interface Spectoda_WASM {
   _onLog(_0: number, _1: ArrayBuffer | Uint8Array | Uint8ClampedArray | Int8Array | string, _2: ArrayBuffer | Uint8Array | Uint8ClampedArray | Int8Array | string): void;
   init(_0: ArrayBuffer | Uint8Array | Uint8ClampedArray | Int8Array | string, _1: ArrayBuffer | Uint8Array | Uint8ClampedArray | Int8Array | string): void;
   getLabel(): string;
+  emitEvent(_0: ArrayBuffer | Uint8Array | Uint8ClampedArray | Int8Array | string, _1: Value, _2: number, _3: boolean): void;
   _onEvents(_0: any): boolean;
   _onEventStateUpdates(_0: any): boolean;
   _onSynchronize(_0: any, _1: Connection): boolean;
@@ -101,6 +110,7 @@ export interface MainModule {
   };
   connection_rssi_t: { RSSI_MAX: connection_rssi_tValue<127>; RSSI_MIN: connection_rssi_tValue<-128> };
   Connection: { new (_0: ArrayBuffer | Uint8Array | Uint8ClampedArray | Int8Array | string, _1: connector_type_t, _2: connection_rssi_t): Connection };
+  Value: { new (): Value };
   Uint8Vector: { new (): Uint8Vector };
   Spectoda_WASM: { implement(_0: any): ImplementedSpectoda_WASM; extend(_0: ArrayBuffer | Uint8Array | Uint8ClampedArray | Int8Array | string, _1: any): any };
   ImplementedSpectoda_WASM: {};
@@ -326,6 +336,7 @@ export class SpectodaWasm {
   static interface_error_t: MainModule["interface_error_t"];
   static connector_type_t: MainModule["connector_type_t"];
   static connection_rssi_t: MainModule["connection_rssi_t"];
+  static Value: MainModule["Value"];
   static Connection: MainModule["Connection"];
   static Uint8Vector: MainModule["Uint8Vector"];
   static Spectoda_WASM: MainModule["Spectoda_WASM"];
@@ -430,6 +441,8 @@ function onWasmLoad() {
     // @ts-ignore - Module is a global object of Emscripten
     SpectodaWasm.connection_rssi_t = Module.connection_rssi_t;
     // @ts-ignore - Module is a global object of Emscripten
+    SpectodaWasm.Value = Module.Value;
+    // @ts-ignore - Module is a global object of Emscripten
     SpectodaWasm.Connection = Module.Connection;
     // @ts-ignore - Module is a global object of Emscripten
     SpectodaWasm.Uint8Vector = Module.Uint8Vector;
@@ -437,7 +450,6 @@ function onWasmLoad() {
     SpectodaWasm.Spectoda_WASM = Module.Spectoda_WASM;
     // @ts-ignore - Module is a global object of Emscripten
     SpectodaWasm.IConnector_WASM = Module.IConnector_WASM;
-    // @ts-ignore - Module is a global object of Emscripten
 
     SpectodaWasm.DUMMY_WEBBLE_CONNECTION = new SpectodaWasm.Connection("00:00:11:11:11:11", SpectodaWasm.connector_type_t.CONNECTOR_BLE, SpectodaWasm.connection_rssi_t.RSSI_MAX);
 

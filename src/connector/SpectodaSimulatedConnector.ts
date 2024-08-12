@@ -73,6 +73,7 @@ export class SpectodaSimulatedConnector {
       const controller = new PreviewController("00:00:23:34:45:56");
       controller.construct({
         controller: { name: "SIMULATED" },
+        console: { debug: 3 },
         ports: [
           { tag: "A", size: 100 },
           { tag: "B", size: 100 },
