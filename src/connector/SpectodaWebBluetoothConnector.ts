@@ -1,12 +1,12 @@
 // npm install --save-dev @types/web-bluetooth
 /// <reference types="web-bluetooth" />
 
-import { logging } from "./logging";
-import { detectAndroid, detectSafari, hexStringToUint8Array, numberToBytes, sleep, toBytes, uint8ArrayToHexString } from "./functions";
-import { COMMAND_FLAGS } from "./src/Spectoda_JS";
-import { TimeTrack } from "./TimeTrack.js";
-import { TnglReader } from "./TnglReader.js";
-import { SpectodaWasm } from "./src/SpectodaWasm";
+import { logging } from "../../logging";
+import { detectAndroid, detectSafari, hexStringToUint8Array, numberToBytes, sleep, toBytes, uint8ArrayToHexString } from "../../functions";
+import { COMMAND_FLAGS } from "../Spectoda_JS";
+import { TimeTrack } from "../../TimeTrack.js";
+import { TnglReader } from "../../TnglReader.js";
+import { SpectodaWasm } from "../SpectodaWasm";
 
 // od 0.8.0 maji vsechny spectoda enabled BLE zarizeni jednotne SPECTODA_DEVICE_UUID.
 // kazdy typ (produkt) Spectoda Zarizeni ma svuj kod v manufacturer data
@@ -36,20 +36,20 @@ export class WebBLEConnection {
     /*
       BLE Spectoda Service
     */
-    this.#service = /** @type {BluetoothRemoteGATTService} */ (null);
+    this.#service = /** @type {BluetoothRemoteGATTService} */ null;
 
     /*
       Network Characteristics governs the communication with the Spectoda Netwok.
       That means tngl uploads, timeline manipulation, event emitting...
       You can access it only if you are authenticated via the Device Characteristics
     */
-    this.#networkChar = /** @type {BluetoothRemoteGATTCharacteristic} */ (null); // ? only accesable when connected to the mesh network
+    this.#networkChar = /** @type {BluetoothRemoteGATTCharacteristic} */ null; // ? only accesable when connected to the mesh network
 
     /*
       The whole purpuse of clock characteristics is to synchronize clock time
       of the application with the Spectoda network
     */
-    this.#clockChar = /** @type {BluetoothRemoteGATTCharacteristic} */ (null); // ? always accesable
+    this.#clockChar = /** @type {BluetoothRemoteGATTCharacteristic} */ null; // ? always accesable
 
     /*
       Device Characteristics is renamed Update Characteristics
@@ -60,7 +60,7 @@ export class WebBLEConnection {
       access and manipulate json config of the device, adopt device,
       and authenticate the application client with the spectoda network
     */
-    this.#deviceChar = /** @type {BluetoothRemoteGATTCharacteristic} */ (null);
+    this.#deviceChar = /** @type {BluetoothRemoteGATTCharacteristic} */ null;
 
     /*
       simple mutex indicating that communication over BLE is in progress
@@ -673,7 +673,7 @@ criteria example:
     }
 
     /** @type {RequestDeviceOptions} */
-    let web_ble_options = { filters: /** @type {BluetoothLEScanFilter[]} */ ([]), optionalServices: [this.SPECTODA_SERVICE_UUID] };
+    let web_ble_options = { filters: /** @type {BluetoothLEScanFilter[]} */ [], optionalServices: [this.SPECTODA_SERVICE_UUID] };
 
     //
     if (this.#criteria.length == 0) {
