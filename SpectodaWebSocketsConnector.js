@@ -55,6 +55,10 @@ if (typeof window !== "undefined") {
 }
 /////////////////////////////////////////////////////////////////////////////////////
 
+export const isCurrentSpectodaInstanceLocal = () => {
+  return typeof spectoda.init === "undefined";
+};
+
 export function createSpectodaWebsocket() {
   const timeline = new TimeTrack();
 
@@ -185,7 +189,6 @@ export function createSpectodaWebsocket() {
             const result = await this.sendThroughWebsocket(payload);
 
             if (result.status === "success") {
-
               for (let res of result?.data) {
                 if (res.status === "error") {
                   logging.error(result);
