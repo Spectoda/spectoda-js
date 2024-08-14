@@ -1,8 +1,8 @@
-import { logging } from "./logging";
-import { sleep, toBytes, detectSpectodaConnect, numberToBytes, detectAndroid } from "./functions";
-import { TimeTrack } from "./TimeTrack.js";
-import { TnglReader } from "./TnglReader.js";
-import { COMMAND_FLAGS } from "./src/Spectoda_JS";
+import { logging } from "../../logging";
+import { sleep, toBytes, detectSpectodaConnect, numberToBytes, detectAndroid } from "../../functions";
+import { TimeTrack } from "../../TimeTrack";
+import { TnglReader } from "../../TnglReader";
+import { COMMAND_FLAGS } from "../Spectoda_JS";
 
 /////////////////////////////////////////////////////////////////////////////////////
 
