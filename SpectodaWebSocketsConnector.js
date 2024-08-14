@@ -35,6 +35,10 @@ if (typeof window !== "undefined") {
 }
 /////////////////////////////////////////////////////////////////////////////////////
 
+export const isCurrentSpectodaInstanceLocal = () => {
+  return typeof spectoda.init === "undefined";
+};
+
 export function createSpectodaWebsocket() {
   // ! this timeline is a dummy timeline that it not correctly synced across remote control
   // TODO sync timeline over RC
@@ -93,8 +97,7 @@ export function createSpectodaWebsocket() {
               // unsubscribe from previous event
               return unsub;
             };
-          }
-          if (prop === "on") {
+          } else if (prop === "on") {
             // Special handling for "on" method
             return (eventName, callback) => {
               logging.verbose("Subscribing to event", eventName);
