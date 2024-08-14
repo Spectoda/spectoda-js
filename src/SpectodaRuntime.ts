@@ -319,7 +319,7 @@ export class SpectodaRuntime {
       logging.debug("wasm_execute", command);
       for (const previewController of Object.values(this.previewControllers)) {
         try {
-          previewController.execute(command, new SpectodaWasm.Connection("00:00:11:11:11:11", SpectodaWasm.connector_type_t.CONNECTOR_UNDEFINED, SpectodaWasm.connection_rssi_t.RSSI_MAX));
+          previewController.execute(command, new SpectodaWasm.Connection("11:11:11:11:11:11", SpectodaWasm.connector_type_t.CONNECTOR_UNDEFINED, SpectodaWasm.connection_rssi_t.RSSI_MAX));
         } catch (error) {
           logging.error(error);
         }
@@ -1308,7 +1308,7 @@ export class SpectodaRuntime {
         const request_bytes = [COMMAND_FLAGS.FLAG_READ_PORT_PIXELS_REQUEST, ...numberToBytes(request_uuid, 4), portTag, PIXEL_ENCODING_CODE];
 
         logging.debug("Sending request", uint8ArrayToHexString(request_bytes));
-        const response = await previewController.request(new Uint8Array(request_bytes), new SpectodaWasm.Connection("00:00:11:11:11:11", SpectodaWasm.connector_type_t.CONNECTOR_UNDEFINED, SpectodaWasm.connection_rssi_t.RSSI_MAX));
+        const response = await previewController.request(new Uint8Array(request_bytes), new SpectodaWasm.Connection("11:11:11:11:11:11", SpectodaWasm.connector_type_t.CONNECTOR_UNDEFINED, SpectodaWasm.connection_rssi_t.RSSI_MAX));
 
         logging.debug("Received response", uint8ArrayToHexString(response));
         const tempReader = new TnglReader(new DataView(response.buffer));
@@ -1379,7 +1379,7 @@ export class SpectodaRuntime {
         const request_bytes = [COMMAND_FLAGS.FLAG_READ_PORT_PIXELS_REQUEST, ...numberToBytes(request_uuid, 4), portTag, PIXEL_ENCODING_CODE];
 
         logging.debug("Sending request", uint8ArrayToHexString(request_bytes));
-        const response = previewController.request(new Uint8Array(request_bytes), new SpectodaWasm.Connection("00:00:11:11:11:11", SpectodaWasm.connector_type_t.CONNECTOR_UNDEFINED, SpectodaWasm.connection_rssi_t.RSSI_MAX));
+        const response = previewController.request(new Uint8Array(request_bytes), new SpectodaWasm.Connection("11:11:11:11:11:11", SpectodaWasm.connector_type_t.CONNECTOR_UNDEFINED, SpectodaWasm.connection_rssi_t.RSSI_MAX));
 
         logging.debug("Received response", uint8ArrayToHexString(response));
         const tempReader = new TnglReader(new DataView(response.buffer));

@@ -368,7 +368,7 @@ export class NodeBLEConnection {
     // logging.verbose("dataView", dataView);
     // logging.verbose("uint8Array", uint8Array);
 
-    this.#runtimeReference.interface.execute(uint8Array, new SpectodaWasm.Connection("00:00:11:11:11:11", SpectodaWasm.connector_type_t.CONNECTOR_UNDEFINED, SpectodaWasm.connection_rssi_t.RSSI_MAX));
+    this.#runtimeReference.interface.execute(uint8Array, new SpectodaWasm.Connection("11:11:11:11:11:11", SpectodaWasm.connector_type_t.CONNECTOR_UNDEFINED, SpectodaWasm.connection_rssi_t.RSSI_MAX));
   }
 
   // WIP

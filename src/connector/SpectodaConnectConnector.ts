@@ -3,6 +3,8 @@ import { sleep, toBytes, detectSpectodaConnect, numberToBytes, detectAndroid } f
 import { TimeTrack } from "../../TimeTrack";
 import { TnglReader } from "../../TnglReader";
 import { COMMAND_FLAGS } from "../Spectoda_JS";
+import { SpectodaRuntime } from "../SpectodaRuntime";
+import { Connection, SpectodaWasm, Synchronization } from "../SpectodaWasm";
 
 /////////////////////////////////////////////////////////////////////////////////////
 
@@ -115,7 +117,7 @@ class FlutterConnection {
       var _connected = false;
       var _selected = false;
 
-      function _fail(failChance) {
+      function _fail(failChance: number) {
         if (simulatedFails) {
           return Math.random() < failChance;
         } else {
@@ -437,10 +439,11 @@ class FlutterConnection {
 // position of a controller for other Spectoda Devices
 export class FlutterConnector extends FlutterConnection {
   #interfaceReference;
+  #promise: Promise<any> | null;
 
-  #promise;
+  type: string;
 
-  constructor(interfaceReference) {
+  constructor(interfaceReference: SpectodaRuntime) {
     super();
 
     this.type = "flutterbluetooth";
@@ -455,7 +458,8 @@ export class FlutterConnector extends FlutterConnection {
 
     // @ts-ignore
     window.flutterConnection.process = bytes => {
-      this.#interfaceReference.process(new DataView(new Uint8Array(bytes).buffer));
+      const DUMMY_CONNECTION = new SpectodaWasm.Connection("11:11:11:11:11:11", SpectodaWasm.connector_type_t.CONNECTOR_BLE, SpectodaWasm.connection_rssi_t.RSSI_MAX);
+      this.#interfaceReference.spectoda.execute(new Uint8Array(bytes), DUMMY_CONNECTION);
     };
   }
 
@@ -767,6 +771,44 @@ criteria example:
 
   // synchronizes the device internal clock with the provided TimeTrack clock
   // of the application as precisely as possible
+  synchronize(synchonization: Synchronization) {
+    logging.debug("synchronize()");
+
+    return new Promise(async (resolve, reject) => {
+      for (let index = 0; index < 1; index++) {
+        await sleep(1000);
+        try {
+          // tryes to ASAP write a timestamp to the clock characteristics.
+          // if the ASAP write fails, then try it once more
+
+          this.#promise = new Promise((resolve, reject) => {
+            // @ts-ignore
+            window.flutterConnection.resolve = resolve;
+            // @ts-ignore
+            window.flutterConnection.reject = reject;
+          });
+
+          const synchonization_bytes = Array.from(synchonization.toUint8Array());
+          // @ts-ignore
+          window.flutter_inappwebview.callHandler("writeClock", synchonization_bytes);
+
+          await this.#applyTimeout(this.#promise, 5000, "synchonization");
+
+          // @ts-ignore
+          resolve();
+          return;
+        } catch (e) {
+          logging.warn("Clock write failed: " + e);
+        }
+      }
+
+      reject("Clock write failed");
+      return;
+    });
+  }
+
+  // synchronizes the device internal clock with the provided TimeTrack clock
+  // of the application as precisely as possible
   setClock(clock) {
     logging.debug("setClock()");
 
@@ -978,5 +1020,44 @@ criteria example:
         return this.unselect();
       })
       .catch(() => {});
+  }
+
+  // void _sendExecute(const std::vector<uint8_t>& command_bytes, const Connection& source_connection) = 0;
+
+  sendExecute(command_bytes: Uint8Array, source_connection: Connection) {
+    logging.verbose(`sendExecute(command_bytes=${command_bytes}, source_connection=${source_connection})`);
+
+    if (source_connection.connector_type == SpectodaWasm.connector_type_t.CONNECTOR_BLE) {
+      return;
+    }
+
+    return this.deliver(Array.from(command_bytes), 1000);
+  }
+
+  // bool _sendRequest(const int32_t request_ticket_number, std::vector<uint8_t>& request_bytecode, const Connection& destination_connection) = 0;
+
+  sendRequest(request_ticket_number: number, request_bytecode: Uint8Array, destination_connection: Connection) {
+    logging.verbose(`sendRequest(request_ticket_number=${request_ticket_number}, request_bytecode=${request_bytecode}, destination_connection=${destination_connection})`);
+
+    return Promise.reject("NotImplemented");
+  }
+  // bool _sendResponse(const int32_t request_ticket_number, const int32_t request_result, std::vector<uint8_t>& response_bytecode, const Connection& destination_connection) = 0;
+
+  sendResponse(request_ticket_number: number, request_result: number, response_bytecode: Uint8Array, destination_connection: Connection) {
+    logging.verbose(`sendResponse(request_ticket_number=${request_ticket_number}, request_result=${request_result}, response_bytecode=${response_bytecode}, destination_connection=${destination_connection})`);
+
+    return Promise.reject("NotImplemented");
+  }
+
+  // void _sendSynchronize(const Synchronization& synchronization, const Connection& source_connection) = 0;
+
+  sendSynchronize(synchronization: Synchronization, source_connection: Connection) {
+    logging.verbose(`sendSynchronize(synchronization=${synchronization}, source_connection=${source_connection})`);
+
+    if (source_connection.connector_type == SpectodaWasm.connector_type_t.CONNECTOR_BLE) {
+      return;
+    }
+
+    return this.synchronize(synchronization);
   }
 }

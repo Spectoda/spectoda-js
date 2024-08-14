@@ -164,7 +164,7 @@ export class WebBLEConnection {
     const command_bytes = new Uint8Array(event.target.value.buffer);
     logging.verbose(`command_bytes: ${uint8ArrayToHexString(command_bytes)}`);
 
-    const DUMMY_WEBBLE_CONNECTION = new SpectodaWasm.Connection("00:00:11:11:11:11", SpectodaWasm.connector_type_t.CONNECTOR_BLE, SpectodaWasm.connection_rssi_t.RSSI_MAX);
+    const DUMMY_WEBBLE_CONNECTION = new SpectodaWasm.Connection("11:11:11:11:11:11", SpectodaWasm.connector_type_t.CONNECTOR_BLE, SpectodaWasm.connection_rssi_t.RSSI_MAX);
     this.#runtimeReference.spectoda.execute(command_bytes, DUMMY_WEBBLE_CONNECTION);
   }
 
@@ -181,7 +181,7 @@ export class WebBLEConnection {
     // this.#runtimeReference.process(event.target.value);
 
     // TODO process request
-    // const DUMMY_WEBBLE_CONNECTION =new SpectodaWasm.Connection("00:00:11:11:11:11", SpectodaWasm.connector_type_t.CONNECTOR_BLE, SpectodaWasm.connection_rssi_t.RSSI_MAX)
+    // const DUMMY_WEBBLE_CONNECTION =new SpectodaWasm.Connection("11:11:11:11:11:11", SpectodaWasm.connector_type_t.CONNECTOR_BLE, SpectodaWasm.connection_rssi_t.RSSI_MAX)
     // this.#runtimeReference.spectoda.request(new Uint8Array(event.target.value.buffer), SpectodaWasm.DUMMY_WEBBLE_CONNECTION);
   }
 
@@ -235,7 +235,7 @@ export class WebBLEConnection {
 
     const synchronization = SpectodaWasm.Synchronization.fromUint8Array(new Uint8Array(event.target.value.buffer));
 
-    const DUMMY_WEBBLE_CONNECTION = new SpectodaWasm.Connection("00:00:11:11:11:11", SpectodaWasm.connector_type_t.CONNECTOR_BLE, SpectodaWasm.connection_rssi_t.RSSI_MAX);
+    const DUMMY_WEBBLE_CONNECTION = new SpectodaWasm.Connection("11:11:11:11:11:11", SpectodaWasm.connector_type_t.CONNECTOR_BLE, SpectodaWasm.connection_rssi_t.RSSI_MAX);
     this.#runtimeReference.synchronize(synchronization, DUMMY_WEBBLE_CONNECTION);
   }
 
