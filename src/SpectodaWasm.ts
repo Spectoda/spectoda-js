@@ -1,8 +1,9 @@
 import { logging } from "../logging";
 
-const WASM_VERSION = "DEBUG_DEV_0.11.0_20240811";
+const WASM_VERSION = "DEBUG_DEV_0.11.0_20240814";
 
-/// ========== DEBUG_DEV_0.11.0_20240807.d.ts ========== ///
+/// ========== DEBUG_DEV_0.11.0_20240813.d.ts ========== ///
+
 export interface interface_error_tValue<T extends number> {
   value: T;
 }
@@ -32,49 +33,24 @@ export interface Value {
   delete(): void;
 }
 
+export interface Synchronization {
+  history_fingerprint: number;
+  tngl_fingerprint: number;
+  clock_timestamp: number;
+  timeline_clock_timestamp: number;
+  tngl_clock_timestamp: number;
+  fw_compilation_timestamp: number;
+  origin_address: ArrayBuffer | Uint8Array | Uint8ClampedArray | Int8Array | string;
+  toUint8Array(): any;
+  delete(): void;
+}
+
 export interface Uint8Vector {
   push_back(_0: number): void;
   resize(_0: number, _1: number): void;
   size(): number;
   set(_0: number, _1: number): boolean;
   get(_0: number): any;
-  delete(): void;
-}
-
-export interface Spectoda_WASM {
-  _handleReboot(): interface_error_t;
-  begin(): void;
-  end(): void;
-  process(): void;
-  render(): void;
-  registerConnector(): void;
-  _onTnglUpdate(_0: Uint8Vector): boolean;
-  _onExecute(_0: Uint8Vector, _1: Connection): boolean;
-  _onRequest(): boolean;
-  setVirtualInput(_0: number, _1: number): void;
-  execute(_0: number, _1: Connection): boolean;
-  request(_0: number, _1: Uint8Vector, _2: Connection): boolean;
-  getIdentifier(): number;
-  _handleTimelineManipulation(_0: number, _1: boolean, _2: number): interface_error_t;
-  setClockTimestamp(_0: number): void;
-  getClockTimestamp(): number;
-  synchronize(_0: number, _1: Connection): void;
-  _handlePeerConnected(_0: ArrayBuffer | Uint8Array | Uint8ClampedArray | Int8Array | string): interface_error_t;
-  _handlePeerDisconnected(_0: ArrayBuffer | Uint8Array | Uint8ClampedArray | Int8Array | string): interface_error_t;
-  _onLog(_0: number, _1: ArrayBuffer | Uint8Array | Uint8ClampedArray | Int8Array | string, _2: ArrayBuffer | Uint8Array | Uint8ClampedArray | Int8Array | string): void;
-  init(_0: ArrayBuffer | Uint8Array | Uint8ClampedArray | Int8Array | string, _1: ArrayBuffer | Uint8Array | Uint8ClampedArray | Int8Array | string): void;
-  getLabel(): string;
-  emitEvent(_0: ArrayBuffer | Uint8Array | Uint8ClampedArray | Int8Array | string, _1: Value, _2: number, _3: boolean): void;
-  _onEvents(_0: any): boolean;
-  _onEventStateUpdates(_0: any): boolean;
-  _onSynchronize(_0: any, _1: Connection): boolean;
-  makePort(_0: ArrayBuffer | Uint8Array | Uint8ClampedArray | Int8Array | string, _1: number, _2: number, _3: number, _4: boolean, _5: boolean): any;
-  readVariableAddress(_0: number, _1: number): any;
-  delete(): void;
-}
-
-export interface ImplementedSpectoda_WASM extends Spectoda_WASM {
-  notifyOnDestruction(): void;
   delete(): void;
 }
 
@@ -88,11 +64,51 @@ export interface IConnector_WASM {
   _scan(_0: ArrayBuffer | Uint8Array | Uint8ClampedArray | Int8Array | string, _1: number, _2: any): boolean;
   _userConnect(_0: ArrayBuffer | Uint8Array | Uint8ClampedArray | Int8Array | string, _1: number, _2: any): boolean;
   _autoConnect(_0: ArrayBuffer | Uint8Array | Uint8ClampedArray | Int8Array | string, _1: number, _2: number, _3: any): boolean;
-  _sendSynchronize(_0: any, _1: Connection): void;
+  _sendSynchronize(_0: any, _1: any): void;
   delete(): void;
 }
 
 export interface ImplementedIConnector_WASM extends IConnector_WASM {
+  notifyOnDestruction(): void;
+  delete(): void;
+}
+
+export interface Spectoda_WASM {
+  _handleReboot(): interface_error_t;
+  begin(): void;
+  end(): void;
+  synchronize(_0: Synchronization, _1: Connection): void;
+  process(): void;
+  render(): void;
+  clearHistory(): void;
+  clearTimeline(): void;
+  clearTngl(): void;
+  registerConnector(_0: IConnector_WASM): void;
+  _onTnglUpdate(_0: Uint8Vector): boolean;
+  _onRequest(): boolean;
+  setVirtualInput(_0: number, _1: number): void;
+  execute(_0: number, _1: Connection): boolean;
+  request(_0: number, _1: Uint8Vector, _2: Connection): boolean;
+  getIdentifier(): number;
+  _handleTimelineManipulation(_0: number, _1: boolean, _2: number): interface_error_t;
+  setClockTimestamp(_0: number): void;
+  getClockTimestamp(): number;
+  _handlePeerConnected(_0: ArrayBuffer | Uint8Array | Uint8ClampedArray | Int8Array | string): interface_error_t;
+  _handlePeerDisconnected(_0: ArrayBuffer | Uint8Array | Uint8ClampedArray | Int8Array | string): interface_error_t;
+  _onLog(_0: number, _1: ArrayBuffer | Uint8Array | Uint8ClampedArray | Int8Array | string, _2: ArrayBuffer | Uint8Array | Uint8ClampedArray | Int8Array | string): void;
+  init(_0: ArrayBuffer | Uint8Array | Uint8ClampedArray | Int8Array | string, _1: ArrayBuffer | Uint8Array | Uint8ClampedArray | Int8Array | string): void;
+  getLabel(): string;
+  emitEvent(_0: ArrayBuffer | Uint8Array | Uint8ClampedArray | Int8Array | string, _1: Value, _2: number, _3: boolean): void;
+  _onEvents(_0: any): boolean;
+  _onEventStateUpdates(_0: any): boolean;
+  _onExecute(_0: Uint8Vector, _1: any): boolean;
+  _onSynchronize(_0: any, _1: any): boolean;
+  makePort(_0: ArrayBuffer | Uint8Array | Uint8ClampedArray | Int8Array | string, _1: number, _2: number, _3: number, _4: boolean, _5: boolean): any;
+  readVariableAddress(_0: number, _1: number): any;
+  delete(): void;
+}
+
+export interface ImplementedSpectoda_WASM extends Spectoda_WASM {
   notifyOnDestruction(): void;
   delete(): void;
 }
@@ -111,31 +127,22 @@ export interface MainModule {
   connection_rssi_t: { RSSI_MAX: connection_rssi_tValue<127>; RSSI_MIN: connection_rssi_tValue<-128> };
   Connection: { new (_0: ArrayBuffer | Uint8Array | Uint8ClampedArray | Int8Array | string, _1: connector_type_t, _2: connection_rssi_t): Connection };
   Value: { new (): Value };
+  Synchronization: {
+    new (_0: number, _1: ArrayBuffer | Uint8Array | Uint8ClampedArray | Int8Array | string, _2: number, _3: number, _4: number, _5: number, _6: number): Synchronization;
+    make(_0: number, _1: ArrayBuffer | Uint8Array | Uint8ClampedArray | Int8Array | string, _2: number, _3: number, _4: number, _5: number, _6: number): any;
+    fromUint8Array(_0: any): any;
+  };
   Uint8Vector: { new (): Uint8Vector };
-  Spectoda_WASM: { implement(_0: any): ImplementedSpectoda_WASM; extend(_0: ArrayBuffer | Uint8Array | Uint8ClampedArray | Int8Array | string, _1: any): any };
-  ImplementedSpectoda_WASM: {};
   IConnector_WASM: { implement(_0: any): ImplementedIConnector_WASM; extend(_0: ArrayBuffer | Uint8Array | Uint8ClampedArray | Int8Array | string, _1: any): any };
   ImplementedIConnector_WASM: {};
+  Spectoda_WASM: { implement(_0: any): ImplementedSpectoda_WASM; extend(_0: ArrayBuffer | Uint8Array | Uint8ClampedArray | Int8Array | string, _1: any): any };
+  ImplementedSpectoda_WASM: {};
 }
 
-/// ========== DEBUG_DEV_0.11.0_20240807.d.ts ========== ///
+/// ========== DEBUG_DEV_0.11.0_202413.d.ts ========== ///
 
 /// =================== MANUAL INTERFACES ================= ///
-export interface Synchronization {
-  // synchronization_object.set("this_address", std::string(this_address.toString()));
-  // synchronization_object.set("clock_timestamp", double(clock.millis_u64()));
-  // synchronization_object.set("tngl_fingerprint", to_hex_string(tngl_fingerprint32, TNGL_FINGERPRINT_SIZE));
-  // synchronization_object.set("history_fingerprint", to_hex_string(history_fingerprint32, TNGL_FINGERPRINT_SIZE));
-  // synchronization_object.set("timeline_clock_timestamp", double(timeline_clock_timestamp));
-  // synchronization_object.set("tngl_clock_timestamp", double(tngl_clock_timestamp));
 
-  this_address: string;
-  clock_timestamp: number;
-  tngl_fingerprint: string;
-  history_fingerprint: string;
-  timeline_clock_timestamp: number;
-  tngl_clock_timestamp: number;
-}
 export interface Event {
   // event_object.set("label", label_t(event.identifier).asString());
   // event_object.set("indentifier", int32_t(event.identifier.raw()));
@@ -178,9 +185,9 @@ export interface Spectoda_WASMImplementation {
   //     return call<bool>("_onRequest");
   // }
 
-  // bool _onSynchronize(const val& synchronization_object, const Connection& source_connection) override
+  // bool _onSynchronize(const Synchronization& synchronization, const Connection& source_connection) override
   // {
-  //     return call<bool>("_onSynchronize", synchronization_object, source_connection);
+  //     return call<bool>("_onSynchronize", synchronization, source_connection);
   // }
 
   // interface_error_t _handlePeerConnected(const std::string& peer_mac) override
@@ -215,7 +222,7 @@ export interface Spectoda_WASMImplementation {
   _onEventStateUpdates(event_array: Event[]): void;
   _onExecute(execute_bytecode: Uint8Vector, source_connection: Connection): boolean;
   _onRequest(): boolean;
-  _onSynchronize(synchronization_object: Synchronization, source_connection: Connection): boolean;
+  _onSynchronize(synchronization: Synchronization, source_connection: Connection): boolean;
   _handlePeerConnected(peer_mac: string): interface_error_t;
   _handlePeerDisconnected(peer_mac: string): interface_error_t;
   _handleTimelineManipulation(timeline_timestamp: number, timeline_paused: boolean, clock_timestamp: number): interface_error_t;
@@ -259,9 +266,9 @@ export interface IConnector_WASMImplementation {
   //     return call<bool>("_sendResponse", request_ticket_number, request_result, response_bytecode, destination_connection);
   // }
 
-  // void _sendSynchronize(const val& synchronization_object, const Connection& source_connection) override
+  // void _sendSynchronize(const Synchronization& synchronization, const Connection& source_connection) override
   // {
-  //     return call<void>("_sendSynchronize", synchronization_object, source_connection);
+  //     return call<void>("_sendSynchronize", synchronization, source_connection);
   // }
 
   // void _process() override
@@ -278,7 +285,7 @@ export interface IConnector_WASMImplementation {
   _sendExecute: (command_bytes: Uint8Vector, source_connection: Connection) => void;
   _sendRequest: (request_ticket_number: number, request_bytecode: Uint8Vector, destination_connection: Connection) => boolean;
   _sendResponse: (request_ticket_number: number, request_result: number, response_bytecode: Uint8Vector, destination_connection: Connection) => boolean;
-  _sendSynchronize: (synchronization_object: Synchronization, source_connection: Connection) => void;
+  _sendSynchronize: (synchronization: Synchronization, source_connection: Connection) => void;
   _process: () => void;
 }
 
@@ -338,6 +345,7 @@ export class SpectodaWasm {
   static connection_rssi_t: MainModule["connection_rssi_t"];
   static Value: MainModule["Value"];
   static Connection: MainModule["Connection"];
+  static Synchronization: MainModule["Synchronization"];
   static Uint8Vector: MainModule["Uint8Vector"];
   static Spectoda_WASM: MainModule["Spectoda_WASM"];
   static IConnector_WASM: MainModule["IConnector_WASM"];
@@ -428,6 +436,7 @@ function onWasmLoad() {
     // static connector_type_t: MainModule["connector_type_t"];
     // static connection_rssi_t: MainModule["connection_rssi_t"];
     // static Connection: MainModule["Connection"];
+    // static Synchronization: MainModule["Synchronization"];
     // static Uint8Vector: MainModule["Uint8Vector"];
     // static Spectoda_WASM: MainModule["Spectoda_WASM"];
     // static IConnector_WASM: MainModule["IConnector_WASM"];
@@ -445,13 +454,13 @@ function onWasmLoad() {
     // @ts-ignore - Module is a global object of Emscripten
     SpectodaWasm.Connection = Module.Connection;
     // @ts-ignore - Module is a global object of Emscripten
+    SpectodaWasm.Synchronization = Module.Synchronization;
+    // @ts-ignore - Module is a global object of Emscripten
     SpectodaWasm.Uint8Vector = Module.Uint8Vector;
     // @ts-ignore - Module is a global object of Emscripten
     SpectodaWasm.Spectoda_WASM = Module.Spectoda_WASM;
     // @ts-ignore - Module is a global object of Emscripten
     SpectodaWasm.IConnector_WASM = Module.IConnector_WASM;
-
-    SpectodaWasm.DUMMY_WEBBLE_CONNECTION = new SpectodaWasm.Connection("00:00:11:11:11:11", SpectodaWasm.connector_type_t.CONNECTOR_BLE, SpectodaWasm.connection_rssi_t.RSSI_MAX);
 
     if (typeof window !== "undefined") {
       // @ts-ignore - FS is a global object of Emscripten

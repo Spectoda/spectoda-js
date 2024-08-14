@@ -236,7 +236,7 @@ export class Spectoda {
   #setOwnerSignature(ownerSignature) {
     const reg = ownerSignature.match(/([\dabcdefABCDEF]{32})/g);
 
-    if (!reg[0]) {
+    if (!reg || !reg.length || !reg[0]) {
       throw "InvalidSignature";
     }
 
@@ -247,7 +247,7 @@ export class Spectoda {
   #setOwnerKey(ownerKey) {
     const reg = ownerKey.match(/([\dabcdefABCDEF]{32})/g);
 
-    if (!reg[0]) {
+    if (!reg || !reg.length || !reg[0]) {
       throw "InvalidKey";
     }
 
@@ -702,26 +702,28 @@ export class Spectoda {
         this.#resetClockSyncInterval();
 
         logging.debug("> Synchronizing Network State...");
-        return (this.timeline.paused() ? this.requestTimeline() : this.syncTimeline())
-          .catch(e => {
-            logging.error("Timeline sync after reconnection failed:", e);
-          })
-          .then(() => {
-            return this.syncEventHistory();
-          })
-          .catch(e => {
-            logging.error("History sync after reconnection failed:", e);
-          })
-          .then(() => {
-            return this.runtime.connected();
-          })
-          .then(connected => {
-            if (!connected) {
-              throw "ConnectionFailed";
-            }
-            this.#setConnectionState("connected");
-            return connectedDeviceInfo;
-          });
+        return (
+          (this.timeline.paused() ? this.requestTimeline() : this.syncTimeline())
+            .catch(e => {
+              logging.error("Timeline sync after reconnection failed:", e);
+            })
+            // .then(() => {
+            //   return this.syncEventHistory();
+            // })
+            .catch(e => {
+              logging.error("History sync after reconnection failed:", e);
+            })
+            .then(() => {
+              return this.runtime.connected();
+            })
+            .then(connected => {
+              if (!connected) {
+                throw "ConnectionFailed";
+              }
+              this.#setConnectionState("connected");
+              return connectedDeviceInfo;
+            })
+        );
       })
       .catch(error => {
         logging.error("Error during connect():", error);
@@ -1102,14 +1104,9 @@ export class Spectoda {
    * @returns
    */
   emitPercentageEvent(event_label, event_value, device_ids = [0xff], force_delivery = false) {
-    logging.info(`emitPercentageEvent(label=${event_label},value=${event_value},id=${device_ids},force=${force_delivery})`);
+    logging.verbose(`emitPercentageEvent(label=${event_label},value=${event_value},id=${device_ids},force=${force_delivery})`);
 
     this.#resetClockSyncInterval();
-
-    // clearTimeout(this.#saveStateTimeoutHandle);
-    // this.#saveStateTimeoutHandle = setTimeout(() => {
-    //   this.saveState();
-    // }, 5000);
 
     if (event_value > 100.0) {
       logging.error("Invalid event value");
@@ -1121,9 +1118,21 @@ export class Spectoda {
       event_value = -100.0;
     }
 
+    // const func = device_id => {
+    //   const payload = [COMMAND_FLAGS.FLAG_EMIT_PERCENTAGE_EVENT, ...percentageToBytes(event_value), ...labelToBytes(event_label), ...numberToBytes(this.runtime.clock.millis() + 10, 6), numberToBytes(device_id, 1)];
+    //   return this.runtime.execute(payload, force_delivery ? null : "E" + event_label + device_id);
+    // };
+
+    // if (typeof device_ids === "object") {
+    //   let promises = device_ids.map(func);
+    //   return Promise.all(promises);
+    // } else {
+    //   return func(device_ids);
+    // }
+
     const func = device_id => {
-      const payload = [COMMAND_FLAGS.FLAG_EMIT_PERCENTAGE_EVENT, ...percentageToBytes(event_value), ...labelToBytes(event_label), ...numberToBytes(this.runtime.clock.millis() + 10, 6), numberToBytes(device_id, 1)];
-      return this.runtime.execute(payload, force_delivery ? null : "E" + event_label + device_id);
+      this.runtime.spectoda.emitPercentageEvent(event_label, event_value, device_id, true);
+      return Promise.resolve();
     };
 
     if (typeof device_ids === "object") {

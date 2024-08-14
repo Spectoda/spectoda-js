@@ -1,7 +1,9 @@
 import { logging } from "../logging";
-import { Connection, SpectodaWasm, Spectoda_WASM, Spectoda_WASMImplementation } from "./SpectodaWasm";
+import { Connection, IConnector_WASMImplementation, SpectodaWasm, Spectoda_WASM, Spectoda_WASMImplementation, Synchronization, Uint8Vector } from "./SpectodaWasm";
 import { sleep } from "../functions";
 import { SpectodaRuntime } from "./SpectodaRuntime";
+
+export const APP_MAC_ADDRESS = "00:00:12:34:56:78";
 
 export const COMMAND_FLAGS = Object.freeze({
   FLAG_UNSUPPORTED_COMMND_RESPONSE: 255, // TODO change FLAG_OTA_BEGIN to not be 255.
@@ -118,11 +120,13 @@ export class Spectoda_JS {
   #runtimeReference;
 
   #instance: Spectoda_WASM | undefined;
+  #connectors: IConnector_WASMImplementation[];
 
   constructor(runtimeReference: SpectodaRuntime) {
     this.#runtimeReference = runtimeReference;
 
     this.#instance = undefined;
+    this.#connectors = [];
   }
 
   inicilize() {
@@ -257,11 +261,11 @@ export class Spectoda_JS {
           return true;
         },
 
-        _onSynchronize: synchronization_object => {
-          logging.debug("_onSynchronize", synchronization_object);
+        _onSynchronize: synchronization => {
+          logging.debug("_onSynchronize", synchronization);
 
           try {
-            this.#runtimeReference.clock.setMillis(synchronization_object.clock_timestamp);
+            this.#runtimeReference.clock.setMillis(synchronization.clock_timestamp);
           } catch (e) {
             logging.error(e);
           }
@@ -344,6 +348,74 @@ export class Spectoda_JS {
         },
       };
 
+      const WasmConnectorImplementation: IConnector_WASMImplementation = {
+        // _scan: (criteria_json: string, scan_period: number, result_out: any) => boolean;
+        _scan: (criteria_json: string, scan_period: number, result_out: any) => {
+          return false;
+        },
+
+        // _autoConnect: (criteria_json: string, scan_period: number, timeout: number, result_out: any) => boolean;
+        _autoConnect: (criteria_json: string, scan_period: number, timeout: number, result_out: any) => {
+          return false;
+        },
+
+        // _userConnect: (criteria_json: string, timeout: number, result_out: any) => boolean;
+        _userConnect: (criteria_json: string, timeout: number, result_out: any) => {
+          return false;
+        },
+
+        // _disconnect: (connection: Connection) => boolean;
+        _disconnect: (connection: Connection) => {
+          return false;
+        },
+
+        // _sendExecute: (command_bytes: Uint8Vector, source_connection: Connection) => void;
+        _sendExecute: (command_bytes: Uint8Vector, source_connection: Connection) => {
+          logging.info(`_sendExecute(command_bytes=${command_bytes}, source_connection=${source_connection}`);
+
+          const command_bytes_array = SpectodaWasm.convertNumberVectorToJSArray(command_bytes);
+          this.#runtimeReference.sendExecute(command_bytes_array, source_connection).catch(e => {
+            logging.error(e);
+          });
+        },
+
+        // _sendRequest: (request_ticket_number: number, request_bytecode: Uint8Vector, destination_connection: Connection) => boolean;
+        _sendRequest: (request_ticket_number: number, request_bytecode: Uint8Vector, destination_connection: Connection) => {
+          return false;
+        },
+
+        // _sendResponse: (request_ticket_number: number, request_result: number, response_bytecode: Uint8Vector, destination_connection: Connection) => boolean;
+        _sendResponse: (request_ticket_number: number, request_result: number, response_bytecode: Uint8Vector, destination_connection: Connection) => {
+          return false;
+        },
+
+        // _sendSynchronize: (synchronization: Synchronization, source_connection: Connection) => void;
+        _sendSynchronize: (synchronization: Synchronization, source_connection: Connection) => {
+          logging.verbose(`_sendSynchronize(synchronization=${synchronization}, source_connection=${source_connection}`);
+
+          // history_fingerprint: number;
+          // tngl_fingerprint: number;
+          // clock_timestamp: number;
+          // timeline_clock_timestamp: number;
+          // tngl_clock_timestamp: number;
+          // fw_compilation_timestamp: number;
+          // origin_address: number
+
+          // logging.info(`history_fingerprint=${synchronization.history_fingerprint}, tngl_fingerprint=${synchronization.tngl_fingerprint}, clock_timestamp=${synchronization.clock_timestamp}
+          //   , timeline_clock_timestamp=${synchronization.tngl_fingerprint}, tngl_clock_timestamp=${synchronization.tngl_clock_timestamp}, fw_compilation_timestamp=${synchronization.fw_compilation_timestamp}, origin_address${synchronization.origin_address}`);
+          // logging.info(`address_string=${source_connection.address_string.toString()}, connector_type=${source_connection.connector_type.value.toString()}, connection_rssi=${source_connection.connection_rssi.value.toString()}`);
+
+          this.#runtimeReference.sendSynchronize(synchronization, source_connection).catch(e => {
+            logging.error(e);
+          });
+        },
+
+        // _process: () => void;
+        _process: () => {
+          // logging.info(`process()`);
+        },
+      };
+
       this.#instance = SpectodaWasm.Spectoda_WASM.implement(WasmInterfaceImplementation);
 
       const cosntroller_config_json = JSON.stringify(controller_config);
@@ -351,7 +423,9 @@ export class Spectoda_JS {
 
       this.#instance.init(constroller_mac_address, cosntroller_config_json);
 
-      // this.#instance.registerConnector();
+      this.#connectors = [];
+      this.#connectors.push(SpectodaWasm.IConnector_WASM.implement(WasmConnectorImplementation));
+      this.#instance.registerConnector(this.#connectors[0]);
 
       this.#instance.begin();
     });
@@ -382,7 +456,7 @@ export class Spectoda_JS {
     return this.#instance.makePort(port_char, port_size, port_brightness, port_power, port_visible, port_reversed);
   }
 
-  setClock(clock_timestamp: number) {
+  setClockTimestamp(clock_timestamp: number) {
     if (!this.#instance) {
       throw "NotConstructed";
     }
@@ -437,14 +511,14 @@ export class Spectoda_JS {
     return response_bytecode;
   }
 
-  synchronize(clock_timestamp: number, source_connection: Connection) {
-    logging.debug(`synchronize(clock_timestamp=${clock_timestamp}, source_connection=${source_connection})`);
+  synchronize(synchronization: Synchronization, source_connection: Connection) {
+    logging.debug(`synchronize(synchronization=${synchronization}, source_connection=${source_connection})`);
 
     if (!this.#instance) {
       throw "NotConstructed";
     }
 
-    this.#instance.synchronize(clock_timestamp, source_connection);
+    this.#instance.synchronize(synchronization, source_connection);
   }
 
   process() {
@@ -488,5 +562,35 @@ export class Spectoda_JS {
     event_value.setPercentage(event_percentage_value);
 
     this.#instance.emitEvent(event_label, event_value, event_id, true);
+  }
+
+  clearHistory() {
+    logging.verbose("clearHistory()");
+
+    if (!this.#instance) {
+      throw "NotConstructed";
+    }
+
+    this.#instance.clearHistory();
+  }
+
+  clearTimeline() {
+    logging.verbose("clearTimeline()");
+
+    if (!this.#instance) {
+      throw "NotConstructed";
+    }
+
+    this.#instance.clearTimeline();
+  }
+
+  clearTngl() {
+    logging.verbose("clearTngl()");
+
+    if (!this.#instance) {
+      throw "NotConstructed";
+    }
+
+    this.#instance.clearTngl();
   }
 }

@@ -1,7 +1,7 @@
 import { createNanoEvents, sleep } from "../functions";
 import { logging } from "../logging";
 import { LogEntry, RingLogBuffer } from "./LogBuffer";
-import { Connection, Spectoda_WASM, Spectoda_WASMImplementation, SpectodaWasm } from "./SpectodaWasm";
+import { Connection, Spectoda_WASM, Spectoda_WASMImplementation, SpectodaWasm, Synchronization } from "./SpectodaWasm";
 
 export class PreviewController {
   #macAddress;
@@ -135,8 +135,8 @@ export class PreviewController {
           return false;
         },
 
-        _onSynchronize: synchronization_object => {
-          logging.debug("_onSynchronize", synchronization_object);
+        _onSynchronize: synchronization => {
+          logging.debug("_onSynchronize", synchronization);
 
           return true;
         },
@@ -352,19 +352,14 @@ export class PreviewController {
     return response_bytecode;
   }
 
-  /**
-   * @param {number} clock_timestamp
-   * @param {number} source_connection
-   * @return {}
-   * */
-  synchronize(clock_timestamp: number, source_connection: Connection) {
+  synchronize(synchronization: Synchronization, source_connection: Connection) {
     logging.debug("synchronize()");
 
     if (!this.#instance) {
       throw "NotConstructed";
     }
 
-    this.#instance.synchronize(clock_timestamp, source_connection);
+    this.#instance.synchronize(synchronization, source_connection);
   }
 
   process() {

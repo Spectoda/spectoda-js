@@ -1,7 +1,7 @@
 import { logging } from "../../logging";
 import { sleep } from "../../functions";
 import { TimeTrack } from "../../TimeTrack";
-import { COMMAND_FLAGS } from "../Spectoda_JS";
+import { APP_MAC_ADDRESS, COMMAND_FLAGS } from "../Spectoda_JS";
 import { SpectodaRuntime } from "../SpectodaRuntime";
 import { TnglReader } from "../../TnglReader";
 import { TnglWriter } from "../../TnglWriter";
@@ -317,7 +317,7 @@ criteria example:
       }
 
       for (let controller of this.controllers) {
-        await controller.execute(new Uint8Array(payload), new SpectodaWasm.Connection("00:00:12:34:56:78", SpectodaWasm.connector_type_t.CONNECTOR_UNDEFINED, SpectodaWasm.connection_rssi_t.RSSI_MAX));
+        await controller.execute(new Uint8Array(payload), new SpectodaWasm.Connection(APP_MAC_ADDRESS, SpectodaWasm.connector_type_t.CONNECTOR_UNDEFINED, SpectodaWasm.connection_rssi_t.RSSI_MAX));
       }
 
       await sleep(25); // delivering logic
@@ -338,7 +338,7 @@ criteria example:
       }
 
       for (let controller of this.controllers) {
-        await controller.execute(new Uint8Array(payload), new SpectodaWasm.Connection("00:00:12:34:56:78", SpectodaWasm.connector_type_t.CONNECTOR_UNDEFINED, SpectodaWasm.connection_rssi_t.RSSI_MAX));
+        await controller.execute(new Uint8Array(payload), new SpectodaWasm.Connection(APP_MAC_ADDRESS, SpectodaWasm.connector_type_t.CONNECTOR_UNDEFINED, SpectodaWasm.connection_rssi_t.RSSI_MAX));
       }
 
       await sleep(10); // transmiting logic
@@ -361,7 +361,7 @@ criteria example:
       // TODO choose the controller I am connected to choosen in userSelect() or autoSelect()
 
       const response = this.controllers.length
-        ? this.controllers[0].request(new Uint8Array(payload), new SpectodaWasm.Connection("00:00:12:34:56:78", SpectodaWasm.connector_type_t.CONNECTOR_UNDEFINED, SpectodaWasm.connection_rssi_t.RSSI_MAX))
+        ? this.controllers[0].request(new Uint8Array(payload), new SpectodaWasm.Connection(APP_MAC_ADDRESS, SpectodaWasm.connector_type_t.CONNECTOR_UNDEFINED, SpectodaWasm.connection_rssi_t.RSSI_MAX))
         : new Uint8Array();
 
       if (read_response) {

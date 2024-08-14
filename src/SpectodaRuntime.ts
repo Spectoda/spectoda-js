@@ -1,5 +1,5 @@
 import { SpectodaDummyConnector } from "../SpectodaDummyConnector";
-import { SpectodaWebBluetoothConnector } from "../SpectodaWebBluetoothConnector";
+import { SpectodaWebBluetoothConnector } from "./connector/SpectodaWebBluetoothConnector";
 import { createNanoEvents, createNanoEventsWithWrappedEmit, detectAndroid, detectChrome, detectLinux, detectMacintosh, detectNode, detectSpectodaConnect, detectWindows, numberToBytes, sleep, uint8ArrayToHexString } from "../functions";
 import { logging } from "../logging";
 import { SpectodaWebSerialConnector } from "./connector/SpectodaWebSerialConnector";
@@ -7,8 +7,8 @@ import { SpectodaWebSerialConnector } from "./connector/SpectodaWebSerialConnect
 import { FlutterConnector } from "../FlutterConnector";
 import { TimeTrack } from "../TimeTrack";
 import { PreviewController } from "./PreviewController";
-import { Connection, SpectodaWasm } from "./SpectodaWasm";
-import { COMMAND_FLAGS, Spectoda_JS } from "./Spectoda_JS";
+import { Connection, SpectodaWasm, Synchronization } from "./SpectodaWasm";
+import { APP_MAC_ADDRESS, COMMAND_FLAGS, Spectoda_JS } from "./Spectoda_JS";
 
 import { TnglReader } from "../TnglReader";
 import { TnglWriter } from "../TnglWriter";
@@ -112,6 +112,11 @@ class Query {
   static TYPE_GET_CLOCK = 13;
   static TYPE_FIRMWARE_UPDATE = 14;
   static TYPE_DESTROY = 15;
+  static TYPE_SEND_EXECUTE = 16;
+  static TYPE_SEND_REQUEST = 17;
+  static TYPE_SEND_RESPONSE = 18;
+  static TYPE_SEND_SYNCHRONIZE = 19;
+  static TYPE_SYNCHRONIZE = 20;
 
   type: number;
   a: any;
@@ -356,7 +361,7 @@ export class SpectodaRuntime {
         },
       };
 
-      await this.spectoda.construct(app_controller_config, "00:00:45:67:89:ab");
+      await this.spectoda.construct(app_controller_config, APP_MAC_ADDRESS);
 
       await sleep(0.1); // short delay to let fill up the queue to merge the execute items if possible
 
@@ -917,6 +922,12 @@ export class SpectodaRuntime {
               case Query.TYPE_CONNECT:
                 {
                   try {
+                    // logging.warn("Running #connect clear workaround");
+                    // this.spectoda.clearHistory();
+                    // this.spectoda.clearTimeline();
+                    // this.spectoda.clearTngl();
+                    // this.spectoda.setClockTimestamp(0);
+
                     await this.connector
                       .connect(item.a) // a = timeout
                       .then(async (result: any) => {
@@ -928,7 +939,7 @@ export class SpectodaRuntime {
 
                         try {
                           this.clock = await this.connector?.getClock();
-                          this.spectoda.setClock(this.clock.millis());
+                          this.spectoda.setClockTimestamp(this.clock.millis());
                           this.emit("wasm_clock", this.clock.millis());
                           item.resolve(result);
                         } catch (error) {
@@ -1009,7 +1020,7 @@ export class SpectodaRuntime {
                   logging.debug("EXECUTE", uint8ArrayToHexString(data));
 
                   this.emit("wasm_execute", data);
-                  this.spectoda.execute(data, new SpectodaWasm.Connection("00:00:12:34:56:78", SpectodaWasm.connector_type_t.CONNECTOR_UNDEFINED, SpectodaWasm.connection_rssi_t.RSSI_MAX));
+                  this.spectoda.execute(data, new SpectodaWasm.Connection(APP_MAC_ADDRESS, SpectodaWasm.connector_type_t.CONNECTOR_UNDEFINED, SpectodaWasm.connection_rssi_t.RSSI_MAX));
 
                   try {
                     await this.connector.deliver(data, timeout).then(() => {
@@ -1028,7 +1039,7 @@ export class SpectodaRuntime {
                   logging.debug("REQUEST", uint8ArrayToHexString(item.a));
 
                   this.emit("wasm_request", item.a);
-                  // this.spectoda.request(item.a, new SpectodaWasm.Connection("00:00:12:34:56:78", SpectodaWasm.connector_type_t.CONNECTOR_UNDEFINED, SpectodaWasm.connection_rssi_t.RSSI_MAX));
+                  // this.spectoda.request(item.a, new SpectodaWasm.Connection(APP_MAC_ADDRESS, SpectodaWasm.connector_type_t.CONNECTOR_UNDEFINED, SpectodaWasm.connection_rssi_t.RSSI_MAX));
 
                   try {
                     await this.connector.request(item.a, item.b, item.c).then((response: any) => {
@@ -1043,7 +1054,7 @@ export class SpectodaRuntime {
               case Query.TYPE_SET_CLOCK:
                 {
                   this.emit("wasm_clock", item.a.millis());
-                  this.spectoda.setClock(item.a.millis());
+                  this.spectoda.setClockTimestamp(item.a.millis());
 
                   try {
                     await this.connector.setClock(item.a).then(response => {
@@ -1060,7 +1071,7 @@ export class SpectodaRuntime {
                   try {
                     await this.connector.getClock().then(clock => {
                       // this.emit("wasm_clock", clock.millis());
-                      // this.spectoda.setClock(clock.millis());
+                      // this.spectoda.setClockTimestamp(clock.millis());
 
                       item.resolve(clock);
                     });
@@ -1118,9 +1129,99 @@ export class SpectodaRuntime {
                 }
                 break;
 
+              // ========================================================================================================================================================================
+
+              case Query.TYPE_SYNCHRONIZE:
+                {
+                  // void _synchronize(const Synchronization& synchronization, const Connection& source_connection)
+
+                  const synchronization: Synchronization = item.a;
+                  const source_connection: Connection = item.b;
+
+                  try {
+                    this.spectoda.synchronize(synchronization, source_connection);
+                    item.resolve(null);
+                  } catch (error) {
+                    item.reject(error);
+                  }
+                }
+                break;
+
+              case Query.TYPE_SEND_EXECUTE:
+                {
+                  // void _sendExecute(const std::vector<uint8_t>& command_bytes, const Connection& source_connection) = 0;
+
+                  const command_bytes: Uint8Array = item.a;
+                  const source_connection: Connection = item.b;
+
+                  try {
+                    await this.connector.sendExecute(command_bytes, source_connection).then((result: any) => {
+                      item.resolve(result);
+                    });
+                  } catch (error) {
+                    item.reject(error);
+                  }
+                }
+                break;
+
+              case Query.TYPE_SEND_REQUEST:
+                {
+                  // bool _sendRequest(const int32_t request_ticket_number, std::vector<uint8_t>& request_bytecode, const Connection& destination_connection) = 0;
+
+                  const request_ticket_number: Number = item.a;
+                  const request_bytecode: Uint8Array = item.b;
+                  const destination_connection: Connection = item.c;
+
+                  try {
+                    await this.connector.sendRequest(request_ticket_number, request_bytecode, destination_connection).then((result: any) => {
+                      item.resolve(result);
+                    });
+                  } catch (error) {
+                    item.reject(error);
+                  }
+                }
+                break;
+
+              case Query.TYPE_SEND_RESPONSE:
+                {
+                  // bool _sendResponse(const int32_t request_ticket_number, std::vector<uint8_t>& response_bytecode, const Connection& destination_connection) = 0;
+
+                  const request_ticket_number: Number = item.a;
+                  const response_bytecode: Uint8Array = item.b;
+                  const destination_connection: Connection = item.c;
+
+                  try {
+                    await this.connector.sendResponse(request_ticket_number, response_bytecode, destination_connection).then((result: any) => {
+                      item.resolve(result);
+                    });
+                  } catch (error) {
+                    item.reject(error);
+                  }
+                }
+                break;
+
+              case Query.TYPE_SEND_SYNCHRONIZE:
+                {
+                  // void _sendSynchronize(const Synchronization& synchronization, const Connection& source_connection) = 0;
+
+                  const synchronization: Synchronization = item.a;
+                  const source_connection: Connection = item.b;
+
+                  try {
+                    await this.connector.sendSynchronize(synchronization, source_connection).then((result: any) => {
+                      item.resolve(result);
+                    });
+                  } catch (error) {
+                    item.reject(error);
+                  }
+                }
+                break;
+
+              // ========================================================================================================================================================================
+
               default:
                 {
-                  logging.error("ERROR");
+                  logging.error("ERROR item.type=", item.type);
                 }
                 break;
             }
@@ -1387,5 +1488,54 @@ export class SpectodaRuntime {
 
   WIP_setName(name: string) {
     this.WIP_name = name;
+  }
+
+  // ====================================================================================================
+
+  synchronize(synchronization: Synchronization, source_connection: Connection) {
+    logging.verbose(`synchronize(synchronization=${synchronization}, source_connection=${source_connection})`);
+
+    const item = new Query(Query.TYPE_SYNCHRONIZE, synchronization, source_connection);
+    this.#process(item);
+    return item.promise;
+  }
+
+  // void _sendExecute(const std::vector<uint8_t>& command_bytes, const Connection& source_connection) = 0;
+
+  sendExecute(command_bytes: Uint8Array, source_connection: Connection) {
+    logging.verbose(`sendExecute(command_bytes=${command_bytes}, source_connection=${source_connection})`);
+
+    const item = new Query(Query.TYPE_SEND_EXECUTE, command_bytes, source_connection);
+    this.#process(item);
+    return item.promise;
+  }
+
+  // bool _sendRequest(const int32_t request_ticket_number, std::vector<uint8_t>& request_bytecode, const Connection& destination_connection) = 0;
+
+  sendRequest(request_ticket_number: number, request_bytecode: Uint8Array, destination_connection: Connection) {
+    logging.verbose(`sendRequest(request_ticket_number=${request_ticket_number}, request_bytecode=${request_bytecode}, destination_connection=${destination_connection})`);
+
+    const item = new Query(Query.TYPE_SEND_REQUEST, request_ticket_number, request_bytecode, destination_connection);
+    this.#process(item);
+    return item.promise;
+  }
+  // bool _sendResponse(const int32_t request_ticket_number, const int32_t request_result, std::vector<uint8_t>& response_bytecode, const Connection& destination_connection) = 0;
+
+  sendResponse(request_ticket_number: number, request_result: number, response_bytecode: Uint8Array, destination_connection: Connection) {
+    logging.verbose(`sendResponse(request_ticket_number=${request_ticket_number}, request_result=${request_result}, response_bytecode=${response_bytecode}, destination_connection=${destination_connection})`);
+
+    const item = new Query(Query.TYPE_SEND_RESPONSE, request_ticket_number, request_result, response_bytecode, destination_connection);
+    this.#process(item);
+    return item.promise;
+  }
+
+  // void _sendSynchronize(const Synchronization& synchronization, const Connection& source_connection) = 0;
+
+  sendSynchronize(synchronization: Synchronization, source_connection: Connection) {
+    logging.verbose(`sendSynchronize(synchronization=${synchronization}, source_connection=${source_connection})`);
+
+    const item = new Query(Query.TYPE_SEND_SYNCHRONIZE, synchronization, source_connection);
+    this.#process(item);
+    return item.promise;
   }
 }

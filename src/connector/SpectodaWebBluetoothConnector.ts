@@ -6,7 +6,8 @@ import { detectAndroid, detectSafari, hexStringToUint8Array, numberToBytes, slee
 import { COMMAND_FLAGS } from "../Spectoda_JS";
 import { TimeTrack } from "../../TimeTrack.js";
 import { TnglReader } from "../../TnglReader.js";
-import { SpectodaWasm } from "../SpectodaWasm";
+import { Connection, SpectodaWasm, Synchronization } from "../SpectodaWasm";
+import { SpectodaRuntime } from "../SpectodaRuntime";
 
 // od 0.8.0 maji vsechny spectoda enabled BLE zarizeni jednotne SPECTODA_DEVICE_UUID.
 // kazdy typ (produkt) Spectoda Zarizeni ma svuj kod v manufacturer data
@@ -21,17 +22,21 @@ import { SpectodaWasm } from "../SpectodaWasm";
     is renamed Transmitter. Helper class for WebBluetoothConnector.js
 */
 export class WebBLEConnection {
+  #connectedDeviceMacAddress: string;
+
   #runtimeReference;
   // private fields
-  #service;
-  #networkChar;
-  #clockChar;
-  #deviceChar;
+  #service: BluetoothRemoteGATTService | null;
+  #networkChar: BluetoothRemoteGATTCharacteristic | null;
+  #clockChar: BluetoothRemoteGATTCharacteristic | null;
+  #deviceChar: BluetoothRemoteGATTCharacteristic | null;
   #writing;
   #uuidCounter;
 
-  constructor(runtimeReference) {
+  constructor(runtimeReference: SpectodaRuntime) {
     this.#runtimeReference = runtimeReference;
+
+    this.#connectedDeviceMacAddress = "00:00:00:00:00:00";
 
     /*
       BLE Spectoda Service
@@ -79,7 +84,7 @@ export class WebBLEConnection {
     return ++this.#uuidCounter;
   }
 
-  #writeBytes(characteristic, bytes, response) {
+  #writeBytes(characteristic: BluetoothRemoteGATTCharacteristic, bytes: number[], response: boolean) {
     const write_uuid = this.#getUUID(); // two messages near to each other must not have the same UUID!
     const packet_header_size = 12; // 3x 4byte integers: write_uuid, index_from, payload.length
     const packet_size = detectAndroid() ? 212 : 512; // min size packet_header_size + 1 !!!! ANDROID NEEDS PACKET SIZE <= 212!!!!
@@ -108,7 +113,7 @@ export class WebBLEConnection {
           index_from += bytes_size;
           index_to = index_from + bytes_size;
         }
-        resolve();
+        resolve(null);
         return;
       });
     } else {
@@ -121,7 +126,7 @@ export class WebBLEConnection {
     }
   }
 
-  #readBytes(characteristic) {
+  #readBytes(characteristic: BluetoothRemoteGATTCharacteristic) {
     // read the requested value
 
     // TODO write this function effectivelly
@@ -150,18 +155,21 @@ export class WebBLEConnection {
 
   // WIP, event handling from spectoda network to application
   // timeline changes from spectoda network to application ...
-  #onNetworkNotification(event) {
+  #onNetworkNotification(event: Event) {
     logging.verbose("#onNetworkNotification", event);
+    //! Here is a bug, where if the command is too long, it will be split into multiple notifications
+
+    if (!event?.target?.value) return;
 
     const command_bytes = new Uint8Array(event.target.value.buffer);
     logging.verbose(`command_bytes: ${uint8ArrayToHexString(command_bytes)}`);
 
-    //! Here is a bug, where if the command is too long, it will be split into multiple notifications
-    this.#runtimeReference.spectoda.execute(command_bytes, SpectodaWasm.DUMMY_WEBBLE_CONNECTION);
+    const DUMMY_WEBBLE_CONNECTION = new SpectodaWasm.Connection("00:00:11:11:11:11", SpectodaWasm.connector_type_t.CONNECTOR_BLE, SpectodaWasm.connection_rssi_t.RSSI_MAX);
+    this.#runtimeReference.spectoda.execute(command_bytes, DUMMY_WEBBLE_CONNECTION);
   }
 
   // WIP
-  #onDeviceNotification(event) {
+  #onDeviceNotification(event: Event) {
     logging.verbose("#onDeviceNotification", event);
 
     // let value = event.target.value;
@@ -173,12 +181,18 @@ export class WebBLEConnection {
     // this.#runtimeReference.process(event.target.value);
 
     // TODO process request
+    // const DUMMY_WEBBLE_CONNECTION =new SpectodaWasm.Connection("00:00:11:11:11:11", SpectodaWasm.connector_type_t.CONNECTOR_BLE, SpectodaWasm.connection_rssi_t.RSSI_MAX)
     // this.#runtimeReference.spectoda.request(new Uint8Array(event.target.value.buffer), SpectodaWasm.DUMMY_WEBBLE_CONNECTION);
   }
 
   // WIP
-  #onClockNotification(event) {
+  #onClockNotification(event: Event) {
     logging.verbose("#onClockNotification", event);
+
+    if (!event?.target?.value) {
+      logging.error("event.target.value is null");
+      return;
+    }
 
     // let value = event.target.value;
     // let a = [];
@@ -188,41 +202,44 @@ export class WebBLEConnection {
     // logging.debug("> " + a.join(" "));
     // this.#runtimeReference.process(event.target.value);
 
-    // uint64_t clock_timestamp_ms;
+    // uint64_t clock_timestamp;
     // uint64_t origin_address_handle;
     // uint32_t history_fingerprint;
     // uint32_t tngl_fingerprint;
-    // uint64_t timeline_clock_timestamp_ms;
-    // uint64_t tngl_clock_timestamp_ms;
+    // uint64_t timeline_clock_timestamp;
+    // uint64_t tngl_clock_timestamp;
+
+    if (event?.target?.value.buffer.length < 48) {
+      logging.error("event.target.value.buffer.length < 48");
+      return;
+    }
 
     let reader = new TnglReader(new DataView(new Uint8Array(event.target.value.buffer).buffer));
-    const clock_timestamp_ms = reader.readUint64();
+    const clock_timestamp = reader.readUint64();
     const origin_address_handle = reader.readUint64();
+    const timeline_clock_timestamp = reader.readUint64();
+    const tngl_clock_timestamp = reader.readUint64();
+    const fw_compilation_timestamp = reader.readUint64();
     const history_fingerprint = reader.readUint32();
     const tngl_fingerprint = reader.readUint32();
-    const timeline_clock_timestamp_ms = reader.readUint64();
-    const tngl_clock_timestamp_ms = reader.readUint64();
 
     logging.verbose(
-      "clock_timestamp_ms=",
-      clock_timestamp_ms,
-      "origin_address_handle=",
-      origin_address_handle,
-      "history_fingerprint=",
-      history_fingerprint,
-      "tngl_fingerprint=",
-      tngl_fingerprint,
-      "timeline_clock_timestamp_ms=",
-      timeline_clock_timestamp_ms,
-      "tngl_clock_timestamp_ms=",
-      tngl_clock_timestamp_ms,
+      `clock_timestamp=${clock_timestamp}, origin_address_handle=${origin_address_handle}, timeline_clock_timestamp=${timeline_clock_timestamp}, tngl_clock_timestamp=${tngl_clock_timestamp}, fw_compilation_timestamp=${fw_compilation_timestamp}, history_fingerprint=${history_fingerprint}, tngl_fingerprint=${tngl_fingerprint}`,
     );
 
-    // TODO process synchronize
-    this.#runtimeReference.spectoda.synchronize(clock_timestamp_ms, SpectodaWasm.DUMMY_WEBBLE_CONNECTION);
+    const macHandleToString = (macHandle: number) => {
+      const mac = macHandle & 0xffffffffffff;
+      const handle = macHandle >> 48;
+      return `${mac.toString(16)}:${handle.toString(16)}`;
+    };
+
+    const synchronization = SpectodaWasm.Synchronization.fromUint8Array(new Uint8Array(event.target.value.buffer));
+
+    const DUMMY_WEBBLE_CONNECTION = new SpectodaWasm.Connection("00:00:11:11:11:11", SpectodaWasm.connector_type_t.CONNECTOR_BLE, SpectodaWasm.connection_rssi_t.RSSI_MAX);
+    this.#runtimeReference.synchronize(synchronization, DUMMY_WEBBLE_CONNECTION);
   }
 
-  attach(service, networkUUID, clockUUID, deviceUUID) {
+  attach(service: BluetoothRemoteGATTService, networkUUID: BluetoothCharacteristicUUID, clockUUID: BluetoothCharacteristicUUID, deviceUUID: BluetoothCharacteristicUUID) {
     this.#service = service;
 
     logging.info("> Getting Network Characteristics...");
@@ -235,6 +252,7 @@ export class WebBLEConnection {
           .startNotifications()
           .then(() => {
             logging.info("> Network notifications started");
+            if (!this.#networkChar) throw "NetworkCharactristicsNull";
             this.#networkChar.oncharacteristicvaluechanged = event => {
               this.#onNetworkNotification(event);
             };
@@ -249,6 +267,7 @@ export class WebBLEConnection {
       })
       .then(() => {
         logging.info("> Getting Clock Characteristics...");
+        if (!this.#service) throw "ServiceNull";
         return this.#service.getCharacteristic(clockUUID);
       })
       .then(characteristic => {
@@ -258,6 +277,7 @@ export class WebBLEConnection {
           .startNotifications()
           .then(() => {
             logging.info("> Clock notifications started");
+            if (!this.#clockChar) throw "ClockCharactristicsNull";
             this.#clockChar.oncharacteristicvaluechanged = event => {
               this.#onClockNotification(event);
             };
@@ -272,6 +292,7 @@ export class WebBLEConnection {
       })
       .then(() => {
         logging.info("> Getting Device Characteristics...");
+        if (!this.#service) throw "ServiceNull";
         return this.#service.getCharacteristic(deviceUUID);
       })
       .then(characteristic => {
@@ -281,6 +302,7 @@ export class WebBLEConnection {
           .startNotifications()
           .then(() => {
             logging.info("> Device notifications started");
+            if (!this.#deviceChar) throw "DeviceCharactristicsNull";
             this.#deviceChar.oncharacteristicvaluechanged = event => {
               this.#onDeviceNotification(event);
             };
@@ -300,7 +322,7 @@ export class WebBLEConnection {
   // returns promise that resolves when message is physically send, but you
   // dont need to wait for it to resolve, and spam deliver() as you please.
   // transmering queue will handle it
-  deliver(payload, timeout) {
+  deliver(payload: number[], timeout: number) {
     if (!this.#networkChar) {
       logging.warn("Network characteristics is null");
       return Promise.reject("DeliverFailed");
@@ -326,7 +348,7 @@ export class WebBLEConnection {
   // transmit() tryes to transmit data NOW. ASAP. It will fail,
   // if deliver or another transmit is being executed at the moment
   // returns promise that will be resolved when message is physically send (only transmittion, not receive)
-  transmit(payload, timeout) {
+  transmit(payload: number[], timeout: number) {
     if (!this.#networkChar) {
       logging.warn("Network characteristics is null");
       return Promise.reject("TransmitFailed");
@@ -351,7 +373,7 @@ export class WebBLEConnection {
 
   // request first writes the request to the Device Characteristics
   // and then reads the response also from the Device Characteristics
-  request(payload, read_response, timeout) {
+  request(payload: number[], read_response: boolean, timeout: Number) {
     if (!this.#deviceChar) {
       logging.warn("Device characteristics is null");
       return Promise.reject("RequestFailed");
@@ -367,6 +389,7 @@ export class WebBLEConnection {
     return this.#writeBytes(this.#deviceChar, payload, true)
       .then(() => {
         if (read_response) {
+          if (!this.#deviceChar) throw "DeviceCharactristicsNull";
           return this.#readBytes(this.#deviceChar);
         } else {
           return Promise.resolve([]);
@@ -382,7 +405,7 @@ export class WebBLEConnection {
   }
 
   // write timestamp to clock characteristics as fast as possible
-  writeClock(timestamp) {
+  writeClock(timestamp: number) {
     if (!this.#clockChar) {
       logging.warn("Sync characteristics is null");
       return Promise.reject("ClockWriteFailed");
@@ -442,7 +465,7 @@ export class WebBLEConnection {
       });
   }
 
-  updateFirmware(firmware) {
+  updateFirmware(firmware: number[]) {
     if (!this.#deviceChar) {
       logging.warn("Device characteristics is null");
       return Promise.reject("UpdateFailed");
@@ -467,6 +490,8 @@ export class WebBLEConnection {
       logging.debug(firmware);
 
       const start_timestamp = new Date().getTime();
+
+      if (!this.#deviceChar) throw "DeviceCharactristicsNull";
 
       try {
         this.#runtimeReference.emit("ota_status", "begin");
@@ -530,7 +555,7 @@ export class WebBLEConnection {
         logging.info("Firmware written in " + (new Date().getTime() - start_timestamp) / 1000 + " seconds");
 
         this.#runtimeReference.emit("ota_status", "success");
-        resolve();
+        resolve(null);
       } catch (e) {
         logging.error(e);
         this.#runtimeReference.emit("ota_status", "fail");
@@ -552,7 +577,36 @@ export class WebBLEConnection {
 
   destroy() {
     this.reset();
-    this.#runtimeReference = null;
+  }
+
+  // write timestamp to clock characteristics as fast as possible
+  sendSynchronize(synchronization: Synchronization) {
+    if (!this.#clockChar) {
+      logging.warn("Sync characteristics is null");
+      return Promise.reject("sendSynchronizeFailed");
+    }
+
+    if (this.#writing) {
+      logging.warn("Communication in proccess");
+      return Promise.reject("sendSynchronizeFailed");
+    }
+
+    this.#writing = true;
+
+    const bytes_uint8array = synchronization.toUint8Array();
+
+    return this.#clockChar
+      .writeValueWithoutResponse(bytes_uint8array)
+      .then(() => {
+        logging.debug("Clock characteristics written");
+      })
+      .catch(e => {
+        logging.error(e);
+        throw "sendSynchronizeFailed";
+      })
+      .finally(() => {
+        this.#writing = false;
+      });
   }
 }
 
@@ -563,34 +617,35 @@ export class WebBLEConnection {
 export class SpectodaWebBluetoothConnector {
   #runtimeReference;
 
-  #webBTDevice;
-  #connection;
-  #reconection;
-  #criteria;
-  #connectedGuard;
+  #webBTDevice: BluetoothDevice | null;
+  #connection: WebBLEConnection;
+  #reconection: boolean;
+  #criteria: object[];
+  #connectedGuard: boolean;
 
-  constructor(runtimeReference) {
+  type: string;
+  SPECTODA_SERVICE_UUID: string;
+  SPECTODA_ADOPTING_SERVICE_UUID: string;
+  NETWORK_CHAR_UUID: string;
+  CLOCK_CHAR_UUID: string;
+  DEVICE_CHAR_UUID: string;
+
+  constructor(runtimeReference: SpectodaRuntime) {
     this.type = "webbluetooth";
 
     this.#runtimeReference = runtimeReference;
 
-    this.FW_PRE_0_7_SERVICE_UUID = "0000ffe0-0000-1000-8000-00805f9b34fb";
-    this.FW_0_7_0_SERVICE_UUID = "60cb125a-0000-0007-0000-5ad20c574c10";
-    this.FW_0_7_1_SERVICE_UUID = "60cb125a-0000-0007-0001-5ad20c574c10";
-    this.FW_0_7_2_SERVICE_UUID = "60cb125a-0000-0007-0002-5ad20c574c10";
-    this.FW_0_7_3_SERVICE_UUID = "60cb125a-0000-0007-0003-5ad20c574c10";
-    this.FW_0_7_4_SERVICE_UUID = "60cb125a-0000-0007-0004-5ad20c574c10";
     this.SPECTODA_SERVICE_UUID = "cc540e31-80be-44af-b64a-5d2def886bf5";
     this.SPECTODA_ADOPTING_SERVICE_UUID = "723247e6-3e2d-4279-ad8e-85a13b74d4a5";
 
-    this.TERMINAL_CHAR_UUID = "33a0937e-0c61-41ea-b770-007ade2c79fa";
+    this.NETWORK_CHAR_UUID = "33a0937e-0c61-41ea-b770-007ade2c79fa";
     this.CLOCK_CHAR_UUID = "7a1e0e3a-6b9b-49ef-b9b7-65c81b714a19";
     this.DEVICE_CHAR_UUID = "9ebe2e4b-10c7-4a81-ac83-49540d1135a5";
 
     this.#webBTDevice = null;
     this.#connection = new WebBLEConnection(runtimeReference);
     this.#reconection = false;
-    this.#criteria = {};
+    this.#criteria = [{}];
 
     this.#connectedGuard = false;
 
@@ -646,7 +701,7 @@ criteria example:
   // if no criteria are set, then show all Spectoda devices visible.
   // first bonds the BLE device with the PC/Phone/Tablet if it is needed.
   // Then selects the device
-  userSelect(criteria, timeout) {
+  userSelect(criteria: object[], timeout: number): object {
     //logging.debug("choose()");
 
     if (this.#connected()) {
@@ -672,8 +727,7 @@ criteria example:
       this.#criteria = [];
     }
 
-    /** @type {RequestDeviceOptions} */
-    let web_ble_options = { filters: /** @type {BluetoothLEScanFilter[]} */ [], optionalServices: [this.SPECTODA_SERVICE_UUID] };
+    let web_ble_options: RequestDeviceOptions = { filters: [], optionalServices: [this.SPECTODA_SERVICE_UUID] };
 
     //
     if (this.#criteria.length == 0) {
@@ -687,23 +741,6 @@ criteria example:
 
       for (let i = 0; i < this.#criteria.length; i++) {
         const criterium = this.#criteria[i];
-
-        // if legacy criterium is set, then fill the services of legacy FW versions
-        if (criterium.legacy) {
-          if (!legacy_filters_applied) {
-            legacy_filters_applied = true;
-
-            web_ble_options.filters.push({ namePrefix: "Nara Al" });
-            web_ble_options.filters.push({ services: [this.FW_PRE_0_7_SERVICE_UUID] });
-            web_ble_options.filters.push({ services: [this.FW_0_7_0_SERVICE_UUID] });
-            web_ble_options.filters.push({ services: [this.FW_0_7_1_SERVICE_UUID] });
-            web_ble_options.filters.push({ services: [this.FW_0_7_2_SERVICE_UUID] });
-            web_ble_options.filters.push({ services: [this.FW_0_7_3_SERVICE_UUID] });
-            web_ble_options.filters.push({ services: [this.FW_0_7_4_SERVICE_UUID] });
-          }
-
-          continue;
-        }
 
         let filter = { services: [this.SPECTODA_SERVICE_UUID] };
 
@@ -834,7 +871,7 @@ criteria example:
         this.#webBTDevice = device;
 
         this.#webBTDevice.ongattserverdisconnected = () => {
-          this.#onDisconnected();
+          this.#onDisconnected(null);
         };
 
         return { connector: this.type };
@@ -850,7 +887,7 @@ criteria example:
   // if no criteria are provided, all Spectoda enabled devices (with all different FWs and Owners and such)
   // are eligible.
 
-  autoSelect(criteria, scan_period, timeout) {
+  autoSelect(criteria: object[], scan_period: number, timeout: number): object {
     // step 1. for the scan_period scan the surroundings for BLE devices.
     // step 2. if some devices matching the criteria are found, then select the one with
     //         the greatest signal strength. If no device is found until the timeout,
@@ -876,7 +913,7 @@ criteria example:
     // Web Bluetooth nepodporuje možnost automatické volby zařízení.
     // Proto je to tady implementováno totožně jako userSelect.
 
-    return this.userSelect(criteria);
+    return this.userSelect(criteria, timeout);
   }
 
   // if device is conneced, then disconnect it
@@ -897,14 +934,14 @@ criteria example:
     return Promise.resolve(this.#selected() ? { connector: this.type } : null);
   }
 
-  scan(criteria, scan_period) {
+  scan(criteria: object[], scan_period: number) {
     // returns devices like autoSelect scan() function
     return Promise.resolve("{}");
   }
 
   // connect Connector to the selected Spectoda Device. Also can be used to reconnect.
   // Fails if no device is selected
-  connect(timeout = 10000) {
+  connect(timeout: number = 10000): Promise<object> {
     logging.verbose(`connect(timeout=${timeout}})`);
 
     if (timeout <= 0) {
@@ -921,20 +958,20 @@ criteria example:
 
     if (this.#connected()) {
       logging.info("> Bluetooth Device is already connected");
-      return Promise.resolve();
+      return Promise.resolve({ connector: "webbluetooth" });
     }
 
     const timeout_handle = setTimeout(
       () => {
         logging.warn("Timeout triggered");
-        this.#webBTDevice.gatt.disconnect();
+        this.#webBTDevice?.gatt?.disconnect();
       },
       timeout < 10000 ? 10000 : timeout,
     );
 
     logging.info("> Connecting to Bluetooth device...");
-    return this.#webBTDevice.gatt
-      .connect()
+    return this.#webBTDevice?.gatt
+      ?.connect()
       .then(server => {
         this.#connection.reset();
 
@@ -946,7 +983,7 @@ criteria example:
 
         clearTimeout(timeout_handle);
 
-        return this.#connection.attach(service, this.TERMINAL_CHAR_UUID, this.CLOCK_CHAR_UUID, this.DEVICE_CHAR_UUID);
+        return this.#connection.attach(service, this.NETWORK_CHAR_UUID, this.CLOCK_CHAR_UUID, this.DEVICE_CHAR_UUID);
       })
       .then(() => {
         logging.info("> Bluetooth Device Connected");
@@ -978,7 +1015,7 @@ criteria example:
 
   // there #connected returns boolean true if connected, false if not connected
   #connected() {
-    return this.#webBTDevice && this.#webBTDevice.gatt.connected;
+    return this.#webBTDevice && this.#webBTDevice?.gatt?.connected;
   }
 
   // connected() is an interface function that needs to return a Promise
@@ -987,7 +1024,7 @@ criteria example:
   }
 
   #disconnect() {
-    this.#webBTDevice.gatt.disconnect();
+    this.#webBTDevice?.gatt?.disconnect();
   }
 
   // disconnect Connector from the connected Spectoda Device. But keep it selected
@@ -1012,7 +1049,7 @@ criteria example:
   // reconnected only if the this.#reconection is true. The event handlers are fired
   // synchronously. So that only after all event handlers (one after the other) are done,
   // only then start this.connect() to reconnect to the bluetooth device
-  #onDisconnected = event => {
+  #onDisconnected = (event: any) => {
     logging.info("> Bluetooth Device disconnected");
     this.#connection.reset();
     if (this.#connectedGuard) {
@@ -1023,7 +1060,7 @@ criteria example:
 
   // deliver handles the communication with the Spectoda network in a way
   // that the command is guaranteed to arrive
-  deliver(payload, timeout) {
+  deliver(payload: number[], timeout: number) {
     if (!this.#connected()) {
       return Promise.reject("DeviceDisconnected");
     }
@@ -1033,7 +1070,7 @@ criteria example:
 
   // transmit handles the communication with the Spectoda network in a way
   // that the command is NOT guaranteed to arrive
-  transmit(payload, timeout) {
+  transmit(payload: number[], timeout: number) {
     if (!this.#connected()) {
       return Promise.reject("DeviceDisconnected");
     }
@@ -1043,7 +1080,7 @@ criteria example:
 
   // request handles the requests on the Spectoda network. The command request
   // is guaranteed to get a response
-  request(payload, read_response, timeout) {
+  request(payload: number[], read_response: boolean, timeout: number) {
     if (!this.#connected()) {
       return Promise.reject("DeviceDisconnected");
     }
@@ -1053,7 +1090,7 @@ criteria example:
 
   // synchronizes the device internal clock with the provided TimeTrack clock
   // of the application as precisely as possible
-  setClock(clock) {
+  setClock(clock: TimeTrack) {
     logging.verbose("setClock()");
 
     if (!this.#connected()) {
@@ -1065,7 +1102,7 @@ criteria example:
         try {
           await this.#connection.writeClock(clock.millis());
           logging.debug("Clock write success");
-          resolve();
+          resolve(null);
           return;
         } catch (e) {
           logging.warn("Clock write failed");
@@ -1107,7 +1144,7 @@ criteria example:
 
   // handles the firmware updating. Sends "ota" events
   // to all handlers
-  updateFW(firmware) {
+  updateFW(firmware: number[]) {
     if (!this.#connected()) {
       return Promise.reject("DeviceDisconnected");
     }
@@ -1123,5 +1160,52 @@ criteria example:
         return this.unselect();
       })
       .catch(() => {});
+  }
+
+  // void _sendExecute(const std::vector<uint8_t>& command_bytes, const Connection& source_connection) = 0;
+
+  sendExecute(command_bytes: Uint8Array, source_connection: Connection) {
+    logging.verbose(`sendExecute(command_bytes=${command_bytes}, source_connection=${source_connection})`);
+
+    if (source_connection.connector_type == SpectodaWasm.connector_type_t.CONNECTOR_BLE) {
+      return;
+    }
+
+    if (!this.#connected()) {
+      return Promise.reject("DeviceDisconnected");
+    }
+
+    return this.#connection.deliver(Array.from(command_bytes), 1000);
+  }
+
+  // bool _sendRequest(const int32_t request_ticket_number, std::vector<uint8_t>& request_bytecode, const Connection& destination_connection) = 0;
+
+  sendRequest(request_ticket_number: number, request_bytecode: Uint8Array, destination_connection: Connection) {
+    logging.verbose(`sendRequest(request_ticket_number=${request_ticket_number}, request_bytecode=${request_bytecode}, destination_connection=${destination_connection})`);
+
+    return Promise.reject("NotImplemented");
+  }
+  // bool _sendResponse(const int32_t request_ticket_number, const int32_t request_result, std::vector<uint8_t>& response_bytecode, const Connection& destination_connection) = 0;
+
+  sendResponse(request_ticket_number: number, request_result: number, response_bytecode: Uint8Array, destination_connection: Connection) {
+    logging.verbose(`sendResponse(request_ticket_number=${request_ticket_number}, request_result=${request_result}, response_bytecode=${response_bytecode}, destination_connection=${destination_connection})`);
+
+    return Promise.reject("NotImplemented");
+  }
+
+  // void _sendSynchronize(const Synchronization& synchronization, const Connection& source_connection) = 0;
+
+  sendSynchronize(synchronization: Synchronization, source_connection: Connection) {
+    logging.verbose(`sendSynchronize(synchronization=${synchronization}, source_connection=${source_connection})`);
+
+    if (source_connection.connector_type == SpectodaWasm.connector_type_t.CONNECTOR_BLE) {
+      return;
+    }
+
+    if (!this.#connected()) {
+      return Promise.reject("DeviceDisconnected");
+    }
+
+    return this.#connection.sendSynchronize(synchronization);
   }
 }
