@@ -383,7 +383,7 @@ export class Spectoda_JS {
 
         // _sendExecute: (command_bytes: Uint8Vector, source_connection: Connection) => void;
         _sendExecute: (command_bytes: Uint8Vector, source_connection: Connection) => {
-          logging.info(`_sendExecute(command_bytes=${command_bytes}, source_connection=${source_connection}`);
+          logging.debug(`_sendExecute(command_bytes=${command_bytes}, source_connection=${source_connection}`);
 
           const command_bytes_array = SpectodaWasm.convertNumberVectorToJSArray(command_bytes);
           this.#runtimeReference.sendExecute(command_bytes_array, source_connection).catch(e => {
@@ -403,7 +403,7 @@ export class Spectoda_JS {
 
         // _sendSynchronize: (synchronization: Synchronization, source_connection: Connection) => void;
         _sendSynchronize: (synchronization: Synchronization, source_connection: Connection) => {
-          logging.verbose(`_sendSynchronize(synchronization=${synchronization}, source_connection=${source_connection}`);
+          logging.debug(`_sendSynchronize(synchronization=${synchronization}, source_connection=${source_connection}`);
 
           // history_fingerprint: number;
           // tngl_fingerprint: number;
@@ -576,33 +576,33 @@ export class Spectoda_JS {
     this.#instance.emitEvent(event_label, event_value, event_id, true);
   }
 
-  clearHistory() {
-    logging.verbose("clearHistory()");
+  eraseHistory() {
+    logging.verbose("eraseHistory()");
 
     if (!this.#instance) {
       throw "NotConstructed";
     }
 
-    this.#instance.clearHistory();
+    this.#instance.eraseHistory();
   }
 
-  clearTimeline() {
-    logging.verbose("clearTimeline()");
+  eraseTimeline() {
+    logging.verbose("eraseTimeline()");
 
     if (!this.#instance) {
       throw "NotConstructed";
     }
 
-    this.#instance.clearTimeline();
+    this.#instance.eraseTimeline();
   }
 
-  clearTngl() {
-    logging.verbose("clearTngl()");
+  eraseTngl() {
+    logging.verbose("eraseTngl()");
 
     if (!this.#instance) {
       throw "NotConstructed";
     }
 
-    this.#instance.clearTngl();
+    this.#instance.eraseTngl();
   }
 }

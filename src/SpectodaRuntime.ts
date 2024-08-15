@@ -4,7 +4,7 @@ import { createNanoEvents, createNanoEventsWithWrappedEmit, detectAndroid, detec
 import { logging } from "../logging";
 import { SpectodaWebSerialConnector } from "./connector/SpectodaWebSerialConnector";
 // import { SpectodaConnectConnector } from "./SpectodaConnectConnector";
-import { FlutterConnector } from "../FlutterConnector";
+import { FlutterConnector } from "./connector/SpectodaConnectConnector";
 import { TimeTrack } from "../TimeTrack";
 import { PreviewController } from "./PreviewController";
 import { Connection, SpectodaWasm, Synchronization } from "./SpectodaWasm";

@@ -393,10 +393,10 @@ criteria example:
           }
           break;
 
-        case COMMAND_FLAGS.FLAG_ERASE_OWNER_REQUEST:
+        case COMMAND_FLAGS.FLAG_ERASE_NETWORK_REQUEST:
           {
-            // log_d("FLAG_ERASE_OWNER_REQUEST");
-            reader.readFlag(); // FLAG_ERASE_OWNER_REQUEST
+            // log_d("FLAG_ERASE_NETWORK_REQUEST");
+            reader.readFlag(); // FLAG_ERASE_NETWORK_REQUEST
 
             const request_uuid = reader.readUint32();
 
