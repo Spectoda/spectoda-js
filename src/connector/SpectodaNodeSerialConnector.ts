@@ -450,7 +450,7 @@ export class SpectodaNodeSerialConnector {
                         //     // TODO sync tngl from wasm to controller instead of clearing it
 
                         //     if (tngl_sync_counter !== 0 && tngl_sync_counter % 16 === 0) {
-                        //       this.#runtimeReference.spectoda.clearTngl();
+                        //       this.#runtimeReference.spectoda.eraseTngl();
                         //     }
 
                         //     else if (tngl_sync_counter % 8 === 0) {
@@ -469,7 +469,7 @@ export class SpectodaNodeSerialConnector {
 
                         //     if (history_sync_counter !== 0 && history_sync_counter % 4 === 0) {
                         //       logging.warn("Clearing Event History");
-                        //       this.#runtimeReference.spectoda.clearHistory(); //? This is only needed because there is no backwards event synchronization
+                        //       this.#runtimeReference.spectoda.eraseHistory(); //? This is only needed because there is no backwards event synchronization
                         //     }
 
                         //     else if (history_sync_counter >= 8) {

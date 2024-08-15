@@ -1659,7 +1659,7 @@ export class Spectoda {
     logging.debug("> Removing owner...");
 
     const request_uuid = this.#getUUID();
-    const bytes = [COMMAND_FLAGS.FLAG_ERASE_OWNER_REQUEST, ...numberToBytes(request_uuid, 4)];
+    const bytes = [COMMAND_FLAGS.FLAG_ERASE_NETWORK_REQUEST, ...numberToBytes(request_uuid, 4)];
 
     return this.runtime.request(bytes, true).then(response => {
       let reader = new TnglReader(response);
@@ -1706,7 +1706,7 @@ export class Spectoda {
     logging.debug("> Removing network owner...");
 
     const request_uuid = this.#getUUID();
-    const bytes = [COMMAND_FLAGS.FLAG_ERASE_OWNER_REQUEST, ...numberToBytes(request_uuid, 4)];
+    const bytes = [COMMAND_FLAGS.FLAG_ERASE_NETWORK_REQUEST, ...numberToBytes(request_uuid, 4)];
 
     return this.runtime.execute(bytes, true).then(() => {
       return this.rebootNetwork();
@@ -2421,8 +2421,43 @@ export class Spectoda {
     //   process.exit(1);
     // }
   }
-}
 
+  eraseTngl() {
+    logging.debug("> Erasing TNGL...");
+
+    const request_uuid = this.#getUUID();
+    const command_bytes = [COMMAND_FLAGS.FLAG_ERASE_TNGL_BYTECODE_REQUEST, ...numberToBytes(request_uuid, 4)];
+
+    return this.runtime.execute(command_bytes, null);
+  }
+
+  saveTnglToBank(tngl_bank) {
+    logging.debug(`> Saving TNGL to bank ${tngl_bank}...`);
+
+    const request_uuid = this.#getUUID();
+    const command_bytes = [COMMAND_FLAGS.FLAG_SAVE_TNGL_MEMORY_BANK_REQUEST, ...numberToBytes(request_uuid, 4), tngl_bank];
+
+    return this.runtime.execute(command_bytes, null);
+  }
+
+  loadTnglFromBank(tngl_bank) {
+    logging.debug(`> Loading TNGL from bank ${tngl_bank}...`);
+
+    const request_uuid = this.#getUUID();
+    const command_bytes = [COMMAND_FLAGS.FLAG_LOAD_TNGL_MEMORY_BANK_REQUEST, ...numberToBytes(request_uuid, 4), tngl_bank, ...numberToBytes(this.runtime.clock.millis(), 6)];
+
+    return this.runtime.execute(command_bytes, null);
+  }
+
+  eraseTnglBank(tngl_bank) {
+    logging.debug(`> Erasing TNGL bank ${tngl_bank}...`);
+
+    const request_uuid = this.#getUUID();
+    const command_bytes = [COMMAND_FLAGS.FLAG_ERASE_TNGL_MEMORY_BANK_REQUEST, ...numberToBytes(request_uuid, 4), tngl_bank];
+
+    return this.runtime.execute(command_bytes, null);
+  }
+}
 // ====== NEW PARADIAGM FUNCTIONS ====== //
 
 if (typeof window !== "undefined") {

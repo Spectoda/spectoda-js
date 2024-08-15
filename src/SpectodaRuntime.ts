@@ -923,9 +923,9 @@ export class SpectodaRuntime {
                 {
                   try {
                     // logging.warn("Running #connect clear workaround");
-                    // this.spectoda.clearHistory();
-                    // this.spectoda.clearTimeline();
-                    // this.spectoda.clearTngl();
+                    // this.spectoda.eraseHistory();
+                    // this.spectoda.eraseTimeline();
+                    // this.spectoda.eraseTngl();
                     // this.spectoda.setClockTimestamp(0);
 
                     await this.connector

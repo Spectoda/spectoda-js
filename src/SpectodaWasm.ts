@@ -1,6 +1,6 @@
 import { logging } from "../logging";
 
-const WASM_VERSION = "DEBUG_DEV_0.11.0_20240814";
+const WASM_VERSION = "DEBUG_DEV_0.11.0_20240815";
 
 /// ========== DEBUG_DEV_0.11.0_20240813.d.ts ========== ///
 
@@ -80,9 +80,9 @@ export interface Spectoda_WASM {
   synchronize(_0: Synchronization, _1: Connection): void;
   process(): void;
   render(): void;
-  clearHistory(): void;
-  clearTimeline(): void;
-  clearTngl(): void;
+  eraseHistory(): void;
+  eraseTimeline(): void;
+  eraseTngl(): void;
   registerConnector(_0: IConnector_WASM): void;
   _onTnglUpdate(_0: Uint8Vector): boolean;
   _onRequest(): boolean;
