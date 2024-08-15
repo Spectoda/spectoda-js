@@ -2431,7 +2431,7 @@ export class Spectoda {
     return this.runtime.execute(command_bytes, null);
   }
 
-  saveTnglToBank(tngl_bank) {
+  saveTnglBank(tngl_bank) {
     logging.debug(`> Saving TNGL to bank ${tngl_bank}...`);
 
     const request_uuid = this.#getUUID();
@@ -2440,7 +2440,7 @@ export class Spectoda {
     return this.runtime.execute(command_bytes, null);
   }
 
-  loadTnglFromBank(tngl_bank) {
+  loadTnglBank(tngl_bank) {
     logging.debug(`> Loading TNGL from bank ${tngl_bank}...`);
 
     const request_uuid = this.#getUUID();
