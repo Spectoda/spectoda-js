@@ -2,6 +2,8 @@
 
 // npm install @types/serialport --save-dev
 
+// ls /dev/cu.*
+
 // add overlays=uart3 to /boot/orangepiEnv.txt
 // add overlays=uart0 to /boot/orangepiEnv.txt
 // sudo stty -F /dev/ttyS3 1500000
