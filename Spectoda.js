@@ -2390,13 +2390,17 @@ export class Spectoda {
   }
 
   reload() {
-    if (detectNode()) {
-      process.exit(1);
-    } else {
-      if (window && window.location) {
-        window.location.reload();
+    setTimeout(()=>{
+      if (detectNode()) {
+        process.exit(1);
+      } else {
+        if (window && window.location) {
+          window.location.reload();
+        }
       }
-    }
+    }, 100);
+
+    return Promise.resolve();
   }
 
   update() {
