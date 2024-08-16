@@ -2,7 +2,7 @@ import { logging } from "../logging";
 
 const WASM_VERSION = "DEBUG_DEV_0.11.0_20240816";
 
-/// ========== DEBUG_DEV_0.11.0_20240813.d.ts ========== ///
+/// ========== DEBUG_DEV_0.11.0_20240816.d.ts ========== ///
 
 export interface interface_error_tValue<T extends number> {
   value: T;
@@ -139,7 +139,7 @@ export interface MainModule {
   ImplementedSpectoda_WASM: {};
 }
 
-/// ========== DEBUG_DEV_0.11.0_202413.d.ts ========== ///
+/// ========== DEBUG_DEV_0.11.0_202416.d.ts ========== ///
 
 /// =================== MANUAL INTERFACES ================= ///
 
@@ -384,17 +384,17 @@ export class SpectodaWasm {
 
   static toHandle(value: any): number {
     // @ts-ignore - Emval is a global object of Emscripten
-    return Emval.toHandle(value);
+    return Module.Emval.toHandle(value);
   }
 
   static toValue(value: number): any {
     // @ts-ignore - Emval is a global object of Emscripten
-    return Emval.toValue(value);
+    return Module.Emval.toValue(value);
   }
 
   static loadFS() {
     // @ts-ignore - FS is a global object of Emscripten
-    return FS.syncfs(true, (err: any) => {
+    return Module.FS.syncfs(true, (err: any) => {
       if (err) {
         logging.error("FS.syncfs error:", err);
       }
@@ -403,7 +403,7 @@ export class SpectodaWasm {
 
   static saveFS() {
     // @ts-ignore - FS is a global object of Emscripten
-    return FS.syncfs(false, (err: any) => {
+    return Module.FS.syncfs(false, (err: any) => {
       if (err) {
         logging.error("FS.syncfs error:", err);
       }
@@ -425,6 +425,13 @@ function injectScript(src: string) {
 
 function onWasmLoad() {
   logging.info("Webassembly loaded");
+
+  const resolveWaitingQueue = () => {
+    waitingQueue.forEach(wait => {
+      wait.resolve();
+    });
+    waitingQueue = [];
+  };
 
   // @ts-ignore - Module is a global object of Emscripten
   Module.onRuntimeInitialized = () => {
@@ -464,33 +471,40 @@ function onWasmLoad() {
 
     if (typeof window !== "undefined") {
       // @ts-ignore - FS is a global object of Emscripten
-      FS.mkdir("/littlefs");
+      Module.FS.mkdir("/littlefs");
       // @ts-ignore - FS and IDBFS are global objects of Emscripten
-      FS.mount(IDBFS, {}, "/littlefs");
+      Module.FS.mount(IDBFS, {}, "/littlefs");
 
       // @ts-ignore - FS is a global objects of Emscripten
-      FS.syncfs(true, function (err: any) {
+      Module.FS.syncfs(true, function (err: any) {
         if (err) {
-          logging.error("FS.syncfs error:", err);
+          logging.error("ERROR ds8a769s:", err);
         }
+        resolveWaitingQueue();
       });
-    } else {
-      // TODO! implement FS pro NODE
-      //   // Make a directory other than '/'
-      //   FS.mkdir('/littlefs');
-      //   // Then mount with IDBFS type
-      //   FS.mount(FS.filesystems.NODEFS, {}, '/littlefs');
-      //   // Then sync
-      //   FS.syncfs(true, function (err) {
-      //       if (err) {
-      //           logging.error("FS.syncfs error:", err);
-      //       }
-      //   });
     }
+    // ? Node.js enviroment
+    else if (!process.env.NEXT_PUBLIC_VERSION) {
+   
+      // Node.js make "filesystem" folder in root
+      const fs = require("fs");
+      if (!fs.existsSync("filesystem")) {
+        fs.mkdirSync("filesystem");
+      }
 
-    waitingQueue.forEach(wait => {
-      wait.resolve();
-    });
+      // @ts-ignore - FS is a global object of Emscripten
+      Module.FS.mkdir("/littlefs");
+      // @ts-ignore - FS is a global object of Emscripten
+      Module.FS.mount(Module.FS.filesystems.NODEFS, { root: "./filesystem" }, "/littlefs");
+
+      // @ts-ignore - FS is a global object of Emscripten
+      Module.FS.syncfs(true, function (err: any) {
+        if (err) {
+          logging.error("ERROR ds798asa:", err);
+        }
+        resolveWaitingQueue();
+      });
+    }
 
     // @ts-ignore - Module is a global objects of Emscripten
     Module.onRuntimeInitialized = undefined;
@@ -500,9 +514,8 @@ function onWasmLoad() {
 function loadWasm(wasmVersion: string) {
   logging.info("Loading spectoda-js WASM version " + wasmVersion);
 
+  // BROWSER enviroment
   if (typeof window !== "undefined") {
-    // BROWSER enviroment
-
     // First try to load local version
     injectScript(`http://localhost:5555/builds/${wasmVersion}.js`)
       .then(onWasmLoad)
@@ -515,13 +528,11 @@ function loadWasm(wasmVersion: string) {
             logging.error("Failed to fetch WASM", error);
           });
       });
-  } else {
-    // NODE enviroment
-    if (!process.env.NEXT_PUBLIC_VERSION) {
-      //! dont know how to declare Module for globalThis in TS
-      globalThis.Module = require(`./webassembly/${wasmVersion}.js`);
-      onWasmLoad();
-    }
+  }
+  // NODE enviroment
+  else if (!process.env.NEXT_PUBLIC_VERSION) {
+    globalThis.Module = require(`./webassembly/${wasmVersion}.js`); //! dont know how to declare Module for globalThis in TS
+    onWasmLoad();
   }
 }
 

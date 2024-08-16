@@ -420,84 +420,16 @@ export class SpectodaNodeSerialConnector {
                       this.#dataCallback && this.#dataCallback(new Uint8Array(data_bytes));
 
                       if (data_header.data_type === NETWORK_WRITE) {
-                        logging.debug("SERIAL >>>NETWORK_WRITE<<<");
+                        logging.info("SERIAL >>>NETWORK_WRITE<<<");
 
-                        this.#runtimeReference.evaluate(new Uint8Array(data_bytes), 0x01010101);
+                        const DUMMY_NODESERIAL_CONNECTION = new SpectodaWasm.Connection("11:11:11:11:11:11", SpectodaWasm.connector_type_t.CONNECTOR_SERIAL, SpectodaWasm.connection_rssi_t.RSSI_MAX);
+                        this.#runtimeReference.spectoda.execute(new Uint8Array(data_bytes), DUMMY_NODESERIAL_CONNECTION);
                       } else if (data_header.data_type === CLOCK_WRITE) {
-                        logging.debug("SERIAL >>>CLOCK_WRITE<<<");
+                        logging.info("SERIAL >>>CLOCK_WRITE<<<");
 
-                        let tnglReader = new TnglReader(new DataView(new Uint8Array(data_bytes).buffer));
-
-                        let clock_timestamp = tnglReader.readUint64();
-                        let timeline_timestamp = tnglReader.readUint32();
-                        let timeline_paused = tnglReader.readUint32();
-                        let history_fingerprint = uint8ArrayToHexString(tnglReader.readBytes(4));
-                        let tngl_fingerprint = uint8ArrayToHexString(tnglReader.readBytes(4));
-
-                        console.info(
-                          `NodeSerialConnector: clock_timestamp=${clock_timestamp}, timeline_timestamp=${timeline_timestamp}, timeline_paused=${timeline_paused}, history_fingerprint=${history_fingerprint}, tngl_fingerprint=${tngl_fingerprint}`,
-                        );
-
-                        this.#runtimeReference.clock.setMillis(clock_timestamp);
-                        this.#runtimeReference.spectoda.setClockTimestamp(clock_timestamp);
-
-                        // try {
-
-                        // // ! this whole section should be moved to SpectodaRuntime
-                        // if (this.#runtimeReference.spectoda.synchronization) {
-                        //   const synchronization = this.#runtimeReference.spectoda.synchronization;
-
-                        //   if (!synchronization.tngl_fingerprint.startsWith(tngl_fingerprint)) {
-                        //     logging.warn("> Synchronizing tngl...");
-                        //     // TODO sync tngl from wasm to controller instead of clearing it
-
-                        //     if (tngl_sync_counter !== 0 && tngl_sync_counter % 16 === 0) {
-                        //       this.#runtimeReference.spectoda.eraseTngl();
-                        //     }
-
-                        //     else if (tngl_sync_counter % 8 === 0) {
-                        //       this.#runtimeReference.spectodaReference.syncTnglFromControllerToWasm().catch(error => {
-                        //         logging.error("Failed to sync tngl", error);
-                        //       });
-                        //     }
-
-                        //     tngl_sync_counter += 1;
-                        //   }
-
-                        //   else if (!synchronization.history_fingerprint.startsWith(history_fingerprint)) {
-
-                        //     logging.warn("> Synchronizing event history...");
-                        //     // TODO Integrate backwards event synchronization so that I
-
-                        //     if (history_sync_counter !== 0 && history_sync_counter % 4 === 0) {
-                        //       logging.warn("Clearing Event History");
-                        //       this.#runtimeReference.spectoda.eraseHistory(); //? This is only needed because there is no backwards event synchronization
-                        //     }
-
-                        //     else if (history_sync_counter >= 8) {
-                        //       logging.error("History synchonization is failing.. Restart");
-                        //       this.#runtimeReference.spectodaReference.reload();
-                        //     }
-
-                        //     if (history_sync_counter % 2 === 0) {
-                        //       this.#runtimeReference.spectodaReference.syncEventHistory().catch(error => {
-                        //         logging.error("Failed to sync history", error);
-                        //       });
-                        //     }
-
-                        //     history_sync_counter += 1;
-                        //   }
-
-                        //   else {
-                        //     tngl_sync_counter = 0;
-                        //     history_sync_counter = 0;
-                        //   }
-
-                        // }
-
-                        // } catch (error) {
-                        //   logging.error("Failed to synchronize", error);
-                        // }
+                        const synchronization : Synchronization = SpectodaWasm.Synchronization.fromUint8Array(new Uint8Array(data_bytes));
+                        const DUMMY_NODESERIAL_CONNECTION = new SpectodaWasm.Connection("11:11:11:11:11:11", SpectodaWasm.connector_type_t.CONNECTOR_SERIAL, SpectodaWasm.connection_rssi_t.RSSI_MAX);
+                        this.#runtimeReference.synchronize(synchronization, DUMMY_NODESERIAL_CONNECTION);
                       }
 
                       command_bytes.length = 0;

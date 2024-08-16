@@ -214,25 +214,6 @@ export class WebBLEConnection {
       return;
     }
 
-    let reader = new TnglReader(new DataView(new Uint8Array(event.target.value.buffer).buffer));
-    const clock_timestamp = reader.readUint64();
-    const origin_address_handle = reader.readUint64();
-    const timeline_clock_timestamp = reader.readUint64();
-    const tngl_clock_timestamp = reader.readUint64();
-    const fw_compilation_timestamp = reader.readUint64();
-    const history_fingerprint = reader.readUint32();
-    const tngl_fingerprint = reader.readUint32();
-
-    logging.verbose(
-      `clock_timestamp=${clock_timestamp}, origin_address_handle=${origin_address_handle}, timeline_clock_timestamp=${timeline_clock_timestamp}, tngl_clock_timestamp=${tngl_clock_timestamp}, fw_compilation_timestamp=${fw_compilation_timestamp}, history_fingerprint=${history_fingerprint}, tngl_fingerprint=${tngl_fingerprint}`,
-    );
-
-    const macHandleToString = (macHandle: number) => {
-      const mac = macHandle & 0xffffffffffff;
-      const handle = macHandle >> 48;
-      return `${mac.toString(16)}:${handle.toString(16)}`;
-    };
-
     const synchronization = SpectodaWasm.Synchronization.fromUint8Array(new Uint8Array(event.target.value.buffer));
 
     const DUMMY_WEBBLE_CONNECTION = new SpectodaWasm.Connection("11:11:11:11:11:11", SpectodaWasm.connector_type_t.CONNECTOR_BLE, SpectodaWasm.connection_rssi_t.RSSI_MAX);
