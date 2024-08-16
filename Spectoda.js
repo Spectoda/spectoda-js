@@ -21,6 +21,7 @@ import {
 import { changeLanguage, t } from "./i18n.js";
 import { logging } from "./logging";
 import { COMMAND_FLAGS } from "./src/Spectoda_JS";
+import { SpectodaWasm } from "./src/SpectodaWasm";
 
 import { io } from "socket.io-client";
 import customParser from "socket.io-msgpack-parser";
@@ -1951,7 +1952,7 @@ export class Spectoda {
   }
 
   syncEventHistory() {
-    logging.debug("> Requesting event history bytecode...");
+    logging.info("> Requesting event history bytecode...");
 
     const request_uuid = this.#getUUID();
     const bytes = [COMMAND_FLAGS.FLAG_EVENT_HISTORY_BC_REQUEST, ...numberToBytes(request_uuid, 4)];
@@ -1984,7 +1985,8 @@ export class Spectoda {
         const historic_events_bytecode = reader.readBytes(historic_events_bytecode_size);
         logging.verbose(`historic_events_bytecode=[${historic_events_bytecode}]`);
 
-        this.runtime.evaluate(new Uint8Array(historic_events_bytecode), new SpectodaWasm.Connection("00:00:00:00:00:00", SpectodaWasm.connector_type_t.CONNECTOR_UNDEFINED, SpectodaWasm.connection_rssi_t.RSSI_MAX));
+        const DUMMY_CONNECTION = new SpectodaWasm.Connection("11:11:11:11:11:11", SpectodaWasm.connector_type_t.CONNECTOR_UNDEFINED, SpectodaWasm.connection_rssi_t.RSSI_MAX);
+        this.runtime.spectoda.execute(new Uint8Array(data_bytes), DUMMY_CONNECTION);
       } else {
         throw "Fail";
       }
