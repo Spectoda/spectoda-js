@@ -79,7 +79,7 @@ export class PreviewController {
         _onEventStateUpdates: event_state_updates_array => {
           logging.verbose("_onEventStateUpdates", event_state_updates_array);
 
-          if (logging.level >= 3 && event_state_updates_array.length) {
+          if (logging.level >= 4 && event_state_updates_array.length) {
             let debug_log = "";
 
             const name = this.#instance?.getLabel();

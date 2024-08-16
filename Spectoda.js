@@ -1119,21 +1119,9 @@ export class Spectoda {
       event_value = -100.0;
     }
 
-    // const func = device_id => {
-    //   const payload = [COMMAND_FLAGS.FLAG_EMIT_PERCENTAGE_EVENT, ...percentageToBytes(event_value), ...labelToBytes(event_label), ...numberToBytes(this.runtime.clock.millis() + 10, 6), numberToBytes(device_id, 1)];
-    //   return this.runtime.execute(payload, force_delivery ? null : "E" + event_label + device_id);
-    // };
-
-    // if (typeof device_ids === "object") {
-    //   let promises = device_ids.map(func);
-    //   return Promise.all(promises);
-    // } else {
-    //   return func(device_ids);
-    // }
-
     const func = device_id => {
-      this.runtime.spectoda.emitPercentageEvent(event_label, event_value, device_id, true);
-      return Promise.resolve();
+      const payload = [COMMAND_FLAGS.FLAG_EMIT_PERCENTAGE_EVENT, ...percentageToBytes(event_value), ...labelToBytes(event_label), ...numberToBytes(this.runtime.clock.millis() + 10, 6), numberToBytes(device_id, 1)];
+      return this.runtime.execute(payload, force_delivery ? null : "E" + event_label + device_id);
     };
 
     if (typeof device_ids === "object") {
@@ -1142,6 +1130,18 @@ export class Spectoda {
     } else {
       return func(device_ids);
     }
+
+    // const func = device_id => {
+    //   this.runtime.spectoda.emitPercentageEvent(event_label, event_value, device_id, true);
+    //   return Promise.resolve();
+    // };
+
+    // if (typeof device_ids === "object") {
+    //   let promises = device_ids.map(func);
+    //   return Promise.all(promises);
+    // } else {
+    //   return func(device_ids);
+    // }
   }
 
   // event_label example: "evt1"

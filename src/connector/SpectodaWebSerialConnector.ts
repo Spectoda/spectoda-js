@@ -534,13 +534,13 @@ export class SpectodaWebSerialConnector {
 
     return new Promise(async (resolve, reject) => {
       const timeout_handle = setTimeout(() => {
-        logging.warn("Response timeouted");
+        logging.error("ERROR dsfa7087ds");
         this.#feedbackCallback = undefined;
 
         this.disconnect().finally(() => {
           reject("ResponseTimeout");
         });
-      }, timeout + 250); // +250ms for the controller to response timeout if reveive timeoutes
+      }, timeout + 10000); // +250ms for the controller to response timeout if reveive timeoutes
 
       this.#feedbackCallback = (success: boolean) => {
         this.#feedbackCallback = undefined;
