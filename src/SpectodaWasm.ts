@@ -1,8 +1,8 @@
 import { logging } from "../logging";
 
-const WASM_VERSION = "DEBUG_DEV_0.11.0_20240816";
+const WASM_VERSION = "DEBUG_DEV_0.11.0_20240818";
 
-/// ========== DEBUG_DEV_0.11.0_20240816.d.ts ========== ///
+/// ========== DEBUG_DEV_0.11.0_20240818.d.ts ========== ///
 
 export interface interface_error_tValue<T extends number> {
   value: T;
@@ -85,6 +85,7 @@ export interface Spectoda_WASM {
   eraseTngl(): void;
   registerConnector(_0: IConnector_WASM): void;
   _onTnglUpdate(_0: Uint8Vector): boolean;
+  _onExecute(_0: Uint8Vector): boolean;
   _onRequest(): boolean;
   setVirtualInput(_0: number, _1: number): void;
   execute(_0: number, _1: Connection): boolean;
@@ -101,8 +102,7 @@ export interface Spectoda_WASM {
   emitEvent(_0: ArrayBuffer | Uint8Array | Uint8ClampedArray | Int8Array | string, _1: Value, _2: number, _3: boolean): void;
   _onEvents(_0: any): boolean;
   _onEventStateUpdates(_0: any): boolean;
-  _onExecute(_0: Uint8Vector, _1: any): boolean;
-  _onSynchronize(_0: any, _1: any): boolean;
+  _onSynchronize(_0: any): boolean;
   makePort(_0: ArrayBuffer | Uint8Array | Uint8ClampedArray | Int8Array | string, _1: number, _2: number, _3: number, _4: boolean, _5: boolean): any;
   readVariableAddress(_0: number, _1: number): any;
   delete(): void;
@@ -139,11 +139,11 @@ export interface MainModule {
   ImplementedSpectoda_WASM: {};
 }
 
-/// ========== DEBUG_DEV_0.11.0_202416.d.ts ========== ///
+/// ========== DEBUG_DEV_0.11.0_202418.d.ts ========== ///
 
 /// =================== MANUAL INTERFACES ================= ///
 
-export interface Event {
+export interface SpectodaEvent {
   // event_object.set("label", label_t(event.identifier).asString());
   // event_object.set("indentifier", int32_t(event.identifier.raw()));
   // event_object.set("type", int32_t(value_type_t::VALUE_TYPE_UNDEFINED));
@@ -218,11 +218,11 @@ export interface Spectoda_WASMImplementation {
   // // __construct: function () {}
   // // __destruct: function () {}
   _onTnglUpdate(tngl_bytes: Uint8Vector): void;
-  _onEvents(event_array: Event[]): void;
-  _onEventStateUpdates(event_array: Event[]): void;
-  _onExecute(execute_bytecode: Uint8Vector, source_connection: Connection): boolean;
+  _onEvents(event_array: SpectodaEvent[]): void;
+  _onEventStateUpdates(event_array: SpectodaEvent[]): void;
+  _onExecute(execute_bytecode: Uint8Vector): boolean;
   _onRequest(): boolean;
-  _onSynchronize(synchronization: Synchronization, source_connection: Connection): boolean;
+  _onSynchronize(synchronization: Synchronization): boolean;
   _handlePeerConnected(peer_mac: string): interface_error_t;
   _handlePeerDisconnected(peer_mac: string): interface_error_t;
   _handleTimelineManipulation(timeline_timestamp: number, timeline_paused: boolean, clock_timestamp: number): interface_error_t;
@@ -351,7 +351,7 @@ export class SpectodaWasm {
   static IConnector_WASM: MainModule["IConnector_WASM"];
 
   // oposite of convertJSArrayToNumberVector() in https://emscripten.org/docs/api_reference/val.h.html
-  static convertNumberVectorToJSArray(vector: Uint8Vector) {
+  static convertUint8VectorUint8Array(vector: Uint8Vector) {
     let array = new Uint8Array(vector.size());
     for (let i = 0; i < array.length; i++) {
       array[i] = vector.get(i);
@@ -485,7 +485,6 @@ function onWasmLoad() {
     }
     // ? Node.js enviroment
     else if (!process.env.NEXT_PUBLIC_VERSION) {
-   
       // Node.js make "filesystem" folder in root
       const fs = require("fs");
       if (!fs.existsSync("filesystem")) {

@@ -14,6 +14,7 @@ echo 'overlays=uart3' | sudo tee -a /boot/orangepiEnv.txt
 cat /boot/orangepiEnv.txt
 */
 
+import * as NodeSerialPort from "serialport";
 import { TimeTrack } from "../../TimeTrack";
 import { TnglReader } from "../../TnglReader";
 import { TnglWriter } from "../../TnglWriter";
@@ -39,7 +40,7 @@ let history_sync_counter = 0;
 
 ///////////////////////////////////////////////////////////////////////////////////
 
-const PORT_OPTIONS = { path: "/dev/ttyS0", baudRate: 115200, dataBits: 8, stopBits: 1, parity: "none", autoOpen: false, bufferSize: 65535, flowControl: "none" };
+const PORT_OPTIONS = { path: "/dev/ttyS3", baudRate: 1500000, dataBits: 8, stopBits: 1, parity: "none", autoOpen: false, bufferSize: 65535, flowControl: "none" };
 
 const CODE_WRITE = 100;
 const CODE_READ = 200;
@@ -88,7 +89,7 @@ const ends_with = function (buffer: number[], string: string, start_offset: numb
 export class SpectodaNodeSerialConnector {
   #runtimeReference;
 
-  #serialPort: SerialPort | undefined;
+  #serialPort: NodeSerialPort | undefined;
   #criteria: { baudrate: number | undefined; baudRate: number | undefined; uart: string | undefined; port: string | undefined; path: string | undefined }[] | undefined;
 
   #interfaceConnected: boolean;
@@ -326,7 +327,7 @@ export class SpectodaNodeSerialConnector {
     }
 
     const openSerialPromise = new Promise((resolve, reject) => {
-      this.#serialPort.open(error => {
+      this.#serialPort?.open(error => {
         if (error) {
           logging.error(error);
           reject("OpenSerialError");
@@ -342,7 +343,7 @@ export class SpectodaNodeSerialConnector {
         this.#disconnecting = false;
 
         const parser = new ReadlineParser();
-        this.#serialPort.pipe(parser);
+        this.#serialPort?.pipe(parser);
 
         let command_bytes: number[] = [];
 
@@ -364,7 +365,7 @@ export class SpectodaNodeSerialConnector {
 
         const decoder = new TextDecoder();
 
-        this.#serialPort.removeAllListeners();
+        this.#serialPort?.removeAllListeners();
 
         // this.#serialPort.on('open', function() {
         //   logging.debug('Port Opened');
@@ -378,7 +379,7 @@ export class SpectodaNodeSerialConnector {
         //   logging.debug('Error: ', err.message);
         // });
 
-        this.#serialPort.on("data", (chunk: Buffer) => {
+        this.#serialPort?.on("data", (chunk: Buffer) => {
           // logging.info("[data]", decoder.decode(chunk));
 
           for (const byte of chunk) {
@@ -427,7 +428,7 @@ export class SpectodaNodeSerialConnector {
                       } else if (data_header.data_type === CLOCK_WRITE) {
                         logging.info("SERIAL >>>CLOCK_WRITE<<<");
 
-                        const synchronization : Synchronization = SpectodaWasm.Synchronization.fromUint8Array(new Uint8Array(data_bytes));
+                        const synchronization: Synchronization = SpectodaWasm.Synchronization.fromUint8Array(new Uint8Array(data_bytes));
                         const DUMMY_NODESERIAL_CONNECTION = new SpectodaWasm.Connection("11:11:11:11:11:11", SpectodaWasm.connector_type_t.CONNECTOR_SERIAL, SpectodaWasm.connection_rssi_t.RSSI_MAX);
                         this.#runtimeReference.synchronize(synchronization, DUMMY_NODESERIAL_CONNECTION);
                       }
@@ -523,7 +524,7 @@ export class SpectodaNodeSerialConnector {
           };
 
           try {
-            this.#serialPort.write(">>>ENABLE_SERIAL<<<\n");
+            this.#serialPort?.write(">>>ENABLE_SERIAL<<<\n");
           } catch (error) {
             logging.error("ERROR asd0sd9f876");
           }
@@ -559,7 +560,7 @@ export class SpectodaNodeSerialConnector {
       logging.debug("> Closing serial port...");
 
       return new Promise((resolve, reject) => {
-        this.#serialPort.close(error => {
+        this.#serialPort?.close(error => {
           if (error) {
             logging.error(error);
             logging.error("ERROR asd0896fsda", error);
@@ -630,7 +631,7 @@ export class SpectodaNodeSerialConnector {
 
       try {
         logging.info("> Finishing Serial...");
-        this.#serialPort.write(">>>FINISH_SERIAL<<<\n");
+        this.#serialPort?.write(">>>FINISH_SERIAL<<<\n");
       } catch (error) {
         logging.error("ERROR 0a9s8d0asd8f", error);
       }
@@ -651,7 +652,7 @@ export class SpectodaNodeSerialConnector {
   //   CLOCK_WRITE = 3
   // };
 
-  #initiate(initiate_code: number, payload: number[], tries: number, timeout: number) {
+  #initiate(initiate_code: number, payload: number[], tries: number, timeout: number): Promise<void> {
     logging.verbose(`initiate(initiate_code=${initiate_code}, payload=${payload}, tries=${tries}, timeout=${timeout})`);
 
     if (!tries) {
@@ -705,7 +706,7 @@ export class SpectodaNodeSerialConnector {
         clearInterval(timeout_handle);
 
         if (success) {
-          resolve(null);
+          resolve();
         } else {
           //try to write it once more
           setTimeout(() => {
@@ -719,8 +720,8 @@ export class SpectodaNodeSerialConnector {
       };
 
       try {
-        await this.#serialPort.write(new Uint8Array(header_writer.bytes.buffer));
-        await this.#serialPort.write(new Uint8Array(payload));
+        await this.#serialPort?.write(Buffer.from(header_writer.bytes.buffer));
+        await this.#serialPort?.write(Buffer.from(payload), "utf8");
       } catch (e) {
         logging.error("ERROR 0ads8F67", e);
         reject(e);

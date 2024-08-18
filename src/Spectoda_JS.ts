@@ -175,7 +175,7 @@ export class Spectoda_JS {
 
           try {
             // dont know how to make Uint8Array in C++ yet. So I am forced to give data out in C++ std::vector
-            const tngl_bytes = SpectodaWasm.convertNumberVectorToJSArray(tngl_bytes_vector);
+            const tngl_bytes = SpectodaWasm.convertUint8VectorUint8Array(tngl_bytes_vector);
 
             this.#runtimeReference.emit("written_tngl", tngl_bytes);
           } catch {
@@ -240,22 +240,19 @@ export class Spectoda_JS {
           return true;
         },
 
-        _onExecute: (commands_bytecode_vector, source_connection) => {
-          logging.verbose("_onExecute", commands_bytecode_vector, source_connection);
+        _onExecute: (commands_bytecode_vector: Uint8Vector) => {
+          logging.verbose("_onExecute", commands_bytecode_vector);
 
-          // try {
           // dont know how to make Uint8Array in C++ yet. So I am forced to give data out in C++ std::vector
-          // const commands_bytecode = SpectodaWasm.convertNumberVectorToJSArray(commands_bytecode_vector);
+          // const commands_bytecode = SpectodaWasm.convertUint8VectorUint8Array(commands_bytecode_vector);
 
-          // TODO IMPLEMENT SENDING TO OTHER CONNECTIONS
-
-          // } catch {
-          // ! temporary solution
-          if (source_connection.address_string === "00:00:00:00:00:00") {
-            const array = SpectodaWasm.convertNumberVectorToJSArray(commands_bytecode_vector);
-            this.#runtimeReference.connector?.deliver(array, source_connection);
+          try {
+            const command_bytecode = SpectodaWasm.convertUint8VectorUint8Array(commands_bytecode_vector);
+            const THIS_CONTROLLER_CONNECTION = new SpectodaWasm.Connection("00:00:00:00:00:00", SpectodaWasm.connector_type_t.CONNECTOR_UNDEFINED, SpectodaWasm.connection_rssi_t.RSSI_MAX);
+            this.#runtimeReference.connector?.sendExecute(command_bytecode, THIS_CONTROLLER_CONNECTION);
+          } catch (e) {
+            logging.error(e);
           }
-          // }
 
           return true;
         },
@@ -265,7 +262,7 @@ export class Spectoda_JS {
 
           try {
             // dont know how to make Uint8Array in C++ yet. So I am forced to give data out in C++ std::vector
-            // const commands_bytecode = SpectodaWasm.convertNumberVectorToJSArray(commands_bytecode_vector);
+            // const commands_bytecode = SpectodaWasm.convertUint8VectorUint8Array(commands_bytecode_vector);
             // logging.verbose("commands_bytecode", commands_bytecode);
             // TODO IMPLEMENT SENDING TO OTHER CONNECTIONS
           } catch {}
@@ -273,7 +270,7 @@ export class Spectoda_JS {
           return true;
         },
 
-        _onSynchronize: synchronization => {
+        _onSynchronize: (synchronization: Synchronization) => {
           logging.debug("_onSynchronize", synchronization);
 
           try {
@@ -385,7 +382,7 @@ export class Spectoda_JS {
         _sendExecute: (command_bytes: Uint8Vector, source_connection: Connection) => {
           logging.debug(`_sendExecute(command_bytes=${command_bytes}, source_connection=${source_connection}`);
 
-          const command_bytes_array = SpectodaWasm.convertNumberVectorToJSArray(command_bytes);
+          const command_bytes_array = SpectodaWasm.convertUint8VectorUint8Array(command_bytes);
           this.#runtimeReference.sendExecute(command_bytes_array, source_connection).catch(e => {
             logging.error(e);
           });
@@ -515,7 +512,7 @@ export class Spectoda_JS {
         throw "EvaluateError";
       }
 
-      response_bytecode = SpectodaWasm.convertNumberVectorToJSArray(response_bytecode_vector);
+      response_bytecode = SpectodaWasm.convertUint8VectorUint8Array(response_bytecode_vector);
     } finally {
       response_bytecode_vector.delete();
     }

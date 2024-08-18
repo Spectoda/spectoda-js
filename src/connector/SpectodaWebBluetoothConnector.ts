@@ -33,6 +33,8 @@ export class WebBLEConnection {
   #writing;
   #uuidCounter;
 
+  #deviceNotification: number[];
+
   constructor(runtimeReference: SpectodaRuntime) {
     this.#runtimeReference = runtimeReference;
 
@@ -73,6 +75,8 @@ export class WebBLEConnection {
     this.#writing = false;
 
     this.#uuidCounter = Math.floor(Math.random() * 4294967295);
+
+    this.#deviceNotification = [];
   }
 
   #getUUID() {
@@ -156,7 +160,7 @@ export class WebBLEConnection {
   // WIP, event handling from spectoda network to application
   // timeline changes from spectoda network to application ...
   #onNetworkNotification(event: Event) {
-    logging.verbose("#onNetworkNotification", event);
+    logging.info("#onNetworkNotification", event);
     //! Here is a bug, where if the command is too long, it will be split into multiple notifications
 
     if (!event?.target?.value) return;
@@ -170,19 +174,18 @@ export class WebBLEConnection {
 
   // WIP
   #onDeviceNotification(event: Event) {
-    logging.verbose("#onDeviceNotification", event);
+    logging.info("#onDeviceNotification", event);
 
-    // let value = event.target.value;
-    // let a = [];
-    // for (let i = 0; i < value.byteLength; i++) {
-    //   a.push("0x" + ("00" + value.getUint8(i).toString(16)).slice(-2));
-    // }
-    // logging.debug("> " + a.join(" "));
-    // this.#runtimeReference.process(event.target.value);
+    if (!event?.target?.value) return;
+
+    const command_bytes = new Uint8Array(event.target.value.buffer);
+    logging.verbose(`command_bytes: ${uint8ArrayToHexString(command_bytes)}`);
 
     // TODO process request
-    // const DUMMY_WEBBLE_CONNECTION =new SpectodaWasm.Connection("11:11:11:11:11:11", SpectodaWasm.connector_type_t.CONNECTOR_BLE, SpectodaWasm.connection_rssi_t.RSSI_MAX)
-    // this.#runtimeReference.spectoda.request(new Uint8Array(event.target.value.buffer), SpectodaWasm.DUMMY_WEBBLE_CONNECTION);
+    const DUMMY_WEBBLE_CONNECTION = new SpectodaWasm.Connection("11:11:11:11:11:11", SpectodaWasm.connector_type_t.CONNECTOR_BLE, SpectodaWasm.connection_rssi_t.RSSI_MAX);
+    const response = this.#runtimeReference.spectoda.request(command_bytes, DUMMY_WEBBLE_CONNECTION);
+
+    logging.info("Response:", response);
   }
 
   // WIP
@@ -554,6 +557,7 @@ export class WebBLEConnection {
     this.#clockChar = null;
     this.#deviceChar = null;
     this.#writing = false;
+    this.#deviceNotification = [];
   }
 
   destroy() {
