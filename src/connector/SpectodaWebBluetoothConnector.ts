@@ -178,24 +178,21 @@ export class WebBLEConnection {
 
     if (!event?.target?.value) return;
 
-    const command_bytes = new Uint8Array(event.target.value.buffer);
-    logging.verbose(`command_bytes: ${uint8ArrayToHexString(command_bytes)}`);
+    // const command_bytes = new Uint8Array(event.target.value.buffer);
+    // logging.verbose(`command_bytes: ${uint8ArrayToHexString(command_bytes)}`);
 
-    // TODO process request
-    const DUMMY_WEBBLE_CONNECTION = new SpectodaWasm.Connection("11:11:11:11:11:11", SpectodaWasm.connector_type_t.CONNECTOR_BLE, SpectodaWasm.connection_rssi_t.RSSI_MAX);
-    const response = this.#runtimeReference.spectoda.request(command_bytes, DUMMY_WEBBLE_CONNECTION);
+    // // TODO process request
+    // const DUMMY_WEBBLE_CONNECTION = new SpectodaWasm.Connection("11:11:11:11:11:11", SpectodaWasm.connector_type_t.CONNECTOR_BLE, SpectodaWasm.connection_rssi_t.RSSI_MAX);
+    // const response = this.#runtimeReference.spectoda.request(command_bytes, DUMMY_WEBBLE_CONNECTION);
 
-    logging.info("Response:", response);
+    // logging.info("Response:", response);
   }
 
   // WIP
   #onClockNotification(event: Event) {
     logging.verbose("#onClockNotification", event);
 
-    if (!event?.target?.value) {
-      logging.error("event.target.value is null");
-      return;
-    }
+    if (!event?.target?.value) return;
 
     // let value = event.target.value;
     // let a = [];
@@ -1150,10 +1147,10 @@ criteria example:
   // void _sendExecute(const std::vector<uint8_t>& command_bytes, const Connection& source_connection) = 0;
 
   sendExecute(command_bytes: Uint8Array, source_connection: Connection) {
-    logging.verbose(`sendExecute(command_bytes=${command_bytes}, source_connection=${source_connection})`);
+    logging.verbose(`SpectodaWebBluetoothConnector::sendExecute(command_bytes=${command_bytes}, source_connection=${source_connection})`);
 
     if (source_connection.connector_type == SpectodaWasm.connector_type_t.CONNECTOR_BLE) {
-      return;
+      return Promise.resolve();
     }
 
     if (!this.#connected()) {
@@ -1166,14 +1163,14 @@ criteria example:
   // bool _sendRequest(const int32_t request_ticket_number, std::vector<uint8_t>& request_bytecode, const Connection& destination_connection) = 0;
 
   sendRequest(request_ticket_number: number, request_bytecode: Uint8Array, destination_connection: Connection) {
-    logging.verbose(`sendRequest(request_ticket_number=${request_ticket_number}, request_bytecode=${request_bytecode}, destination_connection=${destination_connection})`);
+    logging.verbose(`SpectodaWebBluetoothConnector::sendRequest(request_ticket_number=${request_ticket_number}, request_bytecode=${request_bytecode}, destination_connection=${destination_connection})`);
 
     return Promise.reject("NotImplemented");
   }
   // bool _sendResponse(const int32_t request_ticket_number, const int32_t request_result, std::vector<uint8_t>& response_bytecode, const Connection& destination_connection) = 0;
 
   sendResponse(request_ticket_number: number, request_result: number, response_bytecode: Uint8Array, destination_connection: Connection) {
-    logging.verbose(`sendResponse(request_ticket_number=${request_ticket_number}, request_result=${request_result}, response_bytecode=${response_bytecode}, destination_connection=${destination_connection})`);
+    logging.verbose(`SpectodaWebBluetoothConnector::sendResponse(request_ticket_number=${request_ticket_number}, request_result=${request_result}, response_bytecode=${response_bytecode}, destination_connection=${destination_connection})`);
 
     return Promise.reject("NotImplemented");
   }
@@ -1181,10 +1178,10 @@ criteria example:
   // void _sendSynchronize(const Synchronization& synchronization, const Connection& source_connection) = 0;
 
   sendSynchronize(synchronization: Synchronization, source_connection: Connection) {
-    logging.verbose(`sendSynchronize(synchronization=${synchronization}, source_connection=${source_connection})`);
+    logging.verbose(`SpectodaWebBluetoothConnector::sendSynchronize(synchronization=${synchronization}, source_connection=${source_connection})`);
 
     if (source_connection.connector_type == SpectodaWasm.connector_type_t.CONNECTOR_BLE) {
-      return;
+      return Promise.resolve();
     }
 
     if (!this.#connected()) {

@@ -312,7 +312,7 @@ export class SpectodaWebSerialConnector {
 
                         const synchronization: Synchronization = SpectodaWasm.Synchronization.fromUint8Array(new Uint8Array(data_bytes));
                         const DUMMY_NODESERIAL_CONNECTION = new SpectodaWasm.Connection("11:11:11:11:11:11", SpectodaWasm.connector_type_t.CONNECTOR_SERIAL, SpectodaWasm.connection_rssi_t.RSSI_MAX);
-                        this.#runtimeReference.synchronize(synchronization, DUMMY_NODESERIAL_CONNECTION);
+                        this.#runtimeReference.spectoda.synchronize(synchronization, DUMMY_NODESERIAL_CONNECTION);
                       }
 
                       command_bytes.length = 0;
@@ -864,10 +864,10 @@ export class SpectodaWebSerialConnector {
   // void _sendExecute(const std::vector<uint8_t>& command_bytes, const Connection& source_connection) = 0;
 
   sendExecute(command_bytes: Uint8Array, source_connection: Connection) {
-    logging.verbose(`sendExecute(command_bytes=${command_bytes}, source_connection=${source_connection})`);
+    logging.verbose(`SpectodaWebSerialConnector::sendExecute(command_bytes=${command_bytes}, source_connection=${source_connection})`);
 
-    if (source_connection.connector_type == SpectodaWasm.connector_type_t.CONNECTOR_BLE) {
-      return;
+    if (source_connection.connector_type == SpectodaWasm.connector_type_t.CONNECTOR_SERIAL) {
+      return Promise.resolve();
     }
 
     return Promise.resolve(null);
@@ -876,14 +876,20 @@ export class SpectodaWebSerialConnector {
   // bool _sendRequest(const int32_t request_ticket_number, std::vector<uint8_t>& request_bytecode, const Connection& destination_connection) = 0;
 
   sendRequest(request_ticket_number: number, request_bytecode: Uint8Array, destination_connection: Connection) {
-    logging.verbose(`sendRequest(request_ticket_number=${request_ticket_number}, request_bytecode=${request_bytecode}, destination_connection=${destination_connection})`);
+    logging.verbose(`SpectodaWebSerialConnector::sendRequest(request_ticket_number=${request_ticket_number}, request_bytecode=${request_bytecode}, destination_connection=${destination_connection})`);
+
+    // TODO! take the request_bytecode and
+
+    // if (source_connection.connector_type != SpectodaWasm.connector_type_t.CONNECTOR_SERIAL) {
+    //   return;
+    // }
 
     return Promise.reject("NotImplemented");
   }
   // bool _sendResponse(const int32_t request_ticket_number, const int32_t request_result, std::vector<uint8_t>& response_bytecode, const Connection& destination_connection) = 0;
 
   sendResponse(request_ticket_number: number, request_result: number, response_bytecode: Uint8Array, destination_connection: Connection) {
-    logging.verbose(`sendResponse(request_ticket_number=${request_ticket_number}, request_result=${request_result}, response_bytecode=${response_bytecode}, destination_connection=${destination_connection})`);
+    logging.verbose(`SpectodaWebSerialConnector::sendResponse(request_ticket_number=${request_ticket_number}, request_result=${request_result}, response_bytecode=${response_bytecode}, destination_connection=${destination_connection})`);
 
     return Promise.reject("NotImplemented");
   }
@@ -891,10 +897,10 @@ export class SpectodaWebSerialConnector {
   // void _sendSynchronize(const Synchronization& synchronization, const Connection& source_connection) = 0;
 
   sendSynchronize(synchronization: Synchronization, source_connection: Connection) {
-    logging.verbose(`sendSynchronize(synchronization=${synchronization}, source_connection=${source_connection})`);
+    logging.verbose(`SpectodaWebSerialConnector::sendSynchronize(synchronization=${synchronization}, source_connection=${source_connection})`);
 
-    if (source_connection.connector_type == SpectodaWasm.connector_type_t.CONNECTOR_BLE) {
-      return;
+    if (source_connection.connector_type == SpectodaWasm.connector_type_t.CONNECTOR_SERIAL) {
+      return Promise.resolve();
     }
 
     return Promise.resolve(null);

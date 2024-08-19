@@ -795,11 +795,13 @@ export class Spectoda {
   disconnect() {
     this.#autonomousConnection = false;
 
+    logging.debug(`> Disconnecting controller...`);
+
     if (this.#getConnectionState() === "disconnected") {
-      Promise.reject("DeviceAlreadyDisconnected");
+      logging.warn("> Controller already disconnected");
+      return Promise.resolve();
     }
 
-    logging.debug(`> Disconnecting controller...`);
     this.#setConnectionState("disconnecting");
 
     return this.runtime.disconnect().finally(() => {
@@ -1224,15 +1226,15 @@ export class Spectoda {
     return this.runtime.execute(payload, "TMLN");
   }
 
-  syncClock() {
-    logging.debug("> Syncing clock...");
+  // syncClock() {
+  //   logging.debug("> Syncing clock...");
 
-    this.#resetClockSyncInterval();
+  //   this.#resetClockSyncInterval();
 
-    return this.runtime.syncClock().then(() => {
-      logging.debug("> App clock synchronized");
-    });
-  }
+  //   return this.runtime.syncClock().then(() => {
+  //     logging.debug("> App clock synchronized");
+  //   });
+  // }
 
   syncState(deviceId) {
     logging.debug("> Synchronizing state...");
@@ -1316,7 +1318,7 @@ export class Spectoda {
 
       let written = 0;
 
-      logging.setLoggingLevel(logging.level - 1);
+      // logging.setLoggingLevel(logging.level - 1);
 
       logging.info("OTA UPDATE");
       logging.verbose(firmware);
@@ -1410,7 +1412,7 @@ export class Spectoda {
         });
         this.#updating = false;
 
-        logging.setLoggingLevel(logging.level + 1);
+        // logging.setLoggingLevel(logging.level + 1);
       });
   }
 
@@ -2385,10 +2387,17 @@ export class Spectoda {
     });
   }
 
+  // executed bytecode
   execute(bytecode) {
     return this.runtime.execute(bytecode, null, 60000);
   }
 
+  // emits JS event
+  emit(event, value) {
+    this.runtime.emit(event, value);
+  }
+
+  // reloads the spectoda app
   reload() {
     setTimeout(() => {
       if (detectNode()) {
@@ -2403,6 +2412,7 @@ export class Spectoda {
     return Promise.resolve();
   }
 
+  // updates the app
   update() {
     // if (detectNode()) {
     //   // run git pull and git submodule update

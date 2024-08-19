@@ -144,6 +144,17 @@ export function createSpectodaWebsocket() {
                 return socket.emitWithAck("join", params).then(response => {
                   if (response.status === "success") {
                     logging.info("Remote joined network", response.roomNumber);
+
+                    this.sendThroughWebsocket({
+                      functionName: "connected",
+                      arguments: undefined,
+                    }).then(connected => {
+                      if (connected) {
+                        eventStream.emit("connected");
+                      } else {
+                        eventStream.emit("disconnected");
+                      }
+                    });
                   } else {
                     throw new Error(response.error);
                   }
@@ -174,25 +185,26 @@ export function createSpectodaWebsocket() {
             const result = await this.sendThroughWebsocket(payload);
 
             if (result.status === "success") {
+
               for (let res of result?.data) {
                 if (res.status === "error") {
-                  logging.error("[WEBSOCKET]", result);
-
+                  logging.error(result);
+                  // logging.error("[WEBSOCKET]", result);
                   throw new Error(res.error);
                 }
               }
 
-              logging.verbose("[WEBSOCKET]", result);
+              // logging.verbose("[WEBSOCKET]", result);
 
               return result?.data?.[0].result;
             } else {
-              let error = new Error(result?.error);
-              if (Array.isArray(result)) {
-                error = new Error(result[0]);
-              }
-              logging.error("[WEBSOCKET]", error);
+              logging.error("[WEBSOCKET]", result);
 
-              throw new Error(result?.error);
+              if (Array.isArray(result)) {
+                throw new Error(result[0]);
+              } else {
+                throw new Error(result?.error);
+              }
             }
           };
         },
