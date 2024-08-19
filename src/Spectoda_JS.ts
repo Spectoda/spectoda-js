@@ -190,7 +190,6 @@ export class Spectoda_JS {
           if (logging.level >= 1 && event_array.length) {
             let debug_log = "";
 
-
             {
               const e = event_array[0];
               debug_log += `🕹️ @${e.id} -> $${e.label}: ${e.value}\ [🕒 ${e.timestamp}ms]`;
@@ -210,7 +209,7 @@ export class Spectoda_JS {
         _onEventStateUpdates: event_state_updates_array => {
           logging.verbose("Spectoda_JS::_onEventStateUpdates", event_state_updates_array);
 
-          if (logging.level >= 4 && event_state_updates_array.length) {
+          if (logging.level >= 3 && event_state_updates_array.length) {
             let debug_log = "";
 
             const name = this.#instance?.getLabel();
@@ -260,7 +259,7 @@ export class Spectoda_JS {
         },
 
         // ! TODO NEXT
-        // ! for now only version that does not 
+        // ! for now only version that does not
         _onRequest: (request_ticket_number: number, request_bytecode_vector: Uint8Vector, destination_connection: Connection) => {
           logging.debug(`Spectoda_JS::_onRequest(request_ticket_number=${request_ticket_number})`);
 

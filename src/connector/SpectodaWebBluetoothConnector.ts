@@ -160,7 +160,7 @@ export class WebBLEConnection {
   // WIP, event handling from spectoda network to application
   // timeline changes from spectoda network to application ...
   #onNetworkNotification(event: Event) {
-    logging.info("#onNetworkNotification", event);
+    logging.verbose("#onNetworkNotification", event);
     //! Here is a bug, where if the command is too long, it will be split into multiple notifications
 
     if (!event?.target?.value) return;
@@ -174,7 +174,7 @@ export class WebBLEConnection {
 
   // WIP
   #onDeviceNotification(event: Event) {
-    logging.info("#onDeviceNotification", event);
+    logging.verbose("#onDeviceNotification", event);
 
     if (!event?.target?.value) return;
 
@@ -217,7 +217,7 @@ export class WebBLEConnection {
     const synchronization = SpectodaWasm.Synchronization.fromUint8Array(new Uint8Array(event.target.value.buffer));
 
     const DUMMY_WEBBLE_CONNECTION = new SpectodaWasm.Connection("11:11:11:11:11:11", SpectodaWasm.connector_type_t.CONNECTOR_BLE, SpectodaWasm.connection_rssi_t.RSSI_MAX);
-    this.#runtimeReference.synchronize(synchronization, DUMMY_WEBBLE_CONNECTION);
+    this.#runtimeReference.spectoda.synchronize(synchronization, DUMMY_WEBBLE_CONNECTION);
   }
 
   attach(service: BluetoothRemoteGATTService, networkUUID: BluetoothCharacteristicUUID, clockUUID: BluetoothCharacteristicUUID, deviceUUID: BluetoothCharacteristicUUID) {

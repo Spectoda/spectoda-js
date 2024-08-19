@@ -486,10 +486,10 @@ function onWasmLoad() {
     // ? Node.js enviroment
     else if (!process.env.NEXT_PUBLIC_VERSION) {
       // Node.js make "filesystem" folder in root
-      const fs = require("fs");
-      if (!fs.existsSync("filesystem")) {
-        fs.mkdirSync("filesystem");
-      }
+      // const fs = require("fs");
+      // if (!fs.existsSync("filesystem")) {
+      //   fs.mkdirSync("filesystem");
+      // }
 
       // @ts-ignore - FS is a global object of Emscripten
       Module.FS.mkdir("/littlefs");
