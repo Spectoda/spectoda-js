@@ -36,6 +36,7 @@ export const logging = {
     if (level >= 0 && level <= 5) {
       logging.level = level;
     }
+    logging.log = logging.level >= 0 ? logging.logCallback : () => {};
     logging.error = logging.level >= 1 ? logging.errorCallback : () => {};
     logging.warn = logging.level >= 2 ? logging.warnCallback : () => {};
     logging.info = logging.level >= 3 ? logging.logCallback : () => {};
@@ -50,6 +51,7 @@ export const logging = {
   setLogCallback(callback: (...msg: any) => void) {
     logging.logCallback = callback;
     //? reassing log function to the new callback
+    logging.log = logging.level >= 0 ? logging.logCallback : () => {};
     logging.info = logging.level >= 3 ? logging.logCallback : () => {};
     logging.debug = logging.level >= 4 ? logging.logCallback : () => {};
     logging.verbose = logging.level >= 5 ? logging.logCallback : () => {};
@@ -67,6 +69,7 @@ export const logging = {
     logging.error = logging.level >= 1 ? logging.errorCallback : () => {};
   },
 
+  log: (...msg: any) => logging.logCallback(...msg),
   error: (...msg: any) => logging.errorCallback(...msg),
   warn: (...msg: any) => logging.warnCallback(...msg),
   info: (...msg: any) => logging.logCallback(...msg),

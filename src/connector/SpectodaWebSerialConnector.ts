@@ -1,5 +1,4 @@
 // npm install --save @types/w3c-web-serial
-/// <reference types="w3c-web-serial" />
 
 import { logging } from "../../logging";
 import { sleep, toBytes, numberToBytes, crc8, crc32, hexStringToArray, rgbToHex, stringToBytes, convertToByteArray } from "../../functions";
@@ -8,6 +7,7 @@ import { COMMAND_FLAGS } from "../Spectoda_JS";
 import { TnglWriter } from "../../TnglWriter.js";
 import { TnglReader } from "../../TnglReader.js";
 import { SpectodaRuntime } from "../SpectodaRuntime";
+import { Connection, SpectodaWasm, Synchronization } from "../SpectodaWasm";
 
 let { SerialPort, ReadlineParser }: { SerialPort: any; ReadlineParser: any } = { SerialPort: null, ReadlineParser: null };
 
@@ -19,14 +19,27 @@ if (typeof window === "undefined" && !process.env.NEXT_PUBLIC_VERSION) {
 
 ///////////////////////////////////////////////////////////////////////////////////
 
-const PORT_OPTIONS: SerialOptions = { baudRate: 115200, dataBits: 8, stopBits: 1, parity: "none", bufferSize: 65535, flowControl: "none" };
+const PORT_OPTIONS: SerialOptions = { baudRate: 1500000, dataBits: 8, stopBits: 1, parity: "none", bufferSize: 65535, flowControl: "none" };
 
 const CODE_WRITE = 100;
 const CODE_READ = 200;
-
 const CHANNEL_NETWORK = 1;
 const CHANNEL_DEVICE = 2;
 const CHANNEL_CLOCK = 3;
+const COMMAND = 0;
+const DATA = 10;
+
+const UNKNOWN_PACKET = 0;
+
+const NETWORK_WRITE = CODE_WRITE + CHANNEL_NETWORK + COMMAND;
+const DEVICE_WRITE = CODE_WRITE + CHANNEL_DEVICE + COMMAND;
+const CLOCK_WRITE = CODE_WRITE + CHANNEL_CLOCK + COMMAND;
+const NETWORK_READ = CODE_READ + CHANNEL_NETWORK + COMMAND;
+const DEVICE_READ = CODE_READ + CHANNEL_DEVICE + COMMAND;
+const CLOCK_READ = CODE_READ + CHANNEL_CLOCK + COMMAND;
+const NETWORK_READ_DATA = CODE_READ + CHANNEL_NETWORK + DATA;
+const DEVICE_READ_DATA = CODE_READ + CHANNEL_DEVICE + DATA;
+const CLOCK_READ_DATA = CODE_READ + CHANNEL_CLOCK + DATA;
 
 const starts_with = function (buffer: number[], string: string, start_offset: number = 0) {
   for (let index = 0; index < string.length; index++) {
@@ -258,33 +271,57 @@ export class SpectodaWebSerialConnector {
                 if (starts_with(command_bytes, ">>>")) {
                   if (ends_with(command_bytes, "<<<\n")) {
                     if (starts_with(command_bytes, "BEGIN", 3)) {
+                      logging.warn("SERIAL >>>BEGIN<<<");
                       this.#beginCallback && this.#beginCallback(true);
                       command_bytes.length = 0;
                     } else if (starts_with(command_bytes, "END", 3)) {
-                      await this.disconnect();
+                      logging.warn("SERIAL >>>END<<<");
                       this.#beginCallback && this.#beginCallback(false);
                       this.#feedbackCallback && this.#feedbackCallback(false);
                       command_bytes.length = 0;
+                      await this.disconnect();
                     } else if (starts_with(command_bytes, "READY", 3)) {
-                      await this.disconnect();
+                      logging.warn("SERIAL >>>READY<<<");
                       this.#beginCallback && this.#beginCallback(false);
                       this.#feedbackCallback && this.#feedbackCallback(false);
                       command_bytes.length = 0;
+                      await this.disconnect();
                     } else if (starts_with(command_bytes, "SUCCESS", 3)) {
+                      logging.verbose("SERIAL >>>SUCCESS<<<");
                       this.#feedbackCallback && this.#feedbackCallback(true);
                       command_bytes.length = 0;
                     } else if (starts_with(command_bytes, "FAIL", 3)) {
+                      logging.info("SERIAL >>>FAIL<<<");
                       this.#feedbackCallback && this.#feedbackCallback(false);
                       command_bytes.length = 0;
                     } else if (starts_with(command_bytes, "ERROR", 3)) {
+                      logging.error("SERIAL >>>ERROR<<<");
                       this.#feedbackCallback && this.#feedbackCallback(false);
                       command_bytes.length = 0;
                     } else if (starts_with(command_bytes, "DATA", 3)) {
+                      logging.verbose("SERIAL >>>DATA<<<");
                       this.#dataCallback && this.#dataCallback(new Uint8Array(data_bytes));
+
+                      if (data_header?.data_type === NETWORK_WRITE) {
+                        logging.info("SERIAL >>>NETWORK_WRITE<<<");
+
+                        const DUMMY_NODESERIAL_CONNECTION = new SpectodaWasm.Connection("11:11:11:11:11:11", SpectodaWasm.connector_type_t.CONNECTOR_SERIAL, SpectodaWasm.connection_rssi_t.RSSI_MAX);
+                        this.#runtimeReference.spectoda.execute(new Uint8Array(data_bytes), DUMMY_NODESERIAL_CONNECTION);
+                      } else if (data_header?.data_type === CLOCK_WRITE) {
+                        logging.info("SERIAL >>>CLOCK_WRITE<<<");
+
+                        const synchronization: Synchronization = SpectodaWasm.Synchronization.fromUint8Array(new Uint8Array(data_bytes));
+                        const DUMMY_NODESERIAL_CONNECTION = new SpectodaWasm.Connection("11:11:11:11:11:11", SpectodaWasm.connector_type_t.CONNECTOR_SERIAL, SpectodaWasm.connection_rssi_t.RSSI_MAX);
+                        this.#runtimeReference.spectoda.synchronize(synchronization, DUMMY_NODESERIAL_CONNECTION);
+                      }
+
                       command_bytes.length = 0;
                     }
                   } else if (ends_with(command_bytes, "DATA=")) {
                     mode = MODE_DATA_RECEIVE;
+
+                    header_bytes.length = 0;
+                    data_bytes.length = 0;
                   } else if (command_bytes.length > 20) {
                     logging.error("Unknown command_bytes", command_bytes);
                     command_bytes.length = 0;
@@ -300,6 +337,7 @@ export class SpectodaWebSerialConnector {
                     const line = decoder.decode(new Uint8Array(line_bytes));
                     // TODO! process line
                     console.log(line);
+                    this.#runtimeReference.emit("controller-log", line);
                     line_bytes.length = 0;
                   } /* if(character !== NEWLINE_ASCII_CODE) */ else {
                     line_bytes.push(character);
@@ -821,5 +859,50 @@ export class SpectodaWebSerialConnector {
         return this.unselect();
       })
       .catch(() => {});
+  }
+
+  // void _sendExecute(const std::vector<uint8_t>& command_bytes, const Connection& source_connection) = 0;
+
+  sendExecute(command_bytes: Uint8Array, source_connection: Connection) {
+    logging.verbose(`SpectodaWebSerialConnector::sendExecute(command_bytes=${command_bytes}, source_connection=${source_connection})`);
+
+    if (source_connection.connector_type == SpectodaWasm.connector_type_t.CONNECTOR_SERIAL) {
+      return Promise.resolve();
+    }
+
+    return Promise.resolve(null);
+  }
+
+  // bool _sendRequest(const int32_t request_ticket_number, std::vector<uint8_t>& request_bytecode, const Connection& destination_connection) = 0;
+
+  sendRequest(request_ticket_number: number, request_bytecode: Uint8Array, destination_connection: Connection) {
+    logging.verbose(`SpectodaWebSerialConnector::sendRequest(request_ticket_number=${request_ticket_number}, request_bytecode=${request_bytecode}, destination_connection=${destination_connection})`);
+
+    // TODO! take the request_bytecode and
+
+    // if (source_connection.connector_type != SpectodaWasm.connector_type_t.CONNECTOR_SERIAL) {
+    //   return;
+    // }
+
+    return Promise.reject("NotImplemented");
+  }
+  // bool _sendResponse(const int32_t request_ticket_number, const int32_t request_result, std::vector<uint8_t>& response_bytecode, const Connection& destination_connection) = 0;
+
+  sendResponse(request_ticket_number: number, request_result: number, response_bytecode: Uint8Array, destination_connection: Connection) {
+    logging.verbose(`SpectodaWebSerialConnector::sendResponse(request_ticket_number=${request_ticket_number}, request_result=${request_result}, response_bytecode=${response_bytecode}, destination_connection=${destination_connection})`);
+
+    return Promise.reject("NotImplemented");
+  }
+
+  // void _sendSynchronize(const Synchronization& synchronization, const Connection& source_connection) = 0;
+
+  sendSynchronize(synchronization: Synchronization, source_connection: Connection) {
+    logging.verbose(`SpectodaWebSerialConnector::sendSynchronize(synchronization=${synchronization}, source_connection=${source_connection})`);
+
+    if (source_connection.connector_type == SpectodaWasm.connector_type_t.CONNECTOR_SERIAL) {
+      return Promise.resolve();
+    }
+
+    return Promise.resolve(null);
   }
 }

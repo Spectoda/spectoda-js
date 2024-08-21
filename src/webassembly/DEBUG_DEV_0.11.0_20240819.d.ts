@@ -50,14 +50,14 @@ export interface Uint8Vector {
 
 export interface IConnector_WASM {
   _process(): void;
-  _sendExecute(_0: Uint8Vector, _1: Connection): void;
   init(_0: connector_type_t): void;
-  _disconnect(_0: Connection): boolean;
-  _sendRequest(_0: number, _1: Uint8Vector, _2: Connection): boolean;
-  _sendResponse(_0: number, _1: number, _2: Uint8Vector, _3: Connection): boolean;
   _scan(_0: ArrayBuffer|Uint8Array|Uint8ClampedArray|Int8Array|string, _1: number, _2: any): boolean;
   _userConnect(_0: ArrayBuffer|Uint8Array|Uint8ClampedArray|Int8Array|string, _1: number, _2: any): boolean;
   _autoConnect(_0: ArrayBuffer|Uint8Array|Uint8ClampedArray|Int8Array|string, _1: number, _2: number, _3: any): boolean;
+  _disconnect(_0: any): boolean;
+  _sendExecute(_0: Uint8Vector, _1: any): void;
+  _sendRequest(_0: number, _1: Uint8Vector, _2: any): boolean;
+  _sendResponse(_0: number, _1: number, _2: Uint8Vector, _3: any): boolean;
   _sendSynchronize(_0: any, _1: any): void;
   delete(): void;
 }
@@ -79,7 +79,7 @@ export interface Spectoda_WASM {
   eraseTngl(): void;
   registerConnector(_0: IConnector_WASM): void;
   _onTnglUpdate(_0: Uint8Vector): boolean;
-  _onRequest(): boolean;
+  _onExecute(_0: Uint8Vector): boolean;
   setVirtualInput(_0: number, _1: number): void;
   execute(_0: number, _1: Connection): boolean;
   request(_0: number, _1: Uint8Vector, _2: Connection): boolean;
@@ -95,8 +95,8 @@ export interface Spectoda_WASM {
   emitEvent(_0: ArrayBuffer|Uint8Array|Uint8ClampedArray|Int8Array|string, _1: Value, _2: number, _3: boolean): void;
   _onEvents(_0: any): boolean;
   _onEventStateUpdates(_0: any): boolean;
-  _onExecute(_0: Uint8Vector, _1: any): boolean;
-  _onSynchronize(_0: any, _1: any): boolean;
+  _onRequest(_0: number, _1: Uint8Vector, _2: any): boolean;
+  _onSynchronize(_0: any): boolean;
   makePort(_0: ArrayBuffer|Uint8Array|Uint8ClampedArray|Int8Array|string, _1: number, _2: number, _3: number, _4: boolean, _5: boolean): any;
   readVariableAddress(_0: number, _1: number): any;
   delete(): void;

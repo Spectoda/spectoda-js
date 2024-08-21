@@ -1,7 +1,7 @@
 import { createNanoEvents, sleep } from "../functions";
 import { logging } from "../logging";
 import { LogEntry, RingLogBuffer } from "./LogBuffer";
-import { Connection, Spectoda_WASM, Spectoda_WASMImplementation, SpectodaWasm, Synchronization } from "./SpectodaWasm";
+import { Connection, Spectoda_WASM, Spectoda_WASMImplementation, SpectodaWasm, Synchronization, Uint8Vector } from "./SpectodaWasm";
 
 export class PreviewController {
   #macAddress;
@@ -79,7 +79,9 @@ export class PreviewController {
         _onEventStateUpdates: event_state_updates_array => {
           logging.verbose("_onEventStateUpdates", event_state_updates_array);
 
-          if (logging.level >= 4 && event_state_updates_array.length) {
+          return;
+
+          if (logging.level >= 3 && event_state_updates_array.length) {
             let debug_log = "";
 
             const name = this.#instance?.getLabel();
@@ -99,18 +101,18 @@ export class PreviewController {
           return true;
         },
 
-        _onExecute: (commands_bytecode_vector, source_connection) => {
+        _onExecute: (commands_bytecode_vector: Uint8Vector) => {
           // logging.verbose("_onExecute", commands_bytecode_vector, source_connection);
 
           // try {
           //     // dont know how to make Uint8Array in C++ yet. So I am forced to give data out in C++ std::vector
-          //     const commands_bytecode = SpectodaWasm.convertNumberVectorToJSArray(commands_bytecode_vector);
+          //     const commands_bytecode = SpectodaWasm.convertUint8VectorUint8Array(commands_bytecode_vector);
 
           //     // TODO IMPLEMENT SENDING TO OTHER INTERFACES
 
           // } catch {
           // if (source_connection.address_string === "00:00:00:00:00:00") {
-          //   const array = SpectodaWasm.convertNumberVectorToJSArray(commands_bytecode_vector);
+          //   const array = SpectodaWasm.convertUint8VectorUint8Array(commands_bytecode_vector);
           //   this.#runtimeReference.connector?.deliver(array, source_connection);
           // }
           // }
@@ -124,7 +126,7 @@ export class PreviewController {
           //   logging.debug("_onRequest", );
           //   try {
           //     // dont know how to make Uint8Array in C++ yet. So I am forced to give data out in C++ std::vector
-          //     const commands_bytecode = SpectodaWasm.convertNumberVectorToJSArray(commands_bytecode_vector);
+          //     const commands_bytecode = SpectodaWasm.convertUint8VectorUint8Array(commands_bytecode_vector);
           //     logging.verbose("commands_bytecode", commands_bytecode);
           //     // TODO IMPLEMENT SENDING TO OTHER INTERFACES
           //   } catch {
@@ -344,7 +346,7 @@ export class PreviewController {
         throw "EvaluateError";
       }
 
-      response_bytecode = SpectodaWasm.convertNumberVectorToJSArray(response_bytecode_vector);
+      response_bytecode = SpectodaWasm.convertUint8VectorUint8Array(response_bytecode_vector);
     } finally {
       response_bytecode_vector.delete();
     }

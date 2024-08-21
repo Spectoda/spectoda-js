@@ -1,8 +1,8 @@
 import { logging } from "../logging";
 
-const WASM_VERSION = "DEBUG_DEV_0.11.0_20240816";
+const WASM_VERSION = "DEBUG_DEV_0.11.0_20240819";
 
-/// ========== DEBUG_DEV_0.11.0_20240816.d.ts ========== ///
+/// ========== DEBUG_DEV_0.11.0_20240818.d.ts ========== ///
 
 export interface interface_error_tValue<T extends number> {
   value: T;
@@ -56,14 +56,14 @@ export interface Uint8Vector {
 
 export interface IConnector_WASM {
   _process(): void;
-  _sendExecute(_0: Uint8Vector, _1: Connection): void;
   init(_0: connector_type_t): void;
-  _disconnect(_0: Connection): boolean;
-  _sendRequest(_0: number, _1: Uint8Vector, _2: Connection): boolean;
-  _sendResponse(_0: number, _1: number, _2: Uint8Vector, _3: Connection): boolean;
   _scan(_0: ArrayBuffer | Uint8Array | Uint8ClampedArray | Int8Array | string, _1: number, _2: any): boolean;
   _userConnect(_0: ArrayBuffer | Uint8Array | Uint8ClampedArray | Int8Array | string, _1: number, _2: any): boolean;
   _autoConnect(_0: ArrayBuffer | Uint8Array | Uint8ClampedArray | Int8Array | string, _1: number, _2: number, _3: any): boolean;
+  _disconnect(_0: any): boolean;
+  _sendExecute(_0: Uint8Vector, _1: any): void;
+  _sendRequest(_0: number, _1: Uint8Vector, _2: any): boolean;
+  _sendResponse(_0: number, _1: number, _2: Uint8Vector, _3: any): boolean;
   _sendSynchronize(_0: any, _1: any): void;
   delete(): void;
 }
@@ -85,7 +85,7 @@ export interface Spectoda_WASM {
   eraseTngl(): void;
   registerConnector(_0: IConnector_WASM): void;
   _onTnglUpdate(_0: Uint8Vector): boolean;
-  _onRequest(): boolean;
+  _onExecute(_0: Uint8Vector): boolean;
   setVirtualInput(_0: number, _1: number): void;
   execute(_0: number, _1: Connection): boolean;
   request(_0: number, _1: Uint8Vector, _2: Connection): boolean;
@@ -101,8 +101,8 @@ export interface Spectoda_WASM {
   emitEvent(_0: ArrayBuffer | Uint8Array | Uint8ClampedArray | Int8Array | string, _1: Value, _2: number, _3: boolean): void;
   _onEvents(_0: any): boolean;
   _onEventStateUpdates(_0: any): boolean;
-  _onExecute(_0: Uint8Vector, _1: any): boolean;
-  _onSynchronize(_0: any, _1: any): boolean;
+  _onRequest(_0: number, _1: Uint8Vector, _2: any): boolean;
+  _onSynchronize(_0: any): boolean;
   makePort(_0: ArrayBuffer | Uint8Array | Uint8ClampedArray | Int8Array | string, _1: number, _2: number, _3: number, _4: boolean, _5: boolean): any;
   readVariableAddress(_0: number, _1: number): any;
   delete(): void;
@@ -139,11 +139,11 @@ export interface MainModule {
   ImplementedSpectoda_WASM: {};
 }
 
-/// ========== DEBUG_DEV_0.11.0_202416.d.ts ========== ///
+/// ========== DEBUG_DEV_0.11.0_202418.d.ts ========== ///
 
 /// =================== MANUAL INTERFACES ================= ///
 
-export interface Event {
+export interface SpectodaEvent {
   // event_object.set("label", label_t(event.identifier).asString());
   // event_object.set("indentifier", int32_t(event.identifier.raw()));
   // event_object.set("type", int32_t(value_type_t::VALUE_TYPE_UNDEFINED));
@@ -175,19 +175,19 @@ export interface Spectoda_WASMImplementation {
   //     return call<void>("_onEventStateUpdates", event_array);
   // }
 
-  // bool _onExecute(const std::vector<uint8_t>& execute_bytecode, const Connection& source_connection) override
+  // bool _onExecute(const std::vector<uint8_t>& execute_bytecode) override
   // {
-  //     return call<bool>("_onExecute", execute_bytecode, source_connection);
+  //     return call<bool>("_onExecute", execute_bytecode);
   // }
 
-  // bool _onRequest() override
+  // bool _onRequest(const int32_t request_ticket_number, const std::vector<uint8_t>& request_bytecode_vector, const val& destination_connection) override
   // {
-  //     return call<bool>("_onRequest");
+  //     return call<bool>("_onRequest", request_ticket_number, request_bytecode_vector, destination_connection);
   // }
 
-  // bool _onSynchronize(const Synchronization& synchronization, const Connection& source_connection) override
+  // bool _onSynchronize(const val synchronization) override
   // {
-  //     return call<bool>("_onSynchronize", synchronization, source_connection);
+  //     return call<bool>("_onSynchronize", synchronization);
   // }
 
   // interface_error_t _handlePeerConnected(const std::string& peer_mac) override
@@ -218,11 +218,11 @@ export interface Spectoda_WASMImplementation {
   // // __construct: function () {}
   // // __destruct: function () {}
   _onTnglUpdate(tngl_bytes: Uint8Vector): void;
-  _onEvents(event_array: Event[]): void;
-  _onEventStateUpdates(event_array: Event[]): void;
-  _onExecute(execute_bytecode: Uint8Vector, source_connection: Connection): boolean;
-  _onRequest(): boolean;
-  _onSynchronize(synchronization: Synchronization, source_connection: Connection): boolean;
+  _onEvents(event_array: SpectodaEvent[]): void;
+  _onEventStateUpdates(event_array: SpectodaEvent[]): void;
+  _onExecute(execute_bytecode: Uint8Vector): boolean;
+  _onRequest(request_ticket_number: number, request_bytecode_vector: Uint8Vector, destination_connection: Connection): boolean;
+  _onSynchronize(synchronization: Synchronization): boolean;
   _handlePeerConnected(peer_mac: string): interface_error_t;
   _handlePeerDisconnected(peer_mac: string): interface_error_t;
   _handleTimelineManipulation(timeline_timestamp: number, timeline_paused: boolean, clock_timestamp: number): interface_error_t;
@@ -351,7 +351,7 @@ export class SpectodaWasm {
   static IConnector_WASM: MainModule["IConnector_WASM"];
 
   // oposite of convertJSArrayToNumberVector() in https://emscripten.org/docs/api_reference/val.h.html
-  static convertNumberVectorToJSArray(vector: Uint8Vector) {
+  static convertUint8VectorUint8Array(vector: Uint8Vector) {
     let array = new Uint8Array(vector.size());
     for (let i = 0; i < array.length; i++) {
       array[i] = vector.get(i);
@@ -485,12 +485,11 @@ function onWasmLoad() {
     }
     // ? Node.js enviroment
     else if (!process.env.NEXT_PUBLIC_VERSION) {
-   
       // Node.js make "filesystem" folder in root
-      const fs = require("fs");
-      if (!fs.existsSync("filesystem")) {
-        fs.mkdirSync("filesystem");
-      }
+      // const fs = require("fs");
+      // if (!fs.existsSync("filesystem")) {
+      //   fs.mkdirSync("filesystem");
+      // }
 
       // @ts-ignore - FS is a global object of Emscripten
       Module.FS.mkdir("/littlefs");

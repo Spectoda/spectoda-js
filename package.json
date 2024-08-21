@@ -3,9 +3,11 @@
   "version": "0.9.0",
   "types": "types/index.d.ts",
   "devDependencies": {
+    "@types/serialport": "^8.0.5",
     "i18next-parser": "^6.0.0"
   },
   "dependencies": {
+    "@types/w3c-web-serial": "^1.0.6",
     "nanoevents": "^7.0.1",
     "nanoid": "^4.0.0",
     "node-ble": "^1.9.0"

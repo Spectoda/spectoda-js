@@ -1025,10 +1025,10 @@ criteria example:
   // void _sendExecute(const std::vector<uint8_t>& command_bytes, const Connection& source_connection) = 0;
 
   sendExecute(command_bytes: Uint8Array, source_connection: Connection) {
-    logging.verbose(`sendExecute(command_bytes=${command_bytes}, source_connection=${source_connection})`);
+    logging.verbose(`SpectodaConnectConnector::sendExecute(command_bytes=${command_bytes}, source_connection=${source_connection})`);
 
     if (source_connection.connector_type == SpectodaWasm.connector_type_t.CONNECTOR_BLE) {
-      return;
+      return Promise.resolve();
     }
 
     return this.deliver(Array.from(command_bytes), 1000);
@@ -1037,14 +1037,14 @@ criteria example:
   // bool _sendRequest(const int32_t request_ticket_number, std::vector<uint8_t>& request_bytecode, const Connection& destination_connection) = 0;
 
   sendRequest(request_ticket_number: number, request_bytecode: Uint8Array, destination_connection: Connection) {
-    logging.verbose(`sendRequest(request_ticket_number=${request_ticket_number}, request_bytecode=${request_bytecode}, destination_connection=${destination_connection})`);
+    logging.verbose(`SpectodaConnectConnector::sendRequest(request_ticket_number=${request_ticket_number}, request_bytecode=${request_bytecode}, destination_connection=${destination_connection})`);
 
     return Promise.reject("NotImplemented");
   }
   // bool _sendResponse(const int32_t request_ticket_number, const int32_t request_result, std::vector<uint8_t>& response_bytecode, const Connection& destination_connection) = 0;
 
   sendResponse(request_ticket_number: number, request_result: number, response_bytecode: Uint8Array, destination_connection: Connection) {
-    logging.verbose(`sendResponse(request_ticket_number=${request_ticket_number}, request_result=${request_result}, response_bytecode=${response_bytecode}, destination_connection=${destination_connection})`);
+    logging.verbose(`SpectodaConnectConnector::sendResponse(request_ticket_number=${request_ticket_number}, request_result=${request_result}, response_bytecode=${response_bytecode}, destination_connection=${destination_connection})`);
 
     return Promise.reject("NotImplemented");
   }
@@ -1052,10 +1052,10 @@ criteria example:
   // void _sendSynchronize(const Synchronization& synchronization, const Connection& source_connection) = 0;
 
   sendSynchronize(synchronization: Synchronization, source_connection: Connection) {
-    logging.verbose(`sendSynchronize(synchronization=${synchronization}, source_connection=${source_connection})`);
+    logging.verbose(`SpectodaConnectConnector::sendSynchronize(synchronization=${synchronization}, source_connection=${source_connection})`);
 
     if (source_connection.connector_type == SpectodaWasm.connector_type_t.CONNECTOR_BLE) {
-      return;
+      return Promise.resolve();
     }
 
     return this.synchronize(synchronization);
