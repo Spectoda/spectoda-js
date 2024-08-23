@@ -15,6 +15,7 @@ export const WEBSOCKET_URL = "https://cloud.host.spectoda.com/";
 const eventStream = createNanoEvents();
 
 eventStream.on("log", (a, b, c, d) => {
+  // TODO: if (typeof d !== "undefined") of if (d === undefined) something like that rather than checking for truthiness
   if (d) {
     console.log(a, b, c, d);
   } else if (c) {
@@ -26,7 +27,9 @@ eventStream.on("log", (a, b, c, d) => {
   }
 });
 
+// TODO: .on("warn", (a, b, c, d) => {
 eventStream.on("log-warn", (a, b, c, d) => {
+  // TODO: if (typeof d !== "undefined") of if (d === undefined) something like that rather than checking for truthiness
   if (d) {
     console.log(a, b, c, d);
   } else if (c) {
@@ -38,7 +41,9 @@ eventStream.on("log-warn", (a, b, c, d) => {
   }
 });
 
+// TODO: .on("error", (a, b, c, d) => {
 eventStream.on("log-error", (a, b, c, d) => {
+  // TODO: if (typeof d !== "undefined") of if (d === undefined) something like that rather than checking for truthiness
   if (d) {
     console.log(a, b, c, d);
   } else if (c) {
@@ -64,15 +69,16 @@ export function createSpectodaWebsocket() {
     parser: customParser,
   });
 
-  window.sockets.push(socket);
-
-  if (typeof window !== "undefined") window.socket = socket;
+  if (typeof window !== "undefined") {
+    window.sockets.push(socket);
+  }
 
   socket.on("event", data => {
     logging.verbose("event", data);
 
     if (data.name === "wasm_execute") {
       eventStream.emit("wasm_execute", data.args[0][1]);
+      return;
     }
 
     eventStream.emit(data.name, ...data.args);
@@ -119,6 +125,7 @@ export function createSpectodaWebsocket() {
           } else if (prop === "timeline") {
             return timeline;
           } else if (prop === "init") {
+            // TODO rename init()
             // Expects [{key,sig}, ...] or {key,sig}
             return params => {
               if (!Array.isArray(params) && !params?.sessionOnly) {
@@ -185,7 +192,6 @@ export function createSpectodaWebsocket() {
             const result = await this.sendThroughWebsocket(payload);
 
             if (result.status === "success") {
-
               for (let res of result?.data) {
                 if (res.status === "error") {
                   logging.error(result);
