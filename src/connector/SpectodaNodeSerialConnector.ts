@@ -729,7 +729,7 @@ export class SpectodaNodeSerialConnector {
             .finally(() => {
               reject("ResponseTimeout");
             });
-        }, timeout + 10000); // +1000 for the controller to response timeout if reveive timeoutes
+        }, timeout + 10000); // +1000 for the controller to response timeout if reeive timeoutes
 
         try {
           await this.#serialPort?.write(Buffer.from(header_writer.bytes.buffer));
