@@ -60,6 +60,10 @@ if (typeof window !== "undefined") {
 }
 /////////////////////////////////////////////////////////////////////////////////////
 
+export const isCurrentSpectodaInstanceLocal = () => {
+  return typeof spectoda.init === "undefined";
+};
+
 export function createSpectodaWebsocket() {
   const timeline = new TimeTrack();
 
