@@ -698,6 +698,12 @@ export class Spectoda {
     return (autoConnect ? this.runtime.autoSelect(this.#criteria, 1000, 10000) : this.runtime.userSelect(this.#criteria))
       .then(() => {
         logging.debug("> Connecting controller...");
+
+        // ? eraseTngl to to discard TNGL from the previous session
+        this.runtime.spectoda.eraseTngl();
+        // ? eraseTngl to to discard Event History from the previous session
+        this.runtime.spectoda.eraseHistory();
+
         return this.runtime.connect();
       })
       .then(connectedDeviceInfo => {
@@ -921,44 +927,10 @@ export class Spectoda {
     return processed_tngl_code;
   }
 
-  // writes Tngl only if fingerprints does not match
-  syncTngl(tngl_code, tngl_bytes = null) {
-    logging.verbose(`syncTngl(tngl_code=${tngl_code}, tngl_bytes=${tngl_bytes})`);
-
-    // this.#resetClockSyncInterval();
-
-    // logging.debug("> Syncing Tngl code...");
-
-    // if (tngl_code === null && tngl_bytes === null) {
-    //   return Promise.reject("InvalidParameters");
-    // }
-
-    // if (tngl_bytes === null) {
-    //   tngl_bytes = this.#parser.parseTnglCode(tngl_code);
-    // }
-
-    // const reinterpret_bytecode = [COMMAND_FLAGS.FLAG_REINTERPRET_TNGL, ...numberToBytes(this.runtime.clock.millis(), 6), 0, ...numberToBytes(tngl_bytes.length, 4), ...tngl_bytes];
-    // this.runtime.evaluate(reinterpret_bytecode);
-
-    // return this.getTnglFingerprint().then(device_fingerprint => {
-    //   return computeTnglFingerprint(tngl_bytes, "fingerprint").then(new_fingerprint => {
-    //     for (let i = 0; i < device_fingerprint.length; i++) {
-    //       if (device_fingerprint[i] !== new_fingerprint[i]) {
-    //         return this.writeTngl(null, tngl_bytes);
-    //       }
-    //     }
-    //   });
-    // });
-
+  syncTngl() {
+    logging.verbose(`syncTngl()`);
+    
     logging.info("> Requesting TNGL bytecode...");
-    logging.warn("Only use this function with BLE connected devices");
-
-    if (detectGW()) {
-      logging.warn("Gateway detected, skipping TNGL sync");
-      return Promise.resolve();
-    }
-
-    this.runtime.spectoda.eraseTngl();
 
     const request_uuid = this.#getUUID();
     const command_bytes = [COMMAND_FLAGS.FLAG_READ_TNGL_BYTECODE_REQUEST, ...numberToBytes(request_uuid, 4)];
@@ -984,6 +956,7 @@ export class Spectoda {
 
       const error_code = reader.readUint8();
       logging.verbose(`error_code=${error_code}`);
+
       if (error_code === 0) {
         const tngl_bytecode_size = reader.readUint16();
         logging.info(`tngl_bytecode_size=${tngl_bytecode_size}`);
@@ -991,8 +964,8 @@ export class Spectoda {
         const tngl_bytecode = reader.readBytes(tngl_bytecode_size);
         logging.info(`tngl_bytecode=[${tngl_bytecode}]`);
 
-        const DUMMY_CONNECTION = new SpectodaWasm.Connection("00:00:12:34:67:89", SpectodaWasm.connector_type_t.CONNECTOR_BLE, SpectodaWasm.connection_rssi_t.RSSI_MAX);
-        this.runtime.spectoda.execute(new Uint8Array(tngl_bytecode), DUMMY_CONNECTION);
+        const DUMMY_CONNECTION = new SpectodaWasm.Connection("00:00:00:00:00:00", SpectodaWasm.connector_type_t.CONNECTOR_UNDEFINED, SpectodaWasm.connection_rssi_t.RSSI_MAX);
+        this.runtime.spectoda.request(new Uint8Array(tngl_bytecode), DUMMY_CONNECTION);
       } else {
         logging.error("ERROR asdf8079");
         throw "FailedToSynchronizeTngl";
@@ -2009,14 +1982,6 @@ export class Spectoda {
 
   syncEventHistory() {
     logging.info("> Requesting event history bytecode...");
-    logging.warn("Only use this function with BLE connected devices");
-
-    if (detectGW()) {
-      logging.warn("Gateway detected, skipping event history sync");
-      return Promise.resolve();
-    }
-
-    this.runtime.spectoda.eraseHistory();
 
     const request_uuid = this.#getUUID();
     const bytes = [COMMAND_FLAGS.FLAG_EVENT_HISTORY_BC_REQUEST, ...numberToBytes(request_uuid, 4)];
@@ -2039,7 +2004,6 @@ export class Spectoda {
       }
 
       const error_code = reader.readUint8();
-
       logging.verbose(`error_code=${error_code}`);
 
       if (error_code === 0) {
@@ -2049,10 +2013,11 @@ export class Spectoda {
         const historic_events_bytecode = reader.readBytes(historic_events_bytecode_size);
         logging.info(`historic_events_bytecode=[${historic_events_bytecode}]`);
 
-        const DUMMY_CONNECTION = new SpectodaWasm.Connection("00:00:12:34:67:89", SpectodaWasm.connector_type_t.CONNECTOR_BLE, SpectodaWasm.connection_rssi_t.RSSI_MAX);
-        this.runtime.spectoda.execute(new Uint8Array(historic_events_bytecode), DUMMY_CONNECTION);
+        const DUMMY_CONNECTION = new SpectodaWasm.Connection("00:00:00:00:00:00", SpectodaWasm.connector_type_t.CONNECTOR_UNDEFINED, SpectodaWasm.connection_rssi_t.RSSI_MAX);
+        this.runtime.spectoda.request(new Uint8Array(historic_events_bytecode), DUMMY_CONNECTION);
       } else {
-        throw "Fail";
+        logging.error("ERROR cxzv982io");
+        throw "FailedToSynchronizeEventHistory";
       }
     });
   }
@@ -2461,6 +2426,9 @@ export class Spectoda {
 
   // reloads the spectoda app
   reload() {
+
+    this.disconnect();
+
     setTimeout(() => {
       if (detectNode()) {
         process.exit(1);
@@ -2469,7 +2437,7 @@ export class Spectoda {
           window.location.reload();
         }
       }
-    }, 100);
+    }, 1000);
 
     return Promise.resolve();
   }
