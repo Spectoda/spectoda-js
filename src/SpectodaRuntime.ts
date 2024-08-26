@@ -1,6 +1,6 @@
 import { SpectodaDummyConnector } from "../SpectodaDummyConnector";
 import { SpectodaWebBluetoothConnector } from "./connector/SpectodaWebBluetoothConnector";
-import { createNanoEvents, createNanoEventsWithWrappedEmit, detectAndroid, detectChrome, detectLinux, detectMacintosh, detectNode, detectSpectodaConnect, detectWindows, numberToBytes, sleep, uint8ArrayToHexString } from "../functions";
+import { createNanoEvents, createNanoEventsWithWrappedEmit, detectAndroid, detectChrome, detectLinux, detectMacintosh, detectNode, detectSpectodaConnect, detectWindows, numberToBytes, sleep, uint8ArrayToHexString, detectGW } from "../functions";
 import { logging } from "../logging";
 import { SpectodaWebSerialConnector } from "./connector/SpectodaWebSerialConnector";
 // import { SpectodaConnectConnector } from "./SpectodaConnectConnector";
@@ -431,7 +431,7 @@ export class SpectodaRuntime {
     let choosen_connector = undefined;
 
     if (desired_connector == "default" || desired_connector == "automatic") {
-      if (detectSpectodaConnect()) {
+      if (detectSpectodaConnect() || detectGW()) {
         desired_connector = "serial";
       } else {
         desired_connector = "bluetooth";
