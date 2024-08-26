@@ -520,20 +520,29 @@ export class SpectodaNodeSerialConnector {
 
             if (result) {
               logging.info("Serial connection connected");
-              if (!this.#interfaceConnected) {
-                this.#interfaceConnected = true;
-                this.#runtimeReference.emit("#connected");
-              }
-              resolve({ connector: this.type, criteria: this.#criteria });
+
+              setTimeout(()=>{
+                if (!this.#interfaceConnected) {
+                  this.#interfaceConnected = true;
+                  this.#runtimeReference.emit("#connected");
+                }
+                resolve({ connector: this.type, criteria: this.#criteria });
+              }, 100);
+
+       
             } else {
               // logging.warn("Trying to connect again")
               // const passed = new Date().getTime() - start;
               // resolve(this.connect(timeout - passed));
 
               logging.info("Serial connection failed");
-              this.#disconnect().finally(() => {
-                reject("ConnectFailed");
-              });
+
+
+              setTimeout(()=>{
+                this.#disconnect().finally(() => {
+                  reject("ConnectFailed");
+                });
+              }, 100);
             }
           };
 
