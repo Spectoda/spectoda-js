@@ -3,26 +3,11 @@ import { TimeTrack } from "./TimeTrack.js";
 import "./TnglReader.js";
 import { TnglReader } from "./TnglReader.js";
 import "./TnglWriter.js";
-import {
-  colorToBytes,
-  computeTnglFingerprint,
-  cssColorToHex,
-  detectGW,
-  detectNode,
-  detectSpectodaConnect,
-  hexStringToUint8Array,
-  labelToBytes,
-  numberToBytes,
-  percentageToBytes,
-  sleep,
-  strMacToBytes,
-  stringToBytes,
-  uint8ArrayToHexString,
-} from "./functions";
+import { colorToBytes, cssColorToHex, detectNode, detectSpectodaConnect, hexStringToUint8Array, labelToBytes, numberToBytes, sleep, strMacToBytes, stringToBytes, uint8ArrayToHexString } from "./functions";
 import { changeLanguage, t } from "./i18n.js";
 import { logging } from "./logging";
-import { COMMAND_FLAGS } from "./src/Spectoda_JS";
 import { SpectodaWasm } from "./src/SpectodaWasm";
+import { COMMAND_FLAGS } from "./src/Spectoda_JS";
 
 import { io } from "socket.io-client";
 import customParser from "socket.io-msgpack-parser";
@@ -929,7 +914,7 @@ export class Spectoda {
 
   syncTngl() {
     logging.verbose(`syncTngl()`);
-    
+
     logging.info("> Requesting TNGL bytecode...");
 
     const request_uuid = this.#getUUID();
@@ -2426,7 +2411,6 @@ export class Spectoda {
 
   // reloads the spectoda app
   reload() {
-
     this.disconnect();
 
     setTimeout(() => {
