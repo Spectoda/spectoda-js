@@ -15,3 +15,6 @@ export const VALUE_TYPE = {
 } as const;
 
 export const BROADCAST_ID = 255;
+
+export const PERCENTAGE_MAX = 268435455; // 2^28-1
+export const PERCENTAGE_MIN = -268435455; // -(2^28)+1  (plus 1 is there for the percentage to be simetric)
