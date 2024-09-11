@@ -1,7 +1,7 @@
-import { logging } from "../logging";
-import { Connection, IConnector_WASMImplementation, SpectodaWasm, Spectoda_WASM, Spectoda_WASMImplementation, Synchronization, Uint8Vector } from "./SpectodaWasm";
 import { sleep } from "../functions";
+import { logging } from "../logging";
 import { SpectodaRuntime } from "./SpectodaRuntime";
+import { Connection, IConnector_WASMImplementation, SpectodaWasm, Spectoda_WASM, Spectoda_WASMImplementation, Synchronization, Uint8Vector } from "./SpectodaWasm";
 
 export const APP_MAC_ADDRESS = "00:00:12:34:56:78";
 
@@ -235,7 +235,7 @@ export class Spectoda_JS {
             event_state_updates_array[i].timestamp_utc = Date.now();
           }
           this.#runtimeReference.emit("eventstateupdates", event_state_updates_array);
-          
+
           // ! emitted_events is deprecated
           this.#runtimeReference.emit("emitted_events", event_state_updates_array);
 
@@ -428,7 +428,9 @@ export class Spectoda_JS {
           // logging.info(`address_string=${source_connection.address_string.toString()}, connector_type=${source_connection.connector_type.value.toString()}, connection_rssi=${source_connection.connection_rssi.value.toString()}`);
 
           this.#runtimeReference.sendSynchronize(synchronization, source_connection).catch(e => {
-            logging.error(e);
+            // ! DISABLED 11. 9. 2024 By @mchlkucera
+            // Because of console.error spamming on frontend
+            // logging.error(e);
           });
         },
 
