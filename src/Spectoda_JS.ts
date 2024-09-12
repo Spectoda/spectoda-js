@@ -235,7 +235,7 @@ export class Spectoda_JS {
             event_state_updates_array[i].timestamp_utc = Date.now();
           }
           this.#runtimeReference.emit("eventstateupdates", event_state_updates_array);
-          
+
           // ! emitted_events is deprecated
           this.#runtimeReference.emit("emitted_events", event_state_updates_array);
 
@@ -248,17 +248,17 @@ export class Spectoda_JS {
           // dont know how to make Uint8Array in C++ yet. So I am forced to give data out in C++ std::vector
           // const commands_bytecode = SpectodaWasm.convertUint8VectorUint8Array(commands_bytecode_vector);
 
-          try {
-            const command_bytecode = SpectodaWasm.convertUint8VectorUint8Array(commands_bytecode_vector);
-            const THIS_CONTROLLER_CONNECTION = new SpectodaWasm.Connection("00:00:00:00:00:00", SpectodaWasm.connector_type_t.CONNECTOR_UNDEFINED, SpectodaWasm.connection_rssi_t.RSSI_MAX);
-            this.#runtimeReference.sendExecute(command_bytecode, THIS_CONTROLLER_CONNECTION).catch(e => {
-              logging.error(e);
-              return false;
-            });
-          } catch (e) {
-            logging.error(e);
-            return false;
-          }
+          // try {
+          //   const command_bytecode = SpectodaWasm.convertUint8VectorUint8Array(commands_bytecode_vector);
+          //   const THIS_CONTROLLER_CONNECTION = new SpectodaWasm.Connection("00:00:00:00:00:00", SpectodaWasm.connector_type_t.CONNECTOR_UNDEFINED, SpectodaWasm.connection_rssi_t.RSSI_MAX);
+          //   this.#runtimeReference.sendExecute(command_bytecode, THIS_CONTROLLER_CONNECTION).catch(e => {
+          //     logging.error(e);
+          //     return false;
+          //   });
+          // } catch (e) {
+          //   logging.error(e);
+          //   return false;
+          // }
 
           return true;
         },
@@ -268,16 +268,16 @@ export class Spectoda_JS {
         _onRequest: (request_ticket_number: number, request_bytecode_vector: Uint8Vector, destination_connection: Connection) => {
           logging.debug(`Spectoda_JS::_onRequest(request_ticket_number=${request_ticket_number})`);
 
-          try {
-            const request_bytecode = SpectodaWasm.convertUint8VectorUint8Array(request_bytecode_vector);
-            this.#runtimeReference.sendRequest(request_ticket_number, request_bytecode, destination_connection).catch(e => {
-              logging.error(e);
-              return false;
-            });
-          } catch (e) {
-            logging.error(e);
-            return false;
-          }
+          // try {
+          //   const request_bytecode = SpectodaWasm.convertUint8VectorUint8Array(request_bytecode_vector);
+          //   this.#runtimeReference.sendRequest(request_ticket_number, request_bytecode, destination_connection).catch(e => {
+          //     logging.error(e);
+          //     return false;
+          //   });
+          // } catch (e) {
+          //   logging.error(e);
+          //   return false;
+          // }
 
           return true;
         },
@@ -287,6 +287,7 @@ export class Spectoda_JS {
 
           try {
             this.#runtimeReference.emit("wasm_clock", synchronization.clock_timestamp);
+            logging.debug(`🕒 $${this.#instance?.getLabel()}: ${synchronization.clock_timestamp}`);
             this.#runtimeReference.clock.setMillis(synchronization.clock_timestamp);
           } catch (e) {
             logging.error(e);
@@ -392,18 +393,38 @@ export class Spectoda_JS {
         },
 
         // _sendExecute: (command_bytes: Uint8Vector, source_connection: Connection) => void;
-        _sendExecute: (command_bytes: Uint8Vector, source_connection: Connection) => {
-          logging.debug(`Spectoda_JS::_sendExecute(command_bytes=${command_bytes}, source_connection=${source_connection}`);
+        _sendExecute: (command_bytecode: Uint8Vector, source_connection: Connection) => {
+          logging.debug(`Spectoda_JS::_sendExecute(command_bytecode=${command_bytecode}, source_connection=${source_connection}`);
 
-          const command_bytes_array = SpectodaWasm.convertUint8VectorUint8Array(command_bytes);
-          this.#runtimeReference.sendExecute(command_bytes_array, source_connection).catch(e => {
+          try {
+            const command_bytecode_array = SpectodaWasm.convertUint8VectorUint8Array(command_bytecode);
+            const THIS_CONTROLLER_CONNECTION = new SpectodaWasm.Connection("00:00:00:00:00:00", SpectodaWasm.connector_type_t.CONNECTOR_UNDEFINED, SpectodaWasm.connection_rssi_t.RSSI_MAX);
+            this.#runtimeReference.sendExecute(command_bytecode_array, THIS_CONTROLLER_CONNECTION).catch(e => {
+              logging.error(e);
+              return false;
+            });
+          } catch (e) {
             logging.error(e);
-          });
+            return false;
+          }
         },
 
         // _sendRequest: (request_ticket_number: number, request_bytecode: Uint8Vector, destination_connection: Connection) => boolean;
         _sendRequest: (request_ticket_number: number, request_bytecode: Uint8Vector, destination_connection: Connection) => {
-          return false;
+          logging.debug(`Spectoda_JS::_sendRequest(request_ticket_number=${request_ticket_number}, request_bytecode=${request_bytecode}, destination_connection=${destination_connection}`);
+
+          try {
+            const request_bytecode_array = SpectodaWasm.convertUint8VectorUint8Array(request_bytecode);
+            this.#runtimeReference.sendRequest(request_ticket_number, request_bytecode_array, destination_connection).catch(e => {
+              logging.error(e);
+              return false;
+            });
+          } catch (e) {
+            logging.error(e);
+            return false;
+          }
+
+          return true;
         },
 
         // _sendResponse: (request_ticket_number: number, request_result: number, response_bytecode: Uint8Vector, destination_connection: Connection) => boolean;
@@ -534,7 +555,7 @@ export class Spectoda_JS {
   }
 
   synchronize(synchronization: Synchronization, source_connection: Connection) {
-    logging.debug(`Spectoda_JS::synchronize(synchronization=${synchronization}, source_connection=${source_connection})`);
+    logging.debug(`Spectoda_JS::synchronize(synchronization=`, synchronization, `source_connection=`, source_connection, `)`);
 
     if (!this.#instance) {
       throw "NotConstructed";

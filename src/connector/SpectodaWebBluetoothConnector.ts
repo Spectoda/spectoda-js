@@ -1165,7 +1165,7 @@ criteria example:
   sendRequest(request_ticket_number: number, request_bytecode: Uint8Array, destination_connection: Connection) {
     logging.verbose(`SpectodaWebBluetoothConnector::sendRequest(request_ticket_number=${request_ticket_number}, request_bytecode=${request_bytecode}, destination_connection=${destination_connection})`);
 
-    return Promise.reject("NotImplemented");
+    return this.request(Array.from(request_bytecode), false, 10000);
   }
   // bool _sendResponse(const int32_t request_ticket_number, const int32_t request_result, std::vector<uint8_t>& response_bytecode, const Connection& destination_connection) = 0;
 

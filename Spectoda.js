@@ -684,10 +684,12 @@ export class Spectoda {
       .then(() => {
         logging.debug("> Connecting controller...");
 
-        // ? eraseTngl to to discard TNGL from the previous session
+        // ? eraseTngl to discard TNGL from the previous session
         this.runtime.spectoda.eraseTngl();
-        // ? eraseTngl to to discard Event History from the previous session
+        // ? eraseHistory to discard Event History from the previous session
         this.runtime.spectoda.eraseHistory();
+        // ? eraseTimeline to discard Timeline from the previous session
+        this.runtime.spectoda.eraseTimeline();
 
         return this.runtime.connect();
       })
@@ -952,6 +954,7 @@ export class Spectoda {
         const DUMMY_CONNECTION = new SpectodaWasm.Connection("00:00:00:00:00:00", SpectodaWasm.connector_type_t.CONNECTOR_UNDEFINED, SpectodaWasm.connection_rssi_t.RSSI_MAX);
         this.runtime.spectoda.request(new Uint8Array(tngl_bytecode), DUMMY_CONNECTION);
       } else {
+        // maybe no TNGL in the controller
         logging.error("ERROR asdf8079");
         throw "FailedToSynchronizeTngl";
       }

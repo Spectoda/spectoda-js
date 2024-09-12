@@ -1,6 +1,20 @@
 import { SpectodaDummyConnector } from "../SpectodaDummyConnector";
 import { SpectodaWebBluetoothConnector } from "./connector/SpectodaWebBluetoothConnector";
-import { createNanoEvents, createNanoEventsWithWrappedEmit, detectAndroid, detectChrome, detectLinux, detectMacintosh, detectNode, detectSpectodaConnect, detectWindows, numberToBytes, sleep, uint8ArrayToHexString, detectGW } from "../functions";
+import {
+  createNanoEvents,
+  createNanoEventsWithWrappedEmit,
+  detectAndroid,
+  detectChrome,
+  detectLinux,
+  detectMacintosh,
+  detectNode,
+  detectSpectodaConnect,
+  detectWindows,
+  numberToBytes,
+  sleep,
+  uint8ArrayToHexString,
+  detectGW,
+} from "../functions";
 import { logging } from "../logging";
 import { SpectodaWebSerialConnector } from "./connector/SpectodaWebSerialConnector";
 // import { SpectodaConnectConnector } from "./SpectodaConnectConnector";
@@ -342,7 +356,7 @@ export class SpectodaRuntime {
       }
     });
 
-    this.#ups = 2; // TODO increase to 10 when the performance is good
+    this.#ups = 2; // TODO increase to 4 when the performance is good
     this.#fps = 1; // TODO increase to 2 when the performance is good
   }
 
@@ -1014,7 +1028,7 @@ export class SpectodaRuntime {
                   }
 
                   const merged_payload = payload.slice(0, index);
-                  const timeout = item.c; // TODO! timeout not needed? 
+                  const timeout = item.c; // TODO! timeout not needed?
 
                   // logging.debug("EXECUTE", uint8ArrayToHexString(merged_payload));
 
@@ -1043,7 +1057,7 @@ export class SpectodaRuntime {
 
               // case Query.TYPE_SET_CLOCK:
               //   {
-                  
+
               //     this.spectoda.setClockTimestamp(item.a.millis());
 
               //     try {
@@ -1126,7 +1140,6 @@ export class SpectodaRuntime {
                   const source_connection: Connection = item.b;
 
                   try {
-
                     this.emit("wasm_execute", command_bytes);
 
                     await this.connector
@@ -1175,11 +1188,14 @@ export class SpectodaRuntime {
                   const destination_connection: Connection = item.c;
 
                   try {
-                    await this.connector.sendResponse(request_ticket_number, response_bytecode, destination_connection).then((result: any) => {
-                      item.resolve(result);
-                    }) .catch((e: any) => {
-                      item.reject(e);
-                    });
+                    await this.connector
+                      .sendResponse(request_ticket_number, response_bytecode, destination_connection)
+                      .then((result: any) => {
+                        item.resolve(result);
+                      })
+                      .catch((e: any) => {
+                        item.reject(e);
+                      });
                   } catch (error) {
                     item.reject(error);
                   }
@@ -1194,11 +1210,14 @@ export class SpectodaRuntime {
                   const source_connection: Connection = item.b;
 
                   try {
-                    await this.connector.sendSynchronize(synchronization, source_connection).then((result: any) => {
-                      item.resolve(result);
-                    }) .catch((e: any) => {
-                      item.reject(e);
-                    });
+                    await this.connector
+                      .sendSynchronize(synchronization, source_connection)
+                      .then((result: any) => {
+                        item.resolve(result);
+                      })
+                      .catch((e: any) => {
+                        item.reject(e);
+                      });
                   } catch (error) {
                     item.reject(error);
                   }
