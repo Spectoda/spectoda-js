@@ -4,7 +4,7 @@ import "./TnglReader.js";
 import { TnglReader } from "./TnglReader.js";
 import "./TnglWriter.js";
 import { colorToBytes, cssColorToHex, detectNode, detectSpectodaConnect, hexStringToUint8Array, labelToBytes, numberToBytes, sleep, strMacToBytes, stringToBytes, uint8ArrayToHexString } from "./functions";
-import { changeLanguage, t } from "./i18n.js";
+
 import { logging } from "./logging";
 import { SpectodaWasm } from "./src/SpectodaWasm";
 import { COMMAND_FLAGS } from "./src/Spectoda_JS";
@@ -643,7 +643,7 @@ export class Spectoda {
 
             if (error_code !== 0) {
               logging.warn("Adoption refused.");
-              window.alert(t("Zkuste to, prosím, znovu."), t("Přidání se nezdařilo"), { confirm: t("OK") });
+              window.alert("Zkuste to, prosím, znovu.", "Přidání se nezdařilo", { confirm: "OK" });
 
               throw "AdoptionRefused";
             }
@@ -1906,9 +1906,10 @@ export class Spectoda {
   /**
    * Change language for modals
    * @param {"en"|"cs"} lng
+   * @deprecated
    */
   setLanguage(lng) {
-    changeLanguage(lng);
+    logging.info("setLanguage is deprecated");
   }
 
   setDebugLevel(level) {

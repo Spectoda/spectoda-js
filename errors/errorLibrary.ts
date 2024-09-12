@@ -27,7 +27,6 @@
  * - Generic information, ambiguity (e.g. "Something went wrong", "The item was moved, deleted, removed or archived")
  */
 
-import { t } from "../i18n";
 export interface ErrorFormat {
   title: string;
   message: string;
@@ -40,12 +39,12 @@ interface ErrorList {
 // Errors specific for NARA
 export const app: ErrorList = {
   MicAccessDenied: {
-    title: t("Mikrofon se nepodařilo spustit."),
-    message: t("Zkontrolujte, zda jste v Nastavení povolili aplikaci přístup k mikrofonu."),
+    title: "Mikrofon se nepodařilo spustit.",
+    message: "Zkontrolujte, zda jste v Nastavení povolili aplikaci přístup k mikrofonu.",
   },
   UserCanceledSelection: {
-    title: t("Spárování nové lampy se nezdařilo"),
-    message: t("Pro připojení již spárované lampy prosím stiskněte jakýkoli symbol") + ' "🛑"',
+    title: "Spárování nové lampy se nezdařilo",
+    message: "Pro připojení již spárované lampy prosím stiskněte jakýkoli symbol" + ' "🛑"',
   },
 } as const;
 
