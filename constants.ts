@@ -1,20 +1,27 @@
 export const VALUE_TYPE = {
-  LABEL: 33,
+  NUMBER: 29,
   TIMESTAMP: 32,
   IDENTIFIER: 31,
   PERCENTAGE: 30,
-  NUMBER: 29,
+  DATE: 28,
+  STRING_ADDRESS: 33,
   VALUE_ARRAY: 27,
   COLOR: 26,
-  TRIPLE: 25,
   PIXELS: 19,
   VALUE_ADDRESS: 18,
-  BOOL: 2,
+  BYTE: 3,
+  BOOLEAN: 2,
   NULL: 1,
   UNDEFINED: 0,
+
+  //
+
+  NUMBER_MAX: 1000000000,
+  NUMBER_MIN: -100000000000,
+  TIMESTAMP_MAX: 86400000,
+  TIMESTAMP_MIN: -86400000,
+  PERCENTAGE_MAX: 100000000,
+  PERCENTAGE_MIN: -100000000,
 } as const;
 
 export const BROADCAST_ID = 255;
-
-export const PERCENTAGE_MAX = 268435455; // 2^28-1
-export const PERCENTAGE_MIN = -268435455; // -(2^28)+1  (plus 1 is there for the percentage to be simetric)
