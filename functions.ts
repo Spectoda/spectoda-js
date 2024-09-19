@@ -249,8 +249,20 @@ export function detectNode() {
   return spectodaNodeDetected;
 }
 
+export function detectServerEnvironment() {
+  return typeof window === "undefined";
+}
+
+export function detectBrowser() {
+  return typeof window !== "undefined";
+}
+
 export function detectNext() {
   return process.env.NEXT_PUBLIC_NEXTJS;
+}
+
+export function detectProductionBuild() {
+  return !!process.env.NEXT_PUBLIC_VERSION;
 }
 
 export function detectGW() {
