@@ -30,11 +30,16 @@ export const COMMAND_FLAGS = Object.freeze({
   FLAG_REINTERPRET_TNGL: 104,
   FLAG_SET_TIMELINE: 105,
 
-  FLAG_EMIT_EVENT: 111,
-  FLAG_EMIT_TIMESTAMP_EVENT: 112,
-  FLAG_EMIT_COLOR_EVENT: 113,
-  FLAG_EMIT_PERCENTAGE_EVENT: 114,
-  FLAG_EMIT_LABEL_EVENT: 115,
+  FLAG_EMIT_NULL_EVENT: 117,
+  FLAG_EMIT_BOOLEAN_EVENT: 118,
+  FLAG_EMIT_VALUE_ADDRESS_EVENT: 119,
+  FLAG_EMIT_PIXELS_EVENT: 120,
+  FLAG_EMIT_COLOR_EVENT: 121,
+  FLAG_EMIT_DATE_EVENT: 122,
+  FLAG_EMIT_PERCENTAGE_EVENT: 123,
+  FLAG_EMIT_TIMESTAMP_EVENT: 124,
+  FLAG_EMIT_LABEL_EVENT: 125,
+  FLAG_EMIT_NUMBER_EVENT: 126,
 
   // Former CommandFlag end
 
@@ -192,12 +197,12 @@ export class Spectoda_JS {
 
             {
               const e = event_array[0];
-              debug_log += `🕹️ @${e.id} -> $${e.label}: ${e.value}\ [🕒 ${e.timestamp}ms]`;
+              debug_log += `🕹️ $${e.label} -> ${e.id}: ${e.debug} [🕒 ${e.timestamp}ms]`;
             }
 
             for (let i = 1; i < event_array.length; i++) {
               const e = event_array[i];
-              debug_log += `\n🕹️ @${e.id} -> $${e.label}: ${e.value} [🕒 ${e.timestamp}ms]`;
+              debug_log += `\n🕹️ $${e.label} -> ${e.id}: ${e.debug} [🕒 ${e.timestamp}ms]`;
             }
 
             logging.log(debug_log);
@@ -218,12 +223,12 @@ export class Spectoda_JS {
 
             {
               const e = event_state_updates_array[0];
-              debug_log += `🖥️ $${name}: \t🕹️ $${e.label}[@${e.id}]: ${e.value} [🕒 ${e.timestamp}ms]`;
+              debug_log += `🖥️ $${name}: \t🕹️ $${e.label}[${e.id}]: ${e.debug} [🕒 ${e.timestamp}ms]`;
             }
 
             for (let i = 1; i < event_state_updates_array.length; i++) {
               const e = event_state_updates_array[i];
-              debug_log += `\n🖥️ $${name}: \t🕹️ $${e.label}[@${e.id}]: ${e.value} [🕒 ${e.timestamp}ms]`;
+              debug_log += `\n🖥️ $${name}: \t🕹️ $${e.label}[${e.id}]: ${e.debug} [🕒 ${e.timestamp}ms]`;
             }
 
             logging.log(debug_log);

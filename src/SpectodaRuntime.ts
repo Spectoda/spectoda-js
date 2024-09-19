@@ -356,7 +356,7 @@ export class SpectodaRuntime {
       }
     });
 
-    this.#ups = 2; // TODO increase to 4 when the performance is good
+    this.#ups = 10; // TODO increase to 4 when the performance is good
     this.#fps = 1; // TODO increase to 2 when the performance is good
   }
 

@@ -1,4 +1,5 @@
-import { TnglWriter } from "./TnglWriter.js";
+import { TnglWriter } from "./TnglWriter";
+import { VALUE_LIMITS } from "./constants";
 import { mapValue, uint8ArrayToHexString } from "./functions";
 import { logging } from "./logging";
 
@@ -64,6 +65,7 @@ const TNGL_FLAGS = Object.freeze({
   DEFINE_MARKS: 27,
   DEFINE_EMITTER: 28,
   DEFINE_ANIMATION: 29,
+  DEFINE_BERRY: 30,
 
   // ======================
 
@@ -141,7 +143,6 @@ const TNGL_FLAGS = Object.freeze({
   TUPLE: 193,
   NUMBER: 205,
   ID: 182,
-  BERRY_CODE: 183,
 
   // TODO Operations and Providers should be Object values.
   // OBJECT: ???, // Operations and Providers are objects
@@ -155,8 +156,8 @@ const TNGL_FLAGS = Object.freeze({
   COLOR_WHITE: 197,
   COLOR_BLACK: 198,
   CONST_PERCENTAGE_ZERO: 199,
-  CONST_PERCENTAGE_MAX: 200,
-  CONST_PERCENTAGE_MIN: 201,
+  CONST_PERCENTAGE_100: 200,
+  CONST_PERCENTAGE_MINUS_100: 201,
 
   // ======================
 
@@ -503,10 +504,10 @@ export class TnglCompiler {
 
     // logging.verbose(`total=${total}`);
 
-    if (total >= 2147483647) {
+    if (total >= 86400000) {
       this.#tnglWriter.writeFlag(TNGL_FLAGS.TIMESTAMP_MAX);
       return;
-    } else if (total <= -2147483648) {
+    } else if (total <= -86400000) {
       this.#tnglWriter.writeFlag(TNGL_FLAGS.TIMESTAMP_MIN);
       return;
     } else if (total === 0) {
@@ -560,21 +561,17 @@ export class TnglCompiler {
       val = -100.0;
     }
 
-    // TODO move constants to one file
-    const PERCENTAGE_MAX = 268435455; // 2^28-1
-    const PERCENTAGE_MIN = -268435455; // -(2^28)+1  (plus 1 is there for the percentage to be simetric)
-
-    // percentage has 29 bits of resolution dividing range from -100.0 to 100.0
-    const UNIT_ERROR = (100.0 - -100.0) / 2 ** 29;
+    // percentage has 28 bits of resolution dividing range from -100.0 to 100.0
+    const UNIT_ERROR = (100.0 - -100.0) / 2 ** 28;
 
     if (val > -UNIT_ERROR && val < UNIT_ERROR) {
       this.#tnglWriter.writeFlag(TNGL_FLAGS.CONST_PERCENTAGE_ZERO);
     } else if (val > 100.0 - UNIT_ERROR) {
-      this.#tnglWriter.writeFlag(TNGL_FLAGS.CONST_PERCENTAGE_MAX);
+      this.#tnglWriter.writeFlag(TNGL_FLAGS.CONST_PERCENTAGE_100);
     } else if (val < -100.0 + UNIT_ERROR) {
-      this.#tnglWriter.writeFlag(TNGL_FLAGS.CONST_PERCENTAGE_MIN);
+      this.#tnglWriter.writeFlag(TNGL_FLAGS.CONST_PERCENTAGE_MINUS_100);
     } else {
-      const remapped = mapValue(val, -100.0, 100.0, PERCENTAGE_MIN, PERCENTAGE_MAX);
+      const remapped = mapValue(val, -100.0, 100.0, -VALUE_LIMITS.PERCENTAGE_100, VALUE_LIMITS.PERCENTAGE_100);
       this.#tnglWriter.writeFlag(TNGL_FLAGS.PERCENTAGE);
       this.#tnglWriter.writeInt32(parseInt(remapped));
     }
@@ -1269,7 +1266,7 @@ export class TnglCompiler {
     code = linesAr.join(" ");
 
     let bytes = new TextEncoder().encode(code);
-    this.#tnglWriter.writeFlag(TNGL_FLAGS.BERRY_CODE);
+    this.#tnglWriter.writeFlag(TNGL_FLAGS.DEFINE_BERRY);
     this.#tnglWriter.writeUint16(bytes.length);
     this.#tnglWriter.writeBytes(bytes, bytes.length);
   }

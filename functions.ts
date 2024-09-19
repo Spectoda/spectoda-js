@@ -1,4 +1,5 @@
 import { TnglCodeParser } from "./SpectodaParser";
+import { VALUE_LIMITS } from "./constants";
 import { logging } from "./logging";
 
 export const createNanoEvents = () => ({
@@ -216,12 +217,8 @@ export function colorToBytes(color_hex_code) {
   return [r, g, b];
 }
 
-// TODO move constants to one file
-const PERCENTAGE_MAX = 268435455; // 2^28-1
-const PERCENTAGE_MIN = -268435455; // -(2^28)+1  (plus 1 is there for the percentage to be simetric)
-
 export function percentageToBytes(percentage_float) {
-  const value = mapValue(percentage_float, -100, 100, PERCENTAGE_MIN, PERCENTAGE_MAX);
+  const value = mapValue(percentage_float, -100, 100, VALUE_LIMITS.PERCENTAGE_MINUS_100, VALUE_LIMITS.PERCENTAGE_100);
   return numberToBytes(Math.floor(value), 4);
 }
 
@@ -496,11 +493,11 @@ export function validateTimestamp(value) {
   value = value.trim();
 
   if (value == "inf" || value == "Inf" || value == "infinity" || value == "Infinity") {
-    return [2147483647, "Infinity"];
+    return [86400000, "Infinity"];
   }
 
   if (value == "-inf" || value == "-Inf" || value == "-infinity" || value == "-Infinity") {
-    return [-2147483648, "-Infinity"];
+    return [-86400000, "-Infinity"];
   }
 
   // if the string value is a number
@@ -558,10 +555,10 @@ export function validateTimestamp(value) {
     msecs.shift();
   }
 
-  if (total >= 2147483647) {
-    return [2147483647, "Infinity"];
-  } else if (total <= -2147483648) {
-    return [-2147483648, "-Infinity"];
+  if (total >= 86400000) {
+    return [86400000, "Infinity"];
+  } else if (total <= -86400000) {
+    return [-86400000, "-Infinity"];
   } else if (result === "") {
     return [0, "0s"];
   } else {
@@ -569,7 +566,7 @@ export function validateTimestamp(value) {
   }
 }
 
-export function getColorString(r, g, b) {
+export function getColorString(r: number, g: number, b: number) {
   return "#" + ("0" + r.toString(16)).slice(-2) + ("0" + g.toString(16)).slice(-2) + ("0" + b.toString(16)).slice(-2);
 }
 

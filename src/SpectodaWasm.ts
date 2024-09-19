@@ -1,6 +1,6 @@
 import { logging } from "../logging";
 
-const WASM_VERSION = "DEBUG_DEV_0.11.1_20240910";
+const WASM_VERSION = "DEBUG_DEV_0.12.0_20240918";
 
 /// ========== DEBUG_DEV_0.11.0_20240824.d.ts ========== ///
 
@@ -144,15 +144,8 @@ export interface MainModule {
 /// =================== MANUAL INTERFACES ================= ///
 
 export interface SpectodaEvent {
-  // event_object.set("label", label_t(event.identifier).asString());
-  // event_object.set("indentifier", int32_t(event.identifier.raw()));
-  // event_object.set("type", int32_t(value_type_t::VALUE_TYPE_UNDEFINED));
-  // event_object.set("value", val::undefined());
-  // event_object.set("timestamp", double(event.timestamp));
-  // event_object.set("id", int32_t(event.destination));
-
+  debug: string;
   label: string;
-  identifier: number;
   type: number;
   value: any;
   timestamp: number;

@@ -1048,14 +1048,14 @@ export class Spectoda {
     //   this.saveState();
     // }, 5000);
 
-    if (event_value > 2147483647) {
+    if (event_value > 86400000) {
       logging.error("Invalid event value");
-      event_value = 2147483647;
+      event_value = 86400000;
     }
 
-    if (event_value < -2147483648) {
+    if (event_value < -86400000) {
       logging.error("Invalid event value");
-      event_value = -2147483648;
+      event_value = -86400000;
     }
 
     const func = device_id => {
@@ -2001,6 +2001,8 @@ export class Spectoda {
 
         const historic_events_bytecode = reader.readBytes(historic_events_bytecode_size);
         logging.info(`historic_events_bytecode=[${historic_events_bytecode}]`);
+
+        this.runtime.spectoda.eraseHistory();
 
         const DUMMY_CONNECTION = new SpectodaWasm.Connection("00:00:00:00:00:00", SpectodaWasm.connector_type_t.CONNECTOR_UNDEFINED, SpectodaWasm.connection_rssi_t.RSSI_MAX);
         this.runtime.spectoda.request(new Uint8Array(historic_events_bytecode), DUMMY_CONNECTION);
