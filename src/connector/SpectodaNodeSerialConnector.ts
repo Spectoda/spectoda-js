@@ -14,11 +14,10 @@ echo 'overlays=uart3' | sudo tee -a /boot/orangepiEnv.txt
 cat /boot/orangepiEnv.txt
 */
 
-import * as NodeSerialPort from "serialport";
 import { TimeTrack } from "../../TimeTrack";
 import { TnglReader } from "../../TnglReader";
 import { TnglWriter } from "../../TnglWriter";
-import { crc32, numberToBytes, sleep, toBytes, uint8ArrayToHexString } from "../../functions";
+import { crc32, detectProductionBuild, detectServerEnvironment, numberToBytes, sleep, toBytes } from "../../functions";
 import { logging } from "../../logging";
 import { SpectodaRuntime } from "../SpectodaRuntime";
 import { Connection, SpectodaWasm, Synchronization } from "../SpectodaWasm";
@@ -26,7 +25,7 @@ import { COMMAND_FLAGS } from "../Spectoda_JS";
 
 let { SerialPort, ReadlineParser }: { SerialPort: any; ReadlineParser: any } = { SerialPort: null, ReadlineParser: null };
 
-if (typeof window === "undefined" && !process.env.NEXT_PUBLIC_VERSION) {
+if (detectServerEnvironment() && !detectProductionBuild()) {
   const serialport = require("serialport");
   SerialPort = serialport.SerialPort;
   ReadlineParser = serialport.ReadlineParser;
@@ -521,15 +520,13 @@ export class SpectodaNodeSerialConnector {
             if (result) {
               logging.info("Serial connection connected");
 
-              setTimeout(()=>{
+              setTimeout(() => {
                 if (!this.#interfaceConnected) {
                   this.#interfaceConnected = true;
                   this.#runtimeReference.emit("#connected");
                 }
                 resolve({ connector: this.type, criteria: this.#criteria });
               }, 100);
-
-       
             } else {
               // logging.warn("Trying to connect again")
               // const passed = new Date().getTime() - start;
@@ -537,8 +534,7 @@ export class SpectodaNodeSerialConnector {
 
               logging.info("Serial connection failed");
 
-
-              setTimeout(()=>{
+              setTimeout(() => {
                 this.#disconnect().finally(() => {
                   reject("ConnectFailed");
                 });
