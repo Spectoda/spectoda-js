@@ -1,6 +1,6 @@
 import { logging } from "../logging";
 
-const WASM_VERSION = "DEBUG_DEV_0.12.0_20240918";
+const WASM_VERSION = "DEBUG_DEV_0.12.0_20240921";
 
 /// ========== DEBUG_DEV_0.11.0_20240824.d.ts ========== ///
 
