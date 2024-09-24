@@ -156,16 +156,24 @@ export function createSpectodaWebsocket() {
                   if (response.status === "success") {
                     logging.info("Remote joined network", response.roomNumber);
 
-                    this.sendThroughWebsocket({
-                      functionName: "connected",
-                      arguments: undefined,
-                    }).then(connected => {
-                      if (connected) {
-                        eventStream.emit("connected");
-                      } else {
-                        eventStream.emit("disconnected");
-                      }
-                    });
+                    return this.sendThroughWebsocket({
+                      functionName: "syncEventHistory",
+                      arguments: [],
+                    }) //
+                      .then(() => {
+                        return this.sendThroughWebsocket({
+                          functionName: "connected",
+                          arguments: [],
+                        });
+                      }) //
+                      .then(connected => {
+                        if (connected) {
+                          eventStream.emit("connected");
+                        } else {
+                          eventStream.emit("disconnected");
+                        }
+                      });
+                    //
                   } else {
                     throw new Error(response.error);
                   }
