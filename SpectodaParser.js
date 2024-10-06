@@ -42,7 +42,7 @@ const TNGL_FLAGS = Object.freeze({
   CLIP: 12,
 
   /* sifters */
-  SIFTER_DEVICE: 13,
+  SIFTER_CONTROLLER: 13,
   SIFTER_SEGMENT: 14,
   SIFTER_CANVAS: 15,
 
@@ -59,13 +59,11 @@ const TNGL_FLAGS = Object.freeze({
   // ======================
 
   /* definitions global */
-  DEFINE_DEVICE: 24,
+  DEFINE_CONTROLLER: 24,
   DEFINE_SEGMENT: 25,
   DEFINE_CANVAS: 26,
   DEFINE_MARKS: 27,
-  DEFINE_EMITTER: 28,
-  DEFINE_ANIMATION: 29,
-  DEFINE_BERRY: 30,
+  DEFINE_ANIMATION: 28,
 
   // ======================
 
@@ -81,6 +79,8 @@ const TNGL_FLAGS = Object.freeze({
   ANIMATION_COLOR_GRADIENT5: 40,
   ANIMATION_COLOR_GRADIENT2: 41,
   ANIMATION_COLOR_GRADIENT4: 42,
+  ANIMATION_STREAM: 43,
+
   ANIMATION_INL_ANI: 126,
   ANIMATION_DEFINED: 127,
 
@@ -110,21 +110,22 @@ const TNGL_FLAGS = Object.freeze({
 
   /* variable operations gates */
   VALUE_READ_ADDRESS: 160,
-  VALUE_ADD: 161,
-  VALUE_SUB: 162,
-  VALUE_MUL: 163,
-  VALUE_DIV: 164,
-  VALUE_MOD: 165,
-  VALUE_SCALE: 166,
-  VALUE_MAP: 167,
+  OPERATION_ADD: 161,
+  OPERATION_SUB: 162,
+  OPERATION_MUL: 163,
+  OPERATION_DIV: 164,
+  OPERATION_MOD: 165,
+  OPERATION_SCALE: 166,
+  OPERATION_MAP: 167,
 
   /* objects */
-  DEVICE: 176,
-  SEGMENT: 177,
-  SLICE: 178,
-  PORT: 179,
+  CONTROLLER: 176,
+  IO: 177,
+  SEGMENT: 178,
   CANVAS: 180,
   MARKS: 181,
+  ID: 182,
+  OBJECT_MAC_ADDRESS: 183,
 
   /* events */
   EVENT_SET_VALUE: 184,
@@ -134,83 +135,43 @@ const TNGL_FLAGS = Object.freeze({
   // ======================
 
   /* values */
-  VALUE_ADDRESS: 187,
-  TIMESTAMP: 188,
-  COLOR: 189,
-  PERCENTAGE: 190,
-  LABEL: 191,
-  PIXELS: 192,
-  TUPLE: 193,
-  NUMBER: 205,
-  ID: 182,
-
-  // TODO Operations and Providers should be Object values.
-  // OBJECT: ???, // Operations and Providers are objects
+  VALUE_ADDRESS: 191,
+  VALUE_PIXELS: 192,
+  VALUE_COLOR: 193,
+  VALUE_DATE: 194,
+  VALUE_PERCENTAGE: 195,
+  VALUE_TIMESTAMP: 196,
+  VALUE_LABEL: 197,
+  VALUE_NUMBER: 198,
 
   // ======================
 
   /* most used constants */
-  TIMESTAMP_ZERO: 194,
-  TIMESTAMP_MAX: 195,
-  TIMESTAMP_MIN: 196,
-  COLOR_WHITE: 197,
-  COLOR_BLACK: 198,
-  CONST_PERCENTAGE_ZERO: 199,
-  CONST_PERCENTAGE_100: 200,
-  CONST_PERCENTAGE_MINUS_100: 201,
+  CONST_TIMESTAMP_0: 210,
+  CONST_TIMESTAMP_INFINITY: 211,
+  CONST_TIMESTAMP_MINUS_INFINITY: 212,
+  CONST_COLOR_WHITE: 213,
+  CONST_COLOR_BLACK: 214,
+  // CONST_COLOR_RED : 215,
+  // CONST_COLOR_GREEN : 216,
+  // CONST_COLOR_BLUE : 217,
+  CONST_PERCENTAGE_0: 218,
+  CONST_PERCENTAGE_100: 219,
+  CONST_PERCENTAGE_MINUS_100: 220,
+  // CONST_PIXELS_0 : 221,
+  // CONST_PIXELS_1 : 222,
+  // CONST_ID_255 : 223,
+  CONST_BOOLEAN_TRUE: 224,
+  CONST_BOOLEAN_FALSE: 225,
+  CONST_NULL: 226,
 
   // ======================
+
+  BERRY_SCRIPT: 253,
 
   /* command ends */
   END_OF_SCOPE: 254,
   END_OF_TNGL_BYTES: 255,
-});
-
-const OBJECT_TYPE = Object.freeze({
-  // TODO Operations and Providers should be Object values.
-  OPERATION_BOOLEAN: 1,
-  OPERATION_INTEGER: 2,
-  OPERATION_PERCENTAGE: 3,
-  OPERATION_PULSE: 4,
-  OPERATION_AND: 5,
-  OPERATION_COMPARATOR_EQUAL: 6,
-  OPERATION_COMPARATOR_GREATER: 7,
-  OPERATION_COMPARATOR_LESS: 8,
-  OPERATION_COUNTER: 9,
-  OPERATION_DELAY_STACK: 10,
-  OPERATION_DELAY_OVERWRITE: 11,
-  OPERATION_OR: 12,
-  OPERATION_REPEATER: 13,
-  OPERATION_XOR: 14,
-  OPERATION_NEGATE: 15,
-  OPERATION_EVENT_RELAY: 16,
-  OPERATION_EVENT_TOGGLE: 17,
-  OPERATION_IF: 18,
-  OPERATION_EVENT_VOID: 19,
-  OPERATION_EVENT_STEPPER: 20,
-  OPERATION_MODULO: 21,
-  OPERATION_EVENT_SET: 22,
-  // TODO OPERATIONS and PROVIDERS should be one type of object
-  PROVIDER: 162,
-
-  // TODO OPERATION_CONNECTION should be FLAG in TNGL_FLAGS
-  OPERATION_CONNECTION: 253,
-});
-
-const ENUMS = Object.freeze({
-  ProviderType: Object.freeze({
-    Invalid: 0,
-    Proximity: 1,
-    Button: 2,
-    Touch: 3,
-    Voltage: 4,
-    PIR: 5,
-    Slider: 6,
-    SonoffTXUltimate: 7,
-    NetworkSync: 8,
-    VEML7700: 9,
-    Event: 10,
-  }),
 });
 
 export class TnglCompiler {
@@ -310,9 +271,9 @@ export class TnglCompiler {
     }
 
     if (reg[1] === "Infinity" || reg[1] === "+Infinity") {
-      this.#tnglWriter.writeFlag(TNGL_FLAGS.TIMESTAMP_MAX);
+      this.#tnglWriter.writeFlag(TNGL_FLAGS.CONST_TIMESTAMP_INFINITY);
     } else if (reg[1] === "-Infinity") {
-      this.#tnglWriter.writeFlag(TNGL_FLAGS.TIMESTAMP_MIN);
+      this.#tnglWriter.writeFlag(TNGL_FLAGS.CONST_TIMESTAMP_MINUS_INFINITY);
     } else {
       logging.error("Error while compiling infinity");
     }
@@ -328,14 +289,14 @@ export class TnglCompiler {
     }
 
     const variable_name = reg[1];
-    let value_address = undefined;
+    let valueadr = undefined;
 
     // check if the variable is already declared
     // look for the latest variable address on the stack
     for (let i = this.#const_declarations_stack.length - 1; i >= 0; i--) {
       const declaration = this.#const_declarations_stack[i];
       if (declaration.name === variable_name) {
-        value_address = declaration.address;
+        valueadr = declaration.address;
         break;
       }
     }
@@ -345,7 +306,7 @@ export class TnglCompiler {
     for (let i = this.#let_declarations_stack.length - 1; i >= 0; i--) {
       const declaration = this.#let_declarations_stack[i];
       if (declaration.name === variable_name) {
-        value_address = declaration.address;
+        valueadr = declaration.address;
         break;
       }
     }
@@ -357,170 +318,78 @@ export class TnglCompiler {
     for (let i = this.#var_declarations.length - 1; i >= 0; i--) {
       const declaration = this.#var_declarations[i];
       if (declaration.name === variable_name) {
-        value_address = declaration.address;
+        valueadr = declaration.address;
         break;
       }
     }
 
-    if (value_address === undefined) {
+    if (valueadr === undefined) {
       logging.error(`Variable ${variable_name} is not declated`);
       throw "CompilationError";
     }
 
-    logging.verbose(`VALUE_ADDRESS name=${variable_name}, address=${value_address}`);
+    logging.verbose(`VALUE_ADDRESS name=${variable_name}, address=${valueadr}`);
     this.#tnglWriter.writeFlag(TNGL_FLAGS.VALUE_ADDRESS);
-    this.#tnglWriter.writeUint16(value_address);
+    this.#tnglWriter.writeUint16(valueadr);
   }
 
-  // takes in time string token like "1.2d+9h2m7.2s-123t" and appeds to payload the total time in ms (tics) as a int32_t: [FLAG.TIMESTAMP, BYTE4, BYTE2, BYTE1, BYTE0]
+  // takes in time string token like "1.2d+9h2m7.2s-123t" and appeds to payload the total time in ms (tics) as a int32_t: [FLAG.VALUE_TIMESTAMP, BYTE4, BYTE2, BYTE1, BYTE0]
   compileTimestamp(value) {
-    // logging.debug(timestamp);
-
-    // timestamp = timestamp.replace(/_/g, ""); // replaces all '_' with nothing
-
-    // let total_tics = 0;
-
-    // while (timestamp) {
-    //   let reg = timestamp.match(/([+-]?[0-9]*[.]?[0-9]+)(d|h|m|s|ms)/i); // for example gets "-1.4d" from "-1.4d23.2m1s"
-
-    //   if (!reg) {
-    //     // if the regex match failes, then the algorithm is done
-    //     if (timestamp != "") {
-    //       logging.error("Error while parsing timestamp");
-    //       logging.debug("Leftover string:", timestamp);
-    //     }
-    //     break;
-    //   }
-
-    //   let value = reg[0]; // gets "-1.4d" from "-1.4d"
-    //   let number = parseFloat(reg[1]); // gets "-1.4" from "-1.4d"
-    //   let unit = reg[2]; // gets "d" from "-1.4d"
-
-    //   logging.debug(`value: ${value}, unit: ${unit}, number: ${number}`);
-
-    //   switch (unit) {
-    //     case "d":
-    //       total_tics += number * 86400000;
-    //       break;
-
-    //     case "h":
-    //       total_tics += number * 3600000;
-    //       break;
-
-    //     case "m":
-    //       total_tics += number * 60000;
-    //       break;
-
-    //     case "s":
-    //       total_tics += number * 1000;
-    //       break;
-
-    //     case "t":
-    //       total_tics += number;
-    //       break;
-
-    //     default:
-    //       logging.error("Error while parsing timestamp");
-    //       break;
-    //   }
-
-    //   timestamp = timestamp.replace(value, ""); // removes one value from the string
-    // }
-
-    // if (total_tics === 0) {
-    //   this.#tnglWriter.writeFlag(TNGL_FLAGS.TIMESTAMP_ZERO);
-    // } else {
-    //   this.#tnglWriter.writeFlag(TNGL_FLAGS.TIMESTAMP);
-    //   this.#tnglWriter.writeInt32(total_tics);
-    // }
-
-    ///////////////////////////////
-
     if (!value) {
-      this.#tnglWriter.writeFlag(TNGL_FLAGS.TIMESTAMP_ZERO);
+      this.#tnglWriter.writeFlag(TNGL_FLAGS.CONST_TIMESTAMP_0);
       return;
     }
 
     value = value.trim();
 
-    if (value == "inf" || value == "Inf" || value == "infinity" || value == "Infinity") {
-      this.#tnglWriter.writeFlag(TNGL_FLAGS.TIMESTAMP_MAX);
-      return;
-    }
-
-    if (value == "-inf" || value == "-Inf" || value == "-infinity" || value == "-Infinity") {
-      this.#tnglWriter.writeFlag(TNGL_FLAGS.TIMESTAMP_MIN);
-      return;
-    }
-
-    // if the value is a number
-    if (!isNaN(value)) {
-      value += "s";
-    }
-
-    let days = value.match(/([+-]?[0-9]+[.]?[0-9]*|[.][0-9]+)\s*d/gi);
-    let hours = value.match(/([+-]?[0-9]+[.]?[0-9]*|[.][0-9]+)\s*h/gi);
-    let minutes = value.match(/([+-]?[0-9]+[.]?[0-9]*|[.][0-9]+)\s*m(?!s)/gi);
-    let secs = value.match(/([+-]?[0-9]+[.]?[0-9]*|[.][0-9]+)\s*s/gi);
-    let msecs = value.match(/([+-]?[0-9]+[.]?[0-9]*|[.][0-9]+)\s*(t|ms)/gi);
-
-    // logging.verbose(days);
-    // logging.verbose(hours);
-    // logging.verbose(minutes);
-    // logging.verbose(secs);
-    // logging.verbose(msecs);
-
+    const timestampRegex = /([+-]?(\d+\.\d+|\d+|\.\d+))\s*(d|h|m(?!s)|s|ms|t)/gi;
+    let match;
     let total = 0;
 
-    while (days && days.length) {
-      let d = parseFloat(days[0]);
-      total += d * 86400000;
-      days.shift();
-    }
+    while ((match = timestampRegex.exec(value)) !== null) {
+      const number = parseFloat(match[1]);
+      const unit = match[3].toLowerCase();
 
-    while (hours && hours.length) {
-      let h = parseFloat(hours[0]);
-      total += h * 3600000;
-      hours.shift();
+      switch (unit) {
+        case "d":
+          total += number * 86400000;
+          break;
+        case "h":
+          total += number * 3600000;
+          break;
+        case "m":
+          total += number * 60000;
+          break;
+        case "s":
+          total += number * 1000;
+          break;
+        case "ms":
+        case "t":
+          total += number;
+          break;
+        default:
+          logging.error("Error while parsing timestamp: Unknown unit", unit);
+          break;
+      }
     }
-
-    while (minutes && minutes.length) {
-      let m = parseFloat(minutes[0]);
-      total += m * 60000;
-      minutes.shift();
-    }
-
-    while (secs && secs.length) {
-      let s = parseFloat(secs[0]);
-      total += s * 1000;
-      secs.shift();
-    }
-
-    while (msecs && msecs.length) {
-      let ms = parseFloat(msecs[0]);
-      total += ms;
-      msecs.shift();
-    }
-
-    // logging.verbose(`total=${total}`);
 
     if (total >= 86400000) {
-      this.#tnglWriter.writeFlag(TNGL_FLAGS.TIMESTAMP_MAX);
+      this.#tnglWriter.writeFlag(TNGL_FLAGS.CONST_TIMESTAMP_INFINITY);
       return;
     } else if (total <= -86400000) {
-      this.#tnglWriter.writeFlag(TNGL_FLAGS.TIMESTAMP_MIN);
+      this.#tnglWriter.writeFlag(TNGL_FLAGS.CONST_TIMESTAMP_MINUS_INFINITY);
       return;
     } else if (total === 0) {
-      this.#tnglWriter.writeFlag(TNGL_FLAGS.TIMESTAMP_ZERO);
+      this.#tnglWriter.writeFlag(TNGL_FLAGS.CONST_TIMESTAMP_0);
       return;
     } else {
-      this.#tnglWriter.writeFlag(TNGL_FLAGS.TIMESTAMP);
+      this.#tnglWriter.writeFlag(TNGL_FLAGS.VALUE_TIMESTAMP);
       this.#tnglWriter.writeInt32(total);
       return;
     }
   }
 
-  // takes in html color string "#abcdef" and encodes it into 24 bits [FLAG.COLOR, R, G, B]
+  // takes in html color string "#abcdef" and encodes it into 24 bits [FLAG.VALUE_COLOR, R, G, B]
   compileColor(color) {
     let reg = color.match(/#([0-9a-f][0-9a-f])([0-9a-f][0-9a-f])([0-9a-f][0-9a-f])/i);
     if (!reg) {
@@ -533,11 +402,11 @@ export class TnglCompiler {
     let b = parseInt(reg[3], 16);
 
     if (r === 255 && g === 255 && b === 255) {
-      this.#tnglWriter.writeFlag(TNGL_FLAGS.COLOR_WHITE);
+      this.#tnglWriter.writeFlag(TNGL_FLAGS.CONST_COLOR_WHITE);
     } else if (r === 0 && g === 0 && b === 0) {
-      this.#tnglWriter.writeFlag(TNGL_FLAGS.COLOR_BLACK);
+      this.#tnglWriter.writeFlag(TNGL_FLAGS.CONST_COLOR_BLACK);
     } else {
-      this.#tnglWriter.writeFlag(TNGL_FLAGS.COLOR);
+      this.#tnglWriter.writeFlag(TNGL_FLAGS.VALUE_COLOR);
       this.#tnglWriter.writeUint8(r);
       this.#tnglWriter.writeUint8(g);
       this.#tnglWriter.writeUint8(b);
@@ -561,18 +430,17 @@ export class TnglCompiler {
       val = -100.0;
     }
 
-    // percentage has 28 bits of resolution dividing range from -100.0 to 100.0
-    const UNIT_ERROR = (100.0 - -100.0) / 2 ** 28;
+    const UNIT_ERROR = 0.000001;
 
     if (val > -UNIT_ERROR && val < UNIT_ERROR) {
-      this.#tnglWriter.writeFlag(TNGL_FLAGS.CONST_PERCENTAGE_ZERO);
+      this.#tnglWriter.writeFlag(TNGL_FLAGS.CONST_PERCENTAGE_0);
     } else if (val > 100.0 - UNIT_ERROR) {
       this.#tnglWriter.writeFlag(TNGL_FLAGS.CONST_PERCENTAGE_100);
     } else if (val < -100.0 + UNIT_ERROR) {
       this.#tnglWriter.writeFlag(TNGL_FLAGS.CONST_PERCENTAGE_MINUS_100);
     } else {
       const remapped = mapValue(val, -100.0, 100.0, -VALUE_LIMITS.PERCENTAGE_100, VALUE_LIMITS.PERCENTAGE_100);
-      this.#tnglWriter.writeFlag(TNGL_FLAGS.PERCENTAGE);
+      this.#tnglWriter.writeFlag(TNGL_FLAGS.VALUE_PERCENTAGE);
       this.#tnglWriter.writeInt32(parseInt(remapped));
     }
   }
@@ -585,7 +453,7 @@ export class TnglCompiler {
       return;
     }
 
-    this.#tnglWriter.writeFlag(TNGL_FLAGS.LABEL);
+    this.#tnglWriter.writeFlag(TNGL_FLAGS.VALUE_LABEL);
     for (let index = 0; index < 5; index++) {
       this.#tnglWriter.writeUint8(reg[1].charCodeAt(index));
     }
@@ -601,7 +469,7 @@ export class TnglCompiler {
 
     let count = parseInt(reg[1]);
 
-    this.#tnglWriter.writeFlag(TNGL_FLAGS.PIXELS);
+    this.#tnglWriter.writeFlag(TNGL_FLAGS.VALUE_PIXELS);
     this.#tnglWriter.writeInt16(count);
   }
 
@@ -761,11 +629,9 @@ export class TnglCompiler {
         break;
 
       // === definitions ===
-      case "defAnimation":
-        this.#tnglWriter.writeFlag(TNGL_FLAGS.DEFINE_ANIMATION);
-        break;
-      case "defDevice":
-        this.#tnglWriter.writeFlag(TNGL_FLAGS.DEFINE_DEVICE);
+
+      case "defController":
+        this.#tnglWriter.writeFlag(TNGL_FLAGS.DEFINE_CONTROLLER);
         break;
       case "defSegment":
         this.#tnglWriter.writeFlag(TNGL_FLAGS.DEFINE_SEGMENT);
@@ -776,14 +642,20 @@ export class TnglCompiler {
       case "defMarks":
         this.#tnglWriter.writeFlag(TNGL_FLAGS.DEFINE_MARKS);
         break;
+      case "defAnimation":
+        this.#tnglWriter.writeFlag(TNGL_FLAGS.DEFINE_ANIMATION);
+        break;
       // case "defVariable":
       //   this.#tnglWriter.writeFlag(TNGL_FLAGS.DECLARE_VALUE_ADDRESS);
       //   break;
 
       // === sifters ===
       // case "siftDevices":
-      //   this.#tnglWriter.writeFlag(TNGL_FLAGS.SIFTER_DEVICE);
+      //   this.#tnglWriter.writeFlag(TNGL_FLAGS.SIFTER_CONTROLLER);
       //   break;
+      case "siftControllers":
+        this.#tnglWriter.writeFlag(TNGL_FLAGS.SIFTER_CONTROLLER);
+        break;
       case "siftSegments":
         this.#tnglWriter.writeFlag(TNGL_FLAGS.SIFTER_SEGMENT);
         break;
@@ -792,26 +664,20 @@ export class TnglCompiler {
         break;
 
       // === objects ===
-      case "device":
-        this.#tnglWriter.writeFlag(TNGL_FLAGS.DEVICE);
+      case "controller":
+        this.#tnglWriter.writeFlag(TNGL_FLAGS.CONTROLLER);
         break;
       case "segment":
         this.#tnglWriter.writeFlag(TNGL_FLAGS.SEGMENT);
         break;
-      case "slice":
-        this.#tnglWriter.writeFlag(TNGL_FLAGS.SLICE);
-        break;
-      case "port":
-        this.#tnglWriter.writeFlag(TNGL_FLAGS.PORT);
+      case "io":
+        this.#tnglWriter.writeFlag(TNGL_FLAGS.IO);
         break;
       case "canvas":
         this.#tnglWriter.writeFlag(TNGL_FLAGS.CANVAS);
         break;
       case "marks":
         this.#tnglWriter.writeFlag(TNGL_FLAGS.MARKS);
-        break;
-      case "id":
-        this.#tnglWriter.writeFlag(TNGL_FLAGS.ID);
         break;
 
       // === modifiers ===
@@ -894,34 +760,37 @@ export class TnglCompiler {
       /* === variable operations === */
 
       case "addValues":
-        this.#tnglWriter.writeFlag(TNGL_FLAGS.VALUE_ADD);
+        this.#tnglWriter.writeFlag(TNGL_FLAGS.OPERATION_ADD);
         break;
       case "subValues":
-        this.#tnglWriter.writeFlag(TNGL_FLAGS.VALUE_SUB);
+        this.#tnglWriter.writeFlag(TNGL_FLAGS.OPERATION_SUB);
         break;
       case "mulValues":
-        this.#tnglWriter.writeFlag(TNGL_FLAGS.VALUE_MUL);
+        this.#tnglWriter.writeFlag(TNGL_FLAGS.OPERATION_MUL);
         break;
       case "divValues":
-        this.#tnglWriter.writeFlag(TNGL_FLAGS.VALUE_DIV);
+        this.#tnglWriter.writeFlag(TNGL_FLAGS.OPERATION_DIV);
         break;
       case "modValues":
-        this.#tnglWriter.writeFlag(TNGL_FLAGS.VALUE_MOD);
+        this.#tnglWriter.writeFlag(TNGL_FLAGS.OPERATION_MOD);
         break;
       case "scaValue":
-        this.#tnglWriter.writeFlag(TNGL_FLAGS.VALUE_SCALE);
+        this.#tnglWriter.writeFlag(TNGL_FLAGS.OPERATION_SCALE);
         break;
       case "mapValue":
-        this.#tnglWriter.writeFlag(TNGL_FLAGS.VALUE_MAP);
+        this.#tnglWriter.writeFlag(TNGL_FLAGS.OPERATION_MAP);
         break;
 
       // === constants ===
-      case "true":
-        this.#tnglWriter.writeUint8(0x01);
-        break;
-      case "false":
-        this.#tnglWriter.writeUint8(0x00);
-        break;
+      // TODO! implement in FW
+      // case "true":
+      //   this.#tnglWriter.writeFlag(TNGL_FLAGS.CONST_VALUE_BOOLEAN_TRUE);
+      //   this.#tnglWriter.writeUint8(0x01);
+      //   break;
+      // case "false":
+      //   this.#tnglWriter.writeFlag(TNGL_FLAGS.CONST_VALUE_BOOLEAN_FALSE);
+      //   this.#tnglWriter.writeUint8(0x00);
+      //   break;
 
       case "MODIFIER_SWITCH_NONE":
         this.#tnglWriter.writeUint8(CONSTANTS.MODIFIER_SWITCH_NONE);
@@ -939,145 +808,8 @@ export class TnglCompiler {
         this.#tnglWriter.writeUint8(CONSTANTS.MODIFIER_SWITCH_BR);
         break;
 
-      // === Sensors ===
-      case "TouchProvider":
-        this.#tnglWriter.writeFlag(OBJECT_TYPE.PROVIDER_TOUCH);
-        break;
-
-      case "ButtonProvider":
-        this.#tnglWriter.writeFlag(OBJECT_TYPE.PROVIDER_BUTTON);
-        break;
-
-      case "ProximityProvider":
-        this.#tnglWriter.writeFlag(OBJECT_TYPE.PROVIDER_PROXIMITY);
-        break;
-
-      case "Boolean":
-        this.#tnglWriter.writeFlag(OBJECT_TYPE.OPERATION_BOOLEAN);
-        break;
-
-      case "Integer":
-        this.#tnglWriter.writeFlag(OBJECT_TYPE.OPERATION_INTEGER);
-        break;
-
-      case "Percentage":
-        this.#tnglWriter.writeFlag(OBJECT_TYPE.OPERATION_PERCENTAGE);
-        break;
-
-      case "Pulse":
-        this.#tnglWriter.writeFlag(OBJECT_TYPE.OPERATION_PULSE);
-        break;
-
-      case "And":
-        this.#tnglWriter.writeFlag(OBJECT_TYPE.OPERATION_AND);
-        break;
-
-      case "ComparatorEqual":
-        this.#tnglWriter.writeFlag(OBJECT_TYPE.OPERATION_COMPARATOR_EQUAL);
-        break;
-
-      case "ComparatorGreater":
-        this.#tnglWriter.writeFlag(OBJECT_TYPE.OPERATION_COMPARATOR_GREATER);
-        break;
-
-      case "ComparatorLess":
-        this.#tnglWriter.writeFlag(OBJECT_TYPE.OPERATION_COMPARATOR_LESS);
-        break;
-
-      case "Counter":
-        this.#tnglWriter.writeFlag(OBJECT_TYPE.OPERATION_COUNTER);
-        break;
-
-      case "DelayStack":
-        this.#tnglWriter.writeFlag(OBJECT_TYPE.OPERATION_DELAY_STACK);
-        break;
-
-      case "DelayOverwrite":
-        this.#tnglWriter.writeFlag(OBJECT_TYPE.OPERATION_DELAY_OVERWRITE);
-        break;
-
-      case "Or":
-        this.#tnglWriter.writeFlag(OBJECT_TYPE.OPERATION_OR);
-        break;
-
-      case "Repeater":
-        this.#tnglWriter.writeFlag(OBJECT_TYPE.OPERATION_REPEATER);
-        break;
-
-      case "Xor":
-        this.#tnglWriter.writeFlag(OBJECT_TYPE.OPERATION_XOR);
-        break;
-
-      case "Negate":
-        this.#tnglWriter.writeFlag(OBJECT_TYPE.OPERATION_NEGATE);
-        break;
-
-      case "EventRelay":
-        this.#tnglWriter.writeFlag(OBJECT_TYPE.OPERATION_EVENT_RELAY);
-        break;
-
-      case "EventToggle":
-        this.#tnglWriter.writeFlag(OBJECT_TYPE.OPERATION_EVENT_TOGGLE);
-        break;
-
-      case "If":
-        this.#tnglWriter.writeFlag(OBJECT_TYPE.OPERATION_IF);
-        break;
-
-      case "VoltageProvider":
-        this.#tnglWriter.writeFlag(OBJECT_TYPE.PROVIDER_VOLTAGE);
-        break;
-
-      case "PIRProvider":
-        this.#tnglWriter.writeFlag(OBJECT_TYPE.PROVIDER_PIR);
-        break;
-
-      case "SliderProvider":
-        this.#tnglWriter.writeFlag(OBJECT_TYPE.PROVIDER_SLIDER);
-        break;
-
-      case "EventVoid":
-        this.#tnglWriter.writeFlag(OBJECT_TYPE.OPERATION_EVENT_VOID);
-        break;
-
-      case "EventStepper":
-        this.#tnglWriter.writeFlag(OBJECT_TYPE.OPERATION_EVENT_STEPPER);
-        break;
-
-      case "Modulo":
-        this.#tnglWriter.writeFlag(OBJECT_TYPE.OPERATION_MODULO);
-        break;
-
-      case "SonoffUltimateProvider":
-        this.#tnglWriter.writeFlag(OBJECT_TYPE.PROVIDER_SONOFF_ULTIMATE);
-        break;
-
-      case "EventSet":
-        this.#tnglWriter.writeFlag(OBJECT_TYPE.OPERATION_EVENT_SET);
-        break;
-
-      case "NetworkSyncProvider":
-        this.#tnglWriter.writeFlag(OBJECT_TYPE.PROVIDER_NETWORKSYNC);
-        break;
-
-      case "AmbientLightProvider":
-        this.#tnglWriter.writeFlag(OBJECT_TYPE.PROVIDER_AMBIENT_LIGHT);
-        break;
-
-      case "LUXv30BProvider":
-        this.#tnglWriter.writeFlag(OBJECT_TYPE.PROVIDER_LUXV30B);
-        break;
-
-      case "VEML7700Provider":
-        this.#tnglWriter.writeFlag(OBJECT_TYPE.PROVIDER_VEML7700);
-        break;
-
-      case "Provider":
-        this.#tnglWriter.writeFlag(OBJECT_TYPE.PROVIDER);
-        break;
-
       default:
-        // TODO look for variable_name in the variable_name->value_address map
+        // TODO look for variable_name in the variable_name->valueadr map
 
         let var_address = undefined;
 
@@ -1129,130 +861,62 @@ export class TnglCompiler {
     }
   }
 
-  compileConnection(connection) {
-    // * New connection format: "variable_name[pin]->[pin]variable_name" to allow for multiple outputs
-    // * allows for proper M:N connections
-    const regex = /([a-zA-Z0-9_]+)\[([0-9]+)\]->\[([0-9]+)\]([a-zA-Z0-9_]+)/;
-
-    const match = connection.match(regex);
-    if (match === null) {
-      logging.error("Failed to compile connection");
+  compileMacAddress(mac_address) {
+    let reg = mac_address.match(/([0-9a-f][0-9a-f]:){5}[0-9a-f][0-9a-f]/i);
+    if (!reg) {
+      logging.error("Failed to compile mac address");
       return;
     }
 
-    const origin = match[1];
-    const originPin = parseInt(match[2], 10);
-    const destinationPin = parseInt(match[3], 10);
-    const destination = match[4];
+    this.#tnglWriter.writeFlag(TNGL_FLAGS.OBJECT_MAC_ADDRESS);
 
-    // find the variable address
-    let origin_value_address = undefined;
-    let destination_variable_address = undefined;
-
-    // check if the variable is already declared
-    // look for the latest variable address on the stack
-    for (let i = this.#const_declarations_stack.length - 1; i >= 0; i--) {
-      const declaration = this.#const_declarations_stack[i];
-      if (!origin_value_address && declaration.name === origin) {
-        origin_value_address = declaration.address;
-      }
-      if (!destination_variable_address && declaration.name === destination) {
-        destination_variable_address = declaration.address;
-      }
-      if (origin_value_address && destination_variable_address) {
-        break;
-      }
+    let mac = reg[0].split(":");
+    for (let i = 0; i < 6; i++) {
+      this.#tnglWriter.writeUint8(parseInt(mac[i], 16));
     }
-
-    // TODO Theory: if the variable is not found in the const stack, it must be in the let stack or var stack?
-
-    if (origin_value_address === undefined) {
-      logging.error(`Failed to find origin variable address [${origin}]`);
-      return;
-    }
-
-    if (destination_variable_address === undefined) {
-      logging.error(`Failed to find destination variable address [${destination}]`);
-      return;
-    }
-
-    this.#tnglWriter.writeFlag(OBJECT_TYPE.OPERATION_CONNECTION);
-    this.#tnglWriter.writeUint16(origin_value_address);
-    this.#tnglWriter.writeUint16(destination_variable_address);
-
-    this.compileNumber(originPin);
-    this.compileNumber(destinationPin);
   }
-  // number_t, 3 bytes, max: 16777215
+
+  // number_t, 4 bytes, min: -1000000000, max: 1000000000
   compileNumber(number) {
-    let bytes = new Uint8Array(3);
-
-    // msb
-    bytes[0] = (number >> 16) & 0xff;
-
-    // msbl
-    bytes[1] = (number >> 8) & 0xff;
-
-    // lsb
-    bytes[2] = number & 0xff;
-
-    this.#tnglWriter.writeFlag(TNGL_FLAGS.NUMBER);
-    bytes.forEach(byte => {
-      this.#tnglWriter.writeUint8(byte);
-    });
+    this.#tnglWriter.writeFlag(TNGL_FLAGS.VALUE_NUMBER);
+    this.#tnglWriter.writeInt32(number);
   }
 
+  /**
+   * Compiles an ID string (e.g., "ID0" to "ID255") and writes it to the payload.
+   * @param {string} id - The ID string to compile.
+   */
   compileId(id) {
-    if (id > 255 || id < 0) {
-      logging.error("Id must be between 0 and 255!");
-      id = 0;
+    // Check if the string starts with "ID" or "id" (case-insensitive)
+    if (typeof id !== "string" || !id.startsWith("ID")) {
+      logging.error("Invalid ID format! Expected 'ID0' to 'ID255'. Received:", id);
+      this.#tnglWriter.writeFlag(TNGL_FLAGS.ID);
+      this.#tnglWriter.writeUint16(0);
+      return;
     }
 
+    // Extract the numerical part
+    const idNumberStr = id.slice(2); // Remove 'ID'
+
+    // Parse the number
+    const idNumber = parseInt(idNumberStr, 10);
+
+    // Write the ID
     this.#tnglWriter.writeFlag(TNGL_FLAGS.ID);
-    this.#tnglWriter.writeUint8(id);
+    this.#tnglWriter.writeUint8(idNumber);
   }
 
-  compileBerryCode(berry_code) {
+  compileBerryScript(berry) {
     // TODO: Get bytes in WASM and then only send Berry bytecode
 
-    let reg = berry_code.match(/execBerry\(\s*[\s\S]*?\s*\);/);
-    if (!reg) {
-      logging.error("Failed to compile berry code");
-      return;
-    }
+    // berry = "BERRY(`...`)"
+    // if (typeof berry == "string" && berry.startsWith("BERRY(`") && berry.endsWith("`)")) {
+    //   logging.error("Failed to compile berry code", berry);
+    //   return;
+    // }
 
-    // First we match all values addresses
-    let value_addresses = reg[0].match(/&[a-z_][\w]*/gi);
-    console.log(value_addresses);
-
-    // We search for in the declarations stack
-
-    if (value_addresses != null) {
-      for (let variable_name of value_addresses) {
-        let address = -1;
-        variable_name = variable_name.slice(1);
-        for (let i = this.#var_declarations.length - 1; i >= 0; i--) {
-          const declaration = this.#var_declarations[i];
-          if (declaration.name === variable_name) {
-            address = declaration.address;
-            break;
-          }
-        }
-
-        if (address === -1) {
-          logging.error(`Failed to find variable address [${variable_name}] in Berry code.`);
-          return;
-        }
-
-        reg[0] = reg[0].replace(`&${variable_name}`, address);
-        console.log("Replaced", `&${variable_name}`, "with", address);
-      }
-    }
-
-    let code = reg[0].slice(10, -2);
-
-    // remove all empty lines
-    code = code.replace(/^\s*[\r\n]/gm, "");
+    // BERRY(`...`)
+    let code = berry.slice(7, -2);
 
     let linesAr = code.split("\n");
 
@@ -1261,12 +925,12 @@ export class TnglCompiler {
     }
 
     // if any lines start with "#", remove them
-    linesAr = linesAr.filter(line => !line.startsWith("#"));
+    linesAr = linesAr.filter(line => !line.startsWith("#") && line.length > 0);
 
-    code = linesAr.join(" ");
+    code = linesAr.join("\n");
 
-    let bytes = new TextEncoder().encode(code);
-    this.#tnglWriter.writeFlag(TNGL_FLAGS.DEFINE_BERRY);
+    const bytes = new TextEncoder().encode(code);
+    this.#tnglWriter.writeFlag(TNGL_FLAGS.BERRY_SCRIPT);
     this.#tnglWriter.writeUint16(bytes.length);
     this.#tnglWriter.writeBytes(bytes, bytes.length);
   }
@@ -1298,100 +962,92 @@ export class TnglCodeParser {
       const element = tokens[index];
 
       switch (element.type) {
-        case "connection":
-          this.#compiler.compileConnection(element.token);
+        case TnglCodeParser.PARSES.BERRY_A:
+          this.#compiler.compileBerryScript(element.token);
           break;
 
-        case "undefined":
-          this.#compiler.compileUndefined();
-          break;
-
-        case "const_declaration":
-          this.#compiler.compileConstDeclaration(element.token);
-          break;
-
-        case "var_declaration":
+        case TnglCodeParser.PARSES.VAR_B:
           this.#compiler.compileVarDeclaration(element.token);
           break;
 
-        case "comment":
+        case TnglCodeParser.PARSES.CONST_C:
+          this.#compiler.compileConstDeclaration(element.token);
+          break;
+
+        case TnglCodeParser.PARSES.COMMENT_D:
           // skip
           break;
 
-        case "htmlrgb":
+        case TnglCodeParser.PARSES.COLOR_E:
           this.#compiler.compileColor(element.token);
           break;
 
-        case "infinity":
+        case TnglCodeParser.PARSES.INFINITY_F:
           this.#compiler.compileInfinity(element.token);
           break;
 
-        case "string":
-          this.#compiler.compileString(element.token);
-          break;
-
-        // case "template_literal":
-        //   this.#compiler.compileTemplateLiteral(element.token);
+        // case TnglCodeParser.PARSES.STRING_G:
+        //   this.#compiler.compileString(element.token);
         //   break;
 
-        case "value_address":
+        case TnglCodeParser.PARSES.ADDRESS_H:
           this.#compiler.compileValueAddress(element.token);
           break;
 
-        case "timestamp":
+        case TnglCodeParser.PARSES.TIME_I:
           this.#compiler.compileTimestamp(element.token);
           break;
 
-        case "label":
+        case TnglCodeParser.PARSES.LABEL_J:
           this.#compiler.compileLabel(element.token);
           break;
 
-        case "char":
-          this.#compiler.compileChar(element.token);
-          break;
-
-        case "byte":
+        case TnglCodeParser.PARSES.BYTE_K:
           this.#compiler.compileByte(element.token);
           break;
 
-        case "pixels":
+        case TnglCodeParser.PARSES.PIXELS_L:
           this.#compiler.compilePixels(element.token);
           break;
 
-        case "percentage":
+        case TnglCodeParser.PARSES.ID_M:
+          this.#compiler.compileId(element.token);
+          break;
+
+        case TnglCodeParser.PARSES.PERCENTAGE_N:
           this.#compiler.compilePercentage(element.token);
           break;
 
-        case "float":
+        case TnglCodeParser.PARSES.FLOAT_O:
           logging.error('"Naked" float numbers are not permitted.');
           break;
 
-        case "number":
+        case TnglCodeParser.PARSES.NUMBER_P:
           this.#compiler.compileNumber(element.token);
           break;
 
-        case "word":
+        case TnglCodeParser.PARSES.WORD_Q:
           this.#compiler.compileWord(element.token);
           break;
 
-        case "whitespace":
+        case TnglCodeParser.PARSES.BYTE_R:
+          this.#compiler.compileByte(element.token);
+          break;
+
+        case TnglCodeParser.PARSES.WHITESPACE_S:
           // skip
           break;
 
-        case "punctuation":
+        case TnglCodeParser.PARSES.PUNCTUATION_T:
           this.#compiler.compilePunctuation(element.token);
           break;
 
-        case "id":
-          this.#compiler.compileId(parseInt(element.token.slice(1)));
-          break;
-
-        case "berry_code":
-          this.#compiler.compileBerryCode(element.token);
+        case TnglCodeParser.PARSES.MACADDRESS_U:
+          this.#compiler.compileMacAddress(element.token);
           break;
 
         default:
-          logging.warn("Unknown token type >", element.type, "<");
+          logging.warn("Unknown token type >", element.type, "<", typeof element.type);
           break;
       }
     }
@@ -1409,38 +1065,57 @@ export class TnglCodeParser {
     return tnglBytes;
   }
 
+  static PARSES = Object.freeze({
+    BERRY_A: "A",
+    VAR_B: "B",
+    CONST_C: "C",
+    COMMENT_D: "D",
+    COLOR_E: "E",
+    INFINITY_F: "F",
+    // STRING_G: "G",
+    ADDRESS_H: "H",
+    TIME_I: "I",
+    LABEL_J: "J",
+    BYTE_K: "K",
+    PIXELS_L: "L",
+    ID_M: "M",
+    PERCENTAGE_N: "N",
+    FLOAT_O: "O",
+    NUMBER_P: "P",
+    WORD_Q: "Q",
+    BYTE_R: "R",
+    WHITESPACE_S: "S",
+    PUNCTUATION_T: "T",
+    MACADDRESS_U: "U",
+  });
+
   static #parses = {
-    berry_code: /execBerry\(\s*[\s\S]*?\s*\);/,
-    connection: /[\w]+\[\w*\]->\[\w*\][\w]+\s*;/,
-    undefined: /undefined/,
-    var_declaration: /var +[A-Za-z_][\w]* *=/,
-    const_declaration: /const +[A-Za-z_][\w]* *=/,
-    comment: /\/\/[^\n]*/,
-    htmlrgb: /#[0-9a-f]{6}/i,
-    infinity: /[+-]?Infinity/,
-    string: /"[\w ]*"/,
-    // template_literal: /`([^`]*)`/s,
-    value_address: /&[a-z_][\w]*/i,
-    timestamp: /(_?[+-]?[0-9]*[.]?[0-9]+(d|h|m(?!s)|s|t|ms))+/,
-    label: /\$[\w]*/,
-    char: /-?'[\W\w]'/,
-    byte: /0x[0-9a-f][0-9a-f](?![0-9a-f])/i,
-    pixels: /-?[\d]+px/,
-    percentage: /[+-]?[\d.]+%/,
-    float: /([+-]?[0-9]*[.][0-9]+)/,
-    number: /([+-]?[0-9]+)/,
-    word: /[a-z_][\w]*/i,
-    whitespace: /\s+/,
-    id: /@\b\d+\b/,
-    punctuation: /[^\w\s]/,
+    A: /BERRY\(`([\s\S]*?)`\)/, // berry code: /BERRY\(`([\s\S]*?)`\)/,
+    B: /var +[A-Za-z_][\w]* *=/, // var declaration
+    C: /const +[A-Za-z_][\w]* *=/, // const declaration
+    D: /\/\/[^\n]*/, // comment: //...
+    U: /^(?:[0-9A-F]{2}:){5}[0-9A-F]{2}$/i, // mac address
+    E: /#[0-9a-f]{6}/i, // color: /#[0-9a-f]{6}/i,
+    F: /[+-]?Infinity/, // +-Infinity
+    // G: /"[\w ]*"/,
+    H: /&[a-z_][\w]*/i, // value address: /&[a-z_][\w]*/i,
+    I: /_?[+-]?(?:\d+\.\d+|\d+)(?:d|h|m(?!s)|s|t|ms)/, //timestamp: /(_?[+-]?[0-9]*[.]?[0-9]+(d|h|m(?!s)|s|t|ms))+/,
+    J: /\$[\w]+/, // label: /\$[\w]+/,
+    K: /0x[0-9a-f][0-9a-f](?![0-9a-f])/i, // byte TODO deprecate in interaction green block
+    L: /-?[\d]+px/, // pixels: /-?[\d]+px/,
+    // M: /@\b\d+\b/, // ID: /@\b\d+\b/,
+    M: /\bID\d+\b/, // ID: /\bID\d+\b/,
+    N: /[+-]?\d+(\.\d+)?%/, // percentage: /[+-]?[\d.]+%/,
+    O: /([+-]?[0-9]*[.][0-9]+)/, // float: /([+-]?[0-9]*[.][0-9]+)/,
+    P: /([+-]?[0-9]+)/, // number: /([+-]?[0-9]+)/,
+    Q: /[a-z_][\w]*/i, // word: /[a-z_][\w]*/i,
+    R: /0x[0-9a-f][0-9a-f](?![0-9a-f])/i,
+    S: /\s+/,
+    T: /[^\w\s]/,
   };
 
   getVariableDeclarations() {
     return this.#compiler.getVariableDeclarations();
-  }
-
-  getEnums() {
-    return ENUMS;
   }
 
   /*

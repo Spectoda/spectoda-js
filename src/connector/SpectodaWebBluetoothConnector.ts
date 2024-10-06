@@ -61,7 +61,7 @@ export class WebBLEConnection {
     /*
       Device Characteristics is renamed Update Characteristics
       Device Characteristics handles ALL CONCEPTS WITH THE
-      PHYSICAL CONNECTED DEVICE. On the other hand Network Characteristics
+      PHYSICAL CONNECTED CONTROLLER. On the other hand Network Characteristics
       handles concepts connected with the whole spectoda network - all devices
       With Device Charactristics you can upload FW to the single device,
       access and manipulate json config of the device, adopt device,

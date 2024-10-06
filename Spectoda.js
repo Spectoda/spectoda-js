@@ -869,31 +869,6 @@ export class Spectoda {
     // var code = `// Publishing TNGL as "${text_tngl_api_name}":\n/*\n${statements_body}*/\n`;
     // var code = `// Loaded TNGL "${text_tngl_api_name}": \n ${tnglCodeToInject}\n`;
 
-    // 2nd stage, handle enum replacing
-    const enums = this.#parser.getEnums();
-
-    let enumRegexes = [];
-
-    // regex creation
-    for (let enum_name in enums) {
-      const regex = new RegExp(`${enum_name}\\.(\\w+)`, "g");
-      enumRegexes.push(regex);
-    }
-
-    // regex replacing
-    for (let regex of enumRegexes) {
-      processed_tngl_code = processed_tngl_code.replace(regex, (match, enum_value) => {
-        for (let enum_name in enums) {
-          let value = enums[enum_name][enum_value];
-
-          if (value == undefined) continue;
-
-          return value;
-        }
-        return match;
-      });
-    }
-
     //3rd stage handle #define replacing
     const defineRegex = new RegExp(`#define\\s+(\\w+)(?:\\s+(.*))?`, "g");
 
@@ -979,7 +954,7 @@ export class Spectoda {
     // const timeline_flags = this.timeline.paused() ? 0b00010000 : 0b00000000; // flags: [reserved,reserved,reserved,timeline_paused,reserved,reserved,reserved,reserved]
     // const timeline_bytecode = [COMMAND_FLAGS.FLAG_SET_TIMELINE, ...numberToBytes(this.runtime.clock.millis(), 6), ...numberToBytes(this.timeline.millis(), 4), timeline_flags];
 
-    const reinterpret_bytecode = [COMMAND_FLAGS.FLAG_REINTERPRET_TNGL, ...numberToBytes(this.runtime.clock.millis(), 6), 0, ...numberToBytes(tngl_bytes.length, 4), ...tngl_bytes];
+    const reinterpret_bytecode = [COMMAND_FLAGS.FLAG_LOAD_TNGL, ...numberToBytes(this.runtime.clock.millis(), 6), 0, ...numberToBytes(tngl_bytes.length, 4), ...tngl_bytes];
 
     // const payload = [...timeline_bytecode, ...reinterpret_bytecode];
     return this.runtime.execute(reinterpret_bytecode, "TNGL").then(() => {
@@ -1016,7 +991,7 @@ export class Spectoda {
     // }, 5000);
 
     const func = device_id => {
-      const payload = [COMMAND_FLAGS.FLAG_EMIT_EVENT, ...labelToBytes(event_label), ...numberToBytes(this.runtime.clock.millis() + 10, 6), numberToBytes(device_id, 1)];
+      const payload = [COMMAND_FLAGS.FLAG_EMIT_NULL_EVENT, ...labelToBytes(event_label), ...numberToBytes(this.runtime.clock.millis() + 10, 6), numberToBytes(device_id, 1)];
       return this.runtime.execute(payload, force_delivery ? null : "E" + event_label + device_id);
     };
 

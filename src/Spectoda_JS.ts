@@ -27,7 +27,7 @@ export const COMMAND_FLAGS = Object.freeze({
   FLAG_PEER_DISCONNECTED: 102,
 
   // FLAG_CONF_BYTES:  103,
-  FLAG_REINTERPRET_TNGL: 104,
+  FLAG_LOAD_TNGL: 104,
   FLAG_SET_TIMELINE: 105,
 
   FLAG_EMIT_NULL_EVENT: 117,
@@ -495,6 +495,7 @@ export class Spectoda_JS {
     // }
   }
 
+  // @deprecated
   makePort(port_char = "A", port_size = 144, port_brightness = 255, port_power = 255, port_visible = true, port_reversed = false) {
     logging.info(`Spectoda_JS::makePort(port_char=${port_char}, port_size=${port_size}, port_brightness=${port_brightness}, port_power=${port_power}, port_visible=${port_visible}, port_reversed=${port_reversed})`);
 
@@ -502,8 +503,8 @@ export class Spectoda_JS {
       throw "NotConstructed";
     }
 
-    // const std::vector<uint8_t>& _makePort(const std::string& port_char, const uint32_t port_size, const uint8_t port_brightness, const uint8_t port_power, bool port_visible, bool port_reversed)
-    return this.#instance.makePort(port_char, port_size, port_brightness, port_power, port_visible, port_reversed);
+    logging.error("deprecated this.#instance.makePort(port_char, port_size, port_brightness, port_power, port_visible, port_reversed)");
+    // return this.#instance.makePort(port_char, port_size, port_brightness, port_power, port_visible, port_reversed);
   }
 
   setClockTimestamp(clock_timestamp: number) {

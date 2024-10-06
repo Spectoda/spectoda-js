@@ -356,8 +356,8 @@ export class SpectodaRuntime {
       }
     });
 
-    this.#ups = 10; // TODO increase to 4 when the performance is good
-    this.#fps = 1; // TODO increase to 2 when the performance is good
+    this.#ups = 10; // TODO increase to 10 when the performance is good
+    this.#fps = 2; // TODO increase to 2 when the performance is good
   }
 
   #runtimeTask = async () => {
@@ -1483,7 +1483,8 @@ export class SpectodaRuntime {
   }
 
   WIP_makePort(port_char = "A", port_size = 1, port_brightness = 255, port_power = 255, port_visible = true, port_reversed = false) {
-    return this.spectoda.makePort(port_char, port_size, port_brightness, port_power, port_visible, port_reversed);
+    logging.error("deprecated WIP_makePort()");
+    // return this.spectoda.makePort(port_char, port_size, port_brightness, port_power, port_visible, port_reversed);
   }
 
   WIP_compute() {
