@@ -17,7 +17,7 @@ cat /boot/orangepiEnv.txt
 import { TimeTrack } from "../../TimeTrack";
 import { TnglReader } from "../../TnglReader";
 import { TnglWriter } from "../../TnglWriter";
-import { crc32, detectProductionBuild, detectServerEnvironment, numberToBytes, sleep, toBytes } from "../../functions";
+import { crc32, detectProductionBuild, numberToBytes, sleep, toBytes } from "../../functions";
 import { logging } from "../../logging";
 import { SpectodaRuntime } from "../SpectodaRuntime";
 import { Connection, SpectodaWasm, Synchronization } from "../SpectodaWasm";
@@ -25,7 +25,7 @@ import { COMMAND_FLAGS } from "../Spectoda_JS";
 
 let { SerialPort, ReadlineParser }: { SerialPort: any; ReadlineParser: any } = { SerialPort: null, ReadlineParser: null };
 
-if (detectServerEnvironment() && !detectProductionBuild()) {
+if (typeof window === "undefined" && !detectProductionBuild()) {
   const serialport = require("serialport");
   SerialPort = serialport.SerialPort;
   ReadlineParser = serialport.ReadlineParser;
