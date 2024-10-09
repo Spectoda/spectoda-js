@@ -197,12 +197,12 @@ export class Spectoda_JS {
 
             {
               const e = event_array[0];
-              debug_log += `🕹️ $${e.label} -> ${e.id}: ${e.debug} [🕒 ${e.timestamp}ms]`;
+              debug_log += `🕹️ $${e.label} -> ${e.id}: ${e.debug} [🕒 ${e.timestamp}]`;
             }
 
             for (let i = 1; i < event_array.length; i++) {
               const e = event_array[i];
-              debug_log += `\n🕹️ $${e.label} -> ${e.id}: ${e.debug} [🕒 ${e.timestamp}ms]`;
+              debug_log += `\n🕹️ $${e.label} -> ${e.id}: ${e.debug} [🕒 ${e.timestamp}]`;
             }
 
             logging.log(debug_log);
@@ -223,12 +223,12 @@ export class Spectoda_JS {
 
             {
               const e = event_state_updates_array[0];
-              debug_log += `🖥️ $${name}: \t🕹️ $${e.label}[${e.id}]: ${e.debug} [🕒 ${e.timestamp}ms]`;
+              debug_log += `🖥️ $${name}: \t📍 $${e.label}[${e.id}]: ${e.debug} [🕒 ${e.timestamp}]`;
             }
 
             for (let i = 1; i < event_state_updates_array.length; i++) {
               const e = event_state_updates_array[i];
-              debug_log += `\n🖥️ $${name}: \t🕹️ $${e.label}[${e.id}]: ${e.debug} [🕒 ${e.timestamp}ms]`;
+              debug_log += `\n🖥️ $${name}: \t📍 $${e.label}[${e.id}]: ${e.debug} [🕒 ${e.timestamp}]`;
             }
 
             logging.log(debug_log);
