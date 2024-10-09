@@ -381,7 +381,11 @@ export class SpectodaRuntime {
       // TODO figure out #fps (render) vs #ups (compute) for non visual processing (a.k.a event handling for example)
 
       const __process = async () => {
-        await this.spectoda.process();
+        try {
+          await this.spectoda.process();
+        } catch (e) {
+          logging.error(e);
+        }
 
         // TODO if the ups was set to 0 and then back to some value, then the render loop should be started again
         if (this.#ups !== 0) {
@@ -390,7 +394,11 @@ export class SpectodaRuntime {
       };
 
       const __render = async () => {
-        await this.spectoda.render();
+        try {
+          await this.spectoda.render();
+        } catch (e) {
+          logging.error(e);
+        }
 
         // TODO if the fps was set to 0 and then back to some value, then the render loop should be started again
         if (this.#fps !== 0) {
