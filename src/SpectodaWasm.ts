@@ -523,7 +523,7 @@ function loadWasm(wasmVersion: string) {
   }
   // NODE enviroment
   else if (!process.env.NEXT_PUBLIC_VERSION) {
-    globalThis.Module = require(`./webassembly/${wasmVersion}.js`); //! dont know how to declare Module for globalThis in TS
+    globalThis.Module = require(`../../../webassembly/${wasmVersion}.js`); //! dont know how to declare Module for globalThis in TS
     onWasmLoad();
   }
 }
