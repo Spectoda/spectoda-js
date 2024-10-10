@@ -403,8 +403,8 @@ export class Spectoda_JS {
 
           try {
             const command_bytecode_array = SpectodaWasm.convertUint8VectorUint8Array(command_bytecode);
-            const THIS_CONTROLLER_CONNECTION = new SpectodaWasm.Connection("00:00:00:00:00:00", SpectodaWasm.connector_type_t.CONNECTOR_UNDEFINED, SpectodaWasm.connection_rssi_t.RSSI_MAX);
-            this.#runtimeReference.sendExecute(command_bytecode_array, THIS_CONTROLLER_CONNECTION).catch(e => {
+            // const THIS_CONTROLLER_CONNECTION = new SpectodaWasm.Connection("00:00:00:00:00:00", SpectodaWasm.connector_type_t.CONNECTOR_UNDEFINED, SpectodaWasm.connection_rssi_t.RSSI_MAX);
+            this.#runtimeReference.sendExecute(command_bytecode_array, source_connection).catch(e => {
               logging.error(e);
               return false;
             });
