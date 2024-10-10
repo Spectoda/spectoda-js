@@ -895,26 +895,26 @@ export class Spectoda {
       // Pattern A: Hex Color Codes - /#[0-9a-f]{6}/i
       const colorRegex = /#([0-9a-f]{6})/gi;
       minified = minified.replace(colorRegex, (match, p1) => {
-        return `Value().setColor("${p1}")`;
+        return `Value.Color("${p1}")`;
       });
 
       // Pattern B: Timestamps - /([+-]?(\d+\.\d+|\d+|\.\d+))(d|h|m(?!s)|s|ms|t)\b/gi
       const timestampRegex = /([+-]?(\d+\.\d+|\d+|\.\d+))(d|h|m(?!s)|s|ms|t)\b/gi;
       minified = minified.replace(timestampRegex, (match, p1, p2, unit) => {
         const miliseconds = computeTimestamp(match);
-        return `Value().setTimestamp(${miliseconds})`;
+        return `Value.Timestamp(${miliseconds})`;
       });
 
       // Pattern C: Labels - /\$[\w]+/
       const labelRegex = /\$([\w]+)/g;
       minified = minified.replace(labelRegex, (match, p1) => {
-        return `Value().setLabel("${p1}")`;
+        return `Value.Label("${p1}")`;
       });
 
       // Pattern D: Percentages - /[+-]?\d+(\.\d+)?%/
       const percentageRegex = /([+-]?\d+(\.\d+)?)%/g;
       minified = minified.replace(percentageRegex, (match, p1) => {
-        return `Value().setPercentage(${parseFloat(p1)})`;
+        return `Value.Percentage(${parseFloat(p1)})`;
       });
 
       // Step 3: Remove leading and trailing whitespace from each line
