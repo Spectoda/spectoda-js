@@ -15,6 +15,7 @@ import { WEBSOCKET_URL } from "./SpectodaWebSocketsConnector";
 import "./TnglReader";
 import "./TnglWriter";
 import { SpectodaRuntime, allEventsEmitter } from "./src/SpectodaRuntime";
+import { VALUE_LIMITS } from "./constants";
 
 // from 0.10-dev-berry created this 0.11-dev branch
 
@@ -813,18 +814,156 @@ export class Spectoda {
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+  /**
+   * Preprocesses TNGL code by handling API injections, removing comments, minifying BERRY code,
+   * replacing specific patterns within BERRY code, and handling #define statements.
+   *
+   * @param {string} tngl_code - The TNGL code as a string.
+   * @returns {string} - The preprocessed TNGL code.
+   */
   async preprocessTngl(tngl_code) {
     logging.verbose(`preprocessTngl(tngl_code=${tngl_code})`);
 
-    // 1st stage: preprocess the code
+    /**
+     * Helper function to parse timestamp strings and convert them to total milliseconds/tics.
+     *
+     * @param {string} value - The timestamp string (e.g., "1.2d+9h2m7.2s-123t").
+     * @returns {number} - The total time in milliseconds/tics.
+     */
+    function computeTimestamp(value) {
+      if (!value) {
+        return 0; // Equivalent to CONST_TIMESTAMP_0
+      }
 
-    let processed_tngl_code = tngl_code;
+      value = value.trim();
 
+      const timestampRegex = /([+-]?(\d+\.\d+|\d+|\.\d+))\s*(d|h|m(?!s)|s|ms|t)/gi;
+      let match;
+      let total = 0;
+
+      while ((match = timestampRegex.exec(value)) !== null) {
+        const number = parseFloat(match[1]);
+        const unit = match[3].toLowerCase();
+
+        switch (unit) {
+          case "d":
+            total += number * 86400000; // 24*60*60*1000
+            break;
+          case "h":
+            total += number * 3600000; // 60*60*1000
+            break;
+          case "m":
+            total += number * 60000; // 60*1000
+            break;
+          case "s":
+            total += number * 1000; // 1000
+            break;
+          case "ms":
+          case "t":
+            total += number;
+            break;
+          default:
+            logging.error("Error while parsing timestamp: Unknown unit", unit);
+            break;
+        }
+      }
+
+      if (total >= VALUE_LIMITS.TIMESTAMP_MAX) {
+        return VALUE_LIMITS.TIMESTAMP_MAX; // Equivalent to CONST_TIMESTAMP_INFINITY
+      } else if (total <= VALUE_LIMITS.TIMESTAMP_MIN) {
+        return VALUE_LIMITS.TIMESTAMP_MIN; // Equivalent to CONST_TIMESTAMP_MINUS_INFINITY
+      } else if (total === 0) {
+        return 0; // Equivalent to CONST_TIMESTAMP_0
+      } else {
+        return Math.round(total); // Ensure it's an integer (int32_t)
+      }
+    }
+
+    /**
+     * Helper function to minify BERRY code by removing # comments, specific patterns, and unnecessary whitespace.
+     *
+     * @param {string} berryCode - The BERRY code to minify.
+     * @returns {string} - The minified BERRY code.
+     */
+    function minifyBerryCode(berryCode) {
+      // Step 1: Remove all BERRY-specific comments (lines starting with #)
+      const berryCommentRegex = /^\s*#.*$/gm;
+      let minified = berryCode.replace(berryCommentRegex, "");
+
+      // Step 2: Replace specific patterns A, B, C, D
+
+      // Pattern A: Hex Color Codes - /#[0-9a-f]{6}/i
+      const colorRegex = /#([0-9a-f]{6})/gi;
+      minified = minified.replace(colorRegex, (match, p1) => {
+        return `Value().setColor("${p1}")`;
+      });
+
+      // Pattern B: Timestamps - /([+-]?(\d+\.\d+|\d+|\.\d+))(d|h|m(?!s)|s|ms|t)\b/gi
+      const timestampRegex = /([+-]?(\d+\.\d+|\d+|\.\d+))(d|h|m(?!s)|s|ms|t)\b/gi;
+      minified = minified.replace(timestampRegex, (match, p1, p2, unit) => {
+        const miliseconds = computeTimestamp(match);
+        return `Value().setTimestamp(${miliseconds})`;
+      });
+
+      // Pattern C: Labels - /\$[\w]+/
+      const labelRegex = /\$([\w]+)/g;
+      minified = minified.replace(labelRegex, (match, p1) => {
+        return `Value().setLabel("${p1}")`;
+      });
+
+      // Pattern D: Percentages - /[+-]?\d+(\.\d+)?%/
+      const percentageRegex = /([+-]?\d+(\.\d+)?)%/g;
+      minified = minified.replace(percentageRegex, (match, p1) => {
+        return `Value().setPercentage(${parseFloat(p1)})`;
+      });
+
+      // Step 3: Remove leading and trailing whitespace from each line
+      minified = minified
+        .split("\n")
+        .map(line => line.trim())
+        .filter(line => line.length > 0) // Remove empty lines
+        .join("\n"); // Preserve line breaks
+
+      // Step 5: Replace multiple spaces with a single space within each line
+      minified = minified.replace(/\s+/g, " ");
+
+      // Step 6: Remove spaces before and after specific characters
+      const charsToRemoveSpaceAround = [";", ",", "{", "}", "(", ")", "=", "<", ">", "+", "-", "*", "/", "%", "&", "|", "!", ":", "?"];
+      charsToRemoveSpaceAround.forEach(char => {
+        // Remove space before the character
+        const beforeRegex = new RegExp(`\\s+\\${char}`, "g");
+        minified = minified.replace(beforeRegex, char);
+
+        // Remove space after the character
+        const afterRegex = new RegExp(`\\${char}\\s+`, "g");
+        minified = minified.replace(afterRegex, char);
+      });
+
+      // Step 6: Optionally, remove unnecessary semicolons (if BerryLang allows)
+      minified = minified.replace(/;+/g, " ");
+
+      return minified;
+    }
+
+    /**
+     * Helper function to remove single-line (// ...) and multi-line () comments
+     * from non-BERRY code segments.
+     *
+     * @param {string} code - The code segment to clean.
+     * @returns {string} - The code without // and  comments.
+     */
+    function removeNonBerryComments(code) {
+      const commentRegex = /\/\/.*|\/\*[\s\S]*?\*\//g;
+      return code.replace(commentRegex, "");
+    }
+
+    // Regular expressions for API handling
     const regexPUBLISH_TNGL_TO_API = /PUBLISH_TNGL_TO_API\s*\(\s*"([^"]*)"\s*,\s*`([^`]*)`\s*\);?/ms;
     const regexINJECT_TNGL_FROM_API = /INJECT_TNGL_FROM_API\s*\(\s*"([^"]*)"\s*\);?/ms;
 
+    // Handle PUBLISH_TNGL_TO_API
     for (let requests = 0; requests < 64; requests++) {
-      const match = regexPUBLISH_TNGL_TO_API.exec(processed_tngl_code);
+      const match = regexPUBLISH_TNGL_TO_API.exec(tngl_code);
       if (!match) {
         break;
       }
@@ -838,15 +977,16 @@ export class Spectoda {
       try {
         logging.verbose(`sendTnglToApi({ id=${id}, name=${name}, tngl=${tngl} })`);
         await sendTnglToApi({ id, name, tngl });
-        processed_tngl_code = processed_tngl_code.replace(match[0], "");
+        tngl_code = tngl_code.replace(match[0], "");
       } catch (e) {
         logging.error(`Failed to send "${name}" to TNGL API`);
         throw "SendTnglToApiFailed";
       }
     }
 
+    // Handle INJECT_TNGL_FROM_API
     for (let requests = 0; requests < 64; requests++) {
-      const match = regexINJECT_TNGL_FROM_API.exec(processed_tngl_code);
+      const match = regexINJECT_TNGL_FROM_API.exec(tngl_code);
       if (!match) {
         break;
       }
@@ -859,34 +999,77 @@ export class Spectoda {
       try {
         logging.verbose(`fetchTnglFromApiById({ id=${id} })`);
         const response = await fetchTnglFromApiById(id);
-        processed_tngl_code = processed_tngl_code.replace(match[0], response.tngl);
+        tngl_code = tngl_code.replace(match[0], response.tngl);
       } catch (e) {
         logging.error(`Failed to fetch "${name}" from TNGL API`, e);
         throw "FetchTnglFromApiFailed";
       }
     }
 
-    // var code = `// Publishing TNGL as "${text_tngl_api_name}":\n/*\n${statements_body}*/\n`;
-    // var code = `// Loaded TNGL "${text_tngl_api_name}": \n ${tnglCodeToInject}\n`;
+    // Handle #define replacing
+    {
+      const regexDEFINE = /#define\s+(\w+)(?:\s+(.*))?/g;
 
-    //3rd stage handle #define replacing
-    const defineRegex = new RegExp(`#define\\s+(\\w+)(?:\\s+(.*))?`, "g");
+      // List all defines [{name: "NAME", value: "VALUE"}, ...]
+      let match;
+      let defines = [];
+      while ((match = regexDEFINE.exec(tngl_code)) !== null) {
+        defines.push({ name: match[1], value: match[2] });
+      }
 
-    // list all defines [{name: "NAME", value: "VALUE"}, ...]
-    let defines = [];
-    defines = [...processed_tngl_code.matchAll(defineRegex)].map(match => {
-      return { name: match[1], value: match[2] };
-    });
+      // Remove all #define statements from the code
+      tngl_code = tngl_code.replace(regexDEFINE, "");
 
-    processed_tngl_code = processed_tngl_code.replaceAll(defineRegex, "");
-
-    for (let define of defines) {
-      processed_tngl_code = processed_tngl_code.replaceAll(define.name, define.value);
+      // Replace all defined names with their corresponding values
+      for (let define of defines) {
+        if (define.value === undefined) continue; // Skip if no value is provided
+        // Use word boundaries to avoid partial replacements
+        const defineRegex = new RegExp(`\\b${define.name}\\b`, "g");
+        tngl_code = tngl_code.replace(defineRegex, define.value);
+      }
     }
 
-    logging.debug(processed_tngl_code);
+    // Handle BERRY code minification and syntax sugar
+    {
+      // Regular expression to find all BERRY(``) segments
+      const regexBERRY = /BERRY\(`([\s\S]*?)`\)/g;
+      let match;
 
-    return processed_tngl_code;
+      // Initialize variables to reconstruct the processed code
+      let processedCode = "";
+      let lastIndex = 0;
+
+      while ((match = regexBERRY.exec(tngl_code)) !== null) {
+        const fullMatch = match[0]; // e.g., BERRY(`...`)
+        const berryCode = match[1]; // The code inside the backticks
+
+        const start = match.index;
+        const end = regexBERRY.lastIndex;
+
+        // Process the non-BERRY segment before the current BERRY segment
+        const nonBerrySegment = tngl_code.slice(lastIndex, start);
+        const cleanedNonBerry = removeNonBerryComments(nonBerrySegment);
+        processedCode += cleanedNonBerry;
+
+        // Process the BERRY segment
+        const minifiedBerry = minifyBerryCode(berryCode);
+        processedCode += `BERRY(\`${minifiedBerry}\`)`;
+
+        // Update lastIndex to the end of the current BERRY segment
+        lastIndex = end;
+      }
+
+      // Process any remaining non-BERRY segment after the last BERRY segment
+      const remainingNonBerry = tngl_code.slice(lastIndex);
+      const cleanedRemainingNonBerry = removeNonBerryComments(remainingNonBerry);
+      processedCode += cleanedRemainingNonBerry;
+
+      tngl_code = processedCode;
+    }
+
+    logging.debug(tngl_code);
+
+    return tngl_code;
   }
 
   syncTngl() {
@@ -2199,7 +2382,7 @@ export class Spectoda {
     });
   }
 
-  readVariable(variable_name, device_id) {
+  readVariable(variable_name, device_id = 255) {
     logging.debug(`> Reading variable...`);
 
     const variable_declarations = this.#parser.getVariableDeclarations();
@@ -2227,7 +2410,7 @@ export class Spectoda {
     return variable_value;
   }
 
-  readVariableAddress(variable_address, device_id) {
+  readVariableAddress(variable_address, device_id = 255) {
     logging.debug("> Reading variable address...");
 
     if (this.#getConnectionState() !== "connected") {

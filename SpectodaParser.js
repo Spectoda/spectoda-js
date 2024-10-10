@@ -373,10 +373,10 @@ export class TnglCompiler {
       }
     }
 
-    if (total >= 86400000) {
+    if (total >= VALUE_LIMITS.TIMESTAMP_MAX) {
       this.#tnglWriter.writeFlag(TNGL_FLAGS.CONST_TIMESTAMP_INFINITY);
       return;
-    } else if (total <= -86400000) {
+    } else if (total <= VALUE_LIMITS.TIMESTAMP_MIN) {
       this.#tnglWriter.writeFlag(TNGL_FLAGS.CONST_TIMESTAMP_MINUS_INFINITY);
       return;
     } else if (total === 0) {
@@ -909,25 +909,8 @@ export class TnglCompiler {
   compileBerryScript(berry) {
     // TODO: Get bytes in WASM and then only send Berry bytecode
 
-    // berry = "BERRY(`...`)"
-    // if (typeof berry == "string" && berry.startsWith("BERRY(`") && berry.endsWith("`)")) {
-    //   logging.error("Failed to compile berry code", berry);
-    //   return;
-    // }
-
     // BERRY(`...`)
     let code = berry.slice(7, -2);
-
-    let linesAr = code.split("\n");
-
-    for (let i = 0; i < linesAr.length; i++) {
-      linesAr[i] = linesAr[i].trim();
-    }
-
-    // if any lines start with "#", remove them
-    linesAr = linesAr.filter(line => !line.startsWith("#") && line.length > 0);
-
-    code = linesAr.join("\n");
 
     const bytes = new TextEncoder().encode(code);
     this.#tnglWriter.writeFlag(TNGL_FLAGS.BERRY_SCRIPT);
