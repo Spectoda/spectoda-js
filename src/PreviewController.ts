@@ -188,7 +188,8 @@ export class PreviewController {
                   const port_visible = port.visible ? port.visible : true;
                   const port_reversed = port.reversed ? port.reversed : false;
 
-                  this.#ports[port_tag] = this.#instance.makePort(port_tag, port_size, port_brightness, port_power, port_visible, port_reversed);
+                  // TODO refactor to new parameters
+                  // this.#ports[port_tag] = this.#instance.makePort(port_tag, port_size, port_brightness, port_power, port_visible, port_reversed);
                 }
               }
             }
@@ -216,7 +217,8 @@ export class PreviewController {
           const port_visible = port.visible ? port.visible : true;
           const port_reversed = port.reversed ? port.reversed : false;
 
-          this.#ports[port_tag] = this.#instance.makePort(port_tag, port_size, port_brightness, port_power, port_visible, port_reversed);
+          // TODO refactor to new parameters
+          // this.#ports[port_tag] = this.#instance.makePort(port_tag, port_size, port_brightness, port_power, port_visible, port_reversed);
         }
       }
     });
