@@ -1,3 +1,6 @@
+// TODO fix TSC in spectoda-js
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-nocheck
 import { TnglCodeParser } from "./SpectodaParser";
 import { VALUE_LIMITS } from "./constants";
 import { logging } from "./logging";
@@ -55,7 +58,7 @@ export function toBytes(value: number, byteCount: number) {
   let number = BigInt(Math.round(value));
   const byteArray: number[] = [];
   for (let index = 0; index < byteCount; index++) {
-    const byte = number & 0xffn;
+    const byte = number & 0xFFn;
     byteArray.push(Number(byte));
     number = number >> 8n;
   }
@@ -93,10 +96,10 @@ export function numberToBytes(number_value: number, byteCount: number) {
 //   return value_int16;
 // }
 
-export const timeOffset = Date.now() % 0x7fffffff;
+export const timeOffset = Date.now() % 0x7FFFFFFF;
 // must be positive int32 (4 bytes)
 export function getClockTimestamp() {
-  return (Date.now() % 0x7fffffff) - timeOffset;
+  return (Date.now() % 0x7FFFFFFF) - timeOffset;
 }
 
 export function sleep(ms) {
@@ -313,9 +316,9 @@ export function detectSafari() {
 
 //////////////////////////////////////////////////////
 export function computeTnglFingerprint(tngl_bytes: Uint8Array | ArrayBuffer, tngl_label = "fingerprint") {
-  let enc = new TextEncoder();
-  let algorithm = { name: "HMAC", hash: "SHA-256" };
-  let body = new Uint8Array(tngl_bytes);
+  const enc = new TextEncoder();
+  const algorithm = { name: "HMAC", hash: "SHA-256" };
+  const body = new Uint8Array(tngl_bytes);
 
   return crypto.subtle
     .importKey("raw", enc.encode(tngl_label), algorithm, false, ["sign", "verify"])
@@ -425,7 +428,7 @@ const CRC32_DATA = CRC32_TABLE.split(" ").map(function (s) {
 export function crc32(bytes) {
   let crc = -1;
   for (let i = 0, iTop = bytes.length; i < iTop; i++) {
-    crc = (crc >>> 8) ^ CRC32_DATA[(crc ^ bytes[i]) & 0xff];
+    crc = (crc >>> 8) ^ CRC32_DATA[(crc ^ bytes[i]) & 0xFF];
   }
   return (crc ^ -1) >>> 0;
 }

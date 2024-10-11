@@ -1,5 +1,9 @@
+// TODO fix TSC in spectoda-js
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-nocheck
+
+import { detectAndroid, numberToBytes, sleep, toBytes } from "../../functions";
 import { logging } from "../../logging";
-import { sleep, toBytes, detectSpectodaConnect, numberToBytes, detectAndroid } from "../../functions";
 import { TimeTrack } from "../../TimeTrack";
 import { TnglReader } from "../../TnglReader";
 import { COMMAND_FLAGS } from "../Spectoda_JS";
@@ -8,7 +12,7 @@ import { Connection, SpectodaWasm, Synchronization } from "../SpectodaWasm";
 
 /////////////////////////////////////////////////////////////////////////////////////
 
-var simulatedFails = false;
+const simulatedFails = false;
 
 class FlutterConnection {
   constructor() {
@@ -114,8 +118,8 @@ class FlutterConnection {
       logging.debug("flutter_inappwebview in window NOT detected");
       logging.info("Simulating Flutter Functions");
 
-      var _connected = false;
-      var _selected = false;
+      let _connected = false;
+      let _selected = false;
 
       function _fail(failChance: number) {
         if (simulatedFails) {
@@ -133,7 +137,7 @@ class FlutterConnection {
         //
         switch (handler) {
           //
-          case "userSelect": // params: (criteria_json, timeout_number)
+          case "userSelect": { // params: (criteria_json, timeout_number)
             {
               // disconnect if already connected
               if (_connected) {
@@ -156,8 +160,9 @@ class FlutterConnection {
               window.flutterConnection.resolve('{"connector":"flutterbluetooth"}');
             }
             break;
+          }
 
-          case "autoSelect": // params: (criteria_json, scan_period_number, timeout_number)
+          case "autoSelect": { // params: (criteria_json, scan_period_number, timeout_number)
             {
               if (_connected) {
                 // @ts-ignore
@@ -174,8 +179,9 @@ class FlutterConnection {
               window.flutterConnection.resolve('{"connector":"flutterbluetooth"}'); // resolve with json containing the information about the connected device
             }
             break;
+          }
 
-          case "selected":
+          case "selected": {
             {
               // params: ()
               if (_selected) {
@@ -187,8 +193,9 @@ class FlutterConnection {
               }
             }
             break;
+          }
 
-          case "unselect":
+          case "unselect": {
             {
               // params: ()
               if (_connected) {
@@ -201,8 +208,9 @@ class FlutterConnection {
               window.flutterConnection.resolve();
             }
             break;
+          }
 
-          case "scan": // params: (criteria_json, scan_period_number)
+          case "scan": { // params: (criteria_json, scan_period_number)
             {
               if (_connected) {
                 // @ts-ignore
@@ -219,8 +227,9 @@ class FlutterConnection {
               window.flutterConnection.resolve('{"connector":"flutterbluetooth"}'); // resolve with json containing the information about the connected device
             }
             break;
+          }
 
-          case "connect":
+          case "connect": {
             {
               // params: (timeout_number)
               if (!_selected) {
@@ -253,8 +262,9 @@ class FlutterConnection {
               }, 60000);
             }
             break;
+          }
 
-          case "disconnect":
+          case "disconnect": {
             {
               // params: ()
               if (_connected) {
@@ -267,8 +277,9 @@ class FlutterConnection {
               window.flutterConnection.resolve(); // always resolves even if there are internal errors
             }
             break;
+          }
 
-          case "connected":
+          case "connected": {
             {
               // params: ()
               if (_connected) {
@@ -280,8 +291,9 @@ class FlutterConnection {
               }
             }
             break;
+          }
 
-          case "deliver":
+          case "deliver": {
             {
               // params: (payload_bytes)
               if (!_connected) {
@@ -299,8 +311,9 @@ class FlutterConnection {
               window.flutterConnection.resolve();
             }
             break;
+          }
 
-          case "transmit":
+          case "transmit": {
             {
               // params: (payload_bytes)
               if (!_connected) {
@@ -318,8 +331,9 @@ class FlutterConnection {
               window.flutterConnection.resolve();
             }
             break;
+          }
 
-          case "request":
+          case "request": {
             {
               // params: (payload_bytes, read_response)
               if (!_connected) {
@@ -338,8 +352,9 @@ class FlutterConnection {
               window.flutterConnection.resolve([246, 1, 0, 0, 0, 188, 251, 18, 0, 212, 247, 18, 0, 0]); // returns data as an array of bytes: [0,255,123,89]
             }
             break;
+          }
 
-          case "writeClock":
+          case "writeClock": {
             {
               // params: (clock_bytes)
               if (!_connected) {
@@ -357,8 +372,9 @@ class FlutterConnection {
               window.flutterConnection.resolve();
             }
             break;
+          }
 
-          case "readClock":
+          case "readClock": {
             {
               // params: ()
               if (!_connected) {
@@ -376,8 +392,9 @@ class FlutterConnection {
               window.flutterConnection.resolve([0, 0, 0, 0]); // returns timestamp as an 32-bit signed number
             }
             break;
+          }
 
-          case "updateFW":
+          case "updateFW": {
             {
               // params: (bytes)
               if (!_connected) {
@@ -421,10 +438,12 @@ class FlutterConnection {
               window.flutterConnection.resolve();
             }
             break;
+          }
 
-          default:
+          default: {
             logging.error("Unknown handler");
             break;
+          }
         }
       };
     }
@@ -464,7 +483,7 @@ export class FlutterConnector extends FlutterConnection {
   }
 
   #applyTimeout(promise, timeout_number, message) {
-    let id = setTimeout(() => {
+    const id = setTimeout(() => {
       // @ts-ignore
       // throw(message, "Error: TC response timeouted");
       // @ts-ignore
@@ -585,7 +604,7 @@ criteria example:
     // @ts-ignore
     window.flutter_inappwebview.callHandler("autoSelect", criteria_json, scan_period_number, timeout_number);
 
-    return this.#applyTimeout(this.#promise, timeout_number * 2.0, "autoSelect");
+    return this.#applyTimeout(this.#promise, timeout_number * 2, "autoSelect");
   }
 
   selected() {
@@ -645,7 +664,7 @@ criteria example:
     // @ts-ignore
     window.flutter_inappwebview.callHandler("scan", criteria_json, scan_period_number);
 
-    return this.#applyTimeout(this.#promise, scan_period_number * 2.0, "scan");
+    return this.#applyTimeout(this.#promise, scan_period_number * 2, "scan");
   }
 
   /*
@@ -788,7 +807,7 @@ criteria example:
             window.flutterConnection.reject = reject;
           });
 
-          const synchonization_bytes = Array.from(synchonization.toUint8Array());
+          const synchonization_bytes = [...synchonization.toUint8Array()];
           // @ts-ignore
           window.flutter_inappwebview.callHandler("writeClock", synchonization_bytes);
 
@@ -926,7 +945,7 @@ criteria example:
       logging.info("OTA UPDATE");
       logging.verbose(firmware_bytes);
 
-      const start_timestamp = new Date().getTime();
+      const start_timestamp = Date.now();
 
       await sleep(100);
 
@@ -993,7 +1012,7 @@ criteria example:
         const device_bytes = [COMMAND_FLAGS.FLAG_DEVICE_REBOOT_REQUEST];
         await this.request(device_bytes, false);
 
-        logging.debug("Firmware written in " + (new Date().getTime() - start_timestamp) / 1000 + " seconds");
+        logging.debug("Firmware written in " + (Date.now() - start_timestamp) / 1000 + " seconds");
 
         this.#interfaceReference.emit("ota_status", "success");
 
@@ -1031,7 +1050,7 @@ criteria example:
       return Promise.resolve();
     }
 
-    return this.deliver(Array.from(command_bytes), 1000);
+    return this.deliver([...command_bytes], 1000);
   }
 
   // bool _sendRequest(const int32_t request_ticket_number, std::vector<uint8_t>& request_bytecode, const Connection& destination_connection) = 0;

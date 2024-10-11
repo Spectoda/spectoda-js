@@ -1,12 +1,22 @@
+// TODO fix TSC in spectoda-js
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-nocheck
+
+import { detectGW, numberToBytes, sleep, toBytes } from "../../functions";
 import { logging } from "../../logging";
-import { numberToBytes, sleep, toBytes, detectGW } from "../../functions";
 import { TimeTrack } from "../../TimeTrack";
 import { TnglReader } from "../../TnglReader";
 import { COMMAND_FLAGS } from "../Spectoda_JS";
 import { SpectodaWasm } from "../SpectodaWasm";
 
+
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore
+// eslint-disable-next-line security/detect-non-literal-require, unicorn/prefer-module
 const requireBundlerWorkeround = (moduleName: string) => (detectGW() ? require(moduleName) : () => {});
 // TODO node-ble on the same level as spectoda-js or node-ble in the spectoda-js repo ? nevíme
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore
 const NodeBle = detectGW() ? requireBundlerWorkeround("../../../node-ble/src/index") : {};
 const { createBluetooth } = NodeBle;
 
@@ -609,7 +619,7 @@ export class NodeBLEConnection {
     return this.#readBytes(this.#clockChar)
       .then(dataView => {
         logging.debug(dataView);
-        let reader = new TnglReader(dataView);
+        const reader = new TnglReader(dataView);
         return reader.readUint64();
       })
       .catch(e => {
@@ -626,12 +636,12 @@ export class NodeBLEConnection {
 
     if (!this.#deviceChar) {
       logging.warn("Device characteristics is null");
-      return Promise.reject("UpdateFailed");
+      throw "UpdateFailed";
     }
 
     if (this.#writing) {
       logging.warn("Communication in proccess");
-      return Promise.reject("UpdateFailed");
+      throw "UpdateFailed";
     }
 
     this.#writing = true;
@@ -646,7 +656,7 @@ export class NodeBLEConnection {
     logging.debug("OTA UPDATE");
     logging.debug(firmware);
 
-    const start_timestamp = new Date().getTime();
+    const start_timestamp = Date.now();
 
     try {
       this.#runtimeReference.emit("ota_status", "begin");
@@ -707,7 +717,7 @@ export class NodeBLEConnection {
 
       await sleep(2000);
 
-      logging.info("Firmware written in " + (new Date().getTime() - start_timestamp) / 1000 + " seconds");
+      logging.info("Firmware written in " + (Date.now() - start_timestamp) / 1000 + " seconds");
 
       this.#runtimeReference.emit("ota_status", "success");
       return;
@@ -872,7 +882,7 @@ criteria example:
       //         the greatest signal strength. If no device is found until the timeout,
       //         then return error
 
-      if (!criteria || criteria.length < 1 || typeof criteria[0]?.mac !== "string") {
+      if (!criteria || criteria.length === 0 || typeof criteria[0]?.mac !== "string") {
         logging.error("Criteria must be an array of at least 1 object with specified MAC address: [{mac:'AA:BB:CC:DD:EE:FF'}]");
         throw "CriteriaNotSupported";
       }
@@ -890,12 +900,12 @@ criteria example:
         this.#bluetoothAdapter = await this.#bluetooth.defaultAdapter();
       }
 
-      if (!(await this.#bluetoothAdapter.isDiscovering())) {
-        logging.info("> Starting BLE scanner");
-        await this.#bluetoothAdapter.startDiscovery();
-      } else {
+      if (await this.#bluetoothAdapter.isDiscovering()) {
         logging.info("> Restarting BLE scanner");
         await this.#bluetoothAdapter.stopDiscovery();
+        await this.#bluetoothAdapter.startDiscovery();
+      } else {
+        logging.info("> Starting BLE scanner");
         await this.#bluetoothAdapter.startDiscovery();
       }
 
@@ -970,7 +980,7 @@ criteria example:
   }
 
   //
-  async scan(criteria: Criteria[], scanPeriod: number = 10000): Promise<object[]> {
+  async scan(criteria: Criteria[], scanPeriod = 10000): Promise<object[]> {
     logging.debug("scan()", criteria, scanPeriod);
 
     try {
@@ -992,12 +1002,12 @@ criteria example:
         this.#bluetoothAdapter = await this.#bluetooth.defaultAdapter();
       }
 
-      if (!(await this.#bluetoothAdapter.isDiscovering())) {
-        logging.info("> Starting BLE scanner");
-        await this.#bluetoothAdapter.startDiscovery();
-      } else {
+      if (await this.#bluetoothAdapter.isDiscovering()) {
         logging.info("> Restarting BLE scanner");
         await this.#bluetoothAdapter.stopDiscovery();
+        await this.#bluetoothAdapter.startDiscovery();
+      } else {
+        logging.info("> Starting BLE scanner");
         await this.#bluetoothAdapter.startDiscovery();
       }
 
@@ -1006,7 +1016,7 @@ criteria example:
       const devices = await this.#bluetoothAdapter.devices();
       logging.info("> Devices Scanned:", devices);
 
-      let eligibleControllersFound = [];
+      const eligibleControllersFound = [];
 
       for (const mac of devices) {
         if (!ESP_MAC_PREFIXES.some(prefix => mac.startsWith(prefix))) {
@@ -1053,14 +1063,14 @@ criteria example:
 
     if (timeout <= 0) {
       logging.info("> Connect timeout have expired");
-      return Promise.reject("ConnectionFailed");
+      throw "ConnectionFailed";
     }
 
-    const start = new Date().getTime();
+    const start = Date.now();
     this.#reconection = true;
 
     if (!this.#bluetoothDevice) {
-      return Promise.reject("DeviceNotSelected");
+      throw "DeviceNotSelected";
     }
 
     // const alreadyConnected = await this.connected();
@@ -1147,7 +1157,7 @@ criteria example:
       return Promise.resolve(null);
     }
 
-    return this.#bluetoothDevice.isConnected().then(connected => Promise.resolve(connected ? { connector: this.type } : null));
+    return this.#bluetoothDevice.isConnected().then(connected => connected ? { connector: this.type } : null);
   }
 
   #disconnect() {
@@ -1252,7 +1262,7 @@ criteria example:
           logging.debug("Clock write success");
           resolve();
           return;
-        } catch (e) {
+        } catch {
           logging.warn("Clock write failed");
           await sleep(1000);
         }

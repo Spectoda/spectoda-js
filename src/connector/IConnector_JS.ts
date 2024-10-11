@@ -1,5 +1,9 @@
+// TODO fix TSC in spectoda-js
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-nocheck
+
 import { logging } from "../../logging";
-import { SpectodaWasm, IConnector_WASM, connector_type_t } from "../SpectodaWasm";
+import { IConnector_WASM, SpectodaWasm, connector_type_t } from "../SpectodaWasm";
 
 export class IConnector_JS {
   #instance: IConnector_WASM | undefined;

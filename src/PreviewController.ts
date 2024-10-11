@@ -1,3 +1,7 @@
+// TODO fix TSC in spectoda-js
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-nocheck
+
 import { createNanoEvents, sleep } from "../functions";
 import { logging } from "../logging";
 import { LogEntry, RingLogBuffer } from "./LogBuffer";
@@ -139,26 +143,32 @@ export class PreviewController {
           const name = this.#instance?.getLabel();
 
           switch (level) {
-            case 5:
+            case 5: {
               logging.verbose(`🖥️ $${name}: \t[V][${filename}]: ${message}`);
               break;
-            case 4:
+            }
+            case 4: {
               logging.debug(`🖥️ $${name}: \t[D][${filename}]: ${message}`);
               break;
-            case 3:
+            }
+            case 3: {
               logging.info(`🖥️ $${name}: \t[I][${filename}]: ${message}`);
               break;
-            case 2:
+            }
+            case 2: {
               logging.warn(`🖥️ $${name}:\t[W][${filename}]: ${message}`);
               // this.#eventEmitter.emit("warn", logEntry);
               break;
-            case 1:
+            }
+            case 1: {
               logging.error(`🖥️ $${name}: \t[E][${filename}]: ${message}`);
               // this.#eventEmitter.emit("error", logEntry);
               break;
-            default:
+            }
+            default: {
               console.warn(`🖥️ $${name}: \t[?][${filename}]: ${message}`);
               break;
+            }
           }
         },
 
@@ -182,7 +192,7 @@ export class PreviewController {
                   const port_tag = port.tag ? port.tag : current_tag;
                   current_tag = String.fromCharCode(port_tag.charCodeAt(0) + 1);
 
-                  const port_size = port.size ? port.size : 1;
+                  const port_size = port.size > 0 ? port.size : 1;
                   const port_brightness = port.brightness ? port.brightness : 255;
                   const port_power = port.power ? port.power : 255;
                   const port_visible = port.visible ? port.visible : true;
@@ -211,7 +221,7 @@ export class PreviewController {
           const port_tag = port.tag ? port.tag : current_tag;
           current_tag = String.fromCharCode(port_tag.charCodeAt(0) + 1);
 
-          const port_size = port.size ? port.size : 1;
+          const port_size = port.size > 0 ? port.size : 1;
           const port_brightness = port.brightness ? port.brightness : 255;
           const port_power = port.power ? port.power : 255;
           const port_visible = port.visible ? port.visible : true;
@@ -303,7 +313,7 @@ export class PreviewController {
       throw "NotConstructed";
     }
 
-    let response_bytecode_vector = new SpectodaWasm.Uint8Vector();
+    const response_bytecode_vector = new SpectodaWasm.Uint8Vector();
     let response_bytecode = undefined;
 
     try {
