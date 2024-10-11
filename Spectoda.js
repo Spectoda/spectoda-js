@@ -2651,6 +2651,14 @@ export class Spectoda {
 
     return this.runtime.execute(command_bytes, null);
   }
+
+  getEventState(event_state_name, event_state_id) {
+    return this.runtime.getEventState(event_state_name, event_state_id);
+  }
+
+  registerDeviceContext(device_id) {
+    return this.runtime.registerDeviceContext(device_id);
+  }
 }
 // ====== NEW PARADIAGM FUNCTIONS ====== //
 

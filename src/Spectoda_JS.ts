@@ -644,4 +644,24 @@ export class Spectoda_JS {
 
     this.#instance.eraseTngl();
   }
+
+  getEventState(event_state_name: string, event_state_id: number) {
+    logging.verbose(`Spectoda_JS::getEventState(event_state_name=${event_state_name}, event_state_id=${event_state_id})`);
+
+    if (!this.#instance) {
+      throw "NotConstructed";
+    }
+
+    return this.#instance.getEventState(event_state_name, event_state_id);
+  }
+
+  registerDeviceContext(device_id: number) {
+    logging.verbose(`Spectoda_JS::registerDeviceContext(device_id=${device_id})`);
+
+    if (!this.#instance) {
+      throw "NotConstructed";
+    }
+
+    return this.#instance.registerDeviceContext(device_id);
+  }
 }

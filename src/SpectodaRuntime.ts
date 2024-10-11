@@ -1507,6 +1507,14 @@ export class SpectodaRuntime {
     this.WIP_name = name;
   }
 
+  getEventState(event_state_name: string, event_state_id: number) {
+    return this.spectoda.getEventState(event_state_name, event_state_id);
+  }
+
+  registerDeviceContext(device_id: number) {
+    return this.spectoda.registerDeviceContext(device_id);
+  }
+
   // ====================================================================================================
 
   // synchronize(synchronization: Synchronization, source_connection: Connection) {
