@@ -1490,9 +1490,9 @@ export class SpectodaRuntime {
     this.#fps = fps;
   }
 
-  WIP_makePort(port_char = "A", port_size = 1, port_brightness = 255, port_power = 255, port_visible = true, port_reversed = false) {
-    logging.error("deprecated WIP_makePort()");
-    // return this.spectoda.makePort(port_char, port_size, port_brightness, port_power, port_visible, port_reversed);
+  WIP_makePort(port_char = "A", port_size = 1, port_brightness = 255, port_power = 255) {
+    const port_config = { label: `PORT${port_char}`, size: port_size, brightness: port_brightness, power: port_power };
+    return this.spectoda.makePort(JSON.stringify(port_config));
   }
 
   WIP_compute() {
