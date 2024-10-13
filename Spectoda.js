@@ -1083,7 +1083,7 @@ export class Spectoda {
     return this.runtime.request(command_bytes, true).then(response => {
       let reader = new TnglReader(response);
 
-      logging.info(`response.byteLength=${response.byteLength}`);
+      logging.verbose(`response.byteLength=${response.byteLength}`);
 
       const flag = reader.readFlag();
       logging.verbose(`flag=${flag}`);
@@ -1113,7 +1113,7 @@ export class Spectoda {
         this.runtime.spectoda.request(new Uint8Array(tngl_bytecode), DUMMY_CONNECTION);
       } else {
         // maybe no TNGL in the controller
-        logging.error("ERROR asdf8079");
+        logging.error("ERROR asdf8079: Failed to synchronize TNGL");
         throw "FailedToSynchronizeTngl";
       }
     });
@@ -2136,7 +2136,7 @@ export class Spectoda {
     return this.runtime.request(bytes, true).then(response => {
       let reader = new TnglReader(response);
 
-      logging.info(`response.byteLength=${response.byteLength}`);
+      logging.verbose(`response.byteLength=${response.byteLength}`);
 
       if (reader.readFlag() !== COMMAND_FLAGS.FLAG_EVENT_HISTORY_BC_RESPONSE) {
         logging.error("InvalidResponseFlag");

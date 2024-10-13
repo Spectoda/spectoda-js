@@ -1,8 +1,8 @@
 import { logging } from "../logging";
 
-const WASM_VERSION = "DEBUG_DEV_0.12.0_20241011";
+const WASM_VERSION = "DEBUG_DEV_0.12.0_20241013";
 
-/// ========== DEBUG_DEV_0.12.0_20241011.d.ts ========== ///
+/// ========== DEBUG_DEV_0.12.0_20241013.d.ts ========== ///
 
 export interface interface_error_tValue<T extends number> {
   value: T;
@@ -12,7 +12,15 @@ export type interface_error_t = interface_error_tValue<0> | interface_error_tVal
 export interface connector_type_tValue<T extends number> {
   value: T;
 }
-export type connector_type_t = connector_type_tValue<0> | connector_type_tValue<1> | connector_type_tValue<2> | connector_type_tValue<3> | connector_type_tValue<4> | connector_type_tValue<5> | connector_type_tValue<6>;
+export type connector_type_t =
+  | connector_type_tValue<0>
+  | connector_type_tValue<1>
+  | connector_type_tValue<2>
+  | connector_type_tValue<3>
+  | connector_type_tValue<4>
+  | connector_type_tValue<5>
+  | connector_type_tValue<6>
+  | connector_type_tValue<7>;
 
 export interface connection_rssi_tValue<T extends number> {
   value: T;
@@ -125,7 +133,8 @@ export interface MainModule {
     CONNECTOR_SERIAL: connector_type_tValue<3>;
     CONNECTOR_WEBSOCKETS: connector_type_tValue<4>;
     CONNECTOR_TWAI: connector_type_tValue<5>;
-    CONNECTOR_MAX: connector_type_tValue<6>;
+    CONNECTOR_SIMULATED: connector_type_tValue<6>;
+    CONNECTOR_MAX: connector_type_tValue<7>;
   };
   connection_rssi_t: { RSSI_MAX: connection_rssi_tValue<127>; RSSI_MIN: connection_rssi_tValue<-128> };
   Connection: { new (_0: ArrayBuffer | Uint8Array | Uint8ClampedArray | Int8Array | string, _1: connector_type_t, _2: connection_rssi_t): Connection };
@@ -142,7 +151,7 @@ export interface MainModule {
   ImplementedSpectoda_WASM: {};
 }
 
-/// ========== DEBUG_DEV_0.12.0_20241011.d.ts ========== ///
+/// ========== DEBUG_DEV_0.12.0_20241013.d.ts ========== ///
 
 /// =================== MANUAL INTERFACES ================= ///
 
