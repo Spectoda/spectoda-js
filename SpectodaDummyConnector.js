@@ -549,4 +549,37 @@ criteria example:
 
     return Promise.resolve();
   }
+
+  // void _sendExecute(const std::vector<uint8_t>& command_bytes, const Connection& source_connection) = 0;
+
+  sendExecute(command_bytes, source_connection) {
+    logging.info(`SpectodaDummyConnector::sendExecute(command_bytes=${command_bytes}, source_connection=${source_connection.address_string})`);
+
+    return Promise.resolve();
+  }
+
+  // bool _sendRequest(const int32_t request_ticket_number, std::vector<uint8_t>& request_bytecode, const Connection& destination_connection) = 0;
+
+  sendRequest(request_ticket_number, request_bytecode, destination_connection) {
+    logging.verbose(`SpectodaDummyConnector::sendRequest(request_ticket_number=${request_ticket_number}, request_bytecode=${request_bytecode}, destination_connection=${destination_connection})`);
+
+    return Promise.resolve();
+  }
+  // bool _sendResponse(const int32_t request_ticket_number, const int32_t request_result, std::vector<uint8_t>& response_bytecode, const Connection& destination_connection) = 0;
+
+  sendResponse(request_ticket_number, request_result, response_bytecode, destination_connection) {
+    logging.verbose(`SpectodaDummyConnector::sendResponse(request_ticket_number=${request_ticket_number}, request_result=${request_result}, response_bytecode=${response_bytecode}, destination_connection=${destination_connection})`);
+
+    return Promise.resolve();
+  }
+
+  // void _sendSynchronize(const Synchronization& synchronization, const Connection& source_connection) = 0;
+
+  sendSynchronize(synchronization, source_connection) {
+    logging.info(`SpectodaDummyConnector::sendSynchronize(synchronization=${synchronization.origin_address}, source_connection=${source_connection.address_string})`);
+
+    return Promise.resolve();
+  }
+
+  //
 }
