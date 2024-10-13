@@ -234,15 +234,7 @@ export class Spectoda_JS {
             logging.log(debug_log);
           }
 
-          // TODO! refactor "emitted_events" for the needs of the Store
-          for (let i = 0; i < event_state_updates_array.length; i++) {
-            // ! This will be removed after Store is implemented
-            event_state_updates_array[i].timestamp_utc = Date.now();
-          }
           this.#runtimeReference.emit("eventstateupdates", event_state_updates_array);
-
-          // ! emitted_events is deprecated
-          this.#runtimeReference.emit("emitted_events", event_state_updates_array);
 
           return true;
         },
