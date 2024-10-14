@@ -86,12 +86,12 @@ export class PreviewController {
 
             {
               const e = event_state_updates_array[0];
-              debug_log += `🖥️ $${name}: \t📍 $${e.label}[${e.id}]: ${e.debug} [🕒 ${e.timestamp}]`;
+              debug_log += `🖥️ $${name}: \t📍 $${e.label} <- ${e.id}: ${e.debug} [🕒 ${e.timestamp}]`;
             }
 
             for (let i = 1; i < event_state_updates_array.length; i++) {
               const e = event_state_updates_array[i];
-              debug_log += `\n🖥️ $${name}: \t📍 $${e.label}[${e.id}]: ${e.debug} [🕒 ${e.timestamp}]`;
+              debug_log += `\n🖥️ $${name}: \t📍 $${e.label} <- ${e.id}: ${e.debug} [🕒 ${e.timestamp}]`;
             }
 
             this.logging.log(debug_log);
