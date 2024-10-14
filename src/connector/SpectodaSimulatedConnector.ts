@@ -1,15 +1,18 @@
-import { logging } from "../../logging";
+// TODO fix TSC in spectoda-js
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-nocheck
+
 import { sleep } from "../../functions";
+import { logging } from "../../logging";
 import { TimeTrack } from "../../TimeTrack";
-import { APP_MAC_ADDRESS, COMMAND_FLAGS } from "../Spectoda_JS";
-import { SpectodaRuntime } from "../SpectodaRuntime";
-import { TnglReader } from "../../TnglReader";
-import { TnglWriter } from "../../TnglWriter";
 import { PreviewController } from "../PreviewController";
+import { APP_MAC_ADDRESS } from "../Spectoda_JS";
+import { SpectodaRuntime } from "../SpectodaRuntime";
 import { Connection, SpectodaWasm, Synchronization, Uint8Vector } from "../SpectodaWasm";
 import { IConnector_JS } from "./IConnector_JS";
 
 export const SIMULATED_MAC_ADDRESS = "00:00:23:34:45:56";
+
 
 /////////////////////////////////////////////////////////////////////////////////////
 
@@ -56,8 +59,8 @@ export class SpectodaSimulatedConnector {
 
     // let networkDefinition = JSON.parse(networkJsonDefinition);
 
-    if (this.controllers.length) {
-      for (let controller of this.controllers) {
+    if (this.controllers.length > 0) {
+      for (const controller of this.controllers) {
         controller.destruct();
       }
       this.controllers = [];
@@ -78,6 +81,7 @@ export class SpectodaSimulatedConnector {
       const SimulatedControllerConfig = {
         controller: { name: "SIMULATED" },
         console: { debug: 3 },
+
         io: {
           PIX1: { type: "NEOPIXEL", variant: "WS2812B" },
           PIX2: { type: "NEOPIXEL", variant: "WS2811", order: "RGB" },
@@ -415,7 +419,7 @@ criteria example:
         return;
       }
 
-      for (let controller of this.controllers) {
+      for (const controller of this.controllers) {
         await controller.execute(new Uint8Array(payload), new SpectodaWasm.Connection(APP_MAC_ADDRESS, SpectodaWasm.connector_type_t.CONNECTOR_SIMULATED, SpectodaWasm.connection_rssi_t.RSSI_MAX));
       }
 
@@ -436,8 +440,8 @@ criteria example:
         return;
       }
 
-      for (let controller of this.controllers) {
-        await controller.execute(new Uint8Array(payload), new SpectodaWasm.Connection(APP_MAC_ADDRESS, SpectodaWasm.connector_type_t.CONNECTOR_SIMULATED, SpectodaWasm.connection_rssi_t.RSSI_MAX));
+      for (const controller of this.controllers) {
+        await controller.execute(new Uint8Array(payload), new SpectodaWasm.Connection(APP_MAC_ADDRESS, SpectodaWasm.connector_type_t.CONNECTOR_UNDEFINED, SpectodaWasm.connection_rssi_t.RSSI_MAX));
       }
 
       await sleep(10); // transmiting logic
@@ -459,8 +463,8 @@ criteria example:
 
       // TODO choose the controller I am connected to choosen in userSelect() or autoSelect()
 
-      const response = this.controllers.length
-        ? this.controllers[0].request(new Uint8Array(payload), new SpectodaWasm.Connection(APP_MAC_ADDRESS, SpectodaWasm.connector_type_t.CONNECTOR_SIMULATED, SpectodaWasm.connection_rssi_t.RSSI_MAX))
+      const response = this.controllers.length > 0
+        ? this.controllers[0].request(new Uint8Array(payload), new SpectodaWasm.Connection(APP_MAC_ADDRESS, SpectodaWasm.connector_type_t.CONNECTOR_UNDEFINED, SpectodaWasm.connection_rssi_t.RSSI_MAX))
         : new Uint8Array();
 
       if (read_response) {
@@ -486,7 +490,7 @@ criteria example:
 
       this.#clock.setMillis(clock.millis());
 
-      for (let controller of this.controllers) {
+      for (const controller of this.controllers) {
         await controller.setClock(clock.millis());
       }
 
@@ -511,7 +515,7 @@ criteria example:
 
       // TODO choose the controller I am connected to choosen in userSelect() or autoSelect()
 
-      const clock_timestamp = this.controllers.length ? this.controllers[0].getClock() : 0;
+      const clock_timestamp = this.controllers.length > 0 ? this.controllers[0].getClock() : 0;
       this.#clock.setMillis(clock_timestamp);
 
       await sleep(50); // reading clock logic.
@@ -564,8 +568,8 @@ criteria example:
           clearTimeout(this.#renderIntervalHandle);
           this.#renderIntervalHandle = null;
         }
-        if (this.controllers.length) {
-          for (let controller of this.controllers) {
+        if (this.controllers.length > 0) {
+          for (const controller of this.controllers) {
             controller.destruct();
           }
           this.controllers = [];

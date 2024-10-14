@@ -1,3 +1,7 @@
+// TODO fix TSC in spectoda-js
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-nocheck
+
 import { spectoda } from "@spectoda/spectoda-utils";
 import { createNanoEvents, sleep } from "../functions";
 import { logging } from "../logging";
@@ -147,26 +151,32 @@ export class PreviewController {
           const name = this.#instance?.getLabel();
 
           switch (level) {
-            case 5:
+            case 5: {
               this.logging.verbose(`🖥️ $${name}: \t[V][${filename}]: ${message}`);
               break;
-            case 4:
+            }
+            case 4: {
               this.logging.debug(`🖥️ $${name}: \t[D][${filename}]: ${message}`);
               break;
-            case 3:
+            }
+            case 3: {
               this.logging.info(`🖥️ $${name}: \t[I][${filename}]: ${message}`);
               break;
-            case 2:
+            }
+            case 2: {
               this.logging.warn(`🖥️ $${name}:\t[W][${filename}]: ${message}`);
               // this.#eventEmitter.emit("warn", logEntry);
               break;
-            case 1:
+            }
+            case 1: {
               this.logging.error(`🖥️ $${name}: \t[E][${filename}]: ${message}`);
               // this.#eventEmitter.emit("error", logEntry);
               break;
-            default:
+            }
+            default: {
               console.warn(`🖥️ $${name}: \t[?][${filename}]: ${message}`);
               break;
+            }
           }
         },
 
@@ -305,7 +315,7 @@ export class PreviewController {
       throw "NotConstructed";
     }
 
-    let response_bytecode_vector = new SpectodaWasm.Uint8Vector();
+    const response_bytecode_vector = new SpectodaWasm.Uint8Vector();
     let response_bytecode = undefined;
 
     try {

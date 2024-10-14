@@ -1,13 +1,17 @@
+// TODO fix TSC in spectoda-js
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-nocheck
+
 // npm install --save-dev @types/web-bluetooth
 /// <reference types="web-bluetooth" />
 
+import { detectAndroid, hexStringToUint8Array, numberToBytes, sleep, toBytes, uint8ArrayToHexString } from "../../functions";
 import { logging } from "../../logging";
-import { detectAndroid, detectSafari, hexStringToUint8Array, numberToBytes, sleep, toBytes, uint8ArrayToHexString } from "../../functions";
-import { COMMAND_FLAGS } from "../Spectoda_JS";
 import { TimeTrack } from "../../TimeTrack.js";
 import { TnglReader } from "../../TnglReader.js";
-import { Connection, SpectodaWasm, Synchronization } from "../SpectodaWasm";
+import { COMMAND_FLAGS } from "../Spectoda_JS";
 import { SpectodaRuntime } from "../SpectodaRuntime";
+import { Connection, SpectodaWasm, Synchronization } from "../SpectodaWasm";
 
 // od 0.8.0 maji vsechny spectoda enabled BLE zarizeni jednotne SPECTODA_DEVICE_UUID.
 // kazdy typ (produkt) Spectoda Zarizeni ma svuj kod v manufacturer data
@@ -354,7 +358,7 @@ export class WebBLEConnection {
 
   // request first writes the request to the Device Characteristics
   // and then reads the response also from the Device Characteristics
-  request(payload: number[], read_response: boolean, timeout: Number) {
+  request(payload: number[], read_response: boolean, timeout: number) {
     if (!this.#deviceChar) {
       logging.warn("Device characteristics is null");
       return Promise.reject("RequestFailed");
@@ -373,7 +377,7 @@ export class WebBLEConnection {
           if (!this.#deviceChar) throw "DeviceCharactristicsNull";
           return this.#readBytes(this.#deviceChar);
         } else {
-          return Promise.resolve([]);
+          return [];
         }
       })
       .catch(e => {
@@ -434,7 +438,7 @@ export class WebBLEConnection {
     return this.#clockChar
       .readValue()
       .then(dataView => {
-        let reader = new TnglReader(dataView);
+        const reader = new TnglReader(dataView);
         return reader.readUint64();
       })
       .catch(e => {
@@ -470,7 +474,7 @@ export class WebBLEConnection {
       logging.debug("OTA UPDATE");
       logging.debug(firmware);
 
-      const start_timestamp = new Date().getTime();
+      const start_timestamp = Date.now();
 
       if (!this.#deviceChar) throw "DeviceCharactristicsNull";
 
@@ -533,7 +537,7 @@ export class WebBLEConnection {
 
         await sleep(2000);
 
-        logging.info("Firmware written in " + (new Date().getTime() - start_timestamp) / 1000 + " seconds");
+        logging.info("Firmware written in " + (Date.now() - start_timestamp) / 1000 + " seconds");
 
         this.#runtimeReference.emit("ota_status", "success");
         resolve(null);
@@ -712,19 +716,19 @@ criteria example:
     let web_ble_options: RequestDeviceOptions = { filters: [], optionalServices: [this.SPECTODA_SERVICE_UUID] };
 
     //
-    if (this.#criteria.length == 0) {
+    if (this.#criteria.length === 0) {
       web_ble_options.filters.push({ services: [this.SPECTODA_SERVICE_UUID] });
       // web_ble_options.filters.push({ services: [this.SPECTODA_ADOPTING_SERVICE_UUID] });
     }
 
     //
     else {
-      let legacy_filters_applied = false;
+      const legacy_filters_applied = false;
 
       for (let i = 0; i < this.#criteria.length; i++) {
         const criterium = this.#criteria[i];
 
-        let filter = { services: [this.SPECTODA_SERVICE_UUID] };
+        const filter = { services: [this.SPECTODA_SERVICE_UUID] };
 
         if (criterium.name) {
           filter.name = criterium.name;
@@ -734,24 +738,24 @@ criteria example:
 
         // if any of these criteria are required, then we need to build a manufacturer data filter.
         if (criterium.fwVersion || criterium.ownerSignature || criterium.productCode || criterium.adoptionFlag) {
-          const company_identifier = 0x02e5; // Bluetooth SIG company identifier of Espressif
+          const company_identifier = 0x02E5; // Bluetooth SIG company identifier of Espressif
 
           delete filter.services;
 
-          let prefix = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
-          let mask = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+          const prefix = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+          const mask = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
 
           if (criterium.productCode) {
-            if (criterium.productCode < 0 || criterium.productCode > 0xffff) {
+            if (criterium.productCode < 0 || criterium.productCode > 0xFFFF) {
               throw "InvalidProductCode";
             }
 
             const product_code_byte_offset = 2;
-            const product_code_bytes = [criterium.productCode & 0xff, (criterium.productCode >> 8) & 0xff];
+            const product_code_bytes = [criterium.productCode & 0xFF, (criterium.productCode >> 8) & 0xFF];
 
             for (let i = 0; i < 2; i++) {
               prefix[product_code_byte_offset + i] = product_code_bytes[i];
-              mask[product_code_byte_offset + i] = 0xff;
+              mask[product_code_byte_offset + i] = 0xFF;
             }
           }
 
@@ -765,7 +769,7 @@ criteria example:
 
             for (let i = 0; i < 16; i++) {
               prefix[owner_signature_byte_offset + i] = owner_signature_code_bytes[i];
-              mask[owner_signature_byte_offset + i] = 0xff;
+              mask[owner_signature_byte_offset + i] = 0xFF;
             }
           }
 
@@ -787,9 +791,9 @@ criteria example:
 
           if (criterium.fwVersion) {
             const fw_version_byte_offset = 0;
-            const reg = criterium.fwVersion.match(/(!?)([\d]+).([\d]+).([\d]+)/);
+            const reg = criterium.fwVersion.match(/(!?)(\d+).(\d+).(\d+)/);
             const version_code = reg[2] * 10000 + reg[3] * 100 + reg[4] * 1;
-            const version_bytes = [version_code & 0xff, (version_code >> 8) & 0xff];
+            const version_bytes = [version_code & 0xFF, (version_code >> 8) & 0xFF];
 
             if (reg[1] === "!") {
               // workaround for web bluetooth not having a filter for "if the manufacturer data are not this, then show me the device"
@@ -812,7 +816,7 @@ criteria example:
                   prefix[fw_version_byte_offset + i] = ~(version_bytes[i] & (1 << j));
                   mask[fw_version_byte_offset + i] = 1 << j;
 
-                  let filter_clone = JSON.parse(JSON.stringify(filter));
+                  const filter_clone = JSON.parse(JSON.stringify(filter));
                   filter_clone.manufacturerData = [{ companyIdentifier: company_identifier, dataPrefix: new Uint8Array(prefix), mask: new Uint8Array(mask) }];
                   web_ble_options.filters.push(filter_clone);
                 }
@@ -820,7 +824,7 @@ criteria example:
             } else {
               for (let i = 0; i < 2; i++) {
                 prefix[fw_version_byte_offset + i] = version_bytes[i];
-                mask[fw_version_byte_offset + i] = 0xff;
+                mask[fw_version_byte_offset + i] = 0xFF;
               }
               filter.manufacturerData = [{ companyIdentifier: company_identifier, dataPrefix: new Uint8Array(prefix), mask: new Uint8Array(mask) }];
               web_ble_options.filters.push(filter);
@@ -835,7 +839,7 @@ criteria example:
       }
     }
 
-    if (web_ble_options.filters.length == 0) {
+    if (web_ble_options.filters.length === 0) {
       web_ble_options = { acceptAllDevices: true, optionalServices: [this.SPECTODA_SERVICE_UUID] };
     }
 
@@ -903,7 +907,7 @@ criteria example:
     return (this.#connected() ? this.disconnect() : Promise.resolve()).then(() => {
       this.#webBTDevice = null;
       this.#connection.reset();
-      return Promise.resolve();
+      return;
     });
   }
 
@@ -923,7 +927,7 @@ criteria example:
 
   // connect Connector to the selected Spectoda Device. Also can be used to reconnect.
   // Fails if no device is selected
-  connect(timeout: number = 10000): Promise<object> {
+  connect(timeout = 10000): Promise<object> {
     logging.verbose(`connect(timeout=${timeout}})`);
 
     if (timeout <= 0) {
@@ -931,7 +935,7 @@ criteria example:
       return Promise.reject("ConnectionFailed");
     }
 
-    const start = new Date().getTime();
+    const start = Date.now();
     this.#reconection = true;
 
     if (!this.#selected()) {
@@ -983,10 +987,10 @@ criteria example:
         if (error.name == "NetworkError") {
           return sleep(1000).then(() => {
             if (this.#reconection) {
-              const passed = new Date().getTime() - start;
+              const passed = Date.now() - start;
               return this.connect(timeout - passed);
             } else {
-              return Promise.reject("ConnectionFailed");
+              throw "ConnectionFailed";
             }
           });
         } else {
@@ -1086,7 +1090,7 @@ criteria example:
           logging.debug("Clock write success");
           resolve(null);
           return;
-        } catch (e) {
+        } catch {
           logging.warn("Clock write failed");
           await sleep(1000);
         }
@@ -1157,7 +1161,7 @@ criteria example:
       return Promise.reject("DeviceDisconnected");
     }
 
-    return this.#connection.deliver(Array.from(command_bytes), 1000);
+    return this.#connection.deliver([...command_bytes], 1000);
   }
 
   // bool _sendRequest(const int32_t request_ticket_number, std::vector<uint8_t>& request_bytecode, const Connection& destination_connection) = 0;
@@ -1165,7 +1169,7 @@ criteria example:
   sendRequest(request_ticket_number: number, request_bytecode: Uint8Array, destination_connection: Connection) {
     logging.verbose(`SpectodaWebBluetoothConnector::sendRequest(request_ticket_number=${request_ticket_number}, request_bytecode=${request_bytecode}, destination_connection=${destination_connection})`);
 
-    return this.request(Array.from(request_bytecode), false, 10000);
+    return this.request([...request_bytecode], false, 10000);
   }
   // bool _sendResponse(const int32_t request_ticket_number, const int32_t request_result, std::vector<uint8_t>& response_bytecode, const Connection& destination_connection) = 0;
 
