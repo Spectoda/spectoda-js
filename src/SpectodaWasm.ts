@@ -4,9 +4,9 @@
 
 import { logging } from "../logging";
 
-const WASM_VERSION = "DEBUG_DEV_0.12.0_20241013";
+const WASM_VERSION = "DEBUG_DEV_0.12.0_20241014";
 
-/// ========== DEBUG_DEV_0.12.0_20241013.d.ts ========== ///
+/// ========== DEBUG_DEV_0.12.0_20241014.d.ts ========== ///
 
 export interface interface_error_tValue<T extends number> {
   value: T;
@@ -155,7 +155,7 @@ export interface MainModule {
   ImplementedSpectoda_WASM: {};
 }
 
-/// ========== DEBUG_DEV_0.12.0_20241013.d.ts ========== ///
+/// ========== DEBUG_DEV_0.12.0_20241014.d.ts ========== ///
 
 /// =================== MANUAL INTERFACES ================= ///
 
