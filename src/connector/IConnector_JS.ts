@@ -20,7 +20,7 @@ export class IConnector_JS {
 
     return SpectodaWasm.waitForInitilize().then(() => {
       this.#instance = SpectodaWasm.IConnector_WASM.implement(implementation);
-      this.#instance?.init(connector_type);
+      this.#instance.init(connector_type);
     });
   }
 
@@ -31,5 +31,13 @@ export class IConnector_JS {
 
     this.#instance.delete(); // delete (free) C++ object
     this.#instance = undefined; // remove javascript reference
+  }
+
+  getWasmInstance(): IConnector_WASM {
+    if (!this.#instance) {
+      throw "NotConstructed";
+    }
+
+    return this.#instance;
   }
 }

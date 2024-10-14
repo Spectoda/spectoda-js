@@ -14,10 +14,34 @@ import customParser from "socket.io-msgpack-parser";
 import { WEBSOCKET_URL } from "./SpectodaWebSocketsConnector";
 import "./TnglReader";
 import "./TnglWriter";
-import { SpectodaRuntime, allEventsEmitter } from "./src/SpectodaRuntime";
 import { VALUE_LIMITS } from "./constants";
+import { SpectodaRuntime, allEventsEmitter } from "./src/SpectodaRuntime";
 
 // from 0.10-dev-berry created this 0.11-dev branch
+
+/**
+ * Important concepts:
+ * Controllers are physical devices that you can connect with an Spectoda.js instance. They always belong in a network, which is identified with a `signature` (deprecated terminology "ownerSignature") and `key` (deprecated terminology "ownerKey") - with the key being a secret value.
+ * Each controller has a unique MAC address, which is used to identify it in the network.
+ * If more contorllers have the same signature + key = they are in the same network.
+ * If more contorller have the same FW version + are in the same network, they will synchronize with each other:
+ * - TNGL code
+ * - Event history
+ * - Timeline
+ * Each physical controller can be called a "node" in the network.
+ * DEFAULT network is a special, default state network that has signature and key set to 32x "0". (00000000000000000000000000000000)
+ *
+ * "label" is a specific type, that can have at max 5 characters [a-zA-Z0-9_]. It is always prefixed with "$" (e.g. $label)
+ */
+
+/**
+ * Refactoring suggestions by @mchlkucera:
+ * All reading, getting, fetching, should be just called `getResource`
+ * All writing, setting, sending, should be just called `setResource`
+ * Spectoda.js should be just for firmware communication
+ * - Flutter-specific functions should be separated (e.g. hideHomeButton)
+ * - Client-specific functions should be separated (e.g. reload)
+ */
 
 export class Spectoda {
   #parser;
@@ -243,6 +267,10 @@ export class Spectoda {
     return true;
   }
 
+  /**
+   * Calls WakeLock API to prevent the screen from turning off.
+   * TODO: Move to different file. Not a spectoda.js concern.
+   */
   requestWakeLock(prioritized = false) {
     logging.debug("> Activating wakeLock...");
 
@@ -272,6 +300,10 @@ export class Spectoda {
     }
   }
 
+  /**
+   * Calls WakeLock API to release the screen from being prevented from turning off.
+   * TODO: Move to different file. Not a spectoda.js concern.
+   */
   releaseWakeLock(prioritized = false) {
     logging.debug("> Deactivating wakeLock...");
 
@@ -303,49 +335,78 @@ export class Spectoda {
     }
   }
 
+  /**
+   * Alias for assignConnector
+   * Assigns with which "connector" you want to `connect`. E.g. "web-bluetooth", "serial", "websockets", "simulated".
+   * The name `connector` legacy term, but we don't have a better name for it yer.
+   */
   setConnector(connector_type, connector_param = undefined) {
     return this.runtime.assignConnector(connector_type, connector_param);
   }
 
   /**
+   * ! Useful
    * @alias this.setConnector
    */
   assignConnector(connector_type, connector_param = undefined) {
     return this.setConnector(connector_type, connector_param);
   }
 
+  /**
+   * @alias this.setConnector
+   */
   assignOwnerSignature(ownerSignature) {
     return this.#setOwnerSignature(ownerSignature);
   }
 
+  /**
+   * @deprecated
+   * Set the network `signature` (deprecated terminology "ownerKey").
+   */
   setOwnerSignature(ownerSignature) {
     return this.#setOwnerSignature(ownerSignature);
   }
 
+  /**
+   * @deprecated
+   * Get the network `signature` (deprecated terminology "ownerKey").
+   */
   getOwnerSignature() {
     return this.#ownerSignature;
   }
 
+  /**
+   * @alias this.setOwnerKey
+   */
   assignOwnerKey(ownerKey) {
     return this.#setOwnerKey(ownerKey);
   }
 
+  /**
+   * Sets the network `key` (deprecated terminology "ownerKey").
+   */
   setOwnerKey(ownerKey) {
     return this.#setOwnerKey(ownerKey);
   }
 
+  /**
+   * Get the network `key` (deprecated terminology "ownerKey").
+   */
   getOwnerKey() {
     return this.#ownerKey;
   }
 
   /**
+   * ! Useful
+   * Initializes Remote control (RC).
+   * ! Remote control needs a complete refactor and needs to be moved from Spectoda.js to a different file. Remote control should not connect based on network signature and key.
+   *
    * @param {Object} options
    * @param {string?} options.signature - The network signature.
    * @param {string?} options.key - The network key.
    * @param {Object} [options.meta] - info about the receiver
    * @param {boolean?} [options.sessionOnly] - Whether to enable remote control for the current session only.
    */
-
   async enableRemoteControl({ signature, key, sessionOnly, meta }) {
     logging.debug("> Connecting to Remote Control");
 
@@ -490,6 +551,10 @@ export class Spectoda {
     });
   }
 
+  /**
+   * ! Useful
+   * Disconnects from the Remote Control. More info about remote control in `enableRemoteControl`.
+   */
   disableRemoteControl() {
     logging.setLogCallback(console.log);
     logging.setWarnCallback(console.warn);
@@ -511,6 +576,7 @@ export class Spectoda {
   }
 
   /**
+   * ! Useful
    * @name addEventListener
    * @param {string} event
    * @param {Function} callback
@@ -520,12 +586,13 @@ export class Spectoda {
    * all events: event.target === the sender object (SpectodaWebBluetoothConnector)
    * event "disconnected": event.reason has a string with a disconnect reason
    *
+   * TODO I think this should expose an "off" method to remove the listener
    * @returns {Function} unbind function
    */
-
   addEventListener(event, callback) {
     return this.runtime.addEventListener(event, callback);
   }
+
   /**
    * @alias this.addEventListener
    */
@@ -533,36 +600,10 @@ export class Spectoda {
     return this.runtime.on(event, callback);
   }
 
-  // každé spectoda zařízení může být spárováno pouze s jedním účtem. (jednim user_key)
-  // jakmile je sparovana, pak ji nelze prepsat novým učtem.
-  // filtr pro pripojovani k zarizeni je pak účet.
-
-  // adopt != pair
-  // adopt reprezentuje proces, kdy si webovka osvoji nove zarizeni. Tohle zarizeni, ale uz
-  // muze byt spárováno s telefonem / SpectodaConnectem
-
-  // pri adoptovani MUSI byt vsechny zarizeni ze skupiny zapnuty.
-  // vsechny zarizeni totiz MUSI vedet o vsech.
-  // adopt() {
-  // const BLE_OPTIONS = {
-  //   //acceptAllDevices: true,
-  //   filters: [
-  //     { services: [this.TRANSMITTER_SERVICE_UUID] },
-  //     // {services: ['c48e6067-5295-48d3-8d5c-0395f61792b1']},
-  //     // {name: 'ExampleName'},
-  //   ],
-  //   //optionalServices: [this.TRANSMITTER_SERVICE_UUID],
-  // };
-  // //
-  // return this.connector
-  //   .adopt(BLE_OPTIONS).then((device)=> {
-  //     // ulozit device do local storage jako json
-  //   })
-  //   .catch((error) => {
-  //     logging.warn(error);
-  //   });
-  // }
-
+  /**
+   * ! Useful
+   * Scans for controllers that match the given criteria around the user.
+   */
   scan(scan_criteria = [{}], scan_period = 5000) {
     logging.verbose(`scan(scan_criteria=${scan_criteria}, scan_period=${scan_period})`);
 
@@ -570,6 +611,10 @@ export class Spectoda {
     return this.runtime.scan(scan_criteria, scan_period);
   }
 
+  /**
+   * @deprecated
+   * TODO MATTY FACT CHECK
+   */
   adopt(newDeviceName = null, newDeviceId = null, tnglCode = null, ownerSignature = null, ownerKey = null, autoSelect = false) {
     logging.verbose(`adopt(newDeviceName=${newDeviceName}, newDeviceId=${newDeviceId}, tnglCode=${tnglCode}, ownerSignature=${ownerSignature}, ownerKey=${ownerKey}, autoSelect=${autoSelect})`);
 
@@ -738,6 +783,16 @@ export class Spectoda {
       });
   }
 
+  /**
+   * ! Useful
+   * Connects to a controller that matches the given criteria.
+   * In web environment, this launches the "Select Device" dialog.
+   *
+   * To connect to ANY controller, use `spectoda.connect({}, true, null, null, true)`
+   * The option to connect to ANY controller will be deprecated in Spectoda FW V1, you should only be able to connect to a controller whose `signature` and `key` you enter.
+   *
+   * TODO REFACTOR to use only one criteria object instead of this param madness
+   */
   connect(criteria = null, autoConnect = true, ownerSignature = null, ownerKey = null, connectAny = false, fwVersion = "", autonomousConnection = false, overrideConnection = false) {
     logging.verbose(
       `connect(criteria=${criteria}, autoConnect=${autoConnect}, ownerSignature=${ownerSignature}, ownerKey=${ownerKey}, connectAny=${connectAny}, fwVersion=${fwVersion}, autonomousConnection=${autonomousConnection}, overrideConnection=${overrideConnection})`,
@@ -791,6 +846,10 @@ export class Spectoda {
     return this.#connect(autoConnect);
   }
 
+  /**
+   * ! Useful
+   * Disconnects from the connected controller.
+   */
   disconnect() {
     this.#autonomousConnection = false;
 
@@ -808,6 +867,9 @@ export class Spectoda {
     });
   }
 
+  /**
+   * @deprecated Use states in spectoda-core instead
+   */
   connected() {
     return this.#getConnectionState() === "connected" ? this.runtime.connected() : Promise.resolve(null);
   }
@@ -815,8 +877,9 @@ export class Spectoda {
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
   /**
-   * Preprocesses TNGL code by handling API injections, removing comments, minifying BERRY code,
-   * replacing specific patterns within BERRY code, and handling #define statements.
+   * ! Useful
+   * Preprocesses TNGL code by handling API injections, removing comments, minifying BERRY code, replacing specific patterns within BERRY code, and handling #define statements.
+   * Happens
    *
    * @param {string} tngl_code - The TNGL code as a string.
    * @returns {string} - The preprocessed TNGL code.
@@ -1072,6 +1135,9 @@ export class Spectoda {
     return tngl_code;
   }
 
+  /**
+   * TODO MATTY
+   */
   syncTngl() {
     logging.verbose(`syncTngl()`);
 
@@ -1083,7 +1149,7 @@ export class Spectoda {
     return this.runtime.request(command_bytes, true).then(response => {
       let reader = new TnglReader(response);
 
-      logging.info(`response.byteLength=${response.byteLength}`);
+      logging.verbose(`response.byteLength=${response.byteLength}`);
 
       const flag = reader.readFlag();
       logging.verbose(`flag=${flag}`);
@@ -1113,12 +1179,17 @@ export class Spectoda {
         this.runtime.spectoda.request(new Uint8Array(tngl_bytecode), DUMMY_CONNECTION);
       } else {
         // maybe no TNGL in the controller
-        logging.error("ERROR asdf8079");
+        logging.error("ERROR asdf8079: Failed to synchronize TNGL");
         throw "FailedToSynchronizeTngl";
       }
     });
   }
 
+  /**
+   * ! Useful
+   * Writes the given TNGL code to the controller.
+   * Controller synchronize their TNGL. Which means the TNLG you upload to one controller will be synchronized to all controllers (within a few minutes, based on the TNGL file size)
+   */
   writeTngl(tngl_code, tngl_bytes = null) {
     logging.verbose(`writeTngl(tngl_code=${tngl_code}, tngl_bytes=${tngl_bytes})`);
 
@@ -1145,23 +1216,9 @@ export class Spectoda {
     });
   }
 
-  // event_label example: "evt1"
-  // event_value example: 1000
   /**
-   *
-   * @param {*} event_label
-   * @param {number|number[]} device_ids
-   * @param {*} force_delivery
-
-   * @returns
-   */
-  /**
-   *
-   * @param {*} event_label
-   * @param {number|number[]} device_ids
-   * @param {*} force_delivery
-
-   * @returns
+   * ! Useful
+   * TODO MATTY is this null event?
    */
   emitEvent(event_label, device_ids = [0xff], force_delivery = true) {
     logging.verbose(`emitEvent(label=${event_label},id=${device_ids},force=${force_delivery})`);
@@ -1186,15 +1243,9 @@ export class Spectoda {
     }
   }
 
-  // event_label example: "evt1"
-  // event_value example: 1000
   /**
-   *
-   * @param {*} event_label
-   * @param {number|number[]} device_ids
-   * @param {*} force_delivery
-
-   * @returns
+   * ! Useful
+   * E.g. event "time" to 1000
    */
   emitTimestampEvent(event_label, event_value, device_ids = [0xff], force_delivery = false) {
     logging.verbose(`emitTimestampEvent(label=${event_label},value=${event_value},id=${device_ids},force=${force_delivery})`);
@@ -1229,15 +1280,8 @@ export class Spectoda {
     }
   }
 
-  // event_label example: "evt1"
-  // event_value example: "#00aaff"
   /**
-   *
-   * @param {*} event_label
-   * @param {*} event_value
-   * @param {number|number[]} device_ids
-   * @param {*} force_delivery
-   * @returns
+   * E.g. event "color" to value "#00aaff"
    */
   emitColorEvent(event_label, event_value, device_ids = [0xff], force_delivery = false) {
     logging.verbose(`emitColorEvent(label=${event_label},value=${event_value},id=${device_ids},force=${force_delivery})`);
@@ -1269,15 +1313,8 @@ export class Spectoda {
     }
   }
 
-  // event_label example: "evt1"
-  // event_value example: 100.0
   /**
-   *
-   * @param {*} event_label
-   * @param {*} event_value
-   * @param {number|number[]} device_ids
-   * @param {*} force_delivery
-   * @returns
+   * E.g. event "brigh" to value 1234
    */
   emitPercentageEvent(event_label, event_value, device_ids = [0xff], force_delivery = false) {
     logging.verbose(`emitPercentageEvent(label=${event_label},value=${event_value},id=${device_ids},force=${force_delivery})`);
@@ -1319,16 +1356,9 @@ export class Spectoda {
     }
   }
 
-  // event_label example: "evt1"
-  // event_value example: "label"
   // !!! PARAMETER CHANGE !!!
   /**
-   *
-   * @param {*} event_label
-   * @param {*} event_value
-   * @param {number|number[]} device_ids
-   * @param {*} force_delivery
-   * @returns
+   * E.g. event "anima" to value "a_001"
    */
   emitLabelEvent(event_label, event_value, device_ids = [0xff], force_delivery = false) {
     logging.verbose(`emitLabelEvent(label=${event_label},value=${event_value},id=${device_ids},force=${force_delivery})`);
@@ -1363,6 +1393,9 @@ export class Spectoda {
     }
   }
 
+  /**
+   * Sets the timeline to the current time of the day and unpauses it.
+   */
   syncTimelineToDayTime() {
     logging.verbose(`syncTimelineToDayTime()`);
 
@@ -1381,6 +1414,9 @@ export class Spectoda {
     return this.syncTimeline();
   }
 
+  /**
+   * TODO MATTY
+   */
   syncTimeline(timestamp = undefined, paused = undefined) {
     logging.verbose(`syncTimeline(timestamp=${timestamp}, paused=${paused})`);
 
@@ -1399,16 +1435,9 @@ export class Spectoda {
     return this.runtime.execute(payload, "TMLN");
   }
 
-  // syncClock() {
-  //   logging.debug("> Syncing clock...");
-
-  //   this.#resetClockSyncInterval();
-
-  //   return this.runtime.syncClock().then(() => {
-  //     logging.debug("> App clock synchronized");
-  //   });
-  // }
-
+  /**
+   * TODO MATTY
+   */
   syncState(deviceId) {
     logging.debug("> Synchronizing state...");
 
@@ -1437,6 +1466,11 @@ export class Spectoda {
     return this.updateNetworkFirmware(fw);
   }
 
+  /**
+   * ! Useful
+   * Update the firmware of the connected controller.
+   * @param {Uint8Array} firmware - The firmware to update the controller with.
+   */
   updateDeviceFirmware(firmware) {
     logging.verbose(`updateDeviceFirmware(firmware.length=${firmware?.length})`);
 
@@ -1465,6 +1499,11 @@ export class Spectoda {
       });
   }
 
+  /**
+   * ! Useful
+   * Update the firmware of ALL CONNECTED CONTROLLERS in the network.
+   * @param {Uint8Array} firmware - The firmware to update the controller with.
+   */
   updateNetworkFirmware(firmware) {
     logging.verbose(`updateNetworkFirmware(firmware.length=${firmware?.length})`);
 
@@ -1589,6 +1628,10 @@ export class Spectoda {
       });
   }
 
+  /**
+   * For FW nerds
+   * TODO MATTY
+   */
   async updatePeerFirmware(peer) {
     logging.verbose(`updatePeerFirmware(peer=${peer})`);
 
@@ -1634,13 +1677,9 @@ export class Spectoda {
   }
 
   /**
-   * @returns {Promise} config;
-   *
-   *
-   *
-   *
+   * ! Useful
+   * Get the JSON config of the connected controller.
    */
-
   readDeviceConfig(mac = "ee:33:fa:89:08:08") {
     logging.debug("> Reading device config...");
 
@@ -1690,13 +1729,9 @@ export class Spectoda {
   }
 
   /**
-   * @param {string} config;
-   *
-   *
-   *
-   *
+   * ! Useful
+   * Updates the JSON config of the connected controller.
    */
-
   updateDeviceConfig(config_raw) {
     logging.debug("> Updating config...");
 
@@ -1745,13 +1780,8 @@ export class Spectoda {
   }
 
   /**
-   * @param {string} config;
-   *
-   *
-   *
-   *
+   * Updates the JSON config of ALL CONNECTED CONTROLLERS in the network.
    */
-
   updateNetworkConfig(config) {
     logging.debug("> Updating config of whole network...");
 
@@ -1770,6 +1800,10 @@ export class Spectoda {
     });
   }
 
+  /**
+   * For FW nerds
+   * TODO MATTY
+   */
   requestTimeline() {
     logging.debug("> Requesting timeline...");
 
@@ -1808,6 +1842,11 @@ export class Spectoda {
   }
 
   // Code.device.runtime.execute([240,1,0,0,0,5],null)
+  /**
+   * ! Useful
+   * Reboots ALL CONNECTED CONTROLLERS in the network. This will temporarily disconnect the controller from the network. Spectoda.js will try to reconnect you back to the controller.
+   * TODO MATTY FACT-CHECK
+   */
   rebootNetwork() {
     logging.debug("> Rebooting network...");
 
@@ -1815,6 +1854,10 @@ export class Spectoda {
     return this.runtime.execute(payload, null);
   }
 
+  /**
+   * ! Useful
+   * Reboots the controller. This will temporarily disconnect the controller from the network. Spectoda.js will try to reconnect you back to the controller.
+   */
   rebootDevice() {
     logging.debug("> Rebooting device...");
 
@@ -1822,6 +1865,10 @@ export class Spectoda {
     return this.runtime.request(payload, false);
   }
 
+  /**
+   * ! Useful
+   * Reboots the controller. This will temporarily disconnect the controller from the network. No automatic reconnection will be attempted.
+   */
   rebootAndDisconnectDevice() {
     logging.debug("> Rebooting and disconnecting device...");
 
@@ -1831,6 +1878,10 @@ export class Spectoda {
     });
   }
 
+  /**
+   * ! Useful
+   * Puts currently connected controller into the DEFAULT network. More info at the top of this file.
+   */
   removeOwner() {
     logging.debug("> Removing owner...");
 
@@ -1878,6 +1929,10 @@ export class Spectoda {
     });
   }
 
+  /**
+   * ! Useful
+   * Puts ALL CONTROLLERS in the network into the DEFAULT network. More info at the top of this file.
+   */
   removeNetworkOwner() {
     logging.debug("> Removing network owner...");
 
@@ -1889,6 +1944,10 @@ export class Spectoda {
     });
   }
 
+  /**
+   * ! Useful
+   * Get the firmware version of the controller in string format
+   */
   getFwVersion() {
     logging.debug("> Requesting fw version...");
 
@@ -1929,6 +1988,11 @@ export class Spectoda {
     });
   }
 
+  /**
+   * ! Useful
+   * Get the fingerprint of a currently uploaded Tngl (via `writeTngl()`)
+   * Tngl fingerprint is an identifier of the Tngl code that is currently running on the controller. It is used for checking if the controller has the correct Tngl code.
+   */
   getTnglFingerprint() {
     logging.debug("> Getting TNGL fingerprint...");
 
@@ -1975,6 +2039,9 @@ export class Spectoda {
     });
   }
 
+  /**
+   * For FW nerds
+   */
   // datarate in bits per second
   setNetworkDatarate(datarate) {
     logging.debug(`> Setting network datarate to ${datarate} bsp...`);
@@ -1985,6 +2052,10 @@ export class Spectoda {
     return this.runtime.execute(payload, null);
   }
 
+  /**
+   * @deprecated
+   * TODO MATTY is this true?
+   */
   readRomPhyVdd33() {
     logging.debug("> Requesting rom_phy_vdd33...");
 
@@ -2023,6 +2094,10 @@ export class Spectoda {
     });
   }
 
+  /**
+   * @deprecated
+   * TODO MATTY is this true?
+   */
   readPinVoltage(pin) {
     logging.debug(`> Requesting pin ${pin} voltage ...`);
 
@@ -2062,18 +2137,23 @@ export class Spectoda {
   }
 
   /**
-   * Change language for modals
-   * @param {"en"|"cs"} lng
-   * @deprecated
+   * @deprecated This is app-level functionality
    */
   setLanguage(lng) {
     logging.info("setLanguage is deprecated");
   }
 
+  /**
+   * Set the debug level of the Spectoda.js library
+   */
   setDebugLevel(level) {
     logging.setLoggingLevel(level);
   }
 
+  /**
+   * ! Useful
+   * Returns the MAC addresses of all nodes connected in the current network in real-time
+   */
   getConnectedPeersInfo() {
     logging.debug("> Requesting connected peers info...");
 
@@ -2127,6 +2207,10 @@ export class Spectoda {
     });
   }
 
+  /**
+   * Tells the currently `connect`ed controller to synchronize its event state history with other controllers in the network.
+   * TODO Matty is this true?
+   */
   syncEventHistory() {
     logging.info("> Requesting event history bytecode...");
 
@@ -2136,7 +2220,7 @@ export class Spectoda {
     return this.runtime.request(bytes, true).then(response => {
       let reader = new TnglReader(response);
 
-      logging.info(`response.byteLength=${response.byteLength}`);
+      logging.verbose(`response.byteLength=${response.byteLength}`);
 
       if (reader.readFlag() !== COMMAND_FLAGS.FLAG_EVENT_HISTORY_BC_RESPONSE) {
         logging.error("InvalidResponseFlag");
@@ -2171,6 +2255,11 @@ export class Spectoda {
     });
   }
 
+  /**
+   * ! Useful
+   * Erases the event state history of ALL CONTROLLERS in the network Spectoda.js is `connect`ed to.
+   * TODO This should be called `eraseEventStateHistory`
+   */
   eraseEventHistory() {
     logging.debug("> Erasing event history...");
 
@@ -2180,6 +2269,10 @@ export class Spectoda {
     return this.runtime.execute(bytes, true);
   }
 
+  /**
+   * ! Useful
+   * Puts CONTROLLER Spectoda.js is `connect`ed to to sleep. To wake him up, power must be cycled by removing and reapplying it.
+   */
   deviceSleep() {
     logging.debug("> Sleep device...");
 
@@ -2188,6 +2281,10 @@ export class Spectoda {
     return this.runtime.request(payload, false);
   }
 
+  /**
+   * ! Useful
+   * Puts ALL CONTROLLERS in the network Spectoda.js is `connect`ed to to sleep. To wake them up, power must be cycled by removing and reapplying it.
+   */
   networkSleep() {
     logging.debug("> Sleep network...");
 
@@ -2196,6 +2293,9 @@ export class Spectoda {
     return this.runtime.execute(payload, null);
   }
 
+  /**
+   * For FW Nerds
+   */
   saveState() {
     logging.debug("> Saving state...");
 
@@ -2204,6 +2304,10 @@ export class Spectoda {
     return this.runtime.execute(payload, null);
   }
 
+  /**
+   * TODO MATTY
+   * Seems a duplicate of `readControllerCodes`
+   */
   getControllerInfo() {
     logging.debug("> Requesting controller info...");
 
@@ -2246,6 +2350,10 @@ export class Spectoda {
     });
   }
 
+  /**
+   * ! Useful
+   * Changes the network of the controller Spectoda.js is `connect`ed to.
+   */
   writeOwner(ownerSignature = "00000000000000000000000000000000", ownerKey = "00000000000000000000000000000000") {
     logging.verbose("writeOwner(ownerSignature=", ownerSignature, "ownerKey=", ownerKey, ")");
 
@@ -2314,6 +2422,10 @@ export class Spectoda {
       });
   }
 
+  /**
+   * ! Useful
+   * Changes the network of ALL controllers in the network Spectoda.js is `connect`ed to.
+   */
   writeNetworkOwner(ownerSignature = "00000000000000000000000000000000", ownerKey = "00000000000000000000000000000000") {
     logging.verbose("writeNetworkOwner(ownerSignature=", ownerSignature, "ownerKey=", ownerKey, ")");
 
@@ -2333,7 +2445,9 @@ export class Spectoda {
     return this.runtime.execute(bytes, true);
   }
 
-  // name as string
+  /**
+   * ! Useful
+   */
   writeControllerName(name) {
     logging.debug("> Writing Controller Name...");
 
@@ -2342,6 +2456,9 @@ export class Spectoda {
     return this.runtime.request(payload, false);
   }
 
+  /**
+   * ! Useful
+   */
   readControllerName() {
     logging.debug("> Reading Controller Name...");
 
@@ -2382,6 +2499,9 @@ export class Spectoda {
     });
   }
 
+  /**
+   * For FW nerds
+   */
   readVariable(variable_name, device_id = 255) {
     logging.debug(`> Reading variable...`);
 
@@ -2410,6 +2530,9 @@ export class Spectoda {
     return variable_value;
   }
 
+  /**
+   * For FW nerds
+   */
   readVariableAddress(variable_address, device_id = 255) {
     logging.debug("> Reading variable address...");
 
@@ -2420,6 +2543,10 @@ export class Spectoda {
     return this.runtime.readVariableAddress(variable_address, device_id);
   }
 
+  /**
+   * Hides the home button on the Flutter Spectoda Connect:
+   * TODO: This is not really a "FW communication feature", should be moved to another file ("FlutterBridge?""). Spectoda.JS should take care only of the communication with the device.
+   */
   hideHomeButton() {
     logging.debug("> Hiding home button...");
 
@@ -2430,8 +2557,11 @@ export class Spectoda {
     return window.flutter_inappwebview.callHandler("hideHomeButton");
   }
 
-  // option:
-  //  0 = no restriction, 1 = portrait, 2 = landscape
+  /**
+   * Sets orientation of the Flutter Spectoda Connect:
+   * 0 = no restriction, 1 = portrait, 2 = landscape
+   * TODO: This is not really a "FW communication feature", should be moved to another file ("FlutterBridge?""). Spectoda.JS should take care only of the communication with the device.
+   */
   setOrientation(option) {
     logging.debug("> Setting orientation...");
 
@@ -2452,6 +2582,10 @@ export class Spectoda {
 
   // 0.9.4
 
+  /**
+   * ! Useful
+   * Reads the network signature of the controller Spectoda.js is `connect`ed to.
+   */
   readNetworkSignature() {
     logging.debug("> Reading network signature...");
 
@@ -2492,6 +2626,13 @@ export class Spectoda {
     });
   }
 
+  /**
+   * Write PCB Code and Product Code. Used when manufacturing a controller
+   *
+   * PCB Code is a code of a specific PCB. A printed circuit of a special type. You can connect many inputs and many outputs to it. E.g. Spectoda Industry A6 controller.
+   *
+   * Product Code is a code of a specific product. A product is a defined, specific configuration of inputs and outputs that make up a whole product. E.g. NARA Lamp (two LED outputs of certain length and a touch button), Sunflow Lamp (three LED outputs, push button)
+   */
   writeControllerCodes(pcb_code, product_code) {
     logging.debug("> Writing controller codes...");
 
@@ -2522,6 +2663,10 @@ export class Spectoda {
     });
   }
 
+  /**
+   * ! Useful
+   * Get PCB Code and Product Code. For more information see `writeControllerCodes`
+   */
   readControllerCodes() {
     logging.debug("> Requesting controller codes ...");
 
@@ -2563,17 +2708,25 @@ export class Spectoda {
     });
   }
 
-  // executed bytecode
+  /**
+   * For FW nerds
+   */
   execute(bytecode) {
     return this.runtime.execute(bytecode, null, 60000);
   }
 
   // emits JS event
+  /**
+   * TODO MATTY
+   */
   emit(event, value) {
     this.runtime.emit(event, value);
   }
 
-  // reloads the spectoda app
+  /**
+   * Reloads the window or restarts node process. Useful when connected to the device via Remote control.
+   * TODO: This is not really a "FW communication feature", should be moved to another function. Spectoda.JS should take care only of the communication with the device.
+   */
   reload() {
     this.disconnect();
 
@@ -2590,7 +2743,9 @@ export class Spectoda {
     return Promise.resolve();
   }
 
-  // updates the app
+  /**
+   * @deprecated
+   */
   update() {
     // if (detectNode()) {
     //   // run git pull and git submodule update
@@ -2616,6 +2771,9 @@ export class Spectoda {
     // }
   }
 
+  /**
+   * Erase current TNGL
+   */
   eraseTngl() {
     logging.debug("> Erasing TNGL...");
 
@@ -2625,6 +2783,13 @@ export class Spectoda {
     return this.runtime.execute(command_bytes, null);
   }
 
+  /**
+   * TNGL BANKS: A concept in which you can save Tngl to different memory banks, and then load them when you need. Used to speed up tngl synchronization in installations where all animations don't fit to one Tngl file
+   */
+
+  /**
+   * Save the current uploaded Tngl (via `uploadTngl) to the bank in parameter
+   */
   saveTnglBank(tngl_bank) {
     logging.debug(`> Saving TNGL to bank ${tngl_bank}...`);
 
@@ -2634,6 +2799,9 @@ export class Spectoda {
     return this.runtime.execute(command_bytes, null);
   }
 
+  /**
+   * Load the Tngl from the bank in parameter
+   */
   loadTnglBank(tngl_bank) {
     logging.debug(`> Loading TNGL from bank ${tngl_bank}...`);
 
@@ -2643,6 +2811,9 @@ export class Spectoda {
     return this.runtime.execute(command_bytes, null);
   }
 
+  /**
+   * Erase the Tngl from the bank in parameter
+   */
   eraseTnglBank(tngl_bank) {
     logging.debug(`> Erasing TNGL bank ${tngl_bank}...`);
 

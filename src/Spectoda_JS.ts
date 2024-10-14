@@ -413,7 +413,6 @@ export class Spectoda_JS {
 
           try {
             const command_bytecode_array = SpectodaWasm.convertUint8VectorUint8Array(command_bytecode);
-            // const THIS_CONTROLLER_CONNECTION = new SpectodaWasm.Connection("00:00:00:00:00:00", SpectodaWasm.connector_type_t.CONNECTOR_UNDEFINED, SpectodaWasm.connection_rssi_t.RSSI_MAX);
             this.#runtimeReference.sendExecute(command_bytecode_array, source_connection).catch(e => {
               logging.error(e);
               return false;
@@ -505,16 +504,15 @@ export class Spectoda_JS {
     // }
   }
 
-  // @deprecated
-  makePort(port_char = "A", port_size = 144, port_brightness = 255, port_power = 255, port_visible = true, port_reversed = false) {
-    logging.info(`Spectoda_JS::makePort(port_char=${port_char}, port_size=${port_size}, port_brightness=${port_brightness}, port_power=${port_power}, port_visible=${port_visible}, port_reversed=${port_reversed})`);
+  // ! @deprecated: Please define "io" and "segments" in controller config.
+  makePort(port_config: string) {
+    logging.info(`Spectoda_JS::makePort(port_config=${port_config})`);
 
     if (!this.#instance) {
       throw "NotConstructed";
     }
 
-    logging.error("deprecated this.#instance.makePort(port_char, port_size, port_brightness, port_power, port_visible, port_reversed)");
-    // return this.#instance.makePort(port_char, port_size, port_brightness, port_power, port_visible, port_reversed);
+    return this.#instance.makePort(port_config);
   }
 
   setClockTimestamp(clock_timestamp: number) {
