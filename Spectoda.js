@@ -20,27 +20,33 @@ import { SpectodaRuntime, allEventsEmitter } from "./src/SpectodaRuntime";
 // from 0.10-dev-berry created this 0.11-dev branch
 
 /**
- * Important concepts:
+ * ----- INTRODUCTION ------
  * Controllers are physical devices that you can connect with an Spectoda.js instance. They always belong in a network, which is identified with a `signature` (deprecated terminology "ownerSignature") and `key` (deprecated terminology "ownerKey") - with the key being a secret value.
  * Each controller has a unique MAC address, which is used to identify it in the network.
+ * Everyone in the network is called a node - whether it is a physical controller or a virtual controller.
+
+ * ----- CONTROLLER SYNCHRONIZATION ------
  * If more contorllers have the same signature + key = they are in the same network.
  * If more contorller have the same FW version + are in the same network, they will synchronize with each other:
  * - TNGL code
  * - Event history
  * - Timeline
- * Each physical controller can be called a "node" in the network.
- * DEFAULT network is a special, default state network that has signature and key set to 32x "0". (00000000000000000000000000000000)
- *
+
+ * ----- NO NETWORK ------
+ * When controller is not in a network, it is in a mode that anyone can connect to it and move it to his own network. Think of this as a "pairing mode" of Bluetooth mode. Althought in Spectoda THIS IS NOT CALLED PAIRING.
+ 
+* ----- LABELS ------
  * "label" is a specific type, that can have at max 5 characters [a-zA-Z0-9_]. It is always prefixed with "$" (e.g. $label)
  */
 
 /**
- * Refactoring suggestions by @mchlkucera:
+ * ----- Refactoring suggestions by @mchlkucera: ------
  * All reading, getting, fetching, should be just called `getResource`
  * All writing, setting, sending, should be just called `setResource`
  * Spectoda.js should be just for firmware communication
  * - Flutter-specific functions should be separated (e.g. hideHomeButton)
  * - Client-specific functions should be separated (e.g. reload)
+ * - More refactoring suggestions are ready in the `0.13-dev` branch
  */
 
 export class Spectoda {
@@ -337,7 +343,7 @@ export class Spectoda {
 
   /**
    * Alias for assignConnector
-   * Assigns with which "connector" you want to `connect`. E.g. "web-bluetooth", "serial", "websockets", "simulated".
+   * Assigns with which "connector" you want to `connect`. E.g. "webbluetooth", "serial", "websockets", "simulated".
    * The name `connector` legacy term, but we don't have a better name for it yer.
    */
   setConnector(connector_type, connector_param = undefined) {
@@ -361,7 +367,7 @@ export class Spectoda {
 
   /**
    * @deprecated
-   * Set the network `signature` (deprecated terminology "ownerKey").
+   * Set the network `signature` (deprecated terminology "ownerSignature").
    */
   setOwnerSignature(ownerSignature) {
     return this.#setOwnerSignature(ownerSignature);
@@ -369,7 +375,7 @@ export class Spectoda {
 
   /**
    * @deprecated
-   * Get the network `signature` (deprecated terminology "ownerKey").
+   * Get the network `signature` (deprecated terminology "ownerSignature").
    */
   getOwnerSignature() {
     return this.#ownerSignature;
@@ -398,7 +404,7 @@ export class Spectoda {
 
   /**
    * ! Useful
-   * Initializes Remote control (RC).
+   * Initializes Remote control (RC) receiving.
    * ! Remote control needs a complete refactor and needs to be moved from Spectoda.js to a different file. Remote control should not connect based on network signature and key.
    *
    * @param {Object} options
@@ -553,7 +559,7 @@ export class Spectoda {
 
   /**
    * ! Useful
-   * Disconnects from the Remote Control. More info about remote control in `enableRemoteControl`.
+   * Disconnects Remote Control receiving. More info about remote control in `enableRemoteControl`.
    */
   disableRemoteControl() {
     logging.setLogCallback(console.log);
@@ -613,7 +619,6 @@ export class Spectoda {
 
   /**
    * @deprecated
-   * TODO MATTY FACT CHECK
    */
   adopt(newDeviceName = null, newDeviceId = null, tnglCode = null, ownerSignature = null, ownerKey = null, autoSelect = false) {
     logging.verbose(`adopt(newDeviceName=${newDeviceName}, newDeviceId=${newDeviceId}, tnglCode=${tnglCode}, ownerSignature=${ownerSignature}, ownerKey=${ownerKey}, autoSelect=${autoSelect})`);
@@ -1136,7 +1141,7 @@ export class Spectoda {
   }
 
   /**
-   * TODO MATTY
+   * Gets the TNGL code from the controller to the WASM runtime.
    */
   syncTngl() {
     logging.verbose(`syncTngl()`);
@@ -1189,6 +1194,7 @@ export class Spectoda {
    * ! Useful
    * Writes the given TNGL code to the controller.
    * Controller synchronize their TNGL. Which means the TNLG you upload to one controller will be synchronized to all controllers (within a few minutes, based on the TNGL file size)
+   * @immakermatty refactor suggestion to `loadTngl` (???)
    */
   writeTngl(tngl_code, tngl_bytes = null) {
     logging.verbose(`writeTngl(tngl_code=${tngl_code}, tngl_bytes=${tngl_bytes})`);
@@ -1314,7 +1320,8 @@ export class Spectoda {
   }
 
   /**
-   * E.g. event "brigh" to value 1234
+   * E.g. event "brigh" to value 100.
+   * value range is (-100,100)
    */
   emitPercentageEvent(event_label, event_value, device_ids = [0xff], force_delivery = false) {
     logging.verbose(`emitPercentageEvent(label=${event_label},value=${event_value},id=${device_ids},force=${force_delivery})`);
@@ -1415,7 +1422,7 @@ export class Spectoda {
   }
 
   /**
-   * TODO MATTY
+   * Synchronizes timeline of the connected controller with the current time of the runtime.
    */
   syncTimeline(timestamp = undefined, paused = undefined) {
     logging.verbose(`syncTimeline(timestamp=${timestamp}, paused=${paused})`);
@@ -1436,7 +1443,7 @@ export class Spectoda {
   }
 
   /**
-   * TODO MATTY
+   * Synchronizes TNGL variable state of given ID to all other IDs
    */
   syncState(deviceId) {
     logging.debug("> Synchronizing state...");
@@ -1629,8 +1636,7 @@ export class Spectoda {
   }
 
   /**
-   * For FW nerds
-   * TODO MATTY
+   * Tells the connected controller to update a peer controller with its own firmware
    */
   async updatePeerFirmware(peer) {
     logging.verbose(`updatePeerFirmware(peer=${peer})`);
@@ -1801,8 +1807,7 @@ export class Spectoda {
   }
 
   /**
-   * For FW nerds
-   * TODO MATTY
+   * Gets the timeline from connected controller to the runtime.
    */
   requestTimeline() {
     logging.debug("> Requesting timeline...");
@@ -1845,7 +1850,6 @@ export class Spectoda {
   /**
    * ! Useful
    * Reboots ALL CONNECTED CONTROLLERS in the network. This will temporarily disconnect the controller from the network. Spectoda.js will try to reconnect you back to the controller.
-   * TODO MATTY FACT-CHECK
    */
   rebootNetwork() {
     logging.debug("> Rebooting network...");
@@ -1931,7 +1935,7 @@ export class Spectoda {
 
   /**
    * ! Useful
-   * Puts ALL CONTROLLERS in the network into the DEFAULT network. More info at the top of this file.
+   * Removes ALL CONTROLLERS from their current network. More info at the top of this file.
    */
   removeNetworkOwner() {
     logging.debug("> Removing network owner...");
@@ -2054,7 +2058,6 @@ export class Spectoda {
 
   /**
    * @deprecated
-   * TODO MATTY is this true?
    */
   readRomPhyVdd33() {
     logging.debug("> Requesting rom_phy_vdd33...");
@@ -2095,8 +2098,7 @@ export class Spectoda {
   }
 
   /**
-   * @deprecated
-   * TODO MATTY is this true?
+   * @deprecated Will be replaced in 0.12 by IO operations
    */
   readPinVoltage(pin) {
     logging.debug(`> Requesting pin ${pin} voltage ...`);
@@ -2208,8 +2210,7 @@ export class Spectoda {
   }
 
   /**
-   * Tells the currently `connect`ed controller to synchronize its event state history with other controllers in the network.
-   * TODO Matty is this true?
+   * Gets the EventHistory from the connected controller and loads it into the runtime.
    */
   syncEventHistory() {
     logging.info("> Requesting event history bytecode...");
@@ -2258,7 +2259,7 @@ export class Spectoda {
   /**
    * ! Useful
    * Erases the event state history of ALL CONTROLLERS in the network Spectoda.js is `connect`ed to.
-   * TODO This should be called `eraseEventStateHistory`
+   * TODO This should be called `eraseEventStates`
    */
   eraseEventHistory() {
     logging.debug("> Erasing event history...");
@@ -2294,7 +2295,7 @@ export class Spectoda {
   }
 
   /**
-   * For FW Nerds
+   * Forces a TNGL variable state save on the connected controller. TNGL variable state is by default saved every 8 seconds atfer no event is emitted.
    */
   saveState() {
     logging.debug("> Saving state...");
@@ -2305,8 +2306,7 @@ export class Spectoda {
   }
 
   /**
-   * TODO MATTY
-   * Seems a duplicate of `readControllerCodes`
+   * A duplicate of `readControllerCodes`
    */
   getControllerInfo() {
     logging.debug("> Requesting controller info...");
@@ -2500,7 +2500,7 @@ export class Spectoda {
   }
 
   /**
-   * For FW nerds
+   * Reads the TNGL variable on given ID from App's WASM
    */
   readVariable(variable_name, device_id = 255) {
     logging.debug(`> Reading variable...`);
@@ -2717,7 +2717,7 @@ export class Spectoda {
 
   // emits JS event
   /**
-   * TODO MATTY
+   * Emits JS events like "connected" or "eventstateupdates"
    */
   emit(event, value) {
     this.runtime.emit(event, value);
@@ -2788,7 +2788,7 @@ export class Spectoda {
    */
 
   /**
-   * Save the current uploaded Tngl (via `uploadTngl) to the bank in parameter
+   * Save the current uploaded Tngl (via `writeTngl) to the bank in parameter
    */
   saveTnglBank(tngl_bank) {
     logging.debug(`> Saving TNGL to bank ${tngl_bank}...`);
