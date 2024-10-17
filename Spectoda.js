@@ -1224,7 +1224,12 @@ export class Spectoda {
 
   /**
    * ! Useful
-   * TODO MATTY is this null event?
+   * Emit a null event
+   *
+    * @param {string} event_label
+    * @param {number[] | number} device_ids
+    * @param {boolean} force_delivery
+
    */
   emitEvent(event_label, device_ids = [0xff], force_delivery = true) {
     logging.verbose(`emitEvent(label=${event_label},id=${device_ids},force=${force_delivery})`);
@@ -1252,6 +1257,12 @@ export class Spectoda {
   /**
    * ! Useful
    * E.g. event "time" to 1000
+   * value range is (-2^31,2^31-1)
+   *
+   * @param {string} event_label
+   * @param {number} event_value
+   * @param {number[] | number} device_ids
+   * @param {boolean} force_delivery
    */
   emitTimestampEvent(event_label, event_value, device_ids = [0xff], force_delivery = false) {
     logging.verbose(`emitTimestampEvent(label=${event_label},value=${event_value},id=${device_ids},force=${force_delivery})`);
@@ -1288,6 +1299,11 @@ export class Spectoda {
 
   /**
    * E.g. event "color" to value "#00aaff"
+   *
+   * @param {string} event_label
+   * @param {string} event_value
+   * @param {number[] | number} device_ids
+   * @param {boolean} force_delivery
    */
   emitColorEvent(event_label, event_value, device_ids = [0xff], force_delivery = false) {
     logging.verbose(`emitColorEvent(label=${event_label},value=${event_value},id=${device_ids},force=${force_delivery})`);
@@ -1322,6 +1338,11 @@ export class Spectoda {
   /**
    * E.g. event "brigh" to value 100.
    * value range is (-100,100)
+   *
+   * @param {string} event_label
+   * @param {number} event_value
+   * @param {number[] | number} device_ids
+   * @param {boolean} force_delivery
    */
   emitPercentageEvent(event_label, event_value, device_ids = [0xff], force_delivery = false) {
     logging.verbose(`emitPercentageEvent(label=${event_label},value=${event_value},id=${device_ids},force=${force_delivery})`);
@@ -1366,6 +1387,11 @@ export class Spectoda {
   // !!! PARAMETER CHANGE !!!
   /**
    * E.g. event "anima" to value "a_001"
+   *
+   * @param {string} event_label
+   * @param {string} event_value
+   * @param {number[] | number} device_ids
+   * @param {boolean} force_delivery
    */
   emitLabelEvent(event_label, event_value, device_ids = [0xff], force_delivery = false) {
     logging.verbose(`emitLabelEvent(label=${event_label},value=${event_value},id=${device_ids},force=${force_delivery})`);
