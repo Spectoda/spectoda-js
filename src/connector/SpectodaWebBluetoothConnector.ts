@@ -173,7 +173,7 @@ export class WebBLEConnection {
     logging.verbose(`command_bytes: ${uint8ArrayToHexString(command_bytes)}`);
 
     const DUMMY_WEBBLE_CONNECTION = new SpectodaWasm.Connection("11:11:11:11:11:11", SpectodaWasm.connector_type_t.CONNECTOR_BLE, SpectodaWasm.connection_rssi_t.RSSI_MAX);
-    this.#runtimeReference.spectoda.execute(command_bytes, DUMMY_WEBBLE_CONNECTION);
+    this.#runtimeReference.spectoda_js.execute(command_bytes, DUMMY_WEBBLE_CONNECTION);
   }
 
   // WIP
@@ -187,7 +187,7 @@ export class WebBLEConnection {
 
     // // TODO process request
     // const DUMMY_WEBBLE_CONNECTION = new SpectodaWasm.Connection("11:11:11:11:11:11", SpectodaWasm.connector_type_t.CONNECTOR_BLE, SpectodaWasm.connection_rssi_t.RSSI_MAX);
-    // const response = this.#runtimeReference.spectoda.request(command_bytes, DUMMY_WEBBLE_CONNECTION);
+    // const response = this.#runtimeReference.spectoda_js.request(command_bytes, DUMMY_WEBBLE_CONNECTION);
 
     // logging.info("Response:", response);
   }
@@ -221,7 +221,7 @@ export class WebBLEConnection {
     const synchronization = SpectodaWasm.Synchronization.fromUint8Array(new Uint8Array(event.target.value.buffer));
 
     const DUMMY_WEBBLE_CONNECTION = new SpectodaWasm.Connection("11:11:11:11:11:11", SpectodaWasm.connector_type_t.CONNECTOR_BLE, SpectodaWasm.connection_rssi_t.RSSI_MAX);
-    this.#runtimeReference.spectoda.synchronize(synchronization, DUMMY_WEBBLE_CONNECTION);
+    this.#runtimeReference.spectoda_js.synchronize(synchronization, DUMMY_WEBBLE_CONNECTION);
   }
 
   attach(service: BluetoothRemoteGATTService, networkUUID: BluetoothCharacteristicUUID, clockUUID: BluetoothCharacteristicUUID, deviceUUID: BluetoothCharacteristicUUID) {
@@ -738,7 +738,7 @@ criteria example:
 
         // if any of these criteria are required, then we need to build a manufacturer data filter.
         if (criterium.fwVersion || criterium.ownerSignature || criterium.productCode || criterium.adoptionFlag) {
-          const company_identifier = 0x02E5; // Bluetooth SIG company identifier of Espressif
+          const company_identifier = 0x02e5; // Bluetooth SIG company identifier of Espressif
 
           delete filter.services;
 
@@ -746,16 +746,16 @@ criteria example:
           const mask = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
 
           if (criterium.productCode) {
-            if (criterium.productCode < 0 || criterium.productCode > 0xFFFF) {
+            if (criterium.productCode < 0 || criterium.productCode > 0xffff) {
               throw "InvalidProductCode";
             }
 
             const product_code_byte_offset = 2;
-            const product_code_bytes = [criterium.productCode & 0xFF, (criterium.productCode >> 8) & 0xFF];
+            const product_code_bytes = [criterium.productCode & 0xff, (criterium.productCode >> 8) & 0xff];
 
             for (let i = 0; i < 2; i++) {
               prefix[product_code_byte_offset + i] = product_code_bytes[i];
-              mask[product_code_byte_offset + i] = 0xFF;
+              mask[product_code_byte_offset + i] = 0xff;
             }
           }
 
@@ -769,7 +769,7 @@ criteria example:
 
             for (let i = 0; i < 16; i++) {
               prefix[owner_signature_byte_offset + i] = owner_signature_code_bytes[i];
-              mask[owner_signature_byte_offset + i] = 0xFF;
+              mask[owner_signature_byte_offset + i] = 0xff;
             }
           }
 
@@ -793,7 +793,7 @@ criteria example:
             const fw_version_byte_offset = 0;
             const reg = criterium.fwVersion.match(/(!?)(\d+).(\d+).(\d+)/);
             const version_code = reg[2] * 10000 + reg[3] * 100 + reg[4] * 1;
-            const version_bytes = [version_code & 0xFF, (version_code >> 8) & 0xFF];
+            const version_bytes = [version_code & 0xff, (version_code >> 8) & 0xff];
 
             if (reg[1] === "!") {
               // workaround for web bluetooth not having a filter for "if the manufacturer data are not this, then show me the device"
@@ -824,7 +824,7 @@ criteria example:
             } else {
               for (let i = 0; i < 2; i++) {
                 prefix[fw_version_byte_offset + i] = version_bytes[i];
-                mask[fw_version_byte_offset + i] = 0xFF;
+                mask[fw_version_byte_offset + i] = 0xff;
               }
               filter.manufacturerData = [{ companyIdentifier: company_identifier, dataPrefix: new Uint8Array(prefix), mask: new Uint8Array(mask) }];
               web_ble_options.filters.push(filter);

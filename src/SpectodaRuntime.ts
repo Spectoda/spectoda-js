@@ -163,8 +163,6 @@ class Query {
 
 // filters out duplicate payloads and merges them together. Also decodes payloads received from the connector.
 export class SpectodaRuntime {
-  #spectodaReference: Spectoda;
-
   #eventEmitter;
 
   #queue: Query[];
@@ -188,7 +186,9 @@ export class SpectodaRuntime {
   #ups;
   #fps;
 
-  spectoda: Spectoda_JS;
+  spectodaReference: Spectoda;
+  spectoda_js: Spectoda_JS;
+
   clock: TimeTrack;
   connector: SpectodaDummyConnector | SpectodaWebBluetoothConnector | SpectodaWebSerialConnector | SpectodaNodeBluetoothConnector | SpectodaNodeSerialConnector | FlutterConnector | SpectodaSimulatedConnector | null;
 
@@ -203,9 +203,8 @@ export class SpectodaRuntime {
   WIP_name: string;
 
   constructor(spectodaReference: Spectoda) {
-    this.#spectodaReference = spectodaReference;
-
-    this.spectoda = new Spectoda_JS(this);
+    this.spectodaReference = spectodaReference;
+    this.spectoda_js = new Spectoda_JS(this);
 
     this.clock = new TimeTrack(0);
 
@@ -325,7 +324,7 @@ export class SpectodaRuntime {
 
         if (this.#inicilized) {
           this.destroyConnector();
-          this.spectoda.destruct();
+          this.spectoda_js.destruct();
         }
       });
     }
@@ -366,7 +365,7 @@ export class SpectodaRuntime {
 
   #runtimeTask = async () => {
     try {
-      await this.spectoda.inicilize();
+      await this.spectoda_js.inicilize();
 
       // ? "APP" controller config
       const app_controller_config = {
@@ -384,7 +383,7 @@ export class SpectodaRuntime {
         },
       };
 
-      await this.spectoda.construct(app_controller_config, APP_MAC_ADDRESS);
+      await this.spectoda_js.construct(app_controller_config, APP_MAC_ADDRESS);
 
       await sleep(0.1); // short delay to let fill up the queue to merge the execute items if possible
 
@@ -392,7 +391,7 @@ export class SpectodaRuntime {
 
       const __process = async () => {
         try {
-          await this.spectoda.process();
+          await this.spectoda_js.process();
         } catch (e) {
           logging.error(e);
         }
@@ -405,7 +404,7 @@ export class SpectodaRuntime {
 
       const __render = async () => {
         try {
-          await this.spectoda.render();
+          await this.spectoda_js.render();
         } catch (e) {
           logging.error(e);
         }
@@ -735,7 +734,7 @@ export class SpectodaRuntime {
   evaluate(bytecode_uint8array: Uint8Array, source_connection: Connection) {
     logging.verbose("evaluate(bytecode_uint8array=", bytecode_uint8array, "source_connection=", source_connection, ")");
 
-    this.spectoda.execute(bytecode_uint8array, source_connection);
+    this.spectoda_js.execute(bytecode_uint8array, source_connection);
   }
 
   execute(bytes: Uint8Array, bytes_label: string | undefined, timeout = 5000) {
@@ -872,7 +871,7 @@ export class SpectodaRuntime {
 
       (async () => {
         await this.#inicilize();
-        await this.spectoda.waitForInitilize();
+        await this.spectoda_js.waitForInitilize();
 
         await sleep(0.001); // short delay to let fill up the queue to merge the execute items if possible
 
@@ -968,10 +967,10 @@ export class SpectodaRuntime {
                 {
                   try {
                     // logging.warn("Running #connect clear workaround");
-                    // this.spectoda.eraseHistory();
-                    // this.spectoda.eraseTimeline();
-                    // this.spectoda.eraseTngl();
-                    // this.spectoda.setClockTimestamp(0);
+                    // this.spectoda_js.eraseHistory();
+                    // this.spectoda_js.eraseTimeline();
+                    // this.spectoda_js.eraseTngl();
+                    // this.spectoda_js.setClockTimestamp(0);
 
                     await this.connector
                       .connect(item.a) // a = timeout
@@ -984,7 +983,7 @@ export class SpectodaRuntime {
 
                         try {
                           this.clock = await this.connector?.getClock();
-                          this.spectoda.setClockTimestamp(this.clock.millis());
+                          this.spectoda_js.setClockTimestamp(this.clock.millis());
                           this.emit("wasm_clock", this.clock.millis());
                           item.resolve(result);
                         } catch (error) {
@@ -1068,7 +1067,7 @@ export class SpectodaRuntime {
                   // logging.debug("EXECUTE", uint8ArrayToHexString(merged_payload));
 
                   try {
-                    this.spectoda.execute(merged_payload, new SpectodaWasm.Connection(APP_MAC_ADDRESS, SpectodaWasm.connector_type_t.CONNECTOR_UNDEFINED, SpectodaWasm.connection_rssi_t.RSSI_MAX));
+                    this.spectoda_js.execute(merged_payload, new SpectodaWasm.Connection(APP_MAC_ADDRESS, SpectodaWasm.connector_type_t.CONNECTOR_UNDEFINED, SpectodaWasm.connection_rssi_t.RSSI_MAX));
                     for (const element of executesInPayload) element.resolve();
                   } catch (error) {
                     for (const element of executesInPayload) element.reject(error);
@@ -1095,7 +1094,7 @@ export class SpectodaRuntime {
               // case Query.TYPE_SET_CLOCK:
               //   {
 
-              //     this.spectoda.setClockTimestamp(item.a.millis());
+              //     this.spectoda_js.setClockTimestamp(item.a.millis());
 
               //     try {
               //       await this.connector.setClock(item.a).then((response: any) => {
@@ -1122,7 +1121,7 @@ export class SpectodaRuntime {
               case Query.TYPE_FIRMWARE_UPDATE: {
                 {
                   try {
-                    await this.#spectodaReference.requestWakeLock();
+                    await this.spectodaReference.requestWakeLock();
                   } catch {}
 
                   try {
@@ -1134,7 +1133,7 @@ export class SpectodaRuntime {
                   }
 
                   try {
-                    this.#spectodaReference.releaseWakeLock();
+                    this.spectodaReference.releaseWakeLock();
                   } catch {}
                 }
                 break;
@@ -1290,7 +1289,7 @@ export class SpectodaRuntime {
   readVariableAddress(variable_address: number, device_id: number) {
     logging.verbose("readVariableAddress()", { variable_address, device_id });
 
-    return this.spectoda.readVariableAddress(variable_address, device_id);
+    return this.spectoda_js.readVariableAddress(variable_address, device_id);
   }
 
   WIP_makePreviewController(controller_mac_address: string, controller_config: object) {
@@ -1519,7 +1518,7 @@ export class SpectodaRuntime {
   }
 
   async WIP_waitForInitilize() {
-    return this.spectoda.waitForInitilize();
+    return this.spectoda_js.waitForInitilize();
   }
 
   WIP_setFPS(fps: number) {
@@ -1528,15 +1527,15 @@ export class SpectodaRuntime {
 
   WIP_makePort(port_char = "A", port_size = 1, port_brightness = 255, port_power = 255) {
     const port_config = { label: `PORT${port_char}`, size: port_size, brightness: port_brightness, power: port_power };
-    return this.spectoda.makePort(JSON.stringify(port_config));
+    return this.spectoda_js.makePort(JSON.stringify(port_config));
   }
 
   WIP_compute() {
-    return this.spectoda.process();
+    return this.spectoda_js.process();
   }
 
   WIP_render() {
-    return this.spectoda.render();
+    return this.spectoda_js.render();
   }
 
   WIP_setName(name: string) {
@@ -1544,11 +1543,11 @@ export class SpectodaRuntime {
   }
 
   getEventState(event_state_name: string, event_state_id: number) {
-    return this.spectoda.getEventState(event_state_name, event_state_id);
+    return this.spectoda_js.getEventState(event_state_name, event_state_id);
   }
 
   registerDeviceContext(device_id: number) {
-    return this.spectoda.registerDeviceContext(device_id);
+    return this.spectoda_js.registerDeviceContext(device_id);
   }
 
   // ====================================================================================================

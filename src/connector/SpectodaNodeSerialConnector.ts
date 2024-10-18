@@ -431,32 +431,32 @@ export class SpectodaNodeSerialConnector {
                       this.#dataCallback && this.#dataCallback(new Uint8Array(data_bytes));
 
                       switch (data_header.data_type) {
-                      case NETWORK_WRITE: {
-                        logging.info("SERIAL >>>NETWORK_WRITE<<<");
+                        case NETWORK_WRITE: {
+                          logging.info("SERIAL >>>NETWORK_WRITE<<<");
 
-                        const DUMMY_NODESERIAL_CONNECTION = new SpectodaWasm.Connection("11:11:11:11:11:11", SpectodaWasm.connector_type_t.CONNECTOR_SERIAL, SpectodaWasm.connection_rssi_t.RSSI_MAX);
-                        this.#runtimeReference.spectoda.execute(new Uint8Array(data_bytes), DUMMY_NODESERIAL_CONNECTION);
-                      
-                      break;
-                      }
-                      case CLOCK_WRITE: {
-                        logging.info("SERIAL >>>CLOCK_WRITE<<<");
+                          const DUMMY_NODESERIAL_CONNECTION = new SpectodaWasm.Connection("11:11:11:11:11:11", SpectodaWasm.connector_type_t.CONNECTOR_SERIAL, SpectodaWasm.connection_rssi_t.RSSI_MAX);
+                          this.#runtimeReference.spectoda_js.execute(new Uint8Array(data_bytes), DUMMY_NODESERIAL_CONNECTION);
 
-                        const synchronization: Synchronization = SpectodaWasm.Synchronization.fromUint8Array(new Uint8Array(data_bytes));
-                        const DUMMY_NODESERIAL_CONNECTION = new SpectodaWasm.Connection("11:11:11:11:11:11", SpectodaWasm.connector_type_t.CONNECTOR_SERIAL, SpectodaWasm.connection_rssi_t.RSSI_MAX);
-                        this.#runtimeReference.spectoda.synchronize(synchronization, DUMMY_NODESERIAL_CONNECTION);
-                      
-                      break;
-                      }
-                      case DEVICE_WRITE: {
-                        logging.info("SERIAL >>>DEVICE_WRITE<<<");
+                          break;
+                        }
+                        case CLOCK_WRITE: {
+                          logging.info("SERIAL >>>CLOCK_WRITE<<<");
 
-                        const DUMMY_NODESERIAL_CONNECTION = new SpectodaWasm.Connection("11:11:11:11:11:11", SpectodaWasm.connector_type_t.CONNECTOR_SERIAL, SpectodaWasm.connection_rssi_t.RSSI_MAX);
-                        this.#runtimeReference.spectoda.request(new Uint8Array(data_bytes), DUMMY_NODESERIAL_CONNECTION);
-                      
-                      break;
-                      }
-                      // No default
+                          const synchronization: Synchronization = SpectodaWasm.Synchronization.fromUint8Array(new Uint8Array(data_bytes));
+                          const DUMMY_NODESERIAL_CONNECTION = new SpectodaWasm.Connection("11:11:11:11:11:11", SpectodaWasm.connector_type_t.CONNECTOR_SERIAL, SpectodaWasm.connection_rssi_t.RSSI_MAX);
+                          this.#runtimeReference.spectoda_js.synchronize(synchronization, DUMMY_NODESERIAL_CONNECTION);
+
+                          break;
+                        }
+                        case DEVICE_WRITE: {
+                          logging.info("SERIAL >>>DEVICE_WRITE<<<");
+
+                          const DUMMY_NODESERIAL_CONNECTION = new SpectodaWasm.Connection("11:11:11:11:11:11", SpectodaWasm.connector_type_t.CONNECTOR_SERIAL, SpectodaWasm.connection_rssi_t.RSSI_MAX);
+                          this.#runtimeReference.spectoda_js.request(new Uint8Array(data_bytes), DUMMY_NODESERIAL_CONNECTION);
+
+                          break;
+                        }
+                        // No default
                       }
 
                       command_bytes.length = 0;

@@ -13,7 +13,6 @@ import { IConnector_JS } from "./IConnector_JS";
 
 export const SIMULATED_MAC_ADDRESS = "00:00:23:34:45:56";
 
-
 /////////////////////////////////////////////////////////////////////////////////////
 
 // Connector connects the application with one Spectoda Device, that is then in a
@@ -119,7 +118,7 @@ export class SpectodaSimulatedConnector {
             if (source_connection.address_string == "00:00:00:00:00:00") {
               source_connection.address_string = SimulatedControllerMacAddress;
 
-              this.#runtimeReference.spectoda.execute(command_bytecode_array, source_connection);
+              this.#runtimeReference.spectoda_js.execute(command_bytecode_array, source_connection);
             }
 
             source_connection.connector_type = SpectodaWasm.connector_type_t.CONNECTOR_SIMULATED;
@@ -154,7 +153,7 @@ export class SpectodaSimulatedConnector {
             // TODO! SOURCE_CONNECTION_THIS_CONTROLLER should have the actual mac address of the controller. Not 00:00:00:00:00:00
             if (source_connection.address_string == "00:00:00:00:00:00") {
               source_connection.address_string = SimulatedControllerMacAddress;
-              this.#runtimeReference.spectoda.synchronize(synchronization, source_connection);
+              this.#runtimeReference.spectoda_js.synchronize(synchronization, source_connection);
             }
 
             source_connection.connector_type = SpectodaWasm.connector_type_t.CONNECTOR_SIMULATED;
@@ -463,9 +462,10 @@ criteria example:
 
       // TODO choose the controller I am connected to choosen in userSelect() or autoSelect()
 
-      const response = this.controllers.length > 0
-        ? this.controllers[0].request(new Uint8Array(payload), new SpectodaWasm.Connection(APP_MAC_ADDRESS, SpectodaWasm.connector_type_t.CONNECTOR_UNDEFINED, SpectodaWasm.connection_rssi_t.RSSI_MAX))
-        : new Uint8Array();
+      const response =
+        this.controllers.length > 0
+          ? this.controllers[0].request(new Uint8Array(payload), new SpectodaWasm.Connection(APP_MAC_ADDRESS, SpectodaWasm.connector_type_t.CONNECTOR_UNDEFINED, SpectodaWasm.connection_rssi_t.RSSI_MAX))
+          : new Uint8Array();
 
       if (read_response) {
         await sleep(50); // requesting logic

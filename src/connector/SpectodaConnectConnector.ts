@@ -137,7 +137,8 @@ class FlutterConnection {
         //
         switch (handler) {
           //
-          case "userSelect": { // params: (criteria_json, timeout_number)
+          case "userSelect": {
+            // params: (criteria_json, timeout_number)
             {
               // disconnect if already connected
               if (_connected) {
@@ -162,7 +163,8 @@ class FlutterConnection {
             break;
           }
 
-          case "autoSelect": { // params: (criteria_json, scan_period_number, timeout_number)
+          case "autoSelect": {
+            // params: (criteria_json, scan_period_number, timeout_number)
             {
               if (_connected) {
                 // @ts-ignore
@@ -210,7 +212,8 @@ class FlutterConnection {
             break;
           }
 
-          case "scan": { // params: (criteria_json, scan_period_number)
+          case "scan": {
+            // params: (criteria_json, scan_period_number)
             {
               if (_connected) {
                 // @ts-ignore
@@ -457,28 +460,28 @@ class FlutterConnection {
 // Connector connects the application with one Spectoda Device, that is then in a
 // position of a controller for other Spectoda Devices
 export class FlutterConnector extends FlutterConnection {
-  #interfaceReference;
+  #runtimeReference;
   #promise: Promise<any> | null;
 
   type: string;
 
-  constructor(interfaceReference: SpectodaRuntime) {
+  constructor(runtimeReference: SpectodaRuntime) {
     super();
 
     this.type = "flutterbluetooth";
 
-    this.#interfaceReference = interfaceReference;
+    this.#runtimeReference = runtimeReference;
     this.#promise = null;
 
     // @ts-ignore
     window.flutterConnection.emit = event => {
-      this.#interfaceReference.emit(event, null);
+      this.#runtimeReference.emit(event, null);
     };
 
     // @ts-ignore
     window.flutterConnection.process = bytes => {
       const DUMMY_CONNECTION = new SpectodaWasm.Connection("11:11:11:11:11:11", SpectodaWasm.connector_type_t.CONNECTOR_BLE, SpectodaWasm.connection_rssi_t.RSSI_MAX);
-      this.#interfaceReference.spectoda.execute(new Uint8Array(bytes), DUMMY_CONNECTION);
+      this.#runtimeReference.spectoda_js.execute(new Uint8Array(bytes), DUMMY_CONNECTION);
     };
   }
 
@@ -931,7 +934,7 @@ criteria example:
     // logging.error("Device update is not yet implemented.");
     // return Promise.reject("NotImplemented");
 
-    this.#interfaceReference.requestWakeLock();
+    this.#runtimeReference.requestWakeLock();
 
     return new Promise(async (resolve, reject) => {
       const chunk_size = detectAndroid() ? 480 : 3984; // must be modulo 16
@@ -950,7 +953,7 @@ criteria example:
       await sleep(100);
 
       try {
-        this.#interfaceReference.emit("ota_status", "begin");
+        this.#runtimeReference.emit("ota_status", "begin");
 
         {
           //===========// RESET //===========//
@@ -988,7 +991,7 @@ criteria example:
 
             const percentage = Math.floor((written * 10000) / firmware_bytes.length) / 100;
             logging.debug(percentage + "%");
-            this.#interfaceReference.emit("ota_progress", percentage);
+            this.#runtimeReference.emit("ota_progress", percentage);
 
             index_from += chunk_size;
             index_to = index_from + chunk_size;
@@ -1014,11 +1017,11 @@ criteria example:
 
         logging.debug("Firmware written in " + (Date.now() - start_timestamp) / 1000 + " seconds");
 
-        this.#interfaceReference.emit("ota_status", "success");
+        this.#runtimeReference.emit("ota_status", "success");
 
         resolve(null);
       } catch (e) {
-        this.#interfaceReference.emit("ota_status", "fail");
+        this.#runtimeReference.emit("ota_status", "fail");
 
         reject(e);
       }
@@ -1027,12 +1030,12 @@ criteria example:
         return this.disconnect();
       })
       .finally(() => {
-        this.#interfaceReference.releaseWakeLock();
+        this.#runtimeReference.releaseWakeLock();
       });
   }
 
   destroy() {
-    //this.#interfaceReference = null; // dont know if I need to destroy this reference.. But I guess I dont need to?
+    //this.#runtimeReference = null; // dont know if I need to destroy this reference.. But I guess I dont need to?
     return this.disconnect()
       .catch(() => {})
       .then(() => {
