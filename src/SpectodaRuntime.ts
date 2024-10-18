@@ -376,6 +376,12 @@ export class SpectodaRuntime {
         console: {
           debug: 4,
         },
+        io: {
+          DUMMY: {
+            type: "GPIO",
+            pin: -1,
+          },
+        },
       };
 
       await this.spectoda.construct(app_controller_config, APP_MAC_ADDRESS);
@@ -1029,7 +1035,7 @@ export class SpectodaRuntime {
 
               case Query.TYPE_EXECUTE: {
                 {
-                  const payload = new Uint8Array(0xFFFF);
+                  const payload = new Uint8Array(0xffff);
                   let index = 0;
 
                   payload.set(item.a, index);
@@ -1342,7 +1348,7 @@ export class SpectodaRuntime {
 
     const PIXEL_ENCODING_CODE = 1;
 
-    let uuidCounter = Math.floor(Math.random() * 0xFFFFFFFF);
+    let uuidCounter = Math.floor(Math.random() * 0xffffffff);
 
     const writer = new TnglWriter(65535);
 
@@ -1415,7 +1421,7 @@ export class SpectodaRuntime {
 
     const PIXEL_ENCODING_CODE = 1;
 
-    let uuidCounter = Math.floor(Math.random() * 0xFFFFFFFF);
+    let uuidCounter = Math.floor(Math.random() * 0xffffffff);
 
     const writer = new TnglWriter(65535);
 
