@@ -4,9 +4,9 @@
 
 import { logging } from "../logging";
 
-const WASM_VERSION = "DEBUG_DEV_0.12.0_20241015";
+const WASM_VERSION = "DEBUG_DEV_0.12.0_20241018";
 
-/// ========== DEBUG_DEV_0.12.0_20241014.d.ts ========== ///
+/// ========== DEBUG_DEV_0.12.0_20241018.d.ts ========== ///
 
 export interface interface_error_tValue<T extends number> {
   value: T;
@@ -68,7 +68,7 @@ export interface Uint8Vector {
 
 export interface IConnector_WASM {
   _process(): void;
-  init(_0: connector_type_t): void;
+  init(_0: connector_type_t): boolean;
   _scan(_0: ArrayBuffer | Uint8Array | Uint8ClampedArray | Int8Array | string, _1: number, _2: any): boolean;
   _userConnect(_0: ArrayBuffer | Uint8Array | Uint8ClampedArray | Int8Array | string, _1: number, _2: any): boolean;
   _autoConnect(_0: ArrayBuffer | Uint8Array | Uint8ClampedArray | Int8Array | string, _1: number, _2: number, _3: any): boolean;
@@ -98,7 +98,7 @@ export interface Spectoda_WASM {
   registerConnector(_0: IConnector_WASM): void;
   _onTnglUpdate(_0: Uint8Vector): boolean;
   _onExecute(_0: Uint8Vector): boolean;
-  registerDeviceContext(_0: number): void;
+  registerDeviceContext(_0: number): boolean;
   execute(_0: number, _1: Connection): boolean;
   request(_0: number, _1: Uint8Vector, _2: Connection): boolean;
   getIdentifier(): number;
@@ -108,7 +108,7 @@ export interface Spectoda_WASM {
   _handlePeerConnected(_0: ArrayBuffer | Uint8Array | Uint8ClampedArray | Int8Array | string): interface_error_t;
   _handlePeerDisconnected(_0: ArrayBuffer | Uint8Array | Uint8ClampedArray | Int8Array | string): interface_error_t;
   _onLog(_0: number, _1: ArrayBuffer | Uint8Array | Uint8ClampedArray | Int8Array | string, _2: ArrayBuffer | Uint8Array | Uint8ClampedArray | Int8Array | string): void;
-  init(_0: ArrayBuffer | Uint8Array | Uint8ClampedArray | Int8Array | string, _1: ArrayBuffer | Uint8Array | Uint8ClampedArray | Int8Array | string): void;
+  init(_0: ArrayBuffer | Uint8Array | Uint8ClampedArray | Int8Array | string, _1: ArrayBuffer | Uint8Array | Uint8ClampedArray | Int8Array | string): boolean;
   getLabel(): string;
   writeIO(_0: ArrayBuffer | Uint8Array | Uint8ClampedArray | Int8Array | string, _1: number, _2: Value): boolean;
   readIO(_0: ArrayBuffer | Uint8Array | Uint8ClampedArray | Int8Array | string, _1: number, _2: Value): boolean;
@@ -155,7 +155,7 @@ export interface MainModule {
   ImplementedSpectoda_WASM: {};
 }
 
-/// ========== DEBUG_DEV_0.12.0_20241014.d.ts ========== ///
+/// ========== DEBUG_DEV_0.12.0_20241018.d.ts ========== ///
 
 /// =================== MANUAL INTERFACES ================= ///
 
