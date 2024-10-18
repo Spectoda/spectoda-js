@@ -748,7 +748,7 @@ export class Spectoda {
         this.#resetClockSyncInterval();
 
         logging.debug("> Synchronizing Network State...");
-        return (this.timeline.paused() ? this.requestTimeline() : this.syncTimeline())
+        return this.requestTimeline()
           .catch(e => {
             logging.error("Timeline sync after reconnection failed:", e);
           })
@@ -1211,12 +1211,8 @@ export class Spectoda {
       tngl_bytes = this.#parser.parseTnglCode(tngl_code);
     }
 
-    // const timeline_flags = this.timeline.paused() ? 0b00010000 : 0b00000000; // flags: [reserved,reserved,reserved,timeline_paused,reserved,reserved,reserved,reserved]
-    // const timeline_bytecode = [COMMAND_FLAGS.FLAG_SET_TIMELINE, ...numberToBytes(this.runtime.clock.millis(), 6), ...numberToBytes(this.timeline.millis(), 4), timeline_flags];
-
     const reinterpret_bytecode = [COMMAND_FLAGS.FLAG_LOAD_TNGL, ...numberToBytes(this.runtime.clock.millis(), 6), 0, ...numberToBytes(tngl_bytes.length, 4), ...tngl_bytes];
 
-    // const payload = [...timeline_bytecode, ...reinterpret_bytecode];
     return this.runtime.execute(reinterpret_bytecode, "TNGL").then(() => {
       // logging.debug("Written");
     });
@@ -1439,10 +1435,15 @@ export class Spectoda {
     const seconds = now.getSeconds();
     const miliseconds = now.getMilliseconds();
 
-    const timestamp = hours * 60 * 60 * 1000 + minutes * 60 * 1000 + seconds * 1000 + miliseconds;
+    const time = hours * 60 * 60 * 1000 + minutes * 60 * 1000 + seconds * 1000 + miliseconds;
+
+    const day = String(now.getDate()).padStart(2, "0");
+    const month = String(now.getMonth() + 1).padStart(2, "0"); // getMonth() returns 0-based index
+    const year = now.getFullYear();
 
     this.timeline.unpause();
-    this.timeline.setMillis(timestamp);
+    this.timeline.setMillis(time);
+    this.timeline.setDate(`${day}-${month}-${year}`);
 
     return this.syncTimeline();
   }
@@ -1450,7 +1451,7 @@ export class Spectoda {
   /**
    * Synchronizes timeline of the connected controller with the current time of the runtime.
    */
-  syncTimeline(timestamp = undefined, paused = undefined) {
+  syncTimeline(timestamp = undefined, paused = undefined, date = undefined) {
     logging.verbose(`syncTimeline(timestamp=${timestamp}, paused=${paused})`);
 
     if (timestamp === undefined) {
@@ -1461,10 +1462,17 @@ export class Spectoda {
       paused = this.timeline.paused();
     }
 
-    logging.debug(`> Synchronizing timeline to ${timestamp}...`);
+    if (date === undefined) {
+      date = this.timeline.date();
+    }
+
+    logging.debug(`> Setting timeline to timestamp=${timestamp}, paused=${paused}, date=${date}`);
+
+    // from "DD-MM-YYYY" date erase "-" and convert to number MMDDYYYY:
+    const date_number = Number(date.replace(/(\d{2})-(\d{2})-(\d{4})/, "$2$1$3"));
 
     const flags = paused ? 0b00010000 : 0b00000000; // flags: [reserved,reserved,reserved,timeline_paused,reserved,reserved,reserved,reserved]
-    const payload = [COMMAND_FLAGS.FLAG_SET_TIMELINE, ...numberToBytes(this.runtime.clock.millis(), 6), ...numberToBytes(timestamp, 4), flags];
+    const payload = [COMMAND_FLAGS.FLAG_TIMELINE_WRITE, ...numberToBytes(this.runtime.clock.millis(), 6), ...numberToBytes(timestamp, 4), flags, ...numberToBytes(date_number, 4)];
     return this.runtime.execute(payload, "TMLN");
   }
 
@@ -1836,7 +1844,9 @@ export class Spectoda {
    * Gets the timeline from connected controller to the runtime.
    */
   requestTimeline() {
-    logging.debug("> Requesting timeline...");
+    logging.verbose(`requestTimeline()`);
+
+    logging.info("> Requesting timeline...");
 
     const request_uuid = this.#getUUID();
     const bytes = [COMMAND_FLAGS.FLAG_TIMELINE_REQUEST, ...numberToBytes(request_uuid, 4)];
@@ -1857,17 +1867,22 @@ export class Spectoda {
       }
 
       const error_code = reader.readUint8();
+      if (error_code !== 0) {
+        throw "Fail";
+      }
 
       const clock_timestamp = reader.readUint48();
       const timeline_timestamp = reader.readInt32();
       const timeline_paused = reader.readUint8();
+      const timeline_date_number = reader.available >= 4 ? reader.readUint32() : 0;
+      const timeline_date = timeline_date_number.toString().replace(/(\d{2})(\d{2})(\d{4})/, "$2-$1-$3");
 
-      logging.verbose(`clock_timestamp=${clock_timestamp}, timeline_timestamp=${timeline_timestamp}, timeline_paused=${timeline_paused}`);
+      logging.info(`clock_timestamp=${clock_timestamp}, timeline_timestamp=${timeline_timestamp}, timeline_paused=${timeline_paused}, timeline_date=${timeline_date}`);
 
       if (timeline_paused) {
-        this.timeline.setState(timeline_timestamp, true);
+        this.syncTimeline(timeline_timestamp, true, timeline_date);
       } else {
-        this.timeline.setState(timeline_timestamp + (this.runtime.clock.millis() - clock_timestamp), false);
+        this.syncTimeline(timeline_timestamp + (this.runtime.clock.millis() - clock_timestamp), false, timeline_date);
       }
     });
   }

@@ -135,7 +135,7 @@ export class PreviewController {
         },
 
         // virtual interface_error_t _handleTimelineManipulation(const int32_t timeline_timestamp, const bool timeline_paused, const double clock_timestamp) = 0;
-        _handleTimelineManipulation: (timeline_timestamp, timeline_paused, clock_timestamp) => {
+        _handleTimelineManipulation: (timeline_timestamp: number, timeline_paused: boolean, timeline_date: string, clock_timestamp: number) => {
           this.logging.verbose("PreviewController::_handleTimelineManipulation", timeline_timestamp, timeline_paused, clock_timestamp);
 
           return SpectodaWasm.interface_error_t.SUCCESS;
@@ -145,8 +145,6 @@ export class PreviewController {
           const logEntry = new LogEntry(level, filename, message);
           this.#ringLogBuffer.push(logEntry);
           // this.#eventEmitter.emit("log", logEntry);
-
-          // debugger;
 
           const name = this.#instance?.getLabel();
 

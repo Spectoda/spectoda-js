@@ -32,7 +32,7 @@ export const COMMAND_FLAGS = Object.freeze({
 
   // FLAG_CONF_BYTES:  103,
   FLAG_LOAD_TNGL: 104,
-  FLAG_SET_TIMELINE: 105,
+  FLAG_TIMELINE_WRITE: 105,
 
   FLAG_EMIT_NULL_EVENT: 117,
   FLAG_EMIT_BOOLEAN_EVENT: 118,
@@ -360,8 +360,8 @@ export class Spectoda_JS {
         },
 
         // virtual interface_error_t _handleTimelineManipulation(const int32_t timeline_timestamp, const bool timeline_paused, const double clock_timestamp) = 0;
-        _handleTimelineManipulation: (timeline_timestamp, timeline_paused, clock_timestamp) => {
-          logging.warn(`Spectoda_JS::_handleTimelineManipulation(timeline_timestamp=${timeline_timestamp}, timeline_paused=${timeline_paused}, clock_timestamp=${clock_timestamp})`);
+        _handleTimelineManipulation: (timeline_timestamp: number, timeline_paused: boolean, timeline_date: string, clock_timestamp: number) => {
+          logging.warn(`Spectoda_JS::_handleTimelineManipulation(timeline_timestamp=${timeline_timestamp}, timeline_paused=${timeline_paused}, timeline_date=${timeline_date}, clock_timestamp=${clock_timestamp})`);
 
           // TODO! Refactor timeline mechanics to inclute date
           this.#runtimeReference.spectodaReference.timeline.setMillis(timeline_timestamp);
@@ -370,6 +370,7 @@ export class Spectoda_JS {
           } else {
             this.#runtimeReference.spectodaReference.timeline.unpause();
           }
+          this.#runtimeReference.spectodaReference.timeline.setDate(timeline_date);
 
           return SpectodaWasm.interface_error_t.SUCCESS;
         },

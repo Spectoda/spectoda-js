@@ -102,11 +102,11 @@ export interface Spectoda_WASM {
   execute(_0: number, _1: Connection): boolean;
   request(_0: number, _1: Uint8Vector, _2: Connection): boolean;
   getIdentifier(): number;
-  _handleTimelineManipulation(_0: number, _1: boolean, _2: number): interface_error_t;
   setClockTimestamp(_0: number): void;
   getClockTimestamp(): number;
   _handlePeerConnected(_0: ArrayBuffer | Uint8Array | Uint8ClampedArray | Int8Array | string): interface_error_t;
   _handlePeerDisconnected(_0: ArrayBuffer | Uint8Array | Uint8ClampedArray | Int8Array | string): interface_error_t;
+  _handleTimelineManipulation(_0: number, _1: boolean, _2: ArrayBuffer | Uint8Array | Uint8ClampedArray | Int8Array | string, _3: number): interface_error_t;
   _onLog(_0: number, _1: ArrayBuffer | Uint8Array | Uint8ClampedArray | Int8Array | string, _2: ArrayBuffer | Uint8Array | Uint8ClampedArray | Int8Array | string): void;
   init(_0: ArrayBuffer | Uint8Array | Uint8ClampedArray | Int8Array | string, _1: ArrayBuffer | Uint8Array | Uint8ClampedArray | Int8Array | string): boolean;
   getLabel(): string;

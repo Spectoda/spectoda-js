@@ -4,6 +4,7 @@ export class TimeTrack {
   constructor(timestamp, paused) {
     this.memory_ = 0;
     this.paused_ = false;
+    this.date_ = "01-01-1960";
 
     this.eventEmitter_ = createNanoEvents();
 
@@ -24,6 +25,14 @@ export class TimeTrack {
     } else {
       return Date.now() - this.memory_;
     }
+  }
+
+  date() {
+    return this.date_;
+  }
+
+  setDate(date) {
+    this.date_ = date;
   }
 
   setState(current_timestamp, paused) {
