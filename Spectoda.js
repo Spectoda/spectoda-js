@@ -14,7 +14,7 @@ import customParser from "socket.io-msgpack-parser";
 import { WEBSOCKET_URL } from "./SpectodaWebSocketsConnector";
 import "./TnglReader";
 import "./TnglWriter";
-import { VALUE_LIMITS } from "./constants";
+import { VALUE_LIMITS, VALUE_TYPE } from "./constants";
 import { SpectodaRuntime, allEventsEmitter } from "./src/SpectodaRuntime";
 
 // from 0.10-dev-berry created this 0.11-dev branch
@@ -72,6 +72,9 @@ export class Spectoda {
   #reconnectRC;
 
   #clockSyncIntervalHandle;
+
+  // ? This is used for getEmittedEvents() to work properly
+  #__events;
 
   constructor(connectorType = "default", reconnecting = true) {
     this.#parser = new TnglCodeParser();
@@ -1228,7 +1231,7 @@ export class Spectoda {
 
    */
   emitEvent(event_label, device_ids = [0xff], force_delivery = true) {
-    logging.verbose(`emitEvent(label=${event_label},id=${device_ids},force=${force_delivery})`);
+    logging.verbose(`emitEvent(event_label=${event_label},device_ids=${device_ids},force_delivery=${force_delivery})`);
 
     this.#resetClockSyncInterval();
 
@@ -1249,6 +1252,8 @@ export class Spectoda {
       return func(device_ids);
     }
   }
+
+  emitNullEvent = this.emitEvent;
 
   /**
    * ! Useful
@@ -2870,6 +2875,153 @@ export class Spectoda {
 
   registerDeviceContext(device_id) {
     return this.runtime.registerDeviceContext(device_id);
+  }
+
+  getEmittedEvents(ids) {
+    logging.verbose("getEmittedEvents(ids=", ids, ")");
+
+    logging.info("> Getting emitted events...");
+
+    // Check if ids is not an array and make it an array if necessary
+    if (!Array.isArray(ids)) {
+      ids = [ids];
+    }
+
+    // TODO refactor getting events from WASM
+    this.#__events = {};
+    for (let id = 0; id < 256; id++) {
+      this.#__events[id] = {};
+    }
+
+    const unregisterListenerEmittedevents = this.runtime.on("emittedevents", events => {
+      for (const event of events) {
+        if (event.id === 255) {
+          for (let id = 0; id < 256; id++) {
+            if (!this.#__events[id][event.label]) {
+              this.#__events[id][event.label] = {};
+            }
+
+            if (!this.#__events[id][event.label] || !this.#__events[id][event.label].timestamp || event.timestamp >= this.#__events[id][event.label].timestamp) {
+              this.#__events[id][event.label].type = event.type;
+              this.#__events[id][event.label].value = event.value;
+              this.#__events[id][event.label].id = id;
+              this.#__events[id][event.label].label = event.label;
+              this.#__events[id][event.label].timestamp = event.timestamp;
+            }
+          }
+
+          continue;
+        }
+
+        if (!this.#__events[event.id][event.label]) {
+          this.#__events[event.id][event.label] = {};
+        }
+
+        if (!this.#__events[event.id][event.label] || !this.#__events[event.id][event.label].timestamp || event.timestamp >= this.#__events[event.id][event.label].timestamp) {
+          this.#__events[event.id][event.label].type = event.type;
+          this.#__events[event.id][event.label].value = event.value;
+          this.#__events[event.id][event.label].id = event.id;
+          this.#__events[event.id][event.label].label = event.label;
+          this.#__events[event.id][event.label].timestamp = event.timestamp;
+        }
+      }
+
+      logging.warn("#__events", this.#__events);
+    });
+
+    return this.syncEventHistory()
+      .catch(() => {
+        logging.warn("Failed to read event history");
+      })
+      .then(() => {
+        return sleep(500);
+      })
+      .then(() => {
+        const events = [];
+
+        for (const id of ids) {
+          for (const event in this.#__events[id]) {
+            events.push(this.#__events[id][event]);
+          }
+        }
+
+        // Step 2: Sort the events by timestamp
+        events.sort((a, b) => a.timestamp - b.timestamp);
+
+        return JSON.stringify(events); // need to stringify because of deleting references to objects
+      })
+      .finally(() => {
+        unregisterListenerEmittedevents();
+        this.#__events = {};
+      });
+  }
+
+  emitEvents(events) {
+    logging.verbose("emitEvents(events=", events, ")");
+
+    logging.info("> Emitting events...");
+
+    if (typeof events === "string") {
+      events = JSON.parse(events);
+    }
+
+    // Check if events is not an array and make it an array if necessary
+    if (!Array.isArray(events)) {
+      events = [events];
+    }
+
+    // NUMBER: 29,
+    // LABEL: 31,
+    // TIME: 32,
+    // PERCENTAGE: 30,
+    // DATE: 28,
+    // COLOR: 26,
+    // PIXELS: 19,
+    // BOOLEAN: 2,
+    // NULL: 1,
+    // UNDEFINED: 0,
+
+    for (const event of events) {
+      switch (event.type) {
+        // case "number":
+        // case VALUE_TYPE.NUMBER:
+        //   this.emitNumberEvent(event.label, event.value, event.id);
+        //   break;
+        case "label":
+        case VALUE_TYPE.LABEL:
+          this.emitLabelEvent(event.label, event.value, event.id);
+          break;
+        case "timestamp":
+        case "time":
+        case VALUE_TYPE.TIME:
+          this.emitTimestampEvent(event.label, event.value, event.id);
+          break;
+        case "percentage":
+        case VALUE_TYPE.PERCENTAGE:
+          this.emitPercentageEvent(event.label, event.value, event.id);
+          break;
+        // case VALUE_TYPE.DATE:
+        //   this.emitDateEvent(event.label, event.value, event.id);
+        //   break;
+        case "color":
+        case VALUE_TYPE.COLOR:
+          this.emitColorEvent(event.label, event.value, event.id);
+          break;
+        // case VALUE_TYPE.PIXELS:
+        //   this.emitPixelsEvent(event.label, event.value, event.id);
+        //   break;
+        // case VALUE_TYPE.BOOLEAN:
+        //   this.emitBoolEvent(event.label, event.value, event.id);
+        //   break;
+        case "none":
+        case VALUE_TYPE.NULL:
+          this.emitNullEvent(event.label, event.id);
+          break;
+        default:
+          logging.warn(`Unknown event type: ${event.type}`);
+          break;
+      }
+    }
   }
 }
 // ====== NEW PARADIAGM FUNCTIONS ====== //
