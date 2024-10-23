@@ -462,7 +462,7 @@ export class SpectodaRuntime {
     let choosen_connector = undefined;
 
     if (desired_connector == "default" || desired_connector == "automatic") {
-      if (detectSpectodaConnect() || detectGW()) {
+      if (detectGW()) {
         desired_connector = "serial";
       } else {
         desired_connector = "bluetooth";
