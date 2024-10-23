@@ -360,8 +360,8 @@ export class Spectoda_JS {
         },
 
         // virtual interface_error_t _handleTimelineManipulation(const int32_t timeline_timestamp, const bool timeline_paused, const double clock_timestamp) = 0;
-        _handleTimelineManipulation: (timeline_timestamp: number, timeline_paused: boolean, timeline_date: string, clock_timestamp: number) => {
-          logging.warn(`Spectoda_JS::_handleTimelineManipulation(timeline_timestamp=${timeline_timestamp}, timeline_paused=${timeline_paused}, timeline_date=${timeline_date}, clock_timestamp=${clock_timestamp})`);
+        _handleTimelineManipulation: (timeline_timestamp: number, timeline_paused: boolean, timeline_date: string) => {
+          logging.warn(`Spectoda_JS::_handleTimelineManipulation(timeline_timestamp=${timeline_timestamp}, timeline_paused=${timeline_paused}, timeline_date=${timeline_date})`);
 
           // TODO! Refactor timeline mechanics to inclute date
           this.#runtimeReference.spectodaReference.timeline.setMillis(timeline_timestamp);
