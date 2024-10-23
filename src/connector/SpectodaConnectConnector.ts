@@ -747,8 +747,14 @@ criteria example:
       window.flutterConnection.reject = reject;
     });
 
+    // ! Bug in SpectodaConnect Native App Workaroud
+    let payload_bytes_map = {};
+    for (let i = 0; i < payload_bytes.length; i++) {
+      payload_bytes_map[i] = payload_bytes[i];
+    }
+
     // @ts-ignore
-    window.flutter_inappwebview.callHandler("deliver", payload_bytes, timeout_number);
+    window.flutter_inappwebview.callHandler("deliver", payload_bytes_map, timeout_number);
 
     return this.#applyTimeout(this.#promise, timeout_number * 1.5, "deliver");
   }
@@ -756,7 +762,7 @@ criteria example:
   // transmit handles the communication with the Spectoda Controller in a way
   // that the paylaod is NOT guaranteed to arrive
   transmit(payload_bytes, timeout_number = 1000) {
-    logging.debug(`transmit(payload=[${payload_bytes}], timeout=${timeout_number})`);
+    console.log(`transmit(payload=[${payload_bytes}], timeout=${timeout_number})`);
 
     this.#promise = new Promise((resolve, reject) => {
       // @ts-ignore
