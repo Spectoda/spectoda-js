@@ -4,7 +4,7 @@
 
 import { logging } from "../logging";
 
-const WASM_VERSION = "DEBUG_DEV_0.12.0_20241023";
+const WASM_VERSION = "DEBUG_DEV_0.12.0_20241028";
 
 /// ========== DEBUG_DEV_0.12.0_20241018.d.ts ========== ///
 
@@ -209,7 +209,7 @@ export interface Spectoda_WASMImplementation {
   //     return call<interface_error_t>("_handlePeerDisconnected", peer_mac);
   // }
 
-  // interface_error_t _handleTimelineManipulation(const time_ms timeline_timestamp, const bool timeline_paused, const double clock_timestamp) override
+  // interface_error_t _handleTimelineManipulation(const int32_t timeline_timestamp, const bool timeline_paused, const double clock_timestamp) override
   // {
   //     return call<interface_error_t>("_handleTimelineManipulation", timeline_timestamp, timeline_paused, clock_timestamp);
   // }
@@ -240,17 +240,17 @@ export interface Spectoda_WASMImplementation {
 }
 
 export interface IConnector_WASMImplementation {
-  // bool _scan(const std::string& criteria_json, const time_ms scan_period, const val& result_out) override
+  // bool _scan(const std::string& criteria_json, const int32_t scan_period, const val& result_out) override
   // {
   //     return call<bool>("_scan", criteria_json, scan_period, result_out);
   // }
 
-  // bool _autoConnect(const std::string& criteria_json, const time_ms scan_period, const time_ms timeout, const val& result_out) override
+  // bool _autoConnect(const std::string& criteria_json, const int32_t scan_period, const int32_t timeout, const val& result_out) override
   // {
   //     return call<bool>("_autoConnect", criteria_json, scan_period, timeout, result_out);
   // }
 
-  // bool _userConnect(const std::string& criteria_json, const time_ms timeout, const val& result_out) override
+  // bool _userConnect(const std::string& criteria_json, const int32_t timeout, const val& result_out) override
   // {
   //     return call<bool>("_userConnect", criteria_json, timeout, result_out);
   // }
@@ -513,6 +513,13 @@ function onWasmLoad() {
         resolveWaitingQueue();
       });
     }
+
+    // TODO Save filesystem before window unload after we switch to network authenticaiton
+    // if (typeof window !== "undefined") {
+    //   window.addEventListener("beforeunload", () => {
+    //     SpectodaWasm.saveFS();
+    //   });
+    // }
 
     // @ts-ignore - Module is a global objects of Emscripten
     Module.onRuntimeInitialized = undefined;

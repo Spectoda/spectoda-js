@@ -4,7 +4,7 @@ export class TimeTrack {
   constructor(timestamp, paused) {
     this.memory_ = 0;
     this.paused_ = false;
-    this.date_ = "01-01-1960";
+    this.date_ = "01-01-1970";
 
     this.eventEmitter_ = createNanoEvents();
 

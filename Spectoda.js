@@ -1473,8 +1473,8 @@ export class Spectoda {
 
     logging.debug(`> Setting timeline to timestamp=${timestamp}, paused=${paused}, date=${date}`);
 
-    // from "DD-MM-YYYY" date erase "-" and convert to number MMDDYYYY:
-    const date_number = Number(date.replace(/(\d{2})-(\d{2})-(\d{4})/, "$2$1$3"));
+    // from "DD-MM-YYYY" date erase "-" and convert to number YYYYMMDD:
+    const date_number = parseInt(date.split("-").reverse().join(""));
 
     const flags = paused ? 0b00010000 : 0b00000000; // flags: [reserved,reserved,reserved,timeline_paused,reserved,reserved,reserved,reserved]
     const payload = [COMMAND_FLAGS.FLAG_TIMELINE_WRITE, ...numberToBytes(this.runtime.clock.millis(), 6), ...numberToBytes(timestamp, 4), flags, ...numberToBytes(date_number, 4)];
@@ -1880,7 +1880,9 @@ export class Spectoda {
       const timeline_timestamp = reader.readInt32();
       const timeline_paused = reader.readUint8();
       const timeline_date_number = reader.available >= 4 ? reader.readUint32() : 0;
-      const timeline_date = timeline_date_number.toString().replace(/(\d{2})(\d{2})(\d{4})/, "$2-$1-$3");
+
+      // Convert date number YYYYMMDD to DD-MM-YYYY format
+      const timeline_date = timeline_date_number ? `${String(timeline_date_number % 100).padStart(2, "0")}-${String(Math.floor(timeline_date_number / 100) % 100).padStart(2, "0")}-${Math.floor(timeline_date_number / 10000)}` : "01-01-1970";
 
       logging.info(`clock_timestamp=${clock_timestamp}, timeline_timestamp=${timeline_timestamp}, timeline_paused=${timeline_paused}, timeline_date=${timeline_date}`);
 
