@@ -21,11 +21,13 @@ import { SpectodaRuntime, allEventsEmitter } from "./src/SpectodaRuntime";
 
 /**
  * ----- INTRODUCTION ------
+ *
  * Controllers are physical devices that you can connect with an Spectoda.js instance. They always belong in a network, which is identified with a `signature` (deprecated terminology "ownerSignature") and `key` (deprecated terminology "ownerKey") - with the key being a secret value.
  * Each controller has a unique MAC address, which is used to identify it in the network.
  * Everyone in the network is called a node - whether it is a physical controller or a virtual controller.
 
  * ----- CONTROLLER SYNCHRONIZATION ------
+ *
  * If more contorllers have the same signature + key = they are in the same network.
  * If more contorller have the same FW version + are in the same network, they will synchronize with each other:
  * - TNGL code
@@ -33,14 +35,15 @@ import { SpectodaRuntime, allEventsEmitter } from "./src/SpectodaRuntime";
  * - Timeline
 
  * ----- NO NETWORK ------
+ *
  * When controller is not in a network, it is in a mode that anyone can connect to it and move it to his own network. Think of this as a "pairing mode" of Bluetooth mode. Althought in Spectoda THIS IS NOT CALLED PAIRING.
  
-* ----- LABELS ------
+ * ----- LABELS ------
+ *
  * "label" is a specific type, that can have at max 5 characters [a-zA-Z0-9_]. It is always prefixed with "$" (e.g. $label)
- */
 
-/**
- * ----- Refactoring suggestions by @mchlkucera: ------
+ * ----- Refactoring suggestions by&ensp;@mchlkucera: ------
+ *
  * All reading, getting, fetching, should be just called `getResource`
  * All writing, setting, sending, should be just called `setResource`
  * Spectoda.js should be just for firmware communication
