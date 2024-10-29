@@ -256,6 +256,7 @@ criteria example:
     logging.verbose(`request(payload=${payload}, read_response=${read_response ? "true" : "false"}, timeout=${timeout})`);
 
     const ERROR_CODE_SUCCESS = 0;
+    const ERROR_CODE_ERROR = 255;
     const DUMMY_MACS = [0x111111111111, 0x222222222222, 0x333333333333, 0x444444444444, 0x555555555555, 0x666666666666, 0x777777777777, 0x888888888888];
 
     return new Promise(async (resolve, reject) => {
@@ -273,157 +274,6 @@ criteria example:
       let reader = new TnglReader(new DataView(new Uint8Array(payload).buffer));
 
       switch (reader.peekFlag()) {
-        case COMMAND_FLAGS.FLAG_ADOPT_REQUEST:
-          {
-            reader.readFlag(); // COMMAND_FLAGS.FLAG_ADOPT_REQUEST
-
-            const request_uuid = reader.readUint32();
-
-            // const uint8_t* const owner_signature = confBytes.readBytes(16);
-            // // log_d("owner_signature=%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x", owner_signature[0], owner_signature[1], owner_signature[2], owner_signature[3], owner_signature[4], owner_signature[5], owner_signature[6], owner_signature[7], owner_signature[8], owner_signature[9], owner_signature[10], owner_signature[11], owner_signature[12], owner_signature[13], owner_signature[14], owner_signature[15]);
-
-            // const uint8_t* const owner_key = confBytes.readBytes(16);
-            // // log_d("owner_key=%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x", owner_key[0], owner_key[1], owner_key[2], owner_key[3], owner_key[4], owner_key[5], owner_key[6], owner_key[7], owner_key[8], owner_key[9], owner_key[10], owner_key[11], owner_key[12], owner_key[13], owner_key[14], owner_key[15]);
-
-            // char device_name[17];
-            // confBytes.readString(device_name, 16);
-            // // log_d("device_name=%s", device_name);
-
-            // const uint8_t device_id = confBytes.read<uint8_t>();
-            // // log_d("device_id=%u", device_id);
-
-            let error_code = ERROR_CODE_SUCCESS;
-
-            // // log_d("error_code=%u", error_code);
-
-            let writer = new TnglWriter(64);
-            writer.writeFlag(COMMAND_FLAGS.FLAG_ADOPT_RESPONSE);
-            writer.writeUint32(request_uuid);
-            writer.writeUint8(error_code);
-
-            if (error_code == ERROR_CODE_SUCCESS) {
-              writer.writeValue(DUMMY_MACS[Math.floor(Math.random() * DUMMY_MACS.length)], 6);
-            }
-
-            resolve(writer.bytes);
-          }
-          break;
-
-        case COMMAND_FLAGS.FLAG_CONFIG_UPDATE_REQUEST:
-          {
-            // log_d("FLAG_CONFIG_UPDATE_REQUEST");
-            reader.readFlag(); // COMMAND_FLAGS.FLAG_CONFIG_UPDATE_REQUEST
-
-            const request_uuid = reader.readUint32();
-            // const uint32_t config_size = confBytes.read<uint32_t>();
-            // const uint8_t* const config_bytes = confBytes.readBytes(config_size);
-
-            let error_code = ERROR_CODE_SUCCESS;
-
-            // {
-            //     if (!unit::writeConfig(config_bytes, config_size)) {
-            //         error_code = RequestErrorCode::CONFIG_UPDATE_FAIL;
-            //     }
-            // }
-
-            // log_d("error_code=%u", error_code);
-
-            let writer = new TnglWriter(64);
-            writer.writeFlag(COMMAND_FLAGS.FLAG_CONFIG_UPDATE_RESPONSE);
-            writer.writeUint32(request_uuid);
-            writer.writeUint8(error_code);
-
-            resolve(writer.bytes);
-          }
-          break;
-
-        case COMMAND_FLAGS.FLAG_TIMELINE_REQUEST:
-          {
-            reader.readFlag(); // COMMAND_FLAGS.FLAG_TIMELINE_REQUEST
-
-            const request_uuid = reader.readUint32();
-            // const time_ms clock_timestamp = Runtime::getClock().millis();
-            // const time_ms timeline_timestamp = Runtime::getTimeline().millis();
-            // const bool timeline_paused = Runtime::getTimeline().paused();
-
-            // // log_d("request_uuid = %u", request_uuid);
-            // // log_d("clock_timestamp = %" PRITIMEMS " ms", clock_timestamp);
-            // // log_d("timeline_timestamp = %" PRITIMEMS " ms", timeline_timestamp);
-            // // log_d("timeline_paused = %s", timeline_paused ? "true" : "false");
-
-            let writer = new TnglWriter(64);
-            writer.writeFlag(COMMAND_FLAGS.FLAG_TIMELINE_RESPONSE);
-            writer.writeUint32(request_uuid);
-            writer.writeInt32(0); // clock_timestamp
-            writer.writeInt32(0); //timeline_timestamp
-            writer.writeUint8(0b00000000); // flags
-
-            resolve(writer.bytes);
-          }
-          break;
-
-        case COMMAND_FLAGS.FLAG_TNGL_FINGERPRINT_REQUEST:
-          {
-            // log_d("FLAG_TNGL_FINGERPRINT_REQUEST");
-
-            reader.readFlag(); // FLAG_TNGL_FINGERPRINT_REQUEST
-
-            const request_uuid = reader.readUint32();
-
-            let error_code = ERROR_CODE_SUCCESS;
-
-            // uint8_t fingerprint[32];
-
-            // if (!spectoda::getTnglFingerprint(fingerprint)) {
-            //     error_code = RequestErrorCode::NO_TNGL_CODE_STORED;
-            // }
-
-            // log_d("error_code=%u", error_code);
-
-            let writer = new TnglWriter(64);
-            writer.writeFlag(COMMAND_FLAGS.FLAG_TNGL_FINGERPRINT_RESPONSE);
-            writer.writeUint32(request_uuid);
-            writer.writeUint8(error_code);
-
-            if (error_code == ERROR_CODE_SUCCESS) {
-              writer.writeBytes([0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00], 32);
-            }
-
-            resolve(writer.bytes);
-          }
-          break;
-
-        case COMMAND_FLAGS.FLAG_ERASE_NETWORK_REQUEST:
-          {
-            // log_d("FLAG_ERASE_NETWORK_REQUEST");
-            reader.readFlag(); // FLAG_ERASE_NETWORK_REQUEST
-
-            const request_uuid = reader.readUint32();
-
-            let error_code = ERROR_CODE_SUCCESS;
-
-            // if (unit::eraseOwner()) {
-            //     bluetooth::rebootOnDisconnect(true);
-            // } else {
-            //     error_code = RequestErrorCode::FAILED_TO_ERASE_OWNER;
-            // }
-
-            // log_d("error_code=%u", error_code);
-
-            let writer = new TnglWriter(64);
-            writer.writeFlag(COMMAND_FLAGS.FLAG_ERASE_OWNER_RESPONSE);
-            writer.writeUint32(request_uuid);
-            writer.writeUint8(error_code);
-
-            // mac address
-            if (error_code == ERROR_CODE_SUCCESS) {
-              writer.writeBytes([0x00, 0x00, 0x00, 0x00, 0x00, 0x00], 6);
-            }
-
-            resolve(writer.bytes);
-          }
-          break;
-
         case COMMAND_FLAGS.FLAG_FW_VERSION_REQUEST:
           {
             // log_d("FLAG_FW_VERSION_REQUEST");
@@ -447,7 +297,15 @@ criteria example:
           break;
 
         default: {
-          resolve([]);
+          reader.readFlag(); // FLAG_REQUEST
+          const request_uuid = reader.readUint32();
+
+          let writer = new TnglWriter(64);
+          writer.writeFlag(COMMAND_FLAGS.FLAG_UNSUPPORTED_COMMND_RESPONSE);
+          writer.writeUint32(request_uuid);
+          writer.writeUint8(ERROR_CODE_ERROR);
+
+          resolve(writer.bytes);
         }
       }
     });
@@ -553,7 +411,7 @@ criteria example:
   // void _sendExecute(const std::vector<uint8_t>& command_bytes, const Connection& source_connection) = 0;
 
   sendExecute(command_bytes, source_connection) {
-    logging.info(`SpectodaDummyConnector::sendExecute(command_bytes=${command_bytes}, source_connection=${source_connection.address_string})`);
+    logging.verbose(`SpectodaDummyConnector::sendExecute(command_bytes=${command_bytes}, source_connection=${source_connection.address_string})`);
 
     return Promise.resolve();
   }
@@ -576,7 +434,7 @@ criteria example:
   // void _sendSynchronize(const Synchronization& synchronization, const Connection& source_connection) = 0;
 
   sendSynchronize(synchronization, source_connection) {
-    logging.info(`SpectodaDummyConnector::sendSynchronize(synchronization=${synchronization.origin_address}, source_connection=${source_connection.address_string})`);
+    logging.verbose(`SpectodaDummyConnector::sendSynchronize(synchronization=${synchronization.origin_address}, source_connection=${source_connection.address_string})`);
 
     return Promise.resolve();
   }
