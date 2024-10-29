@@ -1525,9 +1525,12 @@ export class SpectodaRuntime {
     this.#fps = fps;
   }
 
-  WIP_makePort(port_char = "A", port_size = 1, port_brightness = 255, port_power = 255) {
-    const port_config = { label: `PORT${port_char}`, size: port_size, brightness: port_brightness, power: port_power };
-    return this.spectoda_js.makePort(JSON.stringify(port_config));
+  WIP_setUPS(ups: number) {
+    this.#ups = ups;
+  }
+
+  WIP_makePort(port_label: string, port_config: object) {
+    return this.spectoda_js.makePort(port_label, JSON.stringify(port_config));
   }
 
   WIP_compute() {
@@ -1544,6 +1547,10 @@ export class SpectodaRuntime {
 
   getEventState(event_state_name: string, event_state_id: number) {
     return this.spectoda_js.getEventState(event_state_name, event_state_id);
+  }
+
+  getDateTime() {
+    return this.spectoda_js.getDateTime();
   }
 
   registerDeviceContext(device_id: number) {

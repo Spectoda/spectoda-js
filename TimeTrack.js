@@ -27,12 +27,16 @@ export class TimeTrack {
     }
   }
 
+  setDate(date) {
+    this.date_ = date;
+  }
+
   date() {
     return this.date_;
   }
 
-  setDate(date) {
-    this.date_ = date;
+  getDate() {
+    return this.date();
   }
 
   setState(current_timestamp, paused) {
@@ -62,8 +66,20 @@ export class TimeTrack {
     this.eventEmitter_.emit("millis", current_timestamp);
   }
 
+  getMillis() {
+    return this.millis();
+  }
+
   setMillisWithoutEvent(current_timestamp) {
     this.memory_ = this.paused_ ? current_timestamp : Date.now() - current_timestamp;
+  }
+
+  setPaused(paused) {
+    if (paused) {
+      this.pause();
+    } else {
+      this.unpause();
+    }
   }
 
   pause() {
@@ -100,6 +116,10 @@ export class TimeTrack {
 
   paused() {
     return this.paused_;
+  }
+
+  getPaused() {
+    return this.paused();
   }
 
   on() {

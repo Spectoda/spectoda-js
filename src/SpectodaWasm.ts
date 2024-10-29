@@ -6,7 +6,7 @@ import { logging } from "../logging";
 
 const WASM_VERSION = "DEBUG_DEV_0.12.0_20241028";
 
-/// ========== DEBUG_DEV_0.12.0_20241018.d.ts ========== ///
+/// ========== DEBUG_DEV_0.12.0_20241028.d.ts ========== ///
 
 export interface interface_error_tValue<T extends number> {
   value: T;
@@ -106,7 +106,7 @@ export interface Spectoda_WASM {
   getClockTimestamp(): number;
   _handlePeerConnected(_0: ArrayBuffer | Uint8Array | Uint8ClampedArray | Int8Array | string): interface_error_t;
   _handlePeerDisconnected(_0: ArrayBuffer | Uint8Array | Uint8ClampedArray | Int8Array | string): interface_error_t;
-  _handleTimelineManipulation(_0: number, _1: boolean, _2: ArrayBuffer | Uint8Array | Uint8ClampedArray | Int8Array | string, _3: number): interface_error_t;
+  _handleTimelineManipulation(_0: number, _1: boolean, _2: ArrayBuffer | Uint8Array | Uint8ClampedArray | Int8Array | string): interface_error_t;
   _onLog(_0: number, _1: ArrayBuffer | Uint8Array | Uint8ClampedArray | Int8Array | string, _2: ArrayBuffer | Uint8Array | Uint8ClampedArray | Int8Array | string): void;
   init(_0: ArrayBuffer | Uint8Array | Uint8ClampedArray | Int8Array | string, _1: ArrayBuffer | Uint8Array | Uint8ClampedArray | Int8Array | string): boolean;
   getLabel(): string;
@@ -117,9 +117,10 @@ export interface Spectoda_WASM {
   _onEventStateUpdates(_0: any): boolean;
   _onRequest(_0: number, _1: Uint8Vector, _2: any): boolean;
   _onSynchronize(_0: any): boolean;
-  makePort(_0: ArrayBuffer | Uint8Array | Uint8ClampedArray | Int8Array | string): any;
+  makePort(_0: ArrayBuffer | Uint8Array | Uint8ClampedArray | Int8Array | string, _1: ArrayBuffer | Uint8Array | Uint8ClampedArray | Int8Array | string): any;
   readVariableAddress(_0: number, _1: number): any;
   getEventState(_0: ArrayBuffer | Uint8Array | Uint8ClampedArray | Int8Array | string, _1: number): any;
+  getDateTime(): any;
   delete(): void;
 }
 
@@ -155,7 +156,7 @@ export interface MainModule {
   ImplementedSpectoda_WASM: {};
 }
 
-/// ========== DEBUG_DEV_0.12.0_20241018.d.ts ========== ///
+/// ========== DEBUG_DEV_0.12.0_20241028.d.ts ========== ///
 
 /// =================== MANUAL INTERFACES ================= ///
 

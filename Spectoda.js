@@ -1162,14 +1162,14 @@ export class Spectoda {
       const flag = reader.readFlag();
       logging.verbose(`flag=${flag}`);
       if (flag !== COMMAND_FLAGS.FLAG_READ_TNGL_BYTECODE_RESPONSE) {
-        logging.error("ERROR ds9a8f07");
+        // logging.error("ERROR ds9a8f07");
         throw "InvalidResponseFlag";
       }
 
       const response_uuid = reader.readUint32();
       logging.verbose(`response_uuid=${response_uuid}`);
       if (response_uuid !== request_uuid) {
-        logging.error("ERROR fd0s987");
+        // logging.error("ERROR fd0s987");
         throw "InvalidResponseUuid";
       }
 
@@ -1468,16 +1468,18 @@ export class Spectoda {
     }
 
     if (date === undefined) {
-      date = this.timeline.date();
+      date = this.timeline.getDate();
     }
 
-    logging.debug(`> Setting timeline to timestamp=${timestamp}, paused=${paused}, date=${date}`);
+    const clock_timestamp = this.runtime.clock.millis();
+
+    logging.debug(`> Setting timeline to timestamp=${timestamp}, paused=${paused}, date=${date}, clock_timestamp=${clock_timestamp}`);
 
     // from "DD-MM-YYYY" date erase "-" and convert to number YYYYMMDD:
     const date_number = parseInt(date.split("-").reverse().join(""));
 
     const flags = paused ? 0b00010000 : 0b00000000; // flags: [reserved,reserved,reserved,timeline_paused,reserved,reserved,reserved,reserved]
-    const payload = [COMMAND_FLAGS.FLAG_TIMELINE_WRITE, ...numberToBytes(this.runtime.clock.millis(), 6), ...numberToBytes(timestamp, 4), flags, ...numberToBytes(date_number, 4)];
+    const payload = [COMMAND_FLAGS.FLAG_TIMELINE_WRITE, ...numberToBytes(clock_timestamp, 6), ...numberToBytes(timestamp, 4), flags, ...numberToBytes(date_number, 4)];
     return this.runtime.execute(payload, "TMLN");
   }
 
@@ -1485,7 +1487,7 @@ export class Spectoda {
    * Synchronizes TNGL variable state of given ID to all other IDs
    */
   syncState(deviceId) {
-    logging.debug("> Synchronizing state...");
+    logging.info("> Synchronizing state...");
 
     const request_uuid = this.#getUUID();
     const device_request = [COMMAND_FLAGS.FLAG_SYNC_STATE_REQUEST, ...numberToBytes(request_uuid, 4), deviceId];
@@ -2272,14 +2274,14 @@ export class Spectoda {
       logging.verbose(`response.byteLength=${response.byteLength}`);
 
       if (reader.readFlag() !== COMMAND_FLAGS.FLAG_EVENT_HISTORY_BC_RESPONSE) {
-        logging.error("InvalidResponseFlag");
+        // logging.error("InvalidResponseFlag");
         throw "InvalidResponseFlag";
       }
 
       const response_uuid = reader.readUint32();
 
       if (response_uuid != request_uuid) {
-        logging.error("InvalidResponseUuid");
+        // logging.error("InvalidResponseUuid");
         throw "InvalidResponseUuid";
       }
 
@@ -2873,6 +2875,10 @@ export class Spectoda {
 
   getEventState(event_state_name, event_state_id) {
     return this.runtime.getEventState(event_state_name, event_state_id);
+  }
+
+  getDateTime() {
+    return this.runtime.getDateTime();
   }
 
   registerDeviceContext(device_id) {

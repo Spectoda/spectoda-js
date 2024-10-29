@@ -5,7 +5,7 @@
 import { sleep } from "../functions";
 import { logging } from "../logging";
 import { SpectodaRuntime } from "./SpectodaRuntime";
-import { Connection, IConnector_WASMImplementation, SpectodaWasm, Spectoda_WASM, Spectoda_WASMImplementation, Synchronization, Uint8Vector } from "./SpectodaWasm";
+import { Connection, IConnector_WASMImplementation, SpectodaEvent, SpectodaWasm, Spectoda_WASM, Spectoda_WASMImplementation, Synchronization, Uint8Vector } from "./SpectodaWasm";
 
 export const APP_MAC_ADDRESS = "00:00:12:34:56:78";
 
@@ -297,7 +297,10 @@ export class Spectoda_JS {
           try {
             this.#runtimeReference.emit("wasm_clock", synchronization.clock_timestamp);
             logging.debug(`🕒 $${this.#spectoda_wasm?.getLabel()}: ${synchronization.clock_timestamp}`);
-            this.#runtimeReference.clock.setMillis(synchronization.clock_timestamp);
+
+            if (Math.abs(this.#runtimeReference.clock.millis() - synchronization.clock_timestamp) > 10) {
+              this.#runtimeReference.clock.setMillisWithoutEvent(synchronization.clock_timestamp);
+            }
           } catch (e) {
             logging.error(e);
           }
@@ -361,7 +364,7 @@ export class Spectoda_JS {
 
         // virtual interface_error_t _handleTimelineManipulation(const int32_t timeline_timestamp, const bool timeline_paused, const double clock_timestamp) = 0;
         _handleTimelineManipulation: (timeline_timestamp: number, timeline_paused: boolean, timeline_date: string) => {
-          logging.warn(`Spectoda_JS::_handleTimelineManipulation(timeline_timestamp=${timeline_timestamp}, timeline_paused=${timeline_paused}, timeline_date=${timeline_date})`);
+          logging.debug(`Spectoda_JS::_handleTimelineManipulation(timeline_timestamp=${timeline_timestamp}, timeline_paused=${timeline_paused}, timeline_date=${timeline_date})`);
 
           // TODO! Refactor timeline mechanics to inclute date
           this.#runtimeReference.spectodaReference.timeline.setMillis(timeline_timestamp);
@@ -457,7 +460,7 @@ export class Spectoda_JS {
 
         // _sendSynchronize: (synchronization: Synchronization, source_connection: Connection) => void;
         _sendSynchronize: (synchronization: Synchronization, source_connection: Connection) => {
-          logging.debug(`Spectoda_JS::_sendSynchronize(synchronization=${synchronization}, source_connection=${source_connection}`);
+          logging.verbose(`Spectoda_JS::_sendSynchronize(synchronization=${synchronization}, source_connection=${source_connection}`);
 
           // history_fingerprint: number;
           // tngl_fingerprint: number;
@@ -513,15 +516,14 @@ export class Spectoda_JS {
     // }
   }
 
-  // ! @deprecated: Please define "io" and "segments" in controller config.
-  makePort(port_config: string) {
-    logging.info(`Spectoda_JS::makePort(port_config=${port_config})`);
+  makePort(port_label: string, port_config: string): Uint32Array {
+    logging.info(`Spectoda_JS::makePort(port_label=${port_label}, port_config=${port_config})`);
 
     if (!this.#spectoda_wasm) {
       throw "NotConstructed";
     }
 
-    return this.#spectoda_wasm.makePort(port_config);
+    return this.#spectoda_wasm.makePort(port_label, port_config);
   }
 
   setClockTimestamp(clock_timestamp: number) {
@@ -662,7 +664,7 @@ export class Spectoda_JS {
     this.#spectoda_wasm.eraseTngl();
   }
 
-  getEventState(event_state_name: string, event_state_id: number) {
+  getEventState(event_state_name: string, event_state_id: number): SpectodaEvent | undefined {
     logging.verbose(`Spectoda_JS::getEventState(event_state_name=${event_state_name}, event_state_id=${event_state_id})`);
 
     if (!this.#spectoda_wasm) {
@@ -670,6 +672,14 @@ export class Spectoda_JS {
     }
 
     return this.#spectoda_wasm.getEventState(event_state_name, event_state_id);
+  }
+
+  getDateTime(): { time: number; date: string } {
+    if (!this.#spectoda_wasm) {
+      throw "NotConstructed";
+    }
+
+    return this.#spectoda_wasm.getDateTime();
   }
 
   registerDeviceContext(device_id: number) {
