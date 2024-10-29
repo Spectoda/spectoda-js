@@ -156,16 +156,19 @@ export function createSpectodaWebsocket() {
                   if (response.status === "success") {
                     logging.info("Remote joined network", response.roomNumber);
 
-                    this.sendThroughWebsocket({
-                      functionName: "connected",
-                      arguments: undefined,
-                    }).then(connected => {
-                      if (connected) {
-                        eventStream.emit("connected");
-                      } else {
-                        eventStream.emit("disconnected");
-                      }
-                    });
+                    // ! disabled by @immakermatty because it caused trouble in App Remote Connection
+                    // this.sendThroughWebsocket({
+                    //   functionName: "connected",
+                    //   arguments: undefined,
+                    // }).then(connected => {
+                    //   if (connected) {
+                    //     logging.info("GW already connected, sending connected event");
+                    //     eventStream.emit("connected");
+                    //   } else {
+                    //     logging.info("GW not connected, sending disconnected event");
+                    //     eventStream.emit("disconnected");
+                    //   }
+                    // });
                   } else {
                     throw new Error(response.error);
                   }
