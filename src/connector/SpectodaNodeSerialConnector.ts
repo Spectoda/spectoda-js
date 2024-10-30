@@ -462,6 +462,7 @@ export class SpectodaNodeSerialConnector {
                       }
 
                       command_bytes.length = 0;
+                      data_header = { data_type: 0, data_size: 0, data_receive_timeout: 0, data_crc32: 0, header_crc32: 0 };
                     }
                   } //
                   else if (ends_with(command_bytes, "DATA=")) {
