@@ -710,7 +710,7 @@ export class SpectodaNodeSerialConnector {
     }
 
     const packet_timeout_min = 50;
-    let packet_timeout = (payload.length * 8 * 1000 * this.#timeoutMultiplier) / 115200 + packet_timeout_min;
+    let packet_timeout = (payload.length * this.#timeoutMultiplier) + packet_timeout_min;
 
     if (!packet_timeout || packet_timeout < packet_timeout_min) {
       logging.warn("Packet Timeout is too small:", packet_timeout);
@@ -738,16 +738,20 @@ export class SpectodaNodeSerialConnector {
       const do_write = async () => {
         timeout_handle = setTimeout(() => {
           logging.error("ERROR asvcb8976a", "Serial response timeout");
-          this.#feedbackCallback = undefined;
+         
+          if (this.#feedbackCallback) {
+            this.#feedbackCallback(false);
+          } else {
+            this.#disconnect()
+              .catch(() => {
+                logging.error("ERROR fdsa8796", "Failed to disconnect");
+              })
+              .finally(() => {
+                reject("ResponseTimeout");
+              });
+          }
 
-          this.#disconnect()
-            .catch(() => {
-              logging.error("ERROR fdsa8796", "Failed to disconnect");
-            })
-            .finally(() => {
-              reject("ResponseTimeout");
-            });
-        }, timeout + 10000); // +1000 for the controller to response timeout if reeive timeoutes
+        }, timeout + 1000); // +1000 for the controller to response timeout if reeive timeoutes
 
         try {
           await this.#serialPort?.write(Buffer.from(header_writer.bytes.buffer));
