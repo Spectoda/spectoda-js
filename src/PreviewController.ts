@@ -118,6 +118,12 @@ export class PreviewController {
           return true;
         },
 
+        _onProcess: () => {
+          this.logging.verbose("PreviewController::_onProcess");
+
+          return true;
+        },
+
         _handlePeerConnected: peer_mac => {
           this.logging.verbose("PreviewController::_handlePeerConnected", peer_mac);
 

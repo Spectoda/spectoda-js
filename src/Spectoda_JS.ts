@@ -309,6 +309,12 @@ export class Spectoda_JS {
           return true;
         },
 
+        _onProcess: () => {
+          logging.verbose("Spectoda_JS::_onProcess");
+
+          return true;
+        },
+
         _onLog: (level, filename, message) => {
           // if (level - 1 < logging.level) {
           //   return;
@@ -591,24 +597,26 @@ export class Spectoda_JS {
     this.#spectoda_wasm.synchronize(synchronization, source_connection);
   }
 
-  process() {
+  // ? process() is calling compute() and render() in the right order
+  process(options: { skip_berry_plugin_update: boolean; skip_eventstate_updates: boolean } = { skip_berry_plugin_update: false, skip_eventstate_updates: false }) {
     logging.verbose("Spectoda_JS::process()");
 
     if (!this.#spectoda_wasm) {
       throw "NotConstructed";
     }
 
-    this.#spectoda_wasm.process();
+    this.#spectoda_wasm.process(options.skip_berry_plugin_update, options.skip_eventstate_updates);
   }
 
-  render() {
+  // ? render() is forcing a render cycle
+  render(options: { power: number } = { power: 255 }) {
     logging.verbose("Spectoda_JS::render()");
 
     if (!this.#spectoda_wasm) {
       throw "NotConstructed";
     }
 
-    this.#spectoda_wasm.render();
+    this.#spectoda_wasm.render(options.power);
   }
 
   readVariableAddress(variable_address: number, device_id: number) {

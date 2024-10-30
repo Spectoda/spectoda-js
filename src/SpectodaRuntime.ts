@@ -1533,12 +1533,12 @@ export class SpectodaRuntime {
     return this.spectoda_js.makePort(port_label, JSON.stringify(port_config));
   }
 
-  WIP_compute() {
-    return this.spectoda_js.process();
+  WIP_process(options: { skip_berry_plugin_update: boolean; skip_eventstate_updates: boolean } = { skip_berry_plugin_update: false, skip_eventstate_updates: false }) {
+    return this.spectoda_js.process(options);
   }
 
-  WIP_render() {
-    return this.spectoda_js.render();
+  WIP_render(options: { power: number } = { power: 255 }) {
+    return this.spectoda_js.render(options);
   }
 
   WIP_setName(name: string) {

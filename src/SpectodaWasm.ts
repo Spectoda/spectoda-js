@@ -4,9 +4,9 @@
 
 import { logging } from "../logging";
 
-const WASM_VERSION = "DEBUG_DEV_0.12.0_20241028";
+const WASM_VERSION = "DEBUG_DEV_0.12.0_20241030";
 
-/// ========== DEBUG_DEV_0.12.0_20241028.d.ts ========== ///
+/// ========== DEBUG_DEV_0.12.0_20241030.d.ts ========== ///
 
 export interface interface_error_tValue<T extends number> {
   value: T;
@@ -90,14 +90,14 @@ export interface Spectoda_WASM {
   begin(): void;
   end(): void;
   synchronize(_0: Synchronization, _1: Connection): void;
-  process(): void;
-  render(): void;
   eraseHistory(): void;
   eraseTimeline(): void;
   eraseTngl(): void;
   registerConnector(_0: IConnector_WASM): void;
   _onTnglUpdate(_0: Uint8Vector): boolean;
   _onExecute(_0: Uint8Vector): boolean;
+  process(_0: boolean, _1: boolean): void;
+  render(_0: number): void;
   registerDeviceContext(_0: number): boolean;
   execute(_0: number, _1: Connection): boolean;
   request(_0: number, _1: Uint8Vector, _2: Connection): boolean;
@@ -117,6 +117,7 @@ export interface Spectoda_WASM {
   _onEventStateUpdates(_0: any): boolean;
   _onRequest(_0: number, _1: Uint8Vector, _2: any): boolean;
   _onSynchronize(_0: any): boolean;
+  _onProcess(_0: any): boolean;
   makePort(_0: ArrayBuffer | Uint8Array | Uint8ClampedArray | Int8Array | string, _1: ArrayBuffer | Uint8Array | Uint8ClampedArray | Int8Array | string): any;
   readVariableAddress(_0: number, _1: number): any;
   getEventState(_0: ArrayBuffer | Uint8Array | Uint8ClampedArray | Int8Array | string, _1: number): any;
@@ -156,7 +157,7 @@ export interface MainModule {
   ImplementedSpectoda_WASM: {};
 }
 
-/// ========== DEBUG_DEV_0.12.0_20241028.d.ts ========== ///
+/// ========== DEBUG_DEV_0.12.0_20241030.d.ts ========== ///
 
 /// =================== MANUAL INTERFACES ================= ///
 
