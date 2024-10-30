@@ -43,6 +43,8 @@ const history_sync_counter = 0;
 
 const PORT_OPTIONS = { path: "/dev/ttyS3", baudRate: 1500000, dataBits: 8, stopBits: 1, parity: "none", autoOpen: false, bufferSize: 65535, flowControl: "none" };
 
+const HEADER_BYTES_SIZE = 20;
+
 const CODE_WRITE = 100;
 const CODE_READ = 200;
 const CHANNEL_NETWORK = 1;
@@ -461,13 +463,17 @@ export class SpectodaNodeSerialConnector {
 
                       command_bytes.length = 0;
                     }
-                  } else if (ends_with(command_bytes, "DATA=")) {
+                  } //
+                  else if (ends_with(command_bytes, "DATA=")) {
                     mode = MODE_DATA_RECEIVE;
+                    data_header = { data_type: 0, data_size: 0, data_receive_timeout: 0, data_crc32: 0, header_crc32: 0 };
 
                     header_bytes.length = 0;
                     data_bytes.length = 0;
-                  } else if (command_bytes.length > 20) {
-                    logging.error("Unknown command_bytes", command_bytes);
+                  } //
+                  else if (command_bytes.length > ">>>SUCCESS<<<\n".length) {
+                    // ? >>>SUCCESS<<< is the longest command
+                    logging.error("ERROR 342897cs: command_bytes", command_bytes, "data_header", data_header);
                     command_bytes.length = 0;
                   }
                 }
@@ -489,13 +495,12 @@ export class SpectodaNodeSerialConnector {
                 }
               }
             } else if (mode == MODE_DATA_RECEIVE) {
-              if (header_bytes.length < 20) {
+              if (header_bytes.length < HEADER_BYTES_SIZE) {
                 header_bytes.push(byte);
 
-                if (header_bytes.length >= 20) {
+                if (header_bytes.length >= HEADER_BYTES_SIZE) {
                   const tnglReader = new TnglReader(new DataView(new Uint8Array(header_bytes).buffer));
 
-                  data_header = { data_type: 0, data_size: 0, data_receive_timeout: 0, data_crc32: 0, header_crc32: 0 };
                   data_header.data_type = tnglReader.readUint32();
                   data_header.data_size = tnglReader.readUint32();
                   data_header.data_receive_timeout = tnglReader.readUint32();
@@ -503,6 +508,10 @@ export class SpectodaNodeSerialConnector {
                   data_header.header_crc32 = tnglReader.readUint32();
 
                   logging.verbose("data_header=", data_header);
+
+                  if (data_header.data_size == 0) {
+                    mode = MODE_UTF8_RECEIVE;
+                  }
                 }
               } /* if (data_header) */ else {
                 data_bytes.push(byte);
@@ -710,7 +719,7 @@ export class SpectodaNodeSerialConnector {
     }
 
     const packet_timeout_min = 50;
-    let packet_timeout = (payload.length * this.#timeoutMultiplier) + packet_timeout_min;
+    let packet_timeout = payload.length * this.#timeoutMultiplier + packet_timeout_min;
 
     if (!packet_timeout || packet_timeout < packet_timeout_min) {
       logging.warn("Packet Timeout is too small:", packet_timeout);
@@ -738,7 +747,7 @@ export class SpectodaNodeSerialConnector {
       const do_write = async () => {
         timeout_handle = setTimeout(() => {
           logging.error("ERROR asvcb8976a", "Serial response timeout");
-         
+
           if (this.#feedbackCallback) {
             this.#feedbackCallback(false);
           } else {
@@ -750,7 +759,6 @@ export class SpectodaNodeSerialConnector {
                 reject("ResponseTimeout");
               });
           }
-
         }, timeout + 1000); // +1000 for the controller to response timeout if reeive timeoutes
 
         try {
