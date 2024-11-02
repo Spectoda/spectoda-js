@@ -2232,51 +2232,6 @@ export class Spectoda {
   }
 
   /**
-   * A duplicate of `readControllerCodes`
-   */
-  getControllerInfo() {
-    logging.debug("> Requesting controller info...");
-
-    const request_uuid = this.#getUUID();
-    const bytes = [DEVICE_FLAGS.FLAG_CONTROLLER_INFO_REQUEST, ...numberToBytes(request_uuid, 4)];
-
-    return this.runtime.request(bytes, true).then(response => {
-      let reader = new TnglReader(response);
-
-      logging.verbose("response=", response);
-
-      if (reader.readFlag() !== DEVICE_FLAGS.FLAG_CONTROLLER_INFO_RESPONSE) {
-        throw "InvalidResponseFlag";
-      }
-
-      const response_uuid = reader.readUint32();
-
-      if (response_uuid != request_uuid) {
-        throw "InvalidResponseUuid";
-      }
-
-      const error_code = reader.readUint8();
-
-      logging.verbose(`error_code=${error_code}`);
-
-      let pcb_code = null;
-      let product_code = null;
-
-      if (error_code === 0) {
-        pcb_code = reader.readUint16();
-        product_code = reader.readUint16();
-      } else {
-        throw "Fail";
-      }
-
-      logging.info(`pcb_code=${pcb_code}`);
-      logging.info(`product_code=${product_code}`);
-
-      return { pcb_code: pcb_code, product_code: product_code };
-    });
-  }
-
-  /**
    * ! Useful
    * Changes the network of the controller Spectoda.js is `connect`ed to.
    */
