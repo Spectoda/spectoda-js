@@ -1,13 +1,73 @@
 // TODO fix TSC in spectoda-js
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-nocheck
+// // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// // @ts-nocheck
 
+import { VALUE_TYPE } from "../constants";
 import { sleep } from "../functions";
 import { logging } from "../logging";
 import { SpectodaRuntime } from "./SpectodaRuntime";
 import { Connection, IConnector_WASMImplementation, SpectodaEvent, SpectodaWasm, Spectoda_WASM, Spectoda_WASMImplementation, Synchronization, Uint8Vector } from "./SpectodaWasm";
 
+export namespace SpectodaTypes {
+  export type ConnectorType = "default" | "bluetooth" | "serial" | "websockets" | "simulated" | "dummy";
+  export type ConnectionState = "connected" | "connecting" | "disconnected" | "disconnecting";
+
+  export type ConnectionJSEvent = ConnectionState;
+  export type WebsocketJSEvent = "connecting-websockets" | "connected-websockets" | "disconnecting-websockets" | "disconnected-websockets";
+  export type PeerJSEvent = "peer_connected" | "peer_disconnected";
+  export type OtaJSEvent = "ota_status" | "ota_progress";
+  export type OtaStatus = "begin" | "success" | "fail";
+
+  export type JsEvent = ConnectionJSEvent | WebsocketJSEvent | PeerJSEvent | OtaJSEvent;
+
+  type criteria_generic = { name?: string; network?: string; fw?: string; product?: number };
+  type criteria_ble = criteria_generic;
+  type criteria_serial = criteria_generic & { port?: string; path?: string };
+  type criteria_dummy = criteria_generic;
+  type criteria_simulated = criteria_generic;
+  type criteria = criteria_ble | criteria_serial | criteria_dummy | criteria_simulated;
+  export type Criteria = criteria | criteria[];
+  export type Tngl = { code: string | undefined; bytecode: Uint8Array | undefined };
+  export type NetworkSignature = string; // "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx", where x is a-f or 0-9
+  export type NetworkKey = string; // "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx", where x is a-f or 0-9
+
+  export type PcbCode = number; // 0-16535
+  export type ProductCode = number; // 0-16535
+  export type TnglBank = number; // 0-255
+
+  // NUMBER: 29,
+  // LABEL: 31,
+  // TIME: 32,
+  // PERCENTAGE: 30,
+  // DATE: 28,
+  // COLOR: 26,
+  // PIXELS: 19,
+  // BOOLEAN: 2,
+  // NULL: 1,
+  // UNDEFINED: 0,
+
+  export type ValueType = (typeof VALUE_TYPE)[keyof typeof VALUE_TYPE];
+
+  export type Number = number;
+  export type Label = string; //* "label" is a specific type, that can have at max 5 characters [a-zA-Z0-9_]. It is always prefixed with "$" (e.g. $label)
+  export type Timestamp = number;
+  export type Percentage = number;
+  export type Date = string;
+  export type Color = string;
+  export type Pixels = number;
+  export type Boolean = boolean;
+  export type Null = null;
+  export type Undefined = undefined;
+
+  export type ID = number;
+  export type IDs = ID | ID[];
+
+  export type Event = SpectodaEvent;
+}
+
 export const APP_MAC_ADDRESS = "00:00:12:34:56:78";
+export const USE_ALL_CONNECTIONS = ["*/ff:ff:ff:ff:ff:ff"];
+export const DEFAULT_TIMEOUT = null;
 
 export const COMMAND_FLAGS = Object.freeze({
   FLAG_UNSUPPORTED_COMMND_RESPONSE: 255, // TODO change FLAG_OTA_BEGIN to not be 255.

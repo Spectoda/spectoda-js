@@ -9,7 +9,7 @@ import { detectAndroid, hexStringToUint8Array, numberToBytes, sleep, toBytes, ui
 import { logging } from "../../logging";
 import { TimeTrack } from "../../TimeTrack.js";
 import { TnglReader } from "../../TnglReader.js";
-import { COMMAND_FLAGS } from "../Spectoda_JS";
+import { COMMAND_FLAGS, DEFAULT_TIMEOUT } from "../Spectoda_JS";
 import { SpectodaRuntime } from "../SpectodaRuntime";
 import { Connection, SpectodaWasm, Synchronization } from "../SpectodaWasm";
 
@@ -927,8 +927,11 @@ criteria example:
 
   // connect Connector to the selected Spectoda Device. Also can be used to reconnect.
   // Fails if no device is selected
-  connect(timeout = 10000): Promise<object> {
-    logging.verbose(`connect(timeout=${timeout}})`);
+  connect(timeout = DEFAULT_TIMEOUT): Promise<object> {
+    if (timeout === DEFAULT_TIMEOUT) {
+      timeout = 10000;
+    }
+    logging.verbose(`connect(timeout=${timeout})`);
 
     if (timeout <= 0) {
       logging.info("> Connect timeout have expired");
@@ -1092,7 +1095,7 @@ criteria example:
           return;
         } catch {
           logging.warn("Clock write failed");
-          await sleep(1000);
+          await sleep(100);
         }
       }
 
@@ -1112,7 +1115,7 @@ criteria example:
 
     return new Promise(async (resolve, reject) => {
       for (let index = 0; index < 3; index++) {
-        await sleep(1000);
+        await sleep(100);
         try {
           const timestamp = await this.#connection.readClock();
           logging.debug("Clock read success:", timestamp);

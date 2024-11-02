@@ -58,7 +58,7 @@ export function toBytes(value: number, byteCount: number) {
   let number = BigInt(Math.round(value));
   const byteArray: number[] = [];
   for (let index = 0; index < byteCount; index++) {
-    const byte = number & 0xFFn;
+    const byte = number & 0xffn;
     byteArray.push(Number(byte));
     number = number >> 8n;
   }
@@ -96,10 +96,10 @@ export function numberToBytes(number_value: number, byteCount: number) {
 //   return value_int16;
 // }
 
-export const timeOffset = Date.now() % 0x7FFFFFFF;
+export const timeOffset = Date.now() % 0x7fffffff;
 // must be positive int32 (4 bytes)
 export function getClockTimestamp() {
-  return (Date.now() % 0x7FFFFFFF) - timeOffset;
+  return (Date.now() % 0x7fffffff) - timeOffset;
 }
 
 export function sleep(ms) {
@@ -185,11 +185,11 @@ export function mapValue(x, in_min, in_max, out_min, out_max) {
 }
 
 // takes "label" and outputs ascii characters in a list of bytes
-export function labelToBytes(label_string) {
+export function labelToBytes(label_string: string): number[] {
   return stringToBytes(label_string, 5);
 }
 
-export function stringToBytes(string, length) {
+export function stringToBytes(string: string, length: number): number[] {
   const byteArray: number[] = [];
 
   for (let index = 0; index < length; index++) {
@@ -202,7 +202,7 @@ export function stringToBytes(string, length) {
   return byteArray;
 }
 
-export function colorToBytes(color_hex_code) {
+export function colorToBytes(color_hex_code: string): number[] {
   if (!color_hex_code) {
     return [0, 0, 0];
   }
@@ -220,12 +220,12 @@ export function colorToBytes(color_hex_code) {
   return [r, g, b];
 }
 
-export function percentageToBytes(percentage_float) {
+export function percentageToBytes(percentage_float: number): number[] {
   const value = mapValue(percentage_float, -100, 100, VALUE_LIMITS.PERCENTAGE_MINUS_100, VALUE_LIMITS.PERCENTAGE_100);
   return numberToBytes(Math.floor(value), 4);
 }
 
-export function strMacToBytes(mac_str) {
+export function strMacToBytes(mac_str: string): number[] {
   // Split the string into an array of hexadecimal values
   const hexValues = mac_str.split(":");
 
@@ -428,7 +428,7 @@ const CRC32_DATA = CRC32_TABLE.split(" ").map(function (s) {
 export function crc32(bytes) {
   let crc = -1;
   for (let i = 0, iTop = bytes.length; i < iTop; i++) {
-    crc = (crc >>> 8) ^ CRC32_DATA[(crc ^ bytes[i]) & 0xFF];
+    crc = (crc >>> 8) ^ CRC32_DATA[(crc ^ bytes[i]) & 0xff];
   }
   return (crc ^ -1) >>> 0;
 }
@@ -604,7 +604,7 @@ export function hexStringToNumberArray(hexString) {
   return numberArray;
 }
 
-export async function fetchFirmware(url: string) {
+export function fetchFirmware(url: string): Promise<Uint8Array> {
   return fetch(url)
     .then(response => {
       return response.arrayBuffer();
@@ -614,6 +614,7 @@ export async function fetchFirmware(url: string) {
     })
     .catch(e => {
       logging.error("Failed to fetch firmware", e);
+      return Promise.reject(e);
     });
 }
 

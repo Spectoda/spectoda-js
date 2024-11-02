@@ -25,7 +25,7 @@ import { SpectodaWebSerialConnector } from "./connector/SpectodaWebSerialConnect
 import { TimeTrack } from "../TimeTrack";
 import { PreviewController } from "./PreviewController";
 import { Connection, SpectodaWasm, Synchronization } from "./SpectodaWasm";
-import { APP_MAC_ADDRESS, COMMAND_FLAGS, Spectoda_JS } from "./Spectoda_JS";
+import { APP_MAC_ADDRESS, COMMAND_FLAGS, Spectoda_JS, DEFAULT_TIMEOUT } from "./Spectoda_JS";
 import { FlutterConnector } from "./connector/SpectodaConnectConnector";
 
 import { Spectoda } from "../Spectoda";
@@ -349,7 +349,6 @@ export class SpectodaRuntime {
     // });
 
     this.#eventEmitter.on("wasm_clock", (timestamp: number) => {
-      logging.debug("wasm_clock", timestamp);
       for (const previewController of Object.values(this.previewControllers)) {
         try {
           previewController.setClock(timestamp);
@@ -456,7 +455,7 @@ export class SpectodaRuntime {
     this.#eventEmitter.emit(event, ...arg);
   }
 
-  assignConnector(desired_connector = "default", connector_parameter = undefined) {
+  assignConnector(desired_connector: ConnectorType = "default", connector_parameter: any = undefined) {
     logging.verbose(`assignConnector(desired_connector=${desired_connector})`);
 
     let choosen_connector = undefined;
@@ -579,13 +578,8 @@ export class SpectodaRuntime {
     }
   }
 
-  userSelect(criteria: object, timeout = 600000) {
+  userSelect(criteria: object, timeout: number | typeof DEFAULT_TIMEOUT = DEFAULT_TIMEOUT) {
     logging.verbose(`userSelect(criteria=${JSON.stringify(criteria)}, timeout=${timeout}`);
-
-    if (timeout < 1000) {
-      logging.error("Timeout is too short.");
-      return Promise.reject("InvalidTimeout");
-    }
 
     if (this.#selecting) {
       return Promise.reject("SelectingInProgress");
@@ -606,13 +600,8 @@ export class SpectodaRuntime {
     });
   }
 
-  autoSelect(criteria: object, scan_period = 4000, timeout = 10000) {
+  autoSelect(criteria: object, scan_period: number | typeof DEFAULT_TIMEOUT = DEFAULT_TIMEOUT, timeout: number | typeof DEFAULT_TIMEOUT = DEFAULT_TIMEOUT) {
     logging.verbose(`autoSelect(criteria=${JSON.stringify(criteria)}, scan_period=${scan_period}, timeout=${timeout}`);
-
-    if (timeout < 1000) {
-      logging.error("Timeout is too short.");
-      return Promise.reject("InvalidTimeout");
-    }
 
     if (this.#selecting) {
       return Promise.reject("SelectingInProgress");
@@ -649,13 +638,8 @@ export class SpectodaRuntime {
     return item.promise;
   }
 
-  scan(criteria: object, scan_period = 5000) {
+  scan(criteria: object, scan_period: number | typeof DEFAULT_TIMEOUT = DEFAULT_TIMEOUT) {
     logging.verbose(`scan(criteria=${JSON.stringify(criteria)}, scan_period=${scan_period}`);
-
-    if (scan_period < 1000) {
-      logging.error("Scan period is too short.");
-      return Promise.reject("InvalidScanPeriod");
-    }
 
     if (this.#selecting) {
       return Promise.reject("SelectingInProgress");
@@ -676,13 +660,8 @@ export class SpectodaRuntime {
     });
   }
 
-  connect(timeout = 10000) {
+  connect(timeout: number | typeof DEFAULT_TIMEOUT = DEFAULT_TIMEOUT) {
     logging.verbose(`connect(timeout=${timeout})`);
-
-    if (timeout < 1000) {
-      logging.error("Timeout is too short.");
-      return Promise.reject("InvalidTimeout");
-    }
 
     const item = new Query(Query.TYPE_CONNECT, timeout);
     this.#process(item);
@@ -731,22 +710,10 @@ export class SpectodaRuntime {
     return item.promise;
   }
 
-  evaluate(bytecode_uint8array: Uint8Array, source_connection: Connection) {
-    logging.verbose("evaluate(bytecode_uint8array=", bytecode_uint8array, "source_connection=", source_connection, ")");
+  execute(bytes: number[], bytes_type: string | undefined) {
+    logging.verbose("execute", { bytes, bytes_type });
 
-    this.spectoda_js.execute(bytecode_uint8array, source_connection);
-  }
-
-  execute(bytes: Uint8Array, bytes_label: string | undefined, timeout = 5000) {
-    logging.verbose("execute", { bytes, bytes_label, timeout });
-
-    if (timeout < 100) {
-      logging.error("Timeout is too short.");
-      return Promise.reject("InvalidTimeout");
-    }
-
-    logging.verbose("execute", { bytes, bytes_label, timeout });
-    const item = new Query(Query.TYPE_EXECUTE, bytes, bytes_label, timeout);
+    const item = new Query(Query.TYPE_EXECUTE, bytes, bytes_type);
 
     // there must only by one item in the queue with given label
     // this is used to send only the most recent item.
@@ -767,15 +734,9 @@ export class SpectodaRuntime {
     return item.promise;
   }
 
-  request(bytes: Uint8Array, read_response = true, timeout = 5000) {
+  request(bytes: number[], read_response = true, timeout: number | typeof DEFAULT_TIMEOUT = DEFAULT_TIMEOUT) {
     logging.verbose("request", { bytes, read_response, timeout });
 
-    if (timeout < 100) {
-      logging.error("Timeout is too short.");
-      return Promise.reject("InvalidTimeout");
-    }
-
-    logging.verbose("request", { bytes, read_response, timeout });
     const item = new Query(Query.TYPE_REQUEST, bytes, read_response, timeout);
     this.#process(item);
     return item.promise;
@@ -1062,7 +1023,6 @@ export class SpectodaRuntime {
                   }
 
                   const merged_payload = payload.slice(0, index);
-                  const timeout = item.c; // TODO! timeout not needed?
 
                   // logging.debug("EXECUTE", uint8ArrayToHexString(merged_payload));
 
