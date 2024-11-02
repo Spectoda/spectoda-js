@@ -9,7 +9,7 @@ import { LogEntry, RingLogBuffer } from "./LogBuffer";
 import { Connection, IConnector_WASM, IConnector_WASMImplementation, Spectoda_WASM, Spectoda_WASMImplementation, SpectodaWasm, Synchronization, Uint8Vector } from "./SpectodaWasm";
 import { IConnector_JS } from "./connector/IConnector_JS";
 
-// TODO: Rename to SimulatedController
+// TODO: Deprecate and instead use SimulatedController
 export class PreviewController {
   logging: typeof logging; // ? each instance should be able to be logged separatelly
 
@@ -248,18 +248,15 @@ export class PreviewController {
     this.#instance = undefined; // remove javascript reference
   }
 
-  // /**
-  //  * @param {number} clock_timestamp
-  //  * @return {Uint8Vector}
-  //  */
-  // makePort(port_tag = "A", port_size = 1, port_brightness = 255, port_power = 255, port_visible = true, port_reversed = false) {
-  //     if (!this.#instance) {
-  //         throw "NotConstructed";
-  //     }
+  makePort(port_label: string, port_config: string): Uint32Array {
+    logging.info(`PreviewController::makePort(port_label=${port_label}, port_config=${port_config})`);
 
-  //     // const std::vector<uint8_t>& _makePort(const std::string& port_tag, const uint32_t port_size, const uint8_t port_brightness, const uint8_t port_power, bool port_visible, bool port_reversed)
-  //     return this.#instance.makePort(port_tag, port_size, port_brightness, port_power, port_visible, port_reversed);
-  // }
+    if (!this.#instance) {
+      throw "NotConstructed";
+    }
+
+    return this.#instance.makePort(port_label, port_config);
+  }
 
   getPort(port_tag: string) {
     if (!this.#instance) {
@@ -302,7 +299,9 @@ export class PreviewController {
     return this.#instance.getClockTimestamp();
   }
 
-  execute(execute_bytecode: Uint8Array, source_connection: Connection) {
+  execute(execute_bytecode: Uint8Array, source_connection: Connection): void {
+    logging.debug(`PreviewController::execute(execute_bytecode=${execute_bytecode}, source_connection=${source_connection})`);
+
     if (!this.#instance) {
       throw "NotConstructed";
     }
@@ -315,6 +314,8 @@ export class PreviewController {
   }
 
   request(request_bytecode: Uint8Array, source_connection: Connection) {
+    logging.debug(`PreviewController::request(request_bytecode=${request_bytecode}, source_connection=${source_connection})`);
+
     if (!this.#instance) {
       throw "NotConstructed";
     }
@@ -337,10 +338,8 @@ export class PreviewController {
     return response_bytecode;
   }
 
-  // TODO respond()
-
   synchronize(synchronization: Synchronization, source_connection: Connection) {
-    this.logging.debug("synchronize()");
+    logging.debug(`PreviewController::synchronize(synchronization=`, synchronization, `source_connection=`, source_connection, `)`);
 
     if (!this.#instance) {
       throw "NotConstructed";
@@ -349,20 +348,26 @@ export class PreviewController {
     this.#instance.synchronize(synchronization, source_connection);
   }
 
-  process() {
+  // ? process() is calling compute() and render() in the right order
+  process(options: { skip_berry_plugin_update: boolean; skip_eventstate_updates: boolean } = { skip_berry_plugin_update: false, skip_eventstate_updates: false }) {
+    logging.verbose("PreviewController::process()");
+
     if (!this.#instance) {
       throw "NotConstructed";
     }
 
-    this.#instance.process();
+    this.#instance.process(options.skip_berry_plugin_update, options.skip_eventstate_updates);
   }
 
-  render() {
+  // ? render() is forcing a render cycle
+  render(options: { power: number } = { power: 255 }) {
+    logging.verbose("PreviewController::render()");
+
     if (!this.#instance) {
       throw "NotConstructed";
     }
 
-    this.#instance.render();
+    this.#instance.render(options.power);
   }
 
   getLogs() {
