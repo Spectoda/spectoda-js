@@ -1,6 +1,4 @@
-// TODO fix TSC in spectoda-js
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-nocheck
 
 // npm install --save-dev @types/web-bluetooth
 /// <reference types="web-bluetooth" />
@@ -8,8 +6,8 @@
 import { detectAndroid, hexStringToUint8Array, numberToBytes, sleep, toBytes, uint8ArrayToHexString } from "../../functions";
 import { logging } from "../../logging";
 import { TimeTrack } from "../../TimeTrack.js";
-import { TnglReader } from "../../TnglReader.js";
-import { COMMAND_FLAGS, DEFAULT_TIMEOUT } from "../Spectoda_JS";
+import { TnglReader } from "../../TnglReader";
+import { COMMAND_FLAGS, DEFAULT_TIMEOUT, SpectodaTypes } from "../Spectoda_JS";
 import { SpectodaRuntime } from "../SpectodaRuntime";
 import { Connection, SpectodaWasm, Synchronization } from "../SpectodaWasm";
 
@@ -92,13 +90,13 @@ export class WebBLEConnection {
     return ++this.#uuidCounter;
   }
 
-  #writeBytes(characteristic: BluetoothRemoteGATTCharacteristic, bytes: number[], response: boolean) {
+  #writeBytes(characteristic: BluetoothRemoteGATTCharacteristic, bytes: Uint8Array, reliable: boolean) {
     const write_uuid = this.#getUUID(); // two messages near to each other must not have the same UUID!
     const packet_header_size = 12; // 3x 4byte integers: write_uuid, index_from, payload.length
     const packet_size = detectAndroid() ? 212 : 512; // min size packet_header_size + 1 !!!! ANDROID NEEDS PACKET SIZE <= 212!!!!
     const bytes_size = packet_size - packet_header_size;
 
-    if (response) {
+    if (reliable) {
       return new Promise(async (resolve, reject) => {
         let index_from = 0;
         let index_to = bytes_size;
@@ -134,7 +132,7 @@ export class WebBLEConnection {
     }
   }
 
-  #readBytes(characteristic: BluetoothRemoteGATTCharacteristic) {
+  #readBytes(characteristic: BluetoothRemoteGATTCharacteristic): Promise<Uint8Array> {
     // read the requested value
 
     // TODO write this function effectivelly
@@ -153,7 +151,7 @@ export class WebBLEConnection {
 
         // logging.verbose(total_bytes);
 
-        resolve(new DataView(new Uint8Array(total_bytes).buffer));
+        resolve(new Uint8Array(total_bytes));
       } catch (e) {
         logging.error(e);
         reject("ReadError");
@@ -167,23 +165,27 @@ export class WebBLEConnection {
     logging.verbose("#onNetworkNotification", event);
     //! Here is a bug, where if the command is too long, it will be split into multiple notifications
 
-    if (!event?.target?.value) return;
+    // @ts-ignore
+    if (!event?.target?.value?.buffer) return;
+    // @ts-ignore
+    const data_bytes = new Uint8Array(event.target.value.buffer);
 
-    const command_bytes = new Uint8Array(event.target.value.buffer);
-    logging.verbose(`command_bytes: ${uint8ArrayToHexString(command_bytes)}`);
+    logging.verbose(`data_bytes: ${uint8ArrayToHexString(data_bytes)}`);
 
     const DUMMY_WEBBLE_CONNECTION = new SpectodaWasm.Connection("11:11:11:11:11:11", SpectodaWasm.connector_type_t.CONNECTOR_BLE, SpectodaWasm.connection_rssi_t.RSSI_MAX);
-    this.#runtimeReference.spectoda_js.execute(command_bytes, DUMMY_WEBBLE_CONNECTION);
+    this.#runtimeReference.spectoda_js.execute(data_bytes, DUMMY_WEBBLE_CONNECTION);
   }
 
   // WIP
   #onDeviceNotification(event: Event) {
     logging.verbose("#onDeviceNotification", event);
 
-    if (!event?.target?.value) return;
+    // @ts-ignore
+    if (!event?.target?.value?.buffer) return;
+    // @ts-ignore
+    const data_bytes = new Uint8Array(event.target.value.buffer);
 
-    // const command_bytes = new Uint8Array(event.target.value.buffer);
-    // logging.verbose(`command_bytes: ${uint8ArrayToHexString(command_bytes)}`);
+    // logging.verbose(`data_bytes: ${uint8ArrayToHexString(data_bytes)}`);
 
     // // TODO process request
     // const DUMMY_WEBBLE_CONNECTION = new SpectodaWasm.Connection("11:11:11:11:11:11", SpectodaWasm.connector_type_t.CONNECTOR_BLE, SpectodaWasm.connection_rssi_t.RSSI_MAX);
@@ -196,7 +198,10 @@ export class WebBLEConnection {
   #onClockNotification(event: Event) {
     logging.verbose("#onClockNotification", event);
 
-    if (!event?.target?.value) return;
+    // @ts-ignore
+    if (!event?.target?.value?.buffer) return;
+    // @ts-ignore
+    const data_bytes = new Uint8Array(event.target.value.buffer);
 
     // let value = event.target.value;
     // let a = [];
@@ -213,12 +218,12 @@ export class WebBLEConnection {
     // uint64_t timeline_clock_timestamp;
     // uint64_t tngl_clock_timestamp;
 
-    if (event?.target?.value.buffer.length < 48) {
+    if (data_bytes.length < 48) {
       logging.error("event.target.value.buffer.length < 48");
       return;
     }
 
-    const synchronization = SpectodaWasm.Synchronization.fromUint8Array(new Uint8Array(event.target.value.buffer));
+    const synchronization = SpectodaWasm.Synchronization.fromUint8Array(data_bytes);
 
     const DUMMY_WEBBLE_CONNECTION = new SpectodaWasm.Connection("11:11:11:11:11:11", SpectodaWasm.connector_type_t.CONNECTOR_BLE, SpectodaWasm.connection_rssi_t.RSSI_MAX);
     this.#runtimeReference.spectoda_js.synchronize(synchronization, DUMMY_WEBBLE_CONNECTION);
@@ -307,7 +312,7 @@ export class WebBLEConnection {
   // returns promise that resolves when message is physically send, but you
   // dont need to wait for it to resolve, and spam deliver() as you please.
   // transmering queue will handle it
-  deliver(payload: number[], timeout: number) {
+  deliver(payload_bytes: Uint8Array, timeout_number: number): Promise<unknown> {
     if (!this.#networkChar) {
       logging.warn("Network characteristics is null");
       return Promise.reject("DeliverFailed");
@@ -320,7 +325,7 @@ export class WebBLEConnection {
 
     this.#writing = true;
 
-    return this.#writeBytes(this.#networkChar, payload, true)
+    return this.#writeBytes(this.#networkChar, payload_bytes, true)
       .catch(e => {
         logging.error(e);
         throw "DeliverFailed";
@@ -333,7 +338,7 @@ export class WebBLEConnection {
   // transmit() tryes to transmit data NOW. ASAP. It will fail,
   // if deliver or another transmit is being executed at the moment
   // returns promise that will be resolved when message is physically send (only transmittion, not receive)
-  transmit(payload: number[], timeout: number) {
+  transmit(payload_bytes: Uint8Array, timeout_number: number): Promise<unknown> {
     if (!this.#networkChar) {
       logging.warn("Network characteristics is null");
       return Promise.reject("TransmitFailed");
@@ -346,7 +351,7 @@ export class WebBLEConnection {
 
     this.#writing = true;
 
-    return this.#writeBytes(this.#networkChar, payload, false)
+    return this.#writeBytes(this.#networkChar, payload_bytes, false)
       .catch(e => {
         logging.error(e);
         throw "TransmitFailed";
@@ -358,7 +363,7 @@ export class WebBLEConnection {
 
   // request first writes the request to the Device Characteristics
   // and then reads the response also from the Device Characteristics
-  request(payload: number[], read_response: boolean, timeout: number) {
+  request(payload_bytes: Uint8Array, read_response: boolean, timeout_number: number): Promise<Uint8Array | null> {
     if (!this.#deviceChar) {
       logging.warn("Device characteristics is null");
       return Promise.reject("RequestFailed");
@@ -371,13 +376,13 @@ export class WebBLEConnection {
 
     this.#writing = true;
 
-    return this.#writeBytes(this.#deviceChar, payload, true)
+    return this.#writeBytes(this.#deviceChar, payload_bytes, true)
       .then(() => {
         if (read_response) {
           if (!this.#deviceChar) throw "DeviceCharactristicsNull";
           return this.#readBytes(this.#deviceChar);
         } else {
-          return [];
+          return null;
         }
       })
       .catch(e => {
@@ -420,7 +425,7 @@ export class WebBLEConnection {
 
   // reads the current clock characteristics timestamp from the device
   // as fast as possible
-  readClock() {
+  readClock(): Promise<number> {
     // return Promise.reject("SimulatedFail");
 
     if (!this.#clockChar) {
@@ -438,7 +443,7 @@ export class WebBLEConnection {
     return this.#clockChar
       .readValue()
       .then(dataView => {
-        const reader = new TnglReader(dataView);
+        const reader = new TnglReader(new Uint8Array(dataView.buffer));
         return reader.readUint64();
       })
       .catch(e => {
@@ -450,7 +455,7 @@ export class WebBLEConnection {
       });
   }
 
-  updateFirmware(firmware: number[]) {
+  updateFirmware(firmware_bytes: Uint8Array): Promise<unknown> {
     if (!this.#deviceChar) {
       logging.warn("Device characteristics is null");
       return Promise.reject("UpdateFailed");
@@ -472,7 +477,7 @@ export class WebBLEConnection {
       let written = 0;
 
       logging.debug("OTA UPDATE");
-      logging.debug(firmware);
+      logging.debug(firmware_bytes);
 
       const start_timestamp = Date.now();
 
@@ -486,7 +491,7 @@ export class WebBLEConnection {
           logging.debug("OTA RESET");
 
           const bytes = [COMMAND_FLAGS.FLAG_OTA_RESET, 0x00, ...numberToBytes(0x00000000, 4)];
-          await this.#writeBytes(this.#deviceChar, bytes, true);
+          await this.#writeBytes(this.#deviceChar, new Uint8Array(bytes), true);
         }
 
         await sleep(100);
@@ -495,8 +500,8 @@ export class WebBLEConnection {
           //===========// BEGIN //===========//
           logging.debug("OTA BEGIN");
 
-          const bytes = [COMMAND_FLAGS.FLAG_OTA_BEGIN, 0x00, ...numberToBytes(firmware.length, 4)];
-          await this.#writeBytes(this.#deviceChar, bytes, true);
+          const bytes = [COMMAND_FLAGS.FLAG_OTA_BEGIN, 0x00, ...numberToBytes(firmware_bytes.length, 4)];
+          await this.#writeBytes(this.#deviceChar, new Uint8Array(bytes), true);
         }
 
         await sleep(8000); // need to wait 10 seconds to let the ESP erase the flash.
@@ -505,17 +510,17 @@ export class WebBLEConnection {
           //===========// WRITE //===========//
           logging.debug("OTA WRITE");
 
-          while (written < firmware.length) {
-            if (index_to > firmware.length) {
-              index_to = firmware.length;
+          while (written < firmware_bytes.length) {
+            if (index_to > firmware_bytes.length) {
+              index_to = firmware_bytes.length;
             }
 
-            const bytes = [COMMAND_FLAGS.FLAG_OTA_WRITE, 0x00, ...numberToBytes(written, 4), ...firmware.slice(index_from, index_to)];
+            const bytes = [COMMAND_FLAGS.FLAG_OTA_WRITE, 0x00, ...numberToBytes(written, 4), ...firmware_bytes.slice(index_from, index_to)];
 
-            await this.#writeBytes(this.#deviceChar, bytes, true);
+            await this.#writeBytes(this.#deviceChar, new Uint8Array(bytes), true);
             written += index_to - index_from;
 
-            const percentage = Math.floor((written * 10000) / firmware.length) / 100;
+            const percentage = Math.floor((written * 10000) / firmware_bytes.length) / 100;
             logging.debug(percentage + "%");
 
             this.#runtimeReference.emit("ota_progress", percentage);
@@ -532,7 +537,7 @@ export class WebBLEConnection {
           logging.debug("OTA END");
 
           const bytes = [COMMAND_FLAGS.FLAG_OTA_END, 0x00, ...numberToBytes(written, 4)];
-          await this.#writeBytes(this.#deviceChar, bytes, true);
+          await this.#writeBytes(this.#deviceChar, new Uint8Array(bytes), true);
         }
 
         await sleep(2000);
@@ -552,7 +557,7 @@ export class WebBLEConnection {
   }
 
   // resets the Communations, discarding command queue
-  reset() {
+  reset(): void {
     this.#service = null;
     this.#networkChar = null;
     this.#clockChar = null;
@@ -561,7 +566,7 @@ export class WebBLEConnection {
     this.#deviceNotification = [];
   }
 
-  destroy() {
+  destroy(): void {
     this.reset();
   }
 
@@ -606,7 +611,7 @@ export class SpectodaWebBluetoothConnector {
   #webBTDevice: BluetoothDevice | null;
   #connection: WebBLEConnection;
   #reconection: boolean;
-  #criteria: object[];
+  #criteria: SpectodaTypes.Criteria;
   #connectedGuard: boolean;
 
   type: string;
@@ -650,10 +655,10 @@ criteria: pole objektu, kde plati: [{ tohle and tamto and toto } or { tohle and 
 
 možnosti:
   name: string
-  namePrefix: string
+  nameprefix: string
   fwVersion: string
-  ownerSignature: string
-  productCode: number
+  network: string
+  product: number
   adoptionFlag: bool
 
 criteria example:
@@ -668,16 +673,16 @@ criteria example:
   {
     name:"NARA Alpha"
     fwVersion:"0.8.0"
-    ownerSignature:"baf2398ff5e6a7b8c9d097d54a9f865f"
-    productCode:1
+    network:"baf2398ff5e6a7b8c9d097d54a9f865f"
+    product:1
   },
   // all the devices with the name starting with "NARA", without the 0.8.0 FW and
   // that are not adopted by anyone
   // Product code is 2 what means NARA Beta
   {
-    namePrefix:"NARA"
+    nameprefix:"NARA"
     fwVersion:"!0.8.0"
-    productCode:2
+    product:2
     adoptionFlag:true
   }
 ]
@@ -687,8 +692,11 @@ criteria example:
   // if no criteria are set, then show all Spectoda devices visible.
   // first bonds the BLE device with the PC/Phone/Tablet if it is needed.
   // Then selects the device
-  userSelect(criteria: object[], timeout: number): object {
-    //logging.debug("choose()");
+  userSelect(criterium_array: SpectodaTypes.Criterium[], timeout_number: number | typeof DEFAULT_TIMEOUT = DEFAULT_TIMEOUT): Promise<SpectodaTypes.Criterium | null> {
+    if (timeout_number === DEFAULT_TIMEOUT) {
+      timeout_number = 60000;
+    }
+    logging.debug(`userSelect(criteria=${criterium_array}, timeout=${timeout_number})`);
 
     if (this.#connected()) {
       return this.disconnect()
@@ -696,22 +704,11 @@ criteria example:
           return sleep(1000);
         })
         .then(() => {
-          return this.userSelect(criteria, timeout);
+          return this.userSelect(criterium_array, timeout_number);
         });
     }
 
-    // logging.debug(criteria);
-
-    // store new criteria as a array
-    if (criteria) {
-      if (Array.isArray(criteria)) {
-        this.#criteria = criteria;
-      } else {
-        this.#criteria = [criteria];
-      }
-    } else {
-      this.#criteria = [];
-    }
+    this.#criteria = criterium_array;
 
     let web_ble_options: RequestDeviceOptions = { filters: [], optionalServices: [this.SPECTODA_SERVICE_UUID] };
 
@@ -728,16 +725,16 @@ criteria example:
       for (let i = 0; i < this.#criteria.length; i++) {
         const criterium = this.#criteria[i];
 
-        const filter = { services: [this.SPECTODA_SERVICE_UUID] };
+        let filter: any = { services: [this.SPECTODA_SERVICE_UUID] };
 
         if (criterium.name) {
           filter.name = criterium.name;
-        } else if (criterium.namePrefix) {
-          filter.namePrefix = criterium.namePrefix;
+        } else if (criterium.nameprefix) {
+          filter.nameprefix = criterium.nameprefix;
         }
 
         // if any of these criteria are required, then we need to build a manufacturer data filter.
-        if (criterium.fwVersion || criterium.ownerSignature || criterium.productCode || criterium.adoptionFlag) {
+        if (criterium.fw || criterium.network || criterium.product || criterium.commisionable) {
           const company_identifier = 0x02e5; // Bluetooth SIG company identifier of Espressif
 
           delete filter.services;
@@ -745,13 +742,13 @@ criteria example:
           const prefix = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
           const mask = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
 
-          if (criterium.productCode) {
-            if (criterium.productCode < 0 || criterium.productCode > 0xffff) {
+          if (criterium.product) {
+            if (criterium.product < 0 || criterium.product > 0xffff) {
               throw "InvalidProductCode";
             }
 
             const product_code_byte_offset = 2;
-            const product_code_bytes = [criterium.productCode & 0xff, (criterium.productCode >> 8) & 0xff];
+            const product_code_bytes = [criterium.product & 0xff, (criterium.product >> 8) & 0xff];
 
             for (let i = 0; i < 2; i++) {
               prefix[product_code_byte_offset + i] = product_code_bytes[i];
@@ -759,13 +756,13 @@ criteria example:
             }
           }
 
-          if (criterium.ownerSignature) {
-            if (criterium.ownerSignature.length != 32) {
+          if (criterium.network) {
+            if (criterium.network.length != 32) {
               throw "InvalidOwnerSignature";
             }
 
             const owner_signature_byte_offset = 4;
-            const owner_signature_code_bytes = hexStringToUint8Array(criterium.ownerSignature);
+            const owner_signature_code_bytes = hexStringToUint8Array(criterium.network, 32);
 
             for (let i = 0; i < 16; i++) {
               prefix[owner_signature_byte_offset + i] = owner_signature_code_bytes[i];
@@ -773,13 +770,13 @@ criteria example:
             }
           }
 
-          if (criterium.adoptionFlag) {
+          if (criterium.commisionable) {
             const other_flags_offset = 20;
 
             let flags_prefix = 0b00000000;
             const flags_mask = 0b11111111;
 
-            if (criterium.adoptionFlag === true) {
+            if (criterium.commisionable === true) {
               const adoption_flag_bit_pos = 0;
 
               flags_prefix |= 1 << adoption_flag_bit_pos;
@@ -789,10 +786,15 @@ criteria example:
             mask[other_flags_offset] = flags_mask;
           }
 
-          if (criterium.fwVersion) {
+          if (criterium.fw) {
             const fw_version_byte_offset = 0;
-            const reg = criterium.fwVersion.match(/(!?)(\d+).(\d+).(\d+)/);
-            const version_code = reg[2] * 10000 + reg[3] * 100 + reg[4] * 1;
+            const reg = criterium.fw.match(/(!?)(\d+).(\d+).(\d+)/);
+
+            if (!reg) {
+              throw "InvalidFirmwareVersion";
+            }
+
+            const version_code = Number(reg[2]) * 10000 + Number(reg[3]) * 100 + Number(reg[4]) * 1;
             const version_bytes = [version_code & 0xff, (version_code >> 8) & 0xff];
 
             if (reg[1] === "!") {
@@ -873,7 +875,15 @@ criteria example:
   // if no criteria are provided, all Spectoda enabled devices (with all different FWs and Owners and such)
   // are eligible.
 
-  autoSelect(criteria: object[], scan_period: number, timeout: number): object {
+  autoSelect(criterium_array: SpectodaTypes.Criterium[], scan_duration_number: number | typeof DEFAULT_TIMEOUT = DEFAULT_TIMEOUT, timeout_number: number | typeof DEFAULT_TIMEOUT = DEFAULT_TIMEOUT): Promise<SpectodaTypes.Criterium | null> {
+    if (scan_duration_number === DEFAULT_TIMEOUT) {
+      // ? 1200ms seems to be the minimum for the scan_duration if the controller is rebooted
+      scan_duration_number = 1500;
+    }
+    if (timeout_number === DEFAULT_TIMEOUT) {
+      timeout_number = 5000;
+    }
+
     // step 1. for the scan_period scan the surroundings for BLE devices.
     // step 2. if some devices matching the criteria are found, then select the one with
     //         the greatest signal strength. If no device is found until the timeout,
@@ -885,29 +895,29 @@ criteria example:
           return sleep(1000);
         })
         .then(() => {
-          return this.autoSelect(criteria, scan_period, timeout);
+          return this.autoSelect(criterium_array, scan_duration_number, timeout_number);
         });
     }
 
     // // web bluetooth cant really auto select bluetooth device. This is the closest you can get.
-    // if (this.#selected() && criteria.ownerSignature === this.#criteria.ownerSignature) {
+    // if (this.#selected() && criteria.network === this.#criteria.network) {
     //   return Promise.resolve();
     // }
 
-    this.#criteria = criteria;
+    this.#criteria = criterium_array;
 
     // Web Bluetooth nepodporuje možnost automatické volby zařízení.
     // Proto je to tady implementováno totožně jako userSelect.
 
-    return this.userSelect(criteria, timeout);
+    return this.userSelect(criterium_array, timeout_number);
   }
 
   // if device is conneced, then disconnect it
-  unselect() {
+  unselect(): Promise<null> {
     return (this.#connected() ? this.disconnect() : Promise.resolve()).then(() => {
       this.#webBTDevice = null;
       this.#connection.reset();
-      return;
+      return null;
     });
   }
 
@@ -916,26 +926,32 @@ criteria example:
     return this.#webBTDevice ? true : false;
   }
 
-  selected() {
+  selected(): Promise<SpectodaTypes.Criterium | null> {
     return Promise.resolve(this.#selected() ? { connector: this.type } : null);
   }
 
-  scan(criteria: object[], scan_period: number) {
+  scan(criterium_array: SpectodaTypes.Criterium[], scan_duration_number: number | typeof DEFAULT_TIMEOUT = DEFAULT_TIMEOUT): Promise<SpectodaTypes.Criterium[]> {
+    if (scan_duration_number === DEFAULT_TIMEOUT) {
+      scan_duration_number = 7000;
+    }
+
+    logging.verbose("scan(criterium_array=" + JSON.stringify(criterium_array) + ", scan_duration_number=" + scan_duration_number + ")");
+
     // returns devices like autoSelect scan() function
-    return Promise.resolve("{}");
+    return Promise.resolve([]);
   }
 
   // connect Connector to the selected Spectoda Device. Also can be used to reconnect.
   // Fails if no device is selected
-  connect(timeout = DEFAULT_TIMEOUT): Promise<object> {
+  connect(timeout: number | typeof DEFAULT_TIMEOUT = DEFAULT_TIMEOUT): Promise<SpectodaTypes.Criterium | null> {
     if (timeout === DEFAULT_TIMEOUT) {
       timeout = 10000;
     }
     logging.verbose(`connect(timeout=${timeout})`);
 
     if (timeout <= 0) {
-      logging.info("> Connect timeout have expired");
-      return Promise.reject("ConnectionFailed");
+      logging.debug("> Connect timeout has expired");
+      return Promise.reject("ConnectionTimeout");
     }
 
     const start = Date.now();
@@ -945,61 +961,57 @@ criteria example:
       return Promise.reject("DeviceNotSelected");
     }
 
-    if (this.#connected()) {
-      logging.info("> Bluetooth Device is already connected");
-      return Promise.resolve({ connector: "webbluetooth" });
-    }
+    const MINIMUM_CONNECT_TIMEOUT = 5000;
+    const effectiveTimeout = Math.max(timeout, MINIMUM_CONNECT_TIMEOUT);
 
-    const timeout_handle = setTimeout(
-      () => {
-        logging.warn("Timeout triggered");
-        this.#webBTDevice?.gatt?.disconnect();
-      },
-      timeout < 10000 ? 10000 : timeout,
-    );
+    // Create a promise that rejects after the timeout
+    const timeoutPromise = new Promise<never>((_, reject) => {
+      setTimeout(() => {
+        reject("ConnectionTimeout");
+      }, effectiveTimeout);
+    });
 
-    logging.info("> Connecting to Bluetooth device...");
-    return this.#webBTDevice?.gatt
-      ?.connect()
-      .then(server => {
+    // Create the connection promise
+    const connectionPromise = (async () => {
+      try {
+        logging.debug("> Connecting to Bluetooth device...");
+        const server = await this.#webBTDevice?.gatt?.connect();
+        if (!server) throw new Error("Failed to connect");
+
         this.#connection.reset();
+        logging.debug("> Getting the Bluetooth Service...");
+        const service = await server.getPrimaryService(this.SPECTODA_SERVICE_UUID);
 
-        logging.info("> Getting the Bluetooth Service...");
-        return server.getPrimaryService(this.SPECTODA_SERVICE_UUID);
-      })
-      .then(service => {
-        logging.info("> Getting the Service Characteristic...");
+        logging.debug("> Getting the Service Characteristic...");
+        await this.#connection.attach(service, this.NETWORK_CHAR_UUID, this.CLOCK_CHAR_UUID, this.DEVICE_CHAR_UUID);
 
-        clearTimeout(timeout_handle);
-
-        return this.#connection.attach(service, this.NETWORK_CHAR_UUID, this.CLOCK_CHAR_UUID, this.DEVICE_CHAR_UUID);
-      })
-      .then(() => {
-        logging.info("> Bluetooth Device Connected");
+        logging.debug("> Bluetooth Device Connected");
         if (!this.#connectedGuard) {
           this.#runtimeReference.emit("#connected");
         }
         return { connector: "webbluetooth" };
-      })
-      .catch(error => {
-        logging.warn(error.name);
+      } catch (error: any) {
+        logging.error(error);
 
-        clearTimeout(timeout_handle);
+        logging.info(this.#webBTDevice);
+        this.#webBTDevice?.gatt?.disconnect();
 
-        // If the device is far away, sometimes this "NetworkError" happends
-        if (error.name == "NetworkError") {
-          return sleep(1000).then(() => {
-            if (this.#reconection) {
-              const passed = Date.now() - start;
-              return this.connect(timeout - passed);
-            } else {
-              throw "ConnectionFailed";
-            }
-          });
-        } else {
-          throw error;
+        // If the device is far away, sometimes this "NetworkError" happens
+        if (error.name === "NetworkError") {
+          await sleep(1000);
+          if (this.#reconection) {
+            const passed = Date.now() - start;
+            const remainingTimeout = timeout - passed;
+            return this.connect(remainingTimeout);
+          }
+          throw "ConnectionFailed";
         }
-      });
+        throw error;
+      }
+    })();
+
+    // Race between the connection attempt and the timeout
+    return Promise.race([connectionPromise, timeoutPromise]);
   }
 
   // there #connected returns boolean true if connected, false if not connected
@@ -1007,8 +1019,8 @@ criteria example:
     return this.#webBTDevice && this.#webBTDevice?.gatt?.connected;
   }
 
-  // connected() is an interface function that needs to return a Promise
-  connected() {
+  connected(): Promise<SpectodaTypes.Criterium | null> {
+    logging.verbose(`connected()`);
     return Promise.resolve(this.#connected() ? { connector: this.type } : null);
   }
 
@@ -1017,7 +1029,9 @@ criteria example:
   }
 
   // disconnect Connector from the connected Spectoda Device. But keep it selected
-  disconnect() {
+  disconnect(): Promise<unknown> {
+    logging.verbose("disconnect()");
+
     this.#reconection = false;
 
     logging.info("> Disconnecting from Bluetooth Device...");
@@ -1049,37 +1063,52 @@ criteria example:
 
   // deliver handles the communication with the Spectoda network in a way
   // that the command is guaranteed to arrive
-  deliver(payload: number[], timeout: number) {
+  deliver(payload_bytes: Uint8Array, timeout_number: number | typeof DEFAULT_TIMEOUT = DEFAULT_TIMEOUT): Promise<unknown> {
+    if (timeout_number === DEFAULT_TIMEOUT) {
+      timeout_number = 5000;
+    }
+    logging.verbose(`deliver(payload=${payload_bytes}, timeout=${timeout_number})`);
+
     if (!this.#connected()) {
       return Promise.reject("DeviceDisconnected");
     }
 
-    return this.#connection.deliver(payload, timeout);
+    return this.#connection.deliver(payload_bytes, timeout_number);
   }
 
   // transmit handles the communication with the Spectoda network in a way
   // that the command is NOT guaranteed to arrive
-  transmit(payload: number[], timeout: number) {
+  transmit(payload_bytes: Uint8Array, timeout_number: number | typeof DEFAULT_TIMEOUT = DEFAULT_TIMEOUT): Promise<unknown> {
+    if (timeout_number === DEFAULT_TIMEOUT) {
+      timeout_number = 1000;
+    }
+    logging.verbose(`transmit(payload=${payload_bytes}, timeout=${timeout_number})`);
+
     if (!this.#connected()) {
       return Promise.reject("DeviceDisconnected");
     }
 
-    return this.#connection.transmit(payload, timeout);
+    return this.#connection.transmit(payload_bytes, timeout_number);
   }
 
   // request handles the requests on the Spectoda network. The command request
   // is guaranteed to get a response
-  request(payload: number[], read_response: boolean, timeout: number) {
+  request(payload_bytes: Uint8Array, read_response: boolean, timeout_number: number | typeof DEFAULT_TIMEOUT = DEFAULT_TIMEOUT): Promise<Uint8Array | null> {
+    if (timeout_number === DEFAULT_TIMEOUT) {
+      timeout_number = 5000;
+    }
+    logging.verbose(`request(payload=${payload_bytes}, read_response=${read_response}, timeout=${timeout_number})`);
+
     if (!this.#connected()) {
       return Promise.reject("DeviceDisconnected");
     }
 
-    return this.#connection.request(payload, read_response, timeout);
+    return this.#connection.request(payload_bytes, read_response, timeout_number);
   }
 
   // synchronizes the device internal clock with the provided TimeTrack clock
   // of the application as precisely as possible
-  setClock(clock: TimeTrack) {
+  setClock(clock: TimeTrack): Promise<unknown> {
     logging.verbose("setClock()");
 
     if (!this.#connected()) {
@@ -1106,7 +1135,7 @@ criteria example:
 
   // returns a TimeTrack clock object that is synchronized with the internal clock
   // of the device as precisely as possible
-  getClock() {
+  getClock(): Promise<TimeTrack> {
     logging.verbose("getClock()");
 
     if (!this.#connected()) {
@@ -1133,15 +1162,21 @@ criteria example:
 
   // handles the firmware updating. Sends "ota" events
   // to all handlers
-  updateFW(firmware: number[]) {
+  updateFW(firmware_bytes: Uint8Array): Promise<unknown> {
+    logging.debug("updateFW()", firmware_bytes);
+
     if (!this.#connected()) {
       return Promise.reject("DeviceDisconnected");
     }
 
-    return this.#connection.updateFirmware(firmware);
+    return this.#connection.updateFirmware(firmware_bytes);
   }
 
-  destroy() {
+  cancel(): void {
+    // TODO implement
+  }
+
+  destroy(): Promise<unknown> {
     //this.#runtimeReference = null; // dont know if I need to destroy this reference.. But I guess I dont need to?
     return this.disconnect()
       .catch(() => {})
@@ -1164,7 +1199,7 @@ criteria example:
       return Promise.reject("DeviceDisconnected");
     }
 
-    return this.#connection.deliver([...command_bytes], 1000);
+    return this.#connection.deliver(command_bytes, 1000);
   }
 
   // bool _sendRequest(const int32_t request_ticket_number, std::vector<uint8_t>& request_bytecode, const Connection& destination_connection) = 0;
@@ -1172,7 +1207,7 @@ criteria example:
   sendRequest(request_ticket_number: number, request_bytecode: Uint8Array, destination_connection: Connection) {
     logging.verbose(`SpectodaWebBluetoothConnector::sendRequest(request_ticket_number=${request_ticket_number}, request_bytecode=${request_bytecode}, destination_connection=${destination_connection})`);
 
-    return this.request([...request_bytecode], false, 10000);
+    return this.request(request_bytecode, false, 10000);
   }
   // bool _sendResponse(const int32_t request_ticket_number, const int32_t request_result, std::vector<uint8_t>& response_bytecode, const Connection& destination_connection) = 0;
 

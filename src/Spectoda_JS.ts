@@ -1,31 +1,31 @@
-// TODO fix TSC in spectoda-js
-// // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// // @ts-nocheck
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
 
 import { VALUE_TYPE } from "../constants";
 import { sleep } from "../functions";
 import { logging } from "../logging";
 import { SpectodaRuntime } from "./SpectodaRuntime";
-import { Connection, IConnector_WASMImplementation, SpectodaEvent, SpectodaWasm, Spectoda_WASM, Spectoda_WASMImplementation, Synchronization, Uint8Vector } from "./SpectodaWasm";
+import { Connection, IConnector_WASM, IConnector_WASMImplementation, SpectodaEvent, SpectodaWasm, Spectoda_WASM, Spectoda_WASMImplementation, Synchronization, Uint8Vector, interface_error_t } from "./SpectodaWasm";
 
 export namespace SpectodaTypes {
   export type ConnectorType = "default" | "bluetooth" | "serial" | "websockets" | "simulated" | "dummy";
   export type ConnectionState = "connected" | "connecting" | "disconnected" | "disconnecting";
+  export type WebsocketConnectionState = "connecting-websockets" | "connected-websockets" | "disconnecting-websockets" | "disconnected-websockets";
 
   export type ConnectionJSEvent = ConnectionState;
-  export type WebsocketJSEvent = "connecting-websockets" | "connected-websockets" | "disconnecting-websockets" | "disconnected-websockets";
+  export type WebsocketJSEvent = WebsocketConnectionState;
   export type PeerJSEvent = "peer_connected" | "peer_disconnected";
   export type OtaJSEvent = "ota_status" | "ota_progress";
   export type OtaStatus = "begin" | "success" | "fail";
 
   export type JsEvent = ConnectionJSEvent | WebsocketJSEvent | PeerJSEvent | OtaJSEvent;
 
-  type criteria_generic = { name?: string; network?: string; fw?: string; product?: number };
+  type criteria_generic = { connector?: string; mac?: string; name?: string; nameprefix?: string; network?: string; fw?: string; product?: number; commisionable?: boolean };
   type criteria_ble = criteria_generic;
-  type criteria_serial = criteria_generic & { port?: string; path?: string };
+  type criteria_serial = criteria_generic & { path?: string; manufacturer?: string; serialNumber?: string; pnpId?: string; locationId?: string; productId?: string; vendorId?: string; baudrate?: number; baudRate?: number };
   type criteria_dummy = criteria_generic;
   type criteria_simulated = criteria_generic;
-  type criteria = criteria_ble | criteria_serial | criteria_dummy | criteria_simulated;
+  type criteria = criteria_ble & criteria_serial & criteria_dummy & criteria_simulated;
+  export type Criterium = criteria;
   export type Criteria = criteria | criteria[];
   export type Tngl = { code: string | undefined; bytecode: Uint8Array | undefined };
   export type NetworkSignature = string; // "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx", where x is a-f or 0-9
@@ -201,7 +201,7 @@ export class Spectoda_JS {
   #runtimeReference;
 
   #spectoda_wasm: Spectoda_WASM | undefined;
-  #connectors: IConnector_WASMImplementation[];
+  #connectors: IConnector_WASM[];
 
   constructor(runtimeReference: SpectodaRuntime) {
     this.#runtimeReference = runtimeReference;
@@ -429,7 +429,7 @@ export class Spectoda_JS {
         },
 
         // virtual interface_error_t _handleTimelineManipulation(const int32_t timeline_timestamp, const bool timeline_paused, const double clock_timestamp) = 0;
-        _handleTimelineManipulation: (timeline_timestamp: number, timeline_paused: boolean, timeline_date: string) => {
+        _handleTimelineManipulation: (timeline_timestamp: number, timeline_paused: boolean, timeline_date: string): interface_error_t => {
           logging.debug(`Spectoda_JS::_handleTimelineManipulation(timeline_timestamp=${timeline_timestamp}, timeline_paused=${timeline_paused}, timeline_date=${timeline_date})`);
 
           // TODO! Refactor timeline mechanics to inclute date
@@ -562,7 +562,7 @@ export class Spectoda_JS {
 
       this.#connectors = [];
       this.#connectors.push(SpectodaWasm.IConnector_WASM.implement(WasmConnectorImplementation));
-      this.#spectoda_wasm.registerConnector(this.#connectors[0]);
+      this.registerConnector(this.#connectors[0]);
 
       this.#spectoda_wasm.begin();
     });
@@ -590,6 +590,14 @@ export class Spectoda_JS {
     }
 
     return this.#spectoda_wasm.makePort(port_label, port_config);
+  }
+
+  registerConnector(connector: IConnector_WASM) {
+    if (!this.#spectoda_wasm) {
+      throw "NotConstructed";
+    }
+
+    this.#spectoda_wasm.registerConnector(connector);
   }
 
   setClockTimestamp(clock_timestamp: number) {

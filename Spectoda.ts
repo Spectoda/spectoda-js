@@ -189,30 +189,30 @@ export class Spectoda {
     }, 8000); // ! it is set to 8000ms because of the 10s timeout in the serial connector
   }
 
-  #setWebSocketConnectionState(websocketConnectionState: string) {
+  #setWebSocketConnectionState(websocketConnectionState: SpectodaTypes.WebsocketConnectionState) {
     switch (websocketConnectionState) {
-      case "connecting":
+      case "connecting-websockets":
         if (websocketConnectionState !== this.#websocketConnectionState) {
           logging.warn("> Spectoda websockets connecting");
           this.#websocketConnectionState = websocketConnectionState;
           this.runtime.emit("connecting-websockets");
         }
         break;
-      case "connected":
+      case "connected-websockets":
         if (websocketConnectionState !== this.#websocketConnectionState) {
           logging.warn("> Spectoda websockets connected");
           this.#websocketConnectionState = websocketConnectionState;
           this.runtime.emit("connected-websockets");
         }
         break;
-      case "disconnecting":
+      case "disconnecting-websockets":
         if (websocketConnectionState !== this.#websocketConnectionState) {
           logging.warn("> Spectoda websockets disconnecting");
           this.#websocketConnectionState = websocketConnectionState;
           this.runtime.emit("disconnecting-websockets");
         }
         break;
-      case "disconnected":
+      case "disconnected-websockets":
         if (websocketConnectionState !== this.#websocketConnectionState) {
           logging.warn("> Spectoda websockets disconnected");
           this.#websocketConnectionState = websocketConnectionState;
@@ -268,7 +268,7 @@ export class Spectoda {
     return this.#connectionState;
   }
 
-  #setOwnerSignature(ownerSignature: string) {
+  #setOwnerSignature(ownerSignature: SpectodaTypes.NetworkSignature) {
     const reg = ownerSignature.match(/([\dabcdefABCDEF]{32})/g);
 
     if (!reg || !reg.length || !reg[0]) {
@@ -279,7 +279,7 @@ export class Spectoda {
     return true;
   }
 
-  #setOwnerKey(ownerKey: string) {
+  #setOwnerKey(ownerKey: SpectodaTypes.NetworkKey) {
     const reg = ownerKey.match(/([\dabcdefABCDEF]{32})/g);
 
     if (!reg || !reg.length || !reg[0]) {
@@ -363,7 +363,7 @@ export class Spectoda {
    * Assigns with which "connector" you want to `connect`. E.g. "webbluetooth", "serial", "websockets", "simulated".
    * The name `connector` legacy term, but we don't have a better name for it yer.
    */
-  setConnector(connector_type: string, connector_param = undefined) {
+  setConnector(connector_type: SpectodaTypes.ConnectorType, connector_param = null) {
     return this.runtime.assignConnector(connector_type, connector_param);
   }
 
@@ -371,14 +371,14 @@ export class Spectoda {
    * ! Useful
    * @alias this.setConnector
    */
-  assignConnector(connector_type: string, connector_param = undefined) {
+  assignConnector(connector_type: SpectodaTypes.ConnectorType, connector_param = null) {
     return this.setConnector(connector_type, connector_param);
   }
 
   /**
    * @alias this.setConnector
    */
-  assignOwnerSignature(ownerSignature: string) {
+  assignOwnerSignature(ownerSignature: SpectodaTypes.NetworkSignature) {
     return this.#setOwnerSignature(ownerSignature);
   }
 
@@ -386,7 +386,7 @@ export class Spectoda {
    * @deprecated
    * Set the network `signature` (deprecated terminology "ownerSignature").
    */
-  setOwnerSignature(ownerSignature: string) {
+  setOwnerSignature(ownerSignature: SpectodaTypes.NetworkSignature) {
     return this.#setOwnerSignature(ownerSignature);
   }
 
@@ -394,28 +394,28 @@ export class Spectoda {
    * @deprecated
    * Get the network `signature` (deprecated terminology "ownerSignature").
    */
-  getOwnerSignature() {
+  getOwnerSignature(): SpectodaTypes.NetworkSignature {
     return this.#ownerSignature;
   }
 
   /**
    * @alias this.setOwnerKey
    */
-  assignOwnerKey(ownerKey: string) {
+  assignOwnerKey(ownerKey: SpectodaTypes.NetworkKey) {
     return this.#setOwnerKey(ownerKey);
   }
 
   /**
    * Sets the network `key` (deprecated terminology "ownerKey").
    */
-  setOwnerKey(ownerKey: string) {
+  setOwnerKey(ownerKey: SpectodaTypes.NetworkKey) {
     return this.#setOwnerKey(ownerKey);
   }
 
   /**
    * Get the network `key` (deprecated terminology "ownerKey").
    */
-  getOwnerKey() {
+  getOwnerKey(): SpectodaTypes.NetworkKey {
     return this.#ownerKey;
   }
 
@@ -521,7 +521,7 @@ export class Spectoda {
 
     return await new Promise((resolve, reject) => {
       this.socket.on("disconnect", () => {
-        this.#setWebSocketConnectionState("disconnected");
+        this.#setWebSocketConnectionState("disconnected-websockets");
       });
 
       this.socket.on("connect", async () => {
@@ -546,24 +546,24 @@ export class Spectoda {
           const roomNumber = response?.roomNumber;
 
           if (response?.status === "success") {
-            this.#setWebSocketConnectionState("connected");
+            this.#setWebSocketConnectionState("connected-websockets");
             setConnectionSocketData();
 
             logging.debug("Remote control session joined successfully", roomNumber);
 
             resolve({ status: "success", roomNumber });
           } else {
-            this.#setWebSocketConnectionState("disconnected");
+            this.#setWebSocketConnectionState("disconnected-websockets");
             logging.debug("Remote control session join failed, does not exist");
           }
         } else if (signature) {
           // Handle signature-based logic
-          this.#setWebSocketConnectionState("connecting");
+          this.#setWebSocketConnectionState("connecting-websockets");
           logging.debug("Joining network remotely", signature, key);
           await this.socket
             .emitWithAck("join", { signature, key })
             .then((e: any) => {
-              this.#setWebSocketConnectionState("connected");
+              this.#setWebSocketConnectionState("connected-websockets");
               setConnectionSocketData();
 
               logging.info("> Connected and joined network remotely");
@@ -571,7 +571,7 @@ export class Spectoda {
               resolve({ status: "success" });
             })
             .catch((e: any) => {
-              this.#setWebSocketConnectionState("disconnected");
+              this.#setWebSocketConnectionState("disconnected-websockets");
               reject(e);
             });
         }
@@ -1006,7 +1006,7 @@ export class Spectoda {
 
       // Replace all defined names with their corresponding values
       for (let define of defines) {
-        if (define.value === undefined) continue; // Skip if no value is provided
+        if (define.value === null || define.value === undefined) continue; // Skip if no value is provided
         // Use word boundaries to avoid partial replacements
         const defineRegex = new RegExp(`\\b${define.name}\\b`, "g");
         tngl_code = tngl_code.replace(defineRegex, define.value);
@@ -1068,6 +1068,10 @@ export class Spectoda {
     const command_bytes = [COMMAND_FLAGS.FLAG_READ_TNGL_BYTECODE_REQUEST, ...numberToBytes(request_uuid, 4)];
 
     return this.runtime.request(command_bytes, true).then(response => {
+      if (response === null) {
+        throw "NoResponseReceived";
+      }
+
       let reader = new TnglReader(response);
 
       logging.verbose(`response.byteLength=${response.byteLength}`);
@@ -1117,13 +1121,13 @@ export class Spectoda {
 
     this.#resetClockSyncInterval();
 
-    logging.debug(`> Writing Tngl code...`);
+    logging.info(`> Writing Tngl code...`);
 
-    if (tngl_code === null && tngl_bytes === null) {
+    if ((tngl_code === null || tngl_code === undefined) && (tngl_bytes === null || tngl_bytes === undefined)) {
       return Promise.reject("InvalidParameters");
     }
 
-    if (tngl_bytes === null) {
+    if (tngl_bytes === null || tngl_bytes === undefined) {
       tngl_bytes = this.#parser.parseTnglCode(tngl_code);
     }
 
@@ -1337,18 +1341,18 @@ export class Spectoda {
   /**
    * Synchronizes timeline of the connected controller with the current time of the runtime.
    */
-  syncTimeline(timestamp: SpectodaTypes.Timestamp | undefined = undefined, paused: boolean | undefined = undefined, date: SpectodaTypes.Date | undefined = undefined) {
+  syncTimeline(timestamp: SpectodaTypes.Timestamp | null = null, paused: boolean | null = null, date: SpectodaTypes.Date | null = null) {
     logging.verbose(`syncTimeline(timestamp=${timestamp}, paused=${paused})`);
 
-    if (timestamp === undefined) {
+    if (timestamp === null || timestamp === undefined) {
       timestamp = this.timeline.millis();
     }
 
-    if (paused === undefined) {
+    if (paused === null || paused === undefined) {
       paused = this.timeline.paused();
     }
 
-    if (date === undefined) {
+    if (date === null || date === undefined) {
       date = this.timeline.getDate();
     }
 
@@ -1573,6 +1577,10 @@ export class Spectoda {
     const bytes = [COMMAND_FLAGS.FLAG_FW_UPDATE_PEER_REQUEST, ...numberToBytes(request_uuid, 4), ...strMacToBytes(peer)];
 
     return this.runtime.request(bytes, true).then(response => {
+      if (response === null) {
+        throw "NoResponseReceived";
+      }
+
       let reader = new TnglReader(response);
 
       logging.verbose(`response.byteLength=${response.byteLength}`);
@@ -1610,6 +1618,10 @@ export class Spectoda {
     const bytes = [COMMAND_FLAGS.FLAG_DEVICE_CONFIG_REQUEST, ...numberToBytes(request_uuid, 4)];
 
     return this.runtime.request(bytes, true).then(response => {
+      if (response === null) {
+        throw "NoResponseReceived";
+      }
+
       let reader = new TnglReader(response);
 
       logging.verbose(`response.byteLength=${response.byteLength}`);
@@ -1673,6 +1685,10 @@ export class Spectoda {
     const request_uuid = this.#getUUID();
     const bytes = [COMMAND_FLAGS.FLAG_CONFIG_UPDATE_REQUEST, ...numberToBytes(request_uuid, 4), ...numberToBytes(config_bytes_size, 4), ...config_bytes];
     return this.runtime.request(bytes, true).then(response => {
+      if (response === null) {
+        throw "NoResponseReceived";
+      }
+
       let reader = new TnglReader(response);
 
       logging.verbose(`response.byteLength=${response.byteLength}`);
@@ -1735,6 +1751,10 @@ export class Spectoda {
     const bytes = [COMMAND_FLAGS.FLAG_TIMELINE_REQUEST, ...numberToBytes(request_uuid, 4)];
 
     return this.runtime.request(bytes, true).then(response => {
+      if (response === null) {
+        throw "NoResponseReceived";
+      }
+
       logging.verbose(`response.byteLength=${response.byteLength}`);
 
       let reader = new TnglReader(response);
@@ -1819,6 +1839,10 @@ export class Spectoda {
     const bytes = [COMMAND_FLAGS.FLAG_ERASE_NETWORK_REQUEST, ...numberToBytes(request_uuid, 4)];
 
     return this.runtime.request(bytes, true).then(response => {
+      if (response === null) {
+        throw "NoResponseReceived";
+      }
+
       let reader = new TnglReader(response);
 
       logging.verbose(`response.byteLength=${response.byteLength}`);
@@ -1885,6 +1909,10 @@ export class Spectoda {
     const bytes = [COMMAND_FLAGS.FLAG_FW_VERSION_REQUEST, ...numberToBytes(request_uuid, 4)];
 
     return this.runtime.request(bytes, true).then(response => {
+      if (response === null) {
+        throw "NoResponseReceived";
+      }
+
       let reader = new TnglReader(response);
 
       logging.verbose(`response.byteLength=${response.byteLength}`);
@@ -1930,6 +1958,10 @@ export class Spectoda {
     const bytes = [COMMAND_FLAGS.FLAG_TNGL_FINGERPRINT_REQUEST, ...numberToBytes(request_uuid, 4), 0];
 
     return this.runtime.request(bytes, true).then(response => {
+      if (response === null) {
+        throw "NoResponseReceived";
+      }
+
       let reader = new TnglReader(response);
 
       logging.verbose("response:", response);
@@ -1992,6 +2024,10 @@ export class Spectoda {
     const bytes = [COMMAND_FLAGS.FLAG_ROM_PHY_VDD33_REQUEST, ...numberToBytes(request_uuid, 4)];
 
     return this.runtime.request(bytes, true).then(response => {
+      if (response === null) {
+        throw "NoResponseReceived";
+      }
+
       let reader = new TnglReader(response);
 
       logging.verbose(`response.byteLength=${response.byteLength}`);
@@ -2033,6 +2069,10 @@ export class Spectoda {
     const bytes = [COMMAND_FLAGS.FLAG_VOLTAGE_ON_PIN_REQUEST, ...numberToBytes(request_uuid, 4), pin];
 
     return this.runtime.request(bytes, true).then(response => {
+      if (response === null) {
+        throw "NoResponseReceived";
+      }
+
       let reader = new TnglReader(response);
 
       logging.verbose(`response.byteLength=${response.byteLength}`);
@@ -2089,6 +2129,10 @@ export class Spectoda {
     const bytes = [COMMAND_FLAGS.FLAG_CONNECTED_PEERS_INFO_REQUEST, ...numberToBytes(request_uuid, 4)];
 
     return this.runtime.request(bytes, true).then(response => {
+      if (response === null) {
+        throw "NoResponseReceived";
+      }
+
       let reader = new TnglReader(response);
 
       logging.verbose(`response.byteLength=${response.byteLength}`);
@@ -2145,6 +2189,10 @@ export class Spectoda {
     const bytes = [COMMAND_FLAGS.FLAG_EVENT_HISTORY_BC_REQUEST, ...numberToBytes(request_uuid, 4)];
 
     return this.runtime.request(bytes, true).then(response => {
+      if (response === null) {
+        throw "NoResponseReceived";
+      }
+
       let reader = new TnglReader(response);
 
       logging.verbose(`response.byteLength=${response.byteLength}`);
@@ -2254,6 +2302,10 @@ export class Spectoda {
     return this.runtime
       .request(bytes, true)
       .then(response => {
+        if (response === null) {
+          throw "NoResponseReceived";
+        }
+
         let reader = new TnglReader(response);
 
         logging.verbose("response=", response);
@@ -2347,6 +2399,10 @@ export class Spectoda {
     const bytes = [COMMAND_FLAGS.FLAG_READ_CONTROLLER_NAME_REQUEST, ...numberToBytes(request_uuid, 4)];
 
     return this.runtime.request(bytes, true).then(response => {
+      if (response === null) {
+        throw "NoResponseReceived";
+      }
+
       let reader = new TnglReader(response);
 
       logging.verbose(`response.byteLength=${response.byteLength}`);
@@ -2474,6 +2530,10 @@ export class Spectoda {
     const bytes = [COMMAND_FLAGS.FLAG_READ_OWNER_SIGNATURE_REQUEST, ...numberToBytes(request_uuid, 4)];
 
     return this.runtime.request(bytes, true).then(response => {
+      if (response === null) {
+        throw "NoResponseReceived";
+      }
+
       let reader = new TnglReader(response);
 
       logging.verbose(`response.byteLength=${response.byteLength}`);
@@ -2521,6 +2581,10 @@ export class Spectoda {
     const bytes = [COMMAND_FLAGS.FLAG_WRITE_CONTROLLER_CODES_REQUEST, ...numberToBytes(request_uuid, 4), ...numberToBytes(pcb_code, 2), ...numberToBytes(product_code, 2)];
 
     return this.runtime.request(bytes, true).then(response => {
+      if (response === null) {
+        throw "NoResponseReceived";
+      }
+
       let reader = new TnglReader(response);
 
       logging.verbose(`response.byteLength=${response.byteLength}`);
@@ -2555,6 +2619,10 @@ export class Spectoda {
     const bytes = [COMMAND_FLAGS.FLAG_READ_CONTROLLER_CODES_REQUEST, ...numberToBytes(request_uuid, 4)];
 
     return this.runtime.request(bytes, true).then(response => {
+      if (response === null) {
+        throw "NoResponseReceived";
+      }
+
       let reader = new TnglReader(response);
 
       logging.verbose("response=", response);

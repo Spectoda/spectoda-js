@@ -1,12 +1,10 @@
-// TODO fix TSC in spectoda-js
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-nocheck
 
 import { spectoda } from "@spectoda/spectoda-utils";
 import { createNanoEvents, sleep } from "../functions";
 import { logging } from "../logging";
 import { LogEntry, RingLogBuffer } from "./LogBuffer";
-import { Connection, IConnector_WASM, IConnector_WASMImplementation, Spectoda_WASM, Spectoda_WASMImplementation, SpectodaWasm, Synchronization, Uint8Vector } from "./SpectodaWasm";
+import { Connection, IConnector_WASM, IConnector_WASMImplementation, interface_error_t, Spectoda_WASM, Spectoda_WASMImplementation, SpectodaWasm, Synchronization, Uint8Vector } from "./SpectodaWasm";
 import { IConnector_JS } from "./connector/IConnector_JS";
 
 // TODO: Deprecate and instead use SimulatedController
@@ -19,7 +17,7 @@ export class PreviewController {
   #instance: Spectoda_WASM | undefined;
   #config: { controller?: { name?: string }; ports?: [{ tag?: string; size?: number; brightness?: number; power?: number; visible?: boolean; reversed?: boolean }] } | undefined;
 
-  #ports: { [key: string]: Uint8Array };
+  #ports: { [key: string]: Uint32Array };
   #ringLogBuffer: RingLogBuffer;
   #eventEmitter;
 
@@ -37,7 +35,7 @@ export class PreviewController {
     this.#ringLogBuffer = new RingLogBuffer(1000);
   }
 
-  construct(config: object, SimulatedConnector: IConnector_JS | undefined) {
+  construct(config: object, SimulatedConnector: IConnector_JS | undefined = undefined) {
     this.logging.info(`construct(config=${JSON.stringify(config)}`);
 
     if (this.#instance) {
@@ -141,8 +139,8 @@ export class PreviewController {
         },
 
         // virtual interface_error_t _handleTimelineManipulation(const int32_t timeline_timestamp, const bool timeline_paused, const double clock_timestamp) = 0;
-        _handleTimelineManipulation: (timeline_timestamp: number, timeline_paused: boolean, timeline_date: string, clock_timestamp: number) => {
-          this.logging.verbose("PreviewController::_handleTimelineManipulation", timeline_timestamp, timeline_paused, clock_timestamp);
+        _handleTimelineManipulation: (timeline_timestamp: number, timeline_paused: boolean, timeline_date: string): interface_error_t => {
+          this.logging.verbose("PreviewController::_handleTimelineManipulation", timeline_timestamp, timeline_paused, timeline_date);
 
           return SpectodaWasm.interface_error_t.SUCCESS;
         },
@@ -207,7 +205,7 @@ export class PreviewController {
                 for (const port of this.#config.ports) {
                   const port_tag = port.tag ? port.tag : current_tag;
                   current_tag = String.fromCharCode(port_tag.charCodeAt(0) + 1);
-                  this.#ports[port_tag] = this.#instance.makePort(JSON.stringify(port));
+                  this.#ports[port_tag] = this.makePort(`PORT${current_tag}`, JSON.stringify(port));
                 }
               }
             }
@@ -232,7 +230,7 @@ export class PreviewController {
         for (const port of this.#config.ports) {
           const port_tag = port.tag ? port.tag : current_tag;
           current_tag = String.fromCharCode(port_tag.charCodeAt(0) + 1);
-          this.#ports[port_tag] = this.#instance.makePort(JSON.stringify(port));
+          this.#ports[port_tag] = this.makePort(`PORT${current_tag}`, JSON.stringify(port));
         }
       }
     });
@@ -403,5 +401,13 @@ export class PreviewController {
     }
 
     return this.#instance.getLabel();
+  }
+
+  get identifier() {
+    if (!this.#instance) {
+      throw "NotConstructed";
+    }
+
+    return this.#instance.getIdentifier();
   }
 }

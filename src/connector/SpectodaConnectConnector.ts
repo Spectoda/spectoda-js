@@ -1,12 +1,10 @@
-// TODO fix TSC in spectoda-js
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-nocheck
 
 import { detectAndroid, numberToBytes, sleep, toBytes } from "../../functions";
 import { logging } from "../../logging";
 import { TimeTrack } from "../../TimeTrack";
 import { TnglReader } from "../../TnglReader";
-import { COMMAND_FLAGS } from "../Spectoda_JS";
+import { COMMAND_FLAGS, DEFAULT_TIMEOUT, SpectodaTypes } from "../Spectoda_JS";
 import { SpectodaRuntime } from "../SpectodaRuntime";
 import { Connection, SpectodaWasm, Synchronization } from "../SpectodaWasm";
 
@@ -459,7 +457,7 @@ class FlutterConnection {
 
 // Connector connects the application with one Spectoda Device, that is then in a
 // position of a controller for other Spectoda Devices
-export class FlutterConnector extends FlutterConnection {
+export class SpectodaConnectConnector extends FlutterConnection {
   #runtimeReference;
   #promise: Promise<any> | null;
 
@@ -485,7 +483,12 @@ export class FlutterConnector extends FlutterConnection {
     };
   }
 
-  #applyTimeout(promise, timeout_number, message) {
+  #applyTimeout(promise: Promise<any> | null, timeout_number: number, message: string) {
+    if (!promise) {
+      // ? No promise provided to #applyTimeout()
+      return Promise.reject("NoPromiseProvided");
+    }
+
     const handle = setTimeout(() => {
       // @ts-ignore
       window.flutterConnection.reject("FlutterSafeguardTimeout: " + message);
@@ -524,10 +527,10 @@ criteria: JSON pole objektu, kde plati: [{ tohle AND tamto AND toto } OR { tohle
 
 možnosti:
   name: string
-  namePrefix: string
+  nameprefix: string
   fwVersion: string
-  ownerSignature: string
-  productCode: number
+  network: string
+  product: number
   adoptionFlag: bool
 
 criteria example:
@@ -538,11 +541,11 @@ criteria example:
   {
     name: "NARA Alpha",
     fwVersion: "0.9.2",
-    ownerSignature: "baf2398ff5e6a7b8c9d097d54a9f865f",
-    productCode: 1
+    network: "baf2398ff5e6a7b8c9d097d54a9f865f",
+    product: 1
   },
   {
-    namePrefix: "NARA",
+    nameprefix: "NARA",
     fwVersion: "!0.8.3",
     pcbCode: 2,
     adoptionFlag: true
@@ -554,12 +557,12 @@ criteria example:
   // if no criteria are set, then show all Spectoda devices visible.
   // first bonds the BLE device with the PC/Phone/Tablet if it is needed.
   // Then selects the device
-  userSelect(criteria_object, timeout_number = DEFAULT_TIMEOUT) {
+  userSelect(criterium_array: SpectodaTypes.Criterium[], timeout_number: number | typeof DEFAULT_TIMEOUT = DEFAULT_TIMEOUT): Promise<SpectodaTypes.Criterium | null> {
     if (timeout_number === DEFAULT_TIMEOUT) {
       timeout_number = 60000;
     }
 
-    const criteria_json = JSON.stringify(criteria_object);
+    const criteria_json = JSON.stringify(criterium_array);
     logging.debug(`userSelect(criteria=${criteria_json}, timeout=${timeout_number})`);
 
     this.#promise = new Promise((resolve, reject) => {
@@ -592,10 +595,11 @@ criteria example:
   // if no criteria are provided, all Spectoda enabled devices (with all different FWs and Owners and such)
   // are eligible.
 
-  autoSelect(criteria_object, scan_duration_number = DEFAULT_TIMEOUT, timeout_number = DEFAULT_TIMEOUT) {
+  autoSelect(criterium_array: SpectodaTypes.Criterium[], scan_duration_number: number | typeof DEFAULT_TIMEOUT = DEFAULT_TIMEOUT, timeout_number: number | typeof DEFAULT_TIMEOUT = DEFAULT_TIMEOUT): Promise<SpectodaTypes.Criterium | null> {
     if (scan_duration_number === DEFAULT_TIMEOUT) {
+      // ? 1200ms seems to be the minimum for the scan_duration if the controller is rebooted
       scan_duration_number = 1500;
-    } // 1200ms seems to be the minimum for the scan_duration if the controller is rebooted
+    }
     if (timeout_number === DEFAULT_TIMEOUT) {
       timeout_number = 5000;
     }
@@ -607,7 +611,7 @@ criteria example:
     const MINIMAL_AUTOSELECT_SCAN_DURATION = 1200;
     const MINIMAL_AUTOSELECT_TIMEOUT = 3000;
 
-    const criteria_json = JSON.stringify(criteria_object);
+    const criteria_json = JSON.stringify(criterium_array);
 
     logging.debug(`autoSelect(criteria=${criteria_json}, scan_duration=${scan_duration_number}, timeout=${timeout_number})`);
 
@@ -628,6 +632,7 @@ criteria example:
         logging.warn(e);
 
         // if the second attempt rejects again, then reject the promise
+        // @ts-ignore
         window.flutterConnection.reject = reject;
 
         console.warn("autoSelect() with minimal timeout timeouted, trying it again with the full timeout...");
@@ -648,7 +653,7 @@ criteria example:
     return this.#applyTimeout(this.#promise, FLUTTER_RESPONSE_TIMEOUT, "autoSelect");
   }
 
-  selected() {
+  selected(): Promise<SpectodaTypes.Criterium | null> {
     logging.debug(`selected()`);
 
     this.#promise = new Promise((resolve, reject) => {
@@ -672,7 +677,7 @@ criteria example:
     return this.#applyTimeout(this.#promise, FLUTTER_RESPONSE_TIMEOUT, "selected");
   }
 
-  unselect() {
+  unselect(): Promise<null> {
     logging.debug(`unselect()`);
 
     this.#promise = new Promise((resolve, reject) => {
@@ -693,13 +698,13 @@ criteria example:
   // if no criteria are provided, all Spectoda enabled devices (with all different FWs and Owners and such)
   // are eligible.
 
-  scan(criteria_object, scan_duration_number = DEFAULT_TIMEOUT) {
+  scan(criterium_array: SpectodaTypes.Criterium[], scan_duration_number: number | typeof DEFAULT_TIMEOUT = DEFAULT_TIMEOUT): Promise<SpectodaTypes.Criterium[]> {
     if (scan_duration_number === DEFAULT_TIMEOUT) {
       scan_duration_number = 7000;
     }
     // step 1. for the scan_duration scan the surroundings for BLE devices.
 
-    const criteria_json = JSON.stringify(criteria_object);
+    const criteria_json = JSON.stringify(criterium_array);
 
     logging.debug(`scan(criteria=${criteria_json}, scan_duration=${scan_duration_number})`);
 
@@ -730,7 +735,7 @@ criteria example:
 
   */
   // timeout 20000ms for the old slow devices to be able to connect
-  connect(timeout_number = DEFAULT_TIMEOUT) {
+  connect(timeout_number: number | typeof DEFAULT_TIMEOUT = DEFAULT_TIMEOUT): Promise<SpectodaTypes.Criterium> {
     if (timeout_number === DEFAULT_TIMEOUT) {
       timeout_number = 20000;
     }
@@ -760,6 +765,7 @@ criteria example:
         logging.warn(e);
 
         // if the second attempt rejects again, then reject the promise
+        // @ts-ignore
         window.flutterConnection.reject = reject;
 
         console.warn("Connect with minimal timeout timeouted, trying it again with the full timeout...");
@@ -780,13 +786,15 @@ criteria example:
     const FLUTTER_RESPONSE_TIMEOUT = MINIMAL_CONNECT_TIMEOUT + Math.max(MINIMAL_CONNECT_TIMEOUT, timeout_number) + 5000;
     return this.#applyTimeout(this.#promise, FLUTTER_RESPONSE_TIMEOUT, "connect").then(() => {
       logging.debug("Sleeping for 100ms after connect...");
-      return sleep(100);
+      return sleep(100).then(() => {
+        return { connector: "spectodaconnect" };
+      });
     });
   }
 
   // disconnect Connector from the connected Spectoda Device. But keep it selected
-  disconnect() {
-    logging.debug(`disconnect()`);
+  disconnect(): Promise<unknown> {
+    logging.verbose(`disconnect()`);
 
     this.#promise = new Promise((resolve, reject) => {
       // @ts-ignore
@@ -802,8 +810,8 @@ criteria example:
     return this.#applyTimeout(this.#promise, FLUTTER_RESPONSE_TIMEOUT, "disconnect");
   }
 
-  connected() {
-    logging.debug(`connected()`);
+  connected(): Promise<SpectodaTypes.Criterium | null> {
+    logging.verbose(`connected()`);
 
     this.#promise = new Promise((resolve, reject) => {
       // @ts-ignore
@@ -811,9 +819,11 @@ criteria example:
         // the resolve returns JSON string or null
         if (j) {
           j = j.replace(/\0/g, ""); //! [BUG] Flutter app on Android tends to return nulls as strings with a null character at the end. This is a workaround for that.
-          j = JSON.parse(j);
+          const criteria = JSON.parse(j);
+          resolve(criteria);
+        } else {
+          resolve(null);
         }
-        resolve(j);
       };
       // @ts-ignore
       window.flutterConnection.reject = reject;
@@ -828,7 +838,7 @@ criteria example:
 
   // deliver handles the communication with the Spectoda Controller in a way
   // that the command is guaranteed to arrive
-  deliver(payload_bytes, timeout_number = DEFAULT_TIMEOUT) {
+  deliver(payload_bytes: Uint8Array, timeout_number: number | typeof DEFAULT_TIMEOUT = DEFAULT_TIMEOUT): Promise<unknown> {
     if (timeout_number === DEFAULT_TIMEOUT) {
       timeout_number = 5000;
     }
@@ -841,14 +851,10 @@ criteria example:
       window.flutterConnection.reject = reject;
     });
 
-    // ! Bug in SpectodaConnect Native App Workaroud
-    let payload_bytes_map = {};
-    for (let i = 0; i < payload_bytes.length; i++) {
-      payload_bytes_map[i] = payload_bytes[i];
-    }
-
     // @ts-ignore
-    window.flutter_inappwebview.callHandler("deliver", payload_bytes_map, timeout_number);
+    window.flutter_inappwebview.callHandler("deliver", payload_bytes, timeout_number);
+    // fix bug in spectoda-connect and then enable this line
+    // TODO window.flutter_inappwebview.callHandler("deliver", Array.from(payload_bytes), timeout_number);
 
     const FLUTTER_RESPONSE_TIMEOUT = timeout_number + 5000;
     return this.#applyTimeout(this.#promise, FLUTTER_RESPONSE_TIMEOUT, "deliver");
@@ -856,7 +862,7 @@ criteria example:
 
   // transmit handles the communication with the Spectoda Controller in a way
   // that the paylaod is NOT guaranteed to arrive
-  transmit(payload_bytes, timeout_number = DEFAULT_TIMEOUT) {
+  transmit(payload_bytes: Uint8Array, timeout_number: number | typeof DEFAULT_TIMEOUT = DEFAULT_TIMEOUT): Promise<unknown> {
     if (timeout_number === DEFAULT_TIMEOUT) {
       timeout_number = 1000;
     }
@@ -870,7 +876,7 @@ criteria example:
     });
 
     // @ts-ignore
-    window.flutter_inappwebview.callHandler("transmit", payload_bytes, timeout_number);
+    window.flutter_inappwebview.callHandler("transmit", Array.from(payload_bytes), timeout_number);
 
     const FLUTTER_RESPONSE_TIMEOUT = timeout_number + 5000;
     return this.#applyTimeout(this.#promise, FLUTTER_RESPONSE_TIMEOUT, "transmit");
@@ -878,7 +884,7 @@ criteria example:
 
   // request handles the requests on the Spectoda Controller. The payload request
   // is guaranteed to get a response
-  request(payload_bytes, read_response, timeout_number = DEFAULT_TIMEOUT) {
+  request(payload_bytes: Uint8Array, read_response: boolean, timeout_number: number | typeof DEFAULT_TIMEOUT = DEFAULT_TIMEOUT): Promise<Uint8Array | null> {
     if (timeout_number === DEFAULT_TIMEOUT) {
       timeout_number = 5000;
     }
@@ -894,7 +900,7 @@ criteria example:
     });
 
     // @ts-ignore
-    window.flutter_inappwebview.callHandler("request", payload_bytes, read_response, timeout_number);
+    window.flutter_inappwebview.callHandler("request", Array.from(payload_bytes), read_response, timeout_number);
 
     const FLUTTER_RESPONSE_TIMEOUT = timeout_number + 5000;
     return this.#applyTimeout(this.#promise, FLUTTER_RESPONSE_TIMEOUT, "request");
@@ -902,45 +908,8 @@ criteria example:
 
   // synchronizes the device internal clock with the provided TimeTrack clock
   // of the application as precisely as possible
-  synchronize(synchonization: Synchronization) {
-    logging.info(`FlutterConnector::synchronize(synchonization.clock_timestamp=${synchonization.clock_timestamp})`);
-
-    return new Promise(async (resolve, reject) => {
-      for (let index = 0; index < 1; index++) {
-        try {
-          // tryes to ASAP write a timestamp to the clock characteristics.
-          // if the ASAP write fails, then try it once more
-
-          this.#promise = new Promise((resolve, reject) => {
-            // @ts-ignore
-            window.flutterConnection.resolve = resolve;
-            // @ts-ignore
-            window.flutterConnection.reject = reject;
-          });
-
-          const synchonization_bytes = [...synchonization.toUint8Array()];
-          // @ts-ignore
-          window.flutter_inappwebview.callHandler("writeClock", synchonization_bytes);
-
-          await this.#applyTimeout(this.#promise, 5000, "synchonization");
-
-          // @ts-ignore
-          resolve();
-          return;
-        } catch (e) {
-          logging.warn("Clock write failed: " + e);
-        }
-      }
-
-      reject("Clock write failed");
-      return;
-    });
-  }
-
-  // synchronizes the device internal clock with the provided TimeTrack clock
-  // of the application as precisely as possible
-  setClock(clock) {
-    logging.info(`FlutterConnector::setClock(clock.millis=${clock.millis()})`);
+  setClock(clock: TimeTrack): Promise<unknown> {
+    logging.info(`SpectodaConnectConnector::setClock(clock.millis=${clock.millis()})`);
 
     return new Promise(async (resolve, reject) => {
       for (let tries = 0; tries < 3; tries++) {
@@ -980,7 +949,7 @@ criteria example:
 
   // returns a TimeTrack clock object that is synchronized with the internal clock
   // of the device as precisely as possible
-  getClock() {
+  getClock(): Promise<TimeTrack> {
     logging.debug("getClock()");
 
     return new Promise(async (resolve, reject) => {
@@ -1026,7 +995,7 @@ criteria example:
 
   // TODO - emit "ota_progress" events
 
-  updateFW(firmware_bytes) {
+  updateFW(firmware_bytes: Uint8Array): Promise<unknown> {
     logging.debug(`updateFW(firmware_bytes.length=${firmware_bytes.length})`);
 
     // this.#promise = new Promise((resolve, reject) => {
@@ -1044,7 +1013,7 @@ criteria example:
     // logging.error("Device update is not yet implemented.");
     // return Promise.reject("NotImplemented");
 
-    this.#runtimeReference.requestWakeLock();
+    this.#runtimeReference.spectodaReference.requestWakeLock();
 
     return new Promise(async (resolve, reject) => {
       const chunk_size = detectAndroid() ? 480 : 3984; // must be modulo 16
@@ -1070,7 +1039,7 @@ criteria example:
           logging.info("OTA RESET");
 
           const device_bytes = [COMMAND_FLAGS.FLAG_OTA_RESET, 0x00, ...numberToBytes(0x00000000, 4)];
-          await this.request(device_bytes, false, 10000);
+          await this.request(new Uint8Array(device_bytes), false, 10000);
         }
 
         await sleep(100);
@@ -1080,7 +1049,7 @@ criteria example:
           logging.info("OTA BEGIN");
 
           const device_bytes = [COMMAND_FLAGS.FLAG_OTA_BEGIN, 0x00, ...numberToBytes(firmware_bytes.length, 4)];
-          await this.request(device_bytes, false, 20000);
+          await this.request(new Uint8Array(device_bytes), false, 20000);
         }
 
         await sleep(8000);
@@ -1095,7 +1064,7 @@ criteria example:
             }
 
             const device_bytes = [COMMAND_FLAGS.FLAG_OTA_WRITE, 0x00, ...numberToBytes(written, 4), ...firmware_bytes.slice(index_from, index_to)];
-            await this.request(device_bytes, false, 10000);
+            await this.request(new Uint8Array(device_bytes), false, 10000);
 
             written += index_to - index_from;
 
@@ -1115,7 +1084,7 @@ criteria example:
           logging.info("OTA END");
 
           const device_bytes = [COMMAND_FLAGS.FLAG_OTA_END, 0x00, ...numberToBytes(written, 4)];
-          await this.request(device_bytes, false, 10000);
+          await this.request(new Uint8Array(device_bytes), false, 10000);
         }
 
         await sleep(100);
@@ -1123,7 +1092,7 @@ criteria example:
         logging.info("Rebooting device...");
 
         const device_bytes = [COMMAND_FLAGS.FLAG_DEVICE_REBOOT_REQUEST];
-        await this.request(device_bytes, false);
+        await this.request(new Uint8Array(device_bytes), false);
 
         logging.debug("Firmware written in " + (Date.now() - start_timestamp) / 1000 + " seconds");
 
@@ -1140,17 +1109,17 @@ criteria example:
         return this.disconnect();
       })
       .finally(() => {
-        this.#runtimeReference.releaseWakeLock();
+        this.#runtimeReference.spectodaReference.releaseWakeLock();
       });
   }
 
-  cancel() {
+  cancel(): void {
     logging.debug("cancel()");
 
     window.flutter_inappwebview.callHandler("cancel");
   }
 
-  destroy() {
+  destroy(): Promise<unknown> {
     //this.#runtimeReference = null; // dont know if I need to destroy this reference.. But I guess I dont need to?
     return this.disconnect()
       .catch(() => {})
@@ -1169,7 +1138,7 @@ criteria example:
       return Promise.resolve();
     }
 
-    return this.deliver([...command_bytes], 1000);
+    return this.deliver(command_bytes, 1000);
   }
 
   // bool _sendRequest(const int32_t request_ticket_number, std::vector<uint8_t>& request_bytecode, const Connection& destination_connection) = 0;
@@ -1196,6 +1165,35 @@ criteria example:
       return Promise.resolve();
     }
 
-    return this.synchronize(synchronization);
+    return new Promise(async (resolve, reject) => {
+      for (let index = 0; index < 1; index++) {
+        try {
+          // tryes to ASAP write a timestamp to the clock characteristics.
+          // if the ASAP write fails, then try it once more
+
+          this.#promise = new Promise((resolve, reject) => {
+            // @ts-ignore
+            window.flutterConnection.resolve = resolve;
+            // @ts-ignore
+            window.flutterConnection.reject = reject;
+          });
+
+          const synchronization_bytes = [...synchronization.toUint8Array()];
+          // @ts-ignore
+          window.flutter_inappwebview.callHandler("writeClock", synchronization_bytes);
+
+          await this.#applyTimeout(this.#promise, 5000, "synchronization");
+
+          // @ts-ignore
+          resolve();
+          return;
+        } catch (e) {
+          logging.warn("Clock write failed: " + e);
+        }
+      }
+
+      reject("Clock write failed");
+      return;
+    });
   }
 }

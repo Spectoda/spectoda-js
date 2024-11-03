@@ -1,12 +1,10 @@
-// TODO fix TSC in spectoda-js
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-nocheck
 
 import { sleep } from "../../functions";
 import { logging } from "../../logging";
 import { TimeTrack } from "../../TimeTrack";
 import { PreviewController } from "../PreviewController";
-import { APP_MAC_ADDRESS } from "../Spectoda_JS";
+import { APP_MAC_ADDRESS, DEFAULT_TIMEOUT, SpectodaTypes } from "../Spectoda_JS";
 import { SpectodaRuntime } from "../SpectodaRuntime";
 import { Connection, SpectodaWasm, Synchronization, Uint8Vector } from "../SpectodaWasm";
 import { IConnector_JS } from "./IConnector_JS";
@@ -243,10 +241,10 @@ export class SpectodaSimulatedConnector {
 criteria: pole objektu, kde plati: [{ tohle and tamto and toto } or { tohle and tamto }]
 možnosti:
   name: string
-  namePrefix: string
+  nameprefix: string
   fwVersion: string
-  ownerSignature: string
-  productCode: number
+  network: string
+  product: number
   adoptionFlag: bool
 criteria example:
 [
@@ -256,16 +254,16 @@ criteria example:
   {
     name:"NARA Alpha" 
     fwVersion:"0.7.2"
-    ownerSignature:"baf2398ff5e6a7b8c9d097d54a9f865f"
-    productCode:1
+    network:"baf2398ff5e6a7b8c9d097d54a9f865f"
+    product:1
   },
   // all the devices with the name starting with "NARA", without the 0.7.3 FW and 
   // that are not adopted by anyone
   // Product code is 2 what means NARA Beta 
   {
-    namePrefix:"NARA"
+    nameprefix:"NARA"
     fwVersion:"!0.7.3"
-    productCode:2
+    product:2
     adoptionFlag:true
   }
 ]
@@ -274,8 +272,13 @@ criteria example:
   // if no criteria are set, then show all Spectoda devices visible.
   // first bonds the BLE device with the PC/Phone/Tablet if it is needed.
   // Then selects the device
-  userSelect(criteria: any) {
-    logging.verbose("userSelect(criteria=", criteria, ")");
+  userSelect(criterium_array: SpectodaTypes.Criterium[], timeout_number: number | typeof DEFAULT_TIMEOUT = DEFAULT_TIMEOUT): Promise<SpectodaTypes.Criterium | null> {
+    if (timeout_number === DEFAULT_TIMEOUT) {
+      timeout_number = 60000;
+    }
+
+    const criteria_json = JSON.stringify(criterium_array);
+    logging.verbose("userSelect(criteria=" + criteria_json + ")");
 
     return new Promise(async (resolve, reject) => {
       if (this.#connected) {
@@ -305,8 +308,15 @@ criteria example:
   // if no criteria are provided, all Spectoda enabled devices (with all different FWs and Owners and such)
   // are eligible.
 
-  autoSelect(criteria: any, scan_period: number, timeout: number) {
-    logging.verbose("autoSelect(criteria=", criteria, ", scan_period=", scan_period, "timeout=", timeout, ")");
+  autoSelect(criterium_array: SpectodaTypes.Criterium[], scan_duration_number: number | typeof DEFAULT_TIMEOUT = DEFAULT_TIMEOUT, timeout_number: number | typeof DEFAULT_TIMEOUT = DEFAULT_TIMEOUT): Promise<SpectodaTypes.Criterium | null> {
+    if (scan_duration_number === DEFAULT_TIMEOUT) {
+      // ? 1200ms seems to be the minimum for the scan_duration if the controller is rebooted
+      scan_duration_number = 1500;
+    }
+    if (timeout_number === DEFAULT_TIMEOUT) {
+      timeout_number = 5000;
+    }
+
     // step 1. for the scan_period scan the surroundings for BLE devices.
     // step 2. if some devices matching the criteria are found, then select the one with
     //         the greatest signal strength. If no device is found until the timeout,
@@ -330,7 +340,7 @@ criteria example:
     });
   }
 
-  selected() {
+  selected(): Promise<SpectodaTypes.Criterium | null> {
     logging.verbose(`selected()`);
 
     return new Promise(async (resolve, reject) => {
@@ -342,7 +352,7 @@ criteria example:
     });
   }
 
-  unselect() {
+  unselect(): Promise<null> {
     logging.verbose(`unselect()`);
 
     return new Promise(async (resolve, reject) => {
@@ -355,16 +365,23 @@ criteria example:
     });
   }
 
-  scan(criteria: any, scan_period: number) {
-    logging.verbose(`scan(criteria=${criteria}, scan_period=${scan_period})`);
+  scan(criterium_array: SpectodaTypes.Criterium[], scan_duration_number: number | typeof DEFAULT_TIMEOUT = DEFAULT_TIMEOUT): Promise<SpectodaTypes.Criterium[]> {
+    if (scan_duration_number === DEFAULT_TIMEOUT) {
+      scan_duration_number = 7000;
+    }
+
+    logging.verbose("scan(criterium_array=" + JSON.stringify(criterium_array) + ", scan_duration_number=" + scan_duration_number + ")");
 
     // TODO scan logic based on the controllers contructed and criteria
 
-    return Promise.resolve("{}");
+    return Promise.resolve([]);
   }
 
-  connect(timeout: number) {
-    logging.verbose(`connect(timeout=${timeout})`);
+  connect(timeout_number: number | typeof DEFAULT_TIMEOUT = DEFAULT_TIMEOUT): Promise<SpectodaTypes.Criterium> {
+    if (timeout_number === DEFAULT_TIMEOUT) {
+      timeout_number = 20000;
+    }
+    logging.debug(`connect(timeout=${timeout_number})`);
 
     return new Promise(async (resolve, reject) => {
       if (!this.#selected) {
@@ -381,8 +398,8 @@ criteria example:
   }
 
   // disconnect Connector from the connected Spectoda Device. But keep it selected
-  disconnect() {
-    logging.verbose(`disconnect()`);
+  disconnect(): Promise<unknown> {
+    logging.verbose("disconnect()");
 
     return new Promise(async (resolve, reject) => {
       if (this.#connected) {
@@ -395,7 +412,7 @@ criteria example:
     });
   }
 
-  connected() {
+  connected(): Promise<SpectodaTypes.Criterium | null> {
     logging.verbose(`connected()`);
 
     return new Promise(async (resolve, reject) => {
@@ -409,8 +426,11 @@ criteria example:
 
   // deliver handles the communication with the Spectoda network in a way
   // that the command is guaranteed to arrive
-  deliver(payload: number[], timeout: number) {
-    logging.verbose(`deliver(payload=${payload}, timeout=${timeout})`);
+  deliver(payload_bytes: Uint8Array, timeout_number: number | typeof DEFAULT_TIMEOUT = DEFAULT_TIMEOUT): Promise<unknown> {
+    if (timeout_number === DEFAULT_TIMEOUT) {
+      timeout_number = 5000;
+    }
+    logging.verbose(`deliver(payload=${payload_bytes}, timeout=${timeout_number})`);
 
     return new Promise(async (resolve, reject) => {
       if (!this.#connected) {
@@ -419,19 +439,22 @@ criteria example:
       }
 
       for (const controller of this.controllers) {
-        await controller.execute(new Uint8Array(payload), new SpectodaWasm.Connection(APP_MAC_ADDRESS, SpectodaWasm.connector_type_t.CONNECTOR_SIMULATED, SpectodaWasm.connection_rssi_t.RSSI_MAX));
+        await controller.execute(payload_bytes, new SpectodaWasm.Connection(APP_MAC_ADDRESS, SpectodaWasm.connector_type_t.CONNECTOR_SIMULATED, SpectodaWasm.connection_rssi_t.RSSI_MAX));
       }
 
       await sleep(25); // delivering logic
 
-      resolve(null);
+      resolve(undefined);
     });
   }
 
   // transmit handles the communication with the Spectoda network in a way
   // that the command is NOT guaranteed to arrive
-  transmit(payload: number[], timeout: number) {
-    logging.verbose(`transmit(payload=${payload}, timeout=${timeout})`);
+  transmit(payload_bytes: Uint8Array, timeout_number: number | typeof DEFAULT_TIMEOUT = DEFAULT_TIMEOUT): Promise<unknown> {
+    if (timeout_number === DEFAULT_TIMEOUT) {
+      timeout_number = 1000;
+    }
+    logging.verbose(`transmit(payload=${payload_bytes}, timeout=${timeout_number})`);
 
     return new Promise(async (resolve, reject) => {
       if (!this.#connected) {
@@ -440,19 +463,21 @@ criteria example:
       }
 
       for (const controller of this.controllers) {
-        await controller.execute(new Uint8Array(payload), new SpectodaWasm.Connection(APP_MAC_ADDRESS, SpectodaWasm.connector_type_t.CONNECTOR_UNDEFINED, SpectodaWasm.connection_rssi_t.RSSI_MAX));
+        await controller.execute(payload_bytes, new SpectodaWasm.Connection(APP_MAC_ADDRESS, SpectodaWasm.connector_type_t.CONNECTOR_UNDEFINED, SpectodaWasm.connection_rssi_t.RSSI_MAX));
       }
 
       await sleep(10); // transmiting logic
-
-      resolve(null);
+      resolve(undefined);
     });
   }
 
   // request handles the requests on the Spectoda network. The command request
   // is guaranteed to get a response
-  request(payload: number[], read_response: boolean, timeout: number) {
-    logging.verbose(`request(payload=${payload}, read_response=${read_response ? "true" : "false"}, timeout=${timeout})`);
+  request(payload_bytes: Uint8Array, read_response: boolean, timeout_number: number | typeof DEFAULT_TIMEOUT = DEFAULT_TIMEOUT): Promise<Uint8Array | null> {
+    if (timeout_number === DEFAULT_TIMEOUT) {
+      timeout_number = 5000;
+    }
+    logging.verbose(`request(payload=${payload_bytes}, read_response=${read_response ? "true" : "false"}, timeout=${timeout_number})`);
 
     return new Promise(async (resolve, reject) => {
       if (!this.#connected) {
@@ -463,13 +488,11 @@ criteria example:
       // TODO choose the controller I am connected to choosen in userSelect() or autoSelect()
 
       const response =
-        this.controllers.length > 0
-          ? this.controllers[0].request(new Uint8Array(payload), new SpectodaWasm.Connection(APP_MAC_ADDRESS, SpectodaWasm.connector_type_t.CONNECTOR_UNDEFINED, SpectodaWasm.connection_rssi_t.RSSI_MAX))
-          : new Uint8Array();
+        this.controllers.length > 0 ? this.controllers[0].request(payload_bytes, new SpectodaWasm.Connection(APP_MAC_ADDRESS, SpectodaWasm.connector_type_t.CONNECTOR_UNDEFINED, SpectodaWasm.connection_rssi_t.RSSI_MAX)) : new Uint8Array();
 
       if (read_response) {
         await sleep(50); // requesting logic
-        resolve(new DataView(response.buffer));
+        resolve(response);
       } else {
         await sleep(25); // requesting logic
         resolve(null);
@@ -479,7 +502,7 @@ criteria example:
 
   // synchronizes the device internal clock with the provided TimeTrack clock
   // of the application as precisely as possible
-  setClock(clock: TimeTrack) {
+  setClock(clock: TimeTrack): Promise<unknown> {
     logging.verbose(`setClock(clock.millis()=${clock.millis()})`);
 
     return new Promise(async (resolve, reject) => {
@@ -504,7 +527,7 @@ criteria example:
 
   // returns a TimeTrack clock object that is synchronized with the internal clock
   // of the device as precisely as possible
-  getClock() {
+  getClock(): Promise<TimeTrack> {
     logging.verbose(`getClock()`);
 
     return new Promise(async (resolve, reject) => {
@@ -527,8 +550,8 @@ criteria example:
 
   // handles the firmware updating. Sends "ota" events
   // to all handlers
-  updateFW(firmware: Uint8Array) {
-    logging.verbose(`updateFW(firmware=${firmware})`);
+  updateFW(firmware_bytes: Uint8Array): Promise<unknown> {
+    logging.debug("updateFW()", firmware_bytes);
 
     return new Promise(async (resolve, reject) => {
       if (!this.#connected) {
@@ -550,7 +573,11 @@ criteria example:
     });
   }
 
-  destroy() {
+  cancel(): void {
+    // TODO implement
+  }
+
+  destroy(): Promise<unknown> {
     logging.verbose(`destroy()`);
 
     return this.disconnect()

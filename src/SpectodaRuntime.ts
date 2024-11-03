@@ -1,6 +1,4 @@
-// TODO fix TSC in spectoda-js
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-nocheck
 
 import { SpectodaDummyConnector } from "../SpectodaDummyConnector";
 import {
@@ -25,8 +23,8 @@ import { SpectodaWebSerialConnector } from "./connector/SpectodaWebSerialConnect
 import { TimeTrack } from "../TimeTrack";
 import { PreviewController } from "./PreviewController";
 import { Connection, SpectodaWasm, Synchronization } from "./SpectodaWasm";
-import { APP_MAC_ADDRESS, COMMAND_FLAGS, Spectoda_JS, DEFAULT_TIMEOUT } from "./Spectoda_JS";
-import { FlutterConnector } from "./connector/SpectodaConnectConnector";
+import { APP_MAC_ADDRESS, COMMAND_FLAGS, Spectoda_JS, DEFAULT_TIMEOUT, SpectodaTypes } from "./Spectoda_JS";
+import { SpectodaConnectConnector } from "./connector/SpectodaConnectConnector";
 
 import { Spectoda } from "../Spectoda";
 import { TnglReader } from "../TnglReader";
@@ -66,7 +64,7 @@ import { SpectodaSimulatedConnector } from "./connector/SpectodaSimulatedConnect
 /////////////////////////////////////////////////////////////////////////
 export const allEventsEmitter = createNanoEvents();
 
-export function emitHandler({ event, args }) {
+export function emitHandler({ event, args }: { event: string; args: any }) {
   allEventsEmitter.emit("on", { name: event, args });
 }
 
@@ -110,6 +108,59 @@ class BitSet {
       .join("");
   }
 }
+
+type UserSelectQuery = {
+  criteria_array: SpectodaTypes.Criterium[];
+  timeout: number | typeof DEFAULT_TIMEOUT;
+};
+
+type AutoSelectQuery = {
+  criteria_array: SpectodaTypes.Criterium[];
+  scan_period: number | typeof DEFAULT_TIMEOUT;
+  timeout: number | typeof DEFAULT_TIMEOUT;
+};
+
+type ScanQuery = {
+  criteria_array: SpectodaTypes.Criterium[];
+  scan_period: number | typeof DEFAULT_TIMEOUT;
+};
+
+type ConnectQuery = {
+  timeout: number | typeof DEFAULT_TIMEOUT;
+};
+
+type SendExecuteQuery = {
+  command_bytes: Uint8Array;
+  source_connection: Connection;
+};
+
+type SendRequestQuery = {
+  request_ticket_number: number;
+  request_bytecode: Uint8Array;
+  destination_connection: Connection;
+};
+
+type SendResponseQuery = {
+  request_ticket_number: number;
+  request_result: number;
+  response_bytecode: Uint8Array;
+  destination_connection: Connection;
+};
+
+type SendSynchronizeQuery = {
+  synchronization: Synchronization;
+  source_connection: Connection;
+};
+
+type ExecuteQuery = {
+  bytecode: Uint8Array;
+};
+
+type RequestQuery = {
+  bytecode: Uint8Array;
+  read_response: boolean;
+  timeout: number | typeof DEFAULT_TIMEOUT;
+};
 
 // Deffered object
 class Query {
@@ -181,7 +232,7 @@ export class SpectodaRuntime {
   #inicilized: boolean;
 
   #assignedConnector: string;
-  #assignedConnectorParameter: any | undefined;
+  #assignedConnectorParameter: any | null;
 
   #ups;
   #fps;
@@ -190,7 +241,7 @@ export class SpectodaRuntime {
   spectoda_js: Spectoda_JS;
 
   clock: TimeTrack;
-  connector: SpectodaDummyConnector | SpectodaWebBluetoothConnector | SpectodaWebSerialConnector | SpectodaNodeBluetoothConnector | SpectodaNodeSerialConnector | FlutterConnector | SpectodaSimulatedConnector | null;
+  connector: SpectodaDummyConnector | SpectodaWebBluetoothConnector | SpectodaWebSerialConnector | SpectodaNodeBluetoothConnector | SpectodaNodeSerialConnector | SpectodaConnectConnector | SpectodaSimulatedConnector | null;
 
   onConnected: (e: any) => void;
   onDisconnected: (e: any) => void;
@@ -228,7 +279,7 @@ export class SpectodaRuntime {
     this.#inicilized = false;
 
     this.#assignedConnector = "none";
-    this.#assignedConnectorParameter = undefined;
+    this.#assignedConnectorParameter = null;
 
     this.onConnected = e => {};
     this.onDisconnected = e => {};
@@ -277,17 +328,25 @@ export class SpectodaRuntime {
         (function (e, d, w) {
           if (!e.composedPath) {
             e.composedPath = function () {
+              // @ts-ignore
               if (this.path) {
+                // @ts-ignore
                 return this.path;
               }
               let target = this.target;
 
+              // @ts-ignore
               this.path = [];
+              // @ts-ignore
               while (target.parentNode !== null) {
+                // @ts-ignore
                 this.path.push(target);
+                // @ts-ignore
                 target = target.parentNode;
               }
+              // @ts-ignore
               this.path.push(d, w);
+              // @ts-ignore
               return this.path;
             };
           }
@@ -341,12 +400,6 @@ export class SpectodaRuntime {
         }
       }
     });
-
-    // this.#eventEmitter.on("wasm_request", command => {
-    //   for (const previewController of Object.values(this.previewControllers)) {
-    //     previewController.request(e, 123456789);
-    //   }
-    // });
 
     this.#eventEmitter.on("wasm_clock", (timestamp: number) => {
       for (const previewController of Object.values(this.previewControllers)) {
@@ -455,12 +508,16 @@ export class SpectodaRuntime {
     this.#eventEmitter.emit(event, ...arg);
   }
 
-  assignConnector(desired_connector: ConnectorType = "default", connector_parameter: any = undefined) {
+  assignConnector(desired_connector: SpectodaTypes.ConnectorType = "default", connector_parameter: any = null) {
     logging.verbose(`assignConnector(desired_connector=${desired_connector})`);
 
     let choosen_connector = undefined;
 
-    if (desired_connector == "default" || desired_connector == "automatic") {
+    if (typeof desired_connector !== "string") {
+      throw "InvalidConnectorType";
+    }
+
+    if (desired_connector == "default") {
       if (detectGW()) {
         desired_connector = "serial";
       } else {
@@ -498,7 +555,7 @@ export class SpectodaRuntime {
       choosen_connector = "simulated";
     }
     //
-    else if (desired_connector.includes("none") || desired_connector == "") {
+    else if (desired_connector.includes("none") || desired_connector.length == 0) {
       choosen_connector = "none";
     }
 
@@ -550,7 +607,7 @@ export class SpectodaRuntime {
       }
 
       case "flutterbluetooth": {
-        this.connector = new FlutterConnector(this);
+        this.connector = new SpectodaConnectConnector(this);
         break;
       }
 
@@ -578,7 +635,7 @@ export class SpectodaRuntime {
     }
   }
 
-  userSelect(criteria: object, timeout: number | typeof DEFAULT_TIMEOUT = DEFAULT_TIMEOUT) {
+  userSelect(criteria: SpectodaTypes.Criteria, timeout: number | typeof DEFAULT_TIMEOUT = DEFAULT_TIMEOUT): Promise<SpectodaTypes.Criterium | null> {
     logging.verbose(`userSelect(criteria=${JSON.stringify(criteria)}, timeout=${timeout}`);
 
     if (this.#selecting) {
@@ -587,12 +644,18 @@ export class SpectodaRuntime {
 
     this.#selecting = true;
 
-    // TODO! make sure that criteria is always an array of at least one object
-    if (criteria === null || criteria === undefined || typeof criteria !== "object" || !Array.isArray(criteria)) {
-      throw "InvalidCriteria";
+    // ? make sure that criteria is always an array of SpectodaTypes.Criterium
+    let criteria_array: SpectodaTypes.Criterium[];
+    if (criteria === null || criteria === undefined) {
+      criteria_array = [];
+    } else if (!Array.isArray(criteria)) {
+      criteria_array = [criteria as SpectodaTypes.Criterium];
+    } else {
+      criteria_array = criteria as SpectodaTypes.Criterium[];
     }
 
-    const item = new Query(Query.TYPE_USERSELECT, criteria, timeout);
+    const user_select_query: UserSelectQuery = { criteria_array, timeout };
+    const item = new Query(Query.TYPE_USERSELECT, user_select_query);
     this.#process(item);
 
     return item.promise.finally(() => {
@@ -600,7 +663,7 @@ export class SpectodaRuntime {
     });
   }
 
-  autoSelect(criteria: object, scan_period: number | typeof DEFAULT_TIMEOUT = DEFAULT_TIMEOUT, timeout: number | typeof DEFAULT_TIMEOUT = DEFAULT_TIMEOUT) {
+  autoSelect(criteria: object, scan_period: number | typeof DEFAULT_TIMEOUT = DEFAULT_TIMEOUT, timeout: number | typeof DEFAULT_TIMEOUT = DEFAULT_TIMEOUT): Promise<SpectodaTypes.Criterium | null> {
     logging.verbose(`autoSelect(criteria=${JSON.stringify(criteria)}, scan_period=${scan_period}, timeout=${timeout}`);
 
     if (this.#selecting) {
@@ -609,12 +672,18 @@ export class SpectodaRuntime {
 
     this.#selecting = true;
 
-    // TODO! make sure that criteria is always an array of at least one object
-    if (criteria === null || criteria === undefined || typeof criteria !== "object" || !Array.isArray(criteria)) {
-      throw "InvalidCriteria";
+    // ? make sure that criteria is always an array of SpectodaTypes.Criterium
+    let criteria_array: SpectodaTypes.Criterium[];
+    if (criteria === null || criteria === undefined) {
+      criteria_array = [];
+    } else if (!Array.isArray(criteria)) {
+      criteria_array = [criteria as SpectodaTypes.Criterium];
+    } else {
+      criteria_array = criteria as SpectodaTypes.Criterium[];
     }
 
-    const item = new Query(Query.TYPE_AUTOSELECT, criteria, scan_period, timeout);
+    const auto_select_query: AutoSelectQuery = { criteria_array, scan_period, timeout };
+    const item = new Query(Query.TYPE_AUTOSELECT, auto_select_query);
     this.#process(item);
 
     return item.promise.finally(() => {
@@ -622,7 +691,7 @@ export class SpectodaRuntime {
     });
   }
 
-  unselect() {
+  unselect(): Promise<null> {
     logging.verbose("unselect()");
 
     const item = new Query(Query.TYPE_UNSELECT);
@@ -630,7 +699,7 @@ export class SpectodaRuntime {
     return item.promise;
   }
 
-  selected() {
+  selected(): Promise<SpectodaTypes.Criterium | null> {
     logging.verbose("selected()");
 
     const item = new Query(Query.TYPE_SELECTED);
@@ -638,7 +707,7 @@ export class SpectodaRuntime {
     return item.promise;
   }
 
-  scan(criteria: object, scan_period: number | typeof DEFAULT_TIMEOUT = DEFAULT_TIMEOUT) {
+  scan(criteria: object, scan_period: number | typeof DEFAULT_TIMEOUT = DEFAULT_TIMEOUT): Promise<SpectodaTypes.Criterium[]> {
     logging.verbose(`scan(criteria=${JSON.stringify(criteria)}, scan_period=${scan_period}`);
 
     if (this.#selecting) {
@@ -647,23 +716,29 @@ export class SpectodaRuntime {
 
     this.#selecting = true;
 
-    if (criteria === null) {
-      criteria = [];
+    // ? make sure that criteria is always an array of SpectodaTypes.Criterium
+    let criteria_array: SpectodaTypes.Criterium[];
+    if (criteria === null || criteria === undefined) {
+      criteria_array = [];
     } else if (!Array.isArray(criteria)) {
-      criteria = [criteria];
+      criteria_array = [criteria as SpectodaTypes.Criterium];
+    } else {
+      criteria_array = criteria as SpectodaTypes.Criterium[];
     }
 
-    const item = new Query(Query.TYPE_SCAN, criteria, scan_period);
+    const scan_query: ScanQuery = { criteria_array, scan_period };
+    const item = new Query(Query.TYPE_SCAN, scan_query);
     this.#process(item);
     return item.promise.finally(() => {
       this.#selecting = false;
     });
   }
 
-  connect(timeout: number | typeof DEFAULT_TIMEOUT = DEFAULT_TIMEOUT) {
+  connect(timeout: number | typeof DEFAULT_TIMEOUT = DEFAULT_TIMEOUT): Promise<SpectodaTypes.Criterium | null> {
     logging.verbose(`connect(timeout=${timeout})`);
 
-    const item = new Query(Query.TYPE_CONNECT, timeout);
+    const connect_query: ConnectQuery = { timeout };
+    const item = new Query(Query.TYPE_CONNECT, connect_query);
     this.#process(item);
     return item.promise;
   }
@@ -679,7 +754,7 @@ export class SpectodaRuntime {
     this.onConnected(event);
   };
 
-  disconnect() {
+  disconnect(): Promise<null> {
     logging.verbose("disconnect()");
 
     const item = new Query(Query.TYPE_DISCONNECT);
@@ -702,7 +777,7 @@ export class SpectodaRuntime {
     }
   };
 
-  connected() {
+  connected(): Promise<SpectodaTypes.Criterium | null> {
     logging.verbose("connected()");
 
     const item = new Query(Query.TYPE_CONNECTED);
@@ -710,19 +785,23 @@ export class SpectodaRuntime {
     return item.promise;
   }
 
-  execute(bytes: number[], bytes_type: string | undefined) {
-    logging.verbose("execute", { bytes, bytes_type });
+  // ! bytes_type is deprecated and will be removed in the future
+  execute(bytecode: number[] | Uint8Array, bytes_type: string | undefined): Promise<unknown> {
+    logging.verbose("execute", { bytecode, bytes_type });
 
-    const item = new Query(Query.TYPE_EXECUTE, bytes, bytes_type);
+    const execute_query: ExecuteQuery = { bytecode: new Uint8Array(bytecode) };
+
+    const item = new Query(Query.TYPE_EXECUTE, execute_query, bytes_type);
 
     // there must only by one item in the queue with given label
     // this is used to send only the most recent item.
     // for example events
     // so if there is a item with that label, then remove it and
     // push this item to the end of the queue
-    if (item.b) {
+    if (bytes_type) {
       for (let i = 0; i < this.#queue.length; i++) {
-        if (this.#queue[i].type === Query.TYPE_EXECUTE && this.#queue[i].b === item.b) {
+        if (this.#queue[i].type === Query.TYPE_EXECUTE && bytes_type === this.#queue[i].b) {
+          logging.info(`Query ${bytes_type} already in queue waiting for execute. Resolving it`);
           this.#queue[i].resolve();
           this.#queue.splice(i, 1);
           break;
@@ -734,10 +813,12 @@ export class SpectodaRuntime {
     return item.promise;
   }
 
-  request(bytes: number[], read_response = true, timeout: number | typeof DEFAULT_TIMEOUT = DEFAULT_TIMEOUT) {
-    logging.verbose("request", { bytes, read_response, timeout });
+  request(bytecode: number[] | Uint8Array, read_response = true, timeout: number | typeof DEFAULT_TIMEOUT = DEFAULT_TIMEOUT): Promise<Uint8Array | null> {
+    logging.verbose("request", { bytecode, read_response, timeout });
 
-    const item = new Query(Query.TYPE_REQUEST, bytes, read_response, timeout);
+    const request_query: RequestQuery = { bytecode: new Uint8Array(bytecode), read_response, timeout };
+
+    const item = new Query(Query.TYPE_REQUEST, request_query);
     this.#process(item);
     return item.promise;
   }
@@ -854,9 +935,11 @@ export class SpectodaRuntime {
             switch (item.type) {
               case Query.TYPE_USERSELECT: {
                 {
+                  const user_select_query: UserSelectQuery = item.a;
+
                   try {
                     await this.connector
-                      .userSelect(item.a, item.b) // criteria, timeout
+                      .userSelect(user_select_query.criteria_array, user_select_query.timeout) // criteria, timeout
                       .then((result: any) => {
                         item.resolve(result);
                       });
@@ -869,9 +952,11 @@ export class SpectodaRuntime {
 
               case Query.TYPE_AUTOSELECT: {
                 {
+                  const auto_select_query: AutoSelectQuery = item.a;
+
                   try {
                     await this.connector
-                      .autoSelect(item.a, item.b, item.c) // criteria, scan_period, timeout
+                      .autoSelect(auto_select_query.criteria_array, auto_select_query.scan_period, auto_select_query.timeout) // criteria, scan_period, timeout
                       .then((result: any) => {
                         item.resolve(result);
                       });
@@ -910,9 +995,11 @@ export class SpectodaRuntime {
 
               case Query.TYPE_SCAN: {
                 {
+                  const scan_query: ScanQuery = item.a;
+
                   try {
                     await this.connector
-                      .scan(item.a, item.b) // criteria, scan_period
+                      .scan(scan_query.criteria_array, scan_query.scan_period) // criteria, scan_period
                       .then((result: any) => {
                         item.resolve(result);
                       });
@@ -926,15 +1013,11 @@ export class SpectodaRuntime {
 
               case Query.TYPE_CONNECT: {
                 {
-                  try {
-                    // logging.warn("Running #connect clear workaround");
-                    // this.spectoda_js.eraseHistory();
-                    // this.spectoda_js.eraseTimeline();
-                    // this.spectoda_js.eraseTngl();
-                    // this.spectoda_js.setClockTimestamp(0);
+                  const connect_query: ConnectQuery = item.a;
 
+                  try {
                     await this.connector
-                      .connect(item.a) // a = timeout
+                      .connect(connect_query.timeout) // timeout
                       .then(async (result: any) => {
                         if (!this.#connectGuard) {
                           logging.error("Connection logic error. #connected not called during successful connect()?");
@@ -995,11 +1078,13 @@ export class SpectodaRuntime {
 
               case Query.TYPE_EXECUTE: {
                 {
+                  const execute_query: ExecuteQuery = item.a;
+
                   const payload = new Uint8Array(0xffff);
                   let index = 0;
 
-                  payload.set(item.a, index);
-                  index += item.a.length;
+                  payload.set(execute_query.bytecode, index);
+                  index += execute_query.bytecode.length;
 
                   const executesInPayload = [item];
 
@@ -1007,11 +1092,12 @@ export class SpectodaRuntime {
                   while (this.#queue.length > 0 && this.#queue[0].type == Query.TYPE_EXECUTE) {
                     // @ts-ignore it is never undefined because of (this.#queue.length > 0)
                     const next_item: Query = this.#queue.shift();
+                    const next_execute_query: ExecuteQuery = next_item.a;
 
                     // then check if I have room to merge other payload bytes
-                    if (index + next_item.a.length <= this.#chunkSize) {
-                      payload.set(next_item.a, index);
-                      index += next_item.a.length;
+                    if (index + next_execute_query.bytecode.length <= this.#chunkSize) {
+                      payload.set(next_execute_query.bytecode, index);
+                      index += next_execute_query.bytecode.length;
                       executesInPayload.push(next_item);
                     }
 
@@ -1038,10 +1124,10 @@ export class SpectodaRuntime {
 
               case Query.TYPE_REQUEST: {
                 {
-                  this.emit("wasm_request", item.a);
-
                   try {
-                    await this.connector.request(item.a, item.b, item.c).then((response: any) => {
+                    const request_query: RequestQuery = item.a;
+
+                    await this.connector.request(request_query.bytecode, request_query.read_response, request_query.timeout).then((response: any) => {
                       item.resolve(response);
                     });
                   } catch (error) {
@@ -1134,14 +1220,13 @@ export class SpectodaRuntime {
                 {
                   // void _sendExecute(const std::vector<uint8_t>& command_bytes, const Connection& source_connection) = 0;
 
-                  const command_bytes: Uint8Array = item.a;
-                  const source_connection: Connection = item.b;
+                  const send_execute_query: SendExecuteQuery = item.a;
 
                   try {
-                    this.emit("wasm_execute", command_bytes);
+                    this.emit("wasm_execute", Array.from(send_execute_query.command_bytes));
 
                     await this.connector
-                      .sendExecute(command_bytes, source_connection)
+                      .sendExecute(send_execute_query.command_bytes, send_execute_query.source_connection)
                       .then((result: any) => {
                         item.resolve(result);
                       })
@@ -1159,13 +1244,11 @@ export class SpectodaRuntime {
                 {
                   // bool _sendRequest(const int32_t request_ticket_number, std::vector<uint8_t>& request_bytecode, const Connection& destination_connection) = 0;
 
-                  const request_ticket_number: number = item.a;
-                  const request_bytecode: Uint8Array = item.b;
-                  const destination_connection: Connection = item.c;
+                  const send_request_query: SendRequestQuery = item.a;
 
                   try {
                     await this.connector
-                      .sendRequest(request_ticket_number, request_bytecode, destination_connection)
+                      .sendRequest(send_request_query.request_ticket_number, send_request_query.request_bytecode, send_request_query.destination_connection)
                       .then((result: any) => {
                         item.resolve(result);
                       })
@@ -1183,13 +1266,11 @@ export class SpectodaRuntime {
                 {
                   // bool _sendResponse(const int32_t request_ticket_number, std::vector<uint8_t>& response_bytecode, const Connection& destination_connection) = 0;
 
-                  const request_ticket_number: number = item.a;
-                  const response_bytecode: Uint8Array = item.b;
-                  const destination_connection: Connection = item.c;
+                  const send_response_query: SendResponseQuery = item.a;
 
                   try {
                     await this.connector
-                      .sendResponse(request_ticket_number, response_bytecode, destination_connection)
+                      .sendResponse(send_response_query.request_ticket_number, send_response_query.request_result, send_response_query.response_bytecode, send_response_query.destination_connection)
                       .then((result: any) => {
                         item.resolve(result);
                       })
@@ -1207,12 +1288,11 @@ export class SpectodaRuntime {
                 {
                   // void _sendSynchronize(const Synchronization& synchronization, const Connection& source_connection) = 0;
 
-                  const synchronization: Synchronization = item.a;
-                  const source_connection: Connection = item.b;
+                  const send_synchronize_query: SendSynchronizeQuery = item.a;
 
                   try {
                     await this.connector
-                      .sendSynchronize(synchronization, source_connection)
+                      .sendSynchronize(send_synchronize_query.synchronization, send_synchronize_query.source_connection)
                       .then((result: any) => {
                         item.resolve(result);
                       })
@@ -1361,7 +1441,7 @@ export class SpectodaRuntime {
     const command_bytes = new Uint8Array(writer.bytes.buffer);
     logging.verbose("command_bytes=", command_bytes);
 
-    this.execute(command_bytes, undefined, 60000);
+    this.execute(command_bytes, undefined);
 
     return command_bytes;
   }
@@ -1532,7 +1612,9 @@ export class SpectodaRuntime {
   sendExecute(command_bytes: Uint8Array, source_connection: Connection) {
     logging.verbose(`SpectodaRuntime::sendExecute(command_bytes=${command_bytes}, source_connection=${source_connection})`);
 
-    const item = new Query(Query.TYPE_SEND_EXECUTE, command_bytes, source_connection);
+    const send_execute_query: SendExecuteQuery = { command_bytes, source_connection };
+
+    const item = new Query(Query.TYPE_SEND_EXECUTE, send_execute_query);
     this.#process(item);
     return item.promise;
   }
@@ -1542,7 +1624,9 @@ export class SpectodaRuntime {
   sendRequest(request_ticket_number: number, request_bytecode: Uint8Array, destination_connection: Connection) {
     logging.verbose(`SpectodaRuntime::sendRequest(request_ticket_number=${request_ticket_number}, request_bytecode=${request_bytecode}, destination_connection=${destination_connection})`);
 
-    const item = new Query(Query.TYPE_SEND_REQUEST, request_ticket_number, request_bytecode, destination_connection);
+    const send_request_query: SendRequestQuery = { request_ticket_number, request_bytecode, destination_connection };
+
+    const item = new Query(Query.TYPE_SEND_REQUEST, send_request_query);
     this.#process(item);
     return item.promise;
   }
@@ -1551,7 +1635,9 @@ export class SpectodaRuntime {
   sendResponse(request_ticket_number: number, request_result: number, response_bytecode: Uint8Array, destination_connection: Connection) {
     logging.verbose(`SpectodaRuntime::sendResponse(request_ticket_number=${request_ticket_number}, request_result=${request_result}, response_bytecode=${response_bytecode}, destination_connection=${destination_connection})`);
 
-    const item = new Query(Query.TYPE_SEND_RESPONSE, request_ticket_number, request_result, response_bytecode, destination_connection);
+    const send_response_query: SendResponseQuery = { request_ticket_number, request_result, response_bytecode, destination_connection };
+
+    const item = new Query(Query.TYPE_SEND_RESPONSE, send_response_query);
     this.#process(item);
     return item.promise;
   }
@@ -1561,7 +1647,9 @@ export class SpectodaRuntime {
   sendSynchronize(synchronization: Synchronization, source_connection: Connection) {
     logging.verbose(`SpectodaRuntime::sendSynchronize(synchronization=${synchronization}, source_connection=${source_connection})`);
 
-    const item = new Query(Query.TYPE_SEND_SYNCHRONIZE, synchronization, source_connection);
+    const send_synchronize_query: SendSynchronizeQuery = { synchronization, source_connection };
+
+    const item = new Query(Query.TYPE_SEND_SYNCHRONIZE, send_synchronize_query);
     this.#process(item);
     return item.promise;
   }
