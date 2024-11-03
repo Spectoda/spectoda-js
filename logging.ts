@@ -17,8 +17,6 @@ export const DEBUG_LEVEL_DEBUG = 4;
  * @deprecated use logging.LOGGING_LEVEL_VERBOSE */
 export const DEBUG_LEVEL_VERBOSE = 5;
 
-export type LoggingLevel = 0 | 1 | 2 | 3 | 4 | 5;
-
 // Logging configuration object
 export const logging = {
   LOGGING_LEVEL_NONE: 0,
@@ -34,7 +32,7 @@ export const logging = {
   warnCallback: console.warn,
   errorCallback: console.error,
 
-  setLoggingLevel: (level: LoggingLevel) => {
+  setLoggingLevel: (level: number) => {
     if (level >= 0 && level <= 5) {
       logging.level = level;
     }
@@ -49,7 +47,7 @@ export const logging = {
   /**
    * @deprecated use setLoggingLevel
    */
-  setDebugLevel: (level: LoggingLevel) => {
+  setDebugLevel: (level: number) => {
     logging.setLoggingLevel(level);
   },
 

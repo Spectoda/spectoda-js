@@ -1,6 +1,7 @@
 // TODO fix TSC in spectoda-js
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-nocheck
+
 import { TnglCodeParser } from "./SpectodaParser";
 import { VALUE_LIMITS } from "./constants";
 import { logging } from "./logging";
@@ -425,7 +426,7 @@ const CRC32_DATA = CRC32_TABLE.split(" ").map(function (s) {
   return parseInt(s, 16);
 });
 
-export function crc32(bytes) {
+export function crc32(bytes: Uint8Array): number {
   let crc = -1;
   for (let i = 0, iTop = bytes.length; i < iTop; i++) {
     crc = (crc >>> 8) ^ CRC32_DATA[(crc ^ bytes[i]) & 0xff];
