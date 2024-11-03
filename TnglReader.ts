@@ -1,17 +1,22 @@
+import { logging } from "./logging";
+
 export class TnglReader {
-  constructor(dataView) {
-    this._dataView = dataView;
-    this._index = 0;
+  #dataView: DataView;
+  #index: number;
+
+  constructor(bytecode: Uint8Array) {
+    this.#dataView = new DataView(bytecode.buffer);
+    this.#index = 0;
   }
 
   // TODO optimize and test this function
-  peekValue(byteCount, unsigned = true) {
+  peekValue(byteCount: number, unsigned = true) {
     if (byteCount > 8) {
       logging.error("ByteCountOutOfRange");
       throw new RangeError("ByteCountOutOfRange");
     }
 
-    if (this._index + byteCount > this._dataView.byteLength) {
+    if (this.#index + byteCount > this.#dataView.byteLength) {
       console.error("ReadOutOfRange");
       throw new RangeError("ReadOutOfRange");
     }
@@ -19,7 +24,7 @@ export class TnglReader {
     let value = 0n;
     for (let i = byteCount; i > 0; i--) {
       value <<= 8n;
-      value |= BigInt(this._dataView.getUint8(this._index + i - 1));
+      value |= BigInt(this.#dataView.getUint8(this.#index + i - 1));
     }
 
     let result = value;
@@ -39,7 +44,7 @@ export class TnglReader {
     return Number(result);
   }
 
-  readValue(byteCount, unsigned) {
+  readValue(byteCount: number, unsigned: boolean) {
     try {
       const val = this.peekValue(byteCount, unsigned);
       this.forward(byteCount);
@@ -50,12 +55,12 @@ export class TnglReader {
     }
   }
 
-  readBytes(byteCount) {
-    if (this._index + byteCount <= this._dataView.byteLength) {
+  readBytes(byteCount: number) {
+    if (this.#index + byteCount <= this.#dataView.byteLength) {
       let bytes = [];
 
       for (let i = 0; i < byteCount; i++) {
-        bytes.push(this._dataView.getUint8(this._index + i));
+        bytes.push(this.#dataView.getUint8(this.#index + i));
       }
 
       this.forward(byteCount);
@@ -67,13 +72,13 @@ export class TnglReader {
     }
   }
 
-  readString(bufferLength) {
-    if (this._index + bufferLength <= this._dataView.byteLength) {
+  readString(bufferLength: number) {
+    if (this.#index + bufferLength <= this.#dataView.byteLength) {
       let string = "";
       let endOfTheString = false;
 
       for (let i = 0; i < bufferLength; i++) {
-        let charCode = this._dataView.getUint8(this._index + i);
+        let charCode = this.#dataView.getUint8(this.#index + i);
         if (charCode === 0) {
           endOfTheString = true;
         }
@@ -138,22 +143,22 @@ export class TnglReader {
   }
 
   get available() {
-    return this._dataView.byteLength - this._index;
+    return this.#dataView.byteLength - this.#index;
   }
 
-  forward(byteCount) {
-    if (this._index + byteCount <= this._dataView.byteLength) {
-      this._index += byteCount;
+  forward(byteCount: number) {
+    if (this.#index + byteCount <= this.#dataView.byteLength) {
+      this.#index += byteCount;
     } else {
-      this._index = this._dataView.byteLength;
+      this.#index = this.#dataView.byteLength;
     }
   }
 
-  back(byteCount) {
-    if (this._index >= byteCount) {
-      this._index -= byteCount;
+  back(byteCount: number) {
+    if (this.#index >= byteCount) {
+      this.#index -= byteCount;
     } else {
-      this._index = 0;
+      this.#index = 0;
     }
   }
 }
