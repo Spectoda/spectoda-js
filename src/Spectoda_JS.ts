@@ -72,7 +72,10 @@ export type TnglBank = number;
   export type ValueType = (typeof VALUE_TYPE)[keyof typeof VALUE_TYPE];
 
   export type Number = number;
-  export type Label = string; //* "label" is a specific type, that can have at max 5 characters [a-zA-Z0-9_]. It is always prefixed with "$" (e.g. $label)
+/**
+ * Short label prefixed with `$`, max 5 alphanumeric chars (`[a-zA-Z0-9_]`).
+ * @example $color
+ */
   export type Timestamp = number;
   export type Percentage = number;
   export type Date = string;
