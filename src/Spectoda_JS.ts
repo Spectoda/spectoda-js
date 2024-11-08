@@ -28,12 +28,35 @@ export namespace SpectodaTypes {
   export type Criterium = criteria;
   export type Criteria = criteria | criteria[];
   export type Tngl = { code: string | undefined; bytecode: Uint8Array | undefined };
-  export type NetworkSignature = string; // "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx", where x is a-f or 0-9
-  export type NetworkKey = string; // "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx", where x is a-f or 0-9
+/**
+ * Unique network identifier as a 32-character lowercase hexadecimal string.
+ * Format: `"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"` (characters: `a-f`, `0-9`)
+ */
+export type NetworkSignature = string;
 
-  export type PcbCode = number; // 0-16535
-  export type ProductCode = number; // 0-16535
-  export type TnglBank = number; // 0-255
+/**
+ * Secure 32-character hexadecimal key for network access.
+ * Format: `"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"` (characters: `a-f`, `0-9`)
+ */
+export type NetworkKey = string;
+
+/**
+ * PCB (Printed Circuit Board) code.
+ * Range: 0 - 16535
+ */
+export type PcbCode = number;
+
+/**
+ * Product code for specific models.
+ * Range: 0 - 16535
+ */
+export type ProductCode = number;
+
+/**
+ * TNGL bank identifier.
+ * Range: 0 - 255
+ */
+export type TnglBank = number;
 
   // NUMBER: 29,
   // LABEL: 31,
@@ -49,7 +72,10 @@ export namespace SpectodaTypes {
   export type ValueType = (typeof VALUE_TYPE)[keyof typeof VALUE_TYPE];
 
   export type Number = number;
-  export type Label = string; //* "label" is a specific type, that can have at max 5 characters [a-zA-Z0-9_]. It is always prefixed with "$" (e.g. $label)
+/**
+ * Short label prefixed with `$`, max 5 alphanumeric chars (`[a-zA-Z0-9_]`).
+ * @example $color
+ */
   export type Timestamp = number;
   export type Percentage = number;
   export type Date = string;
