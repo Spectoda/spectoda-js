@@ -321,10 +321,10 @@ export class SpectodaRuntime {
     if (detectSpectodaConnect()) {
       // target="_blank" global handler
       // @ts-ignore
-
       /** @type {HTMLBodyElement} */ document.querySelector("body").addEventListener("click", function (e) {
         e.preventDefault();
 
+        // ! @sirluky Please add types or explanation what this does
         (function (e, d, w) {
           if (!e.composedPath) {
             e.composedPath = function () {
@@ -508,6 +508,11 @@ export class SpectodaRuntime {
     this.#eventEmitter.emit(event, ...arg);
   }
 
+  /**
+   *
+   * @param desired_connector
+   * @param connector_parameter WIP - still figuring out what is can be used for. Right now it is used for simulated connector to pass the parameters for the simulated network.
+   */
   assignConnector(desired_connector: SpectodaTypes.ConnectorType = "default", connector_parameter: any = null) {
     logging.verbose(`assignConnector(desired_connector=${desired_connector})`);
 
@@ -644,7 +649,7 @@ export class SpectodaRuntime {
 
     this.#selecting = true;
 
-    // ? make sure that criteria is always an array of SpectodaTypes.Criterium
+    // ? makes sure that criteria is always an array of SpectodaTypes.Criterium
     let criteria_array: SpectodaTypes.Criterium[];
     if (criteria === null || criteria === undefined) {
       criteria_array = [];
@@ -672,7 +677,7 @@ export class SpectodaRuntime {
 
     this.#selecting = true;
 
-    // ? make sure that criteria is always an array of SpectodaTypes.Criterium
+    // ? makes sure that criteria is always an array of SpectodaTypes.Criterium
     let criteria_array: SpectodaTypes.Criterium[];
     if (criteria === null || criteria === undefined) {
       criteria_array = [];
@@ -716,7 +721,7 @@ export class SpectodaRuntime {
 
     this.#selecting = true;
 
-    // ? make sure that criteria is always an array of SpectodaTypes.Criterium
+    // ? makes sure that criteria is always an array of SpectodaTypes.Criterium
     let criteria_array: SpectodaTypes.Criterium[];
     if (criteria === null || criteria === undefined) {
       criteria_array = [];
@@ -938,11 +943,9 @@ export class SpectodaRuntime {
                   const user_select_query: UserSelectQuery = item.a;
 
                   try {
-                    await this.connector
-                      .userSelect(user_select_query.criteria_array, user_select_query.timeout) // criteria, timeout
-                      .then((result: any) => {
-                        item.resolve(result);
-                      });
+                    await this.connector.userSelect(user_select_query.criteria_array, user_select_query.timeout).then((result: any) => {
+                      item.resolve(result);
+                    });
                   } catch (error) {
                     item.reject(error);
                   }
@@ -955,11 +958,9 @@ export class SpectodaRuntime {
                   const auto_select_query: AutoSelectQuery = item.a;
 
                   try {
-                    await this.connector
-                      .autoSelect(auto_select_query.criteria_array, auto_select_query.scan_period, auto_select_query.timeout) // criteria, scan_period, timeout
-                      .then((result: any) => {
-                        item.resolve(result);
-                      });
+                    await this.connector.autoSelect(auto_select_query.criteria_array, auto_select_query.scan_period, auto_select_query.timeout).then((result: any) => {
+                      item.resolve(result);
+                    });
                   } catch (error) {
                     item.reject(error);
                   }
@@ -998,11 +999,9 @@ export class SpectodaRuntime {
                   const scan_query: ScanQuery = item.a;
 
                   try {
-                    await this.connector
-                      .scan(scan_query.criteria_array, scan_query.scan_period) // criteria, scan_period
-                      .then((result: any) => {
-                        item.resolve(result);
-                      });
+                    await this.connector.scan(scan_query.criteria_array, scan_query.scan_period).then((result: any) => {
+                      item.resolve(result);
+                    });
                   } catch (error) {
                     //logging.warn(error);
                     item.reject(error);
@@ -1016,26 +1015,24 @@ export class SpectodaRuntime {
                   const connect_query: ConnectQuery = item.a;
 
                   try {
-                    await this.connector
-                      .connect(connect_query.timeout) // timeout
-                      .then(async (result: any) => {
-                        if (!this.#connectGuard) {
-                          logging.error("Connection logic error. #connected not called during successful connect()?");
-                          logging.warn("Emitting #connected");
-                          this.#eventEmitter.emit("#connected");
-                        }
+                    await this.connector.connect(connect_query.timeout).then(async (result: any) => {
+                      if (!this.#connectGuard) {
+                        logging.error("Connection logic error. #connected not called during successful connect()?");
+                        logging.warn("Emitting #connected");
+                        this.#eventEmitter.emit("#connected");
+                      }
 
-                        try {
-                          this.clock = await this.connector?.getClock();
-                          this.spectoda_js.setClockTimestamp(this.clock.millis());
-                          this.emit("wasm_clock", this.clock.millis());
-                          item.resolve(result);
-                        } catch (error) {
-                          logging.error(error);
-                          this.clock = new TimeTrack(0);
-                          item.resolve(result);
-                        }
-                      });
+                      try {
+                        this.clock = await this.connector?.getClock();
+                        this.spectoda_js.setClockTimestamp(this.clock.millis());
+                        this.emit("wasm_clock", this.clock.millis());
+                        item.resolve(result);
+                      } catch (error) {
+                        logging.error(error);
+                        this.clock = new TimeTrack(0);
+                        item.resolve(result);
+                      }
+                    });
                   } catch (error) {
                     await this.connector.disconnect();
                     item.reject(error);

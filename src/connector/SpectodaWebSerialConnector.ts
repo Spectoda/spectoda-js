@@ -209,41 +209,6 @@ export class SpectodaWebSerialConnector {
     this.#dataCallback = undefined;
   }
 
-  /*
-    
-    criteria: pole objektu, kde plati: [{ tohle and tamto and toto } or { tohle and tamto }]
-    
-    možnosti:
-      name: string
-      nameprefix: string
-      fwVersion: string
-      network: string
-      product: number
-      adoptionFlag: bool
-    
-    criteria example:
-    [
-      // all Devices that are named "NARA Aplha", are on 0.7.2 fw and are
-      // adopted by the owner with "baf2398ff5e6a7b8c9d097d54a9f865f" signature.
-      // Product code is 1 what means NARA Alpha
-      {
-        name:"NARA Alpha" 
-        fwVersion:"0.7.2"
-        network:"baf2398ff5e6a7b8c9d097d54a9f865f"
-        product:1
-      },
-      // all the devices with the name starting with "NARA", without the 0.7.3 FW and 
-      // that are not adopted by anyone
-      // Product code is 2 what means NARA Beta 
-      {
-        nameprefix:"NARA"
-        fwVersion:"!0.7.3"
-        product:2
-        adoptionFlag:true
-      }
-    ]
-
-    */
   // choose one Spectoda device (user chooses which device to connect to via a popup)
   // if no criteria are set, then show all Spectoda devices visible.
   // first bonds the BLE device with the PC/Phone/Tablet if it is needed.
