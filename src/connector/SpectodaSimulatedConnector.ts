@@ -237,41 +237,7 @@ export class SpectodaSimulatedConnector {
       this.#renderIntervalHandle = setInterval(__render, 1000 / this.#fps);
     }
   }
-  /*
-criteria: pole objektu, kde plati: [{ tohle and tamto and toto } or { tohle and tamto }]
-možnosti:
-  name: string
-  nameprefix: string
-  fwVersion: string
-  network: string
-  product: number
-  adoptionFlag: bool
-criteria example:
-[
-  // all Devices that are named "NARA Aplha", are on 0.7.2 fw and are
-  // adopted by the owner with "baf2398ff5e6a7b8c9d097d54a9f865f" signature.
-  // Product code is 1 what means NARA Alpha
-  {
-    name:"NARA Alpha" 
-    fwVersion:"0.7.2"
-    network:"baf2398ff5e6a7b8c9d097d54a9f865f"
-    product:1
-  },
-  // all the devices with the name starting with "NARA", without the 0.7.3 FW and 
-  // that are not adopted by anyone
-  // Product code is 2 what means NARA Beta 
-  {
-    nameprefix:"NARA"
-    fwVersion:"!0.7.3"
-    product:2
-    adoptionFlag:true
-  }
-]
-*/
-  // choose one Spectoda device (user chooses which device to connect to via a popup)
-  // if no criteria are set, then show all Spectoda devices visible.
-  // first bonds the BLE device with the PC/Phone/Tablet if it is needed.
-  // Then selects the device
+
   userSelect(criterium_array: SpectodaTypes.Criterium[], timeout_number: number | typeof DEFAULT_TIMEOUT = DEFAULT_TIMEOUT): Promise<SpectodaTypes.Criterium | null> {
     if (timeout_number === DEFAULT_TIMEOUT) {
       timeout_number = 60000;
@@ -298,15 +264,6 @@ criteria example:
       resolve({ connector: this.type });
     });
   }
-
-  // takes the criteria, scans for scan_period and automatically selects the device,
-  // you can then connect to. This works only for BLE devices that are bond with the phone/PC/tablet
-  // the app is running on OR doesnt need to be bonded in a special way.
-  // if more devices are found matching the criteria, then the strongest signal wins
-  // if no device is found within the timeout period, then it returns an error
-
-  // if no criteria are provided, all Spectoda enabled devices (with all different FWs and Owners and such)
-  // are eligible.
 
   autoSelect(criterium_array: SpectodaTypes.Criterium[], scan_duration_number: number | typeof DEFAULT_TIMEOUT = DEFAULT_TIMEOUT, timeout_number: number | typeof DEFAULT_TIMEOUT = DEFAULT_TIMEOUT): Promise<SpectodaTypes.Criterium | null> {
     if (scan_duration_number === DEFAULT_TIMEOUT) {
