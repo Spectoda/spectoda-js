@@ -28,8 +28,17 @@ export namespace SpectodaTypes {
   export type Criterium = criteria;
   export type Criteria = criteria | criteria[];
   export type Tngl = { code: string | undefined; bytecode: Uint8Array | undefined };
-  export type NetworkSignature = string; // "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx", where x is a-f or 0-9
-  export type NetworkKey = string; // "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx", where x is a-f or 0-9
+/**
+ * Unique network identifier as a 32-character lowercase hexadecimal string.
+ * Format: `"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"` (characters: `a-f`, `0-9`)
+ */
+export type NetworkSignature = string;
+
+/**
+ * Secure 32-character hexadecimal key for network access.
+ * Format: `"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"` (characters: `a-f`, `0-9`)
+ */
+export type NetworkKey = string;
 
   export type PcbCode = number; // 0-16535
   export type ProductCode = number; // 0-16535
