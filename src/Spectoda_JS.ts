@@ -28,54 +28,44 @@ export namespace SpectodaTypes {
   export type Criterium = criteria;
   export type Criteria = criteria | criteria[];
   export type Tngl = { code: string | undefined; bytecode: Uint8Array | undefined };
-/**
- * Unique network identifier as a 32-character lowercase hexadecimal string.
- * Format: `"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"` (characters: `a-f`, `0-9`)
- */
-export type NetworkSignature = string;
+  /**
+   * Unique network identifier as a 32-character lowercase hexadecimal string.
+   * Format: `"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"` (characters: `a-f`, `0-9`)
+   */
+  export type NetworkSignature = string;
 
-/**
- * Secure 32-character hexadecimal key for network access.
- * Format: `"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"` (characters: `a-f`, `0-9`)
- */
-export type NetworkKey = string;
+  /**
+   * Secure 32-character hexadecimal key for network access.
+   * Format: `"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"` (characters: `a-f`, `0-9`)
+   */
+  export type NetworkKey = string;
 
-/**
- * PCB (Printed Circuit Board) code.
- * Range: 0 - 16535
- */
-export type PcbCode = number;
+  /**
+   * PCB (Printed Circuit Board) code.
+   * Range: 0 - 16535
+   */
+  export type PcbCode = number;
 
-/**
- * Product code for specific models.
- * Range: 0 - 16535
- */
-export type ProductCode = number;
+  /**
+   * Product code for specific models.
+   * Range: 0 - 16535
+   */
+  export type ProductCode = number;
 
-/**
- * TNGL bank identifier.
- * Range: 0 - 255
- */
-export type TnglBank = number;
-
-  // NUMBER: 29,
-  // LABEL: 31,
-  // TIME: 32,
-  // PERCENTAGE: 30,
-  // DATE: 28,
-  // COLOR: 26,
-  // PIXELS: 19,
-  // BOOLEAN: 2,
-  // NULL: 1,
-  // UNDEFINED: 0,
+  /**
+   * TNGL bank identifier.
+   * Range: 0 - 255
+   */
+  export type TnglBank = number;
 
   export type ValueType = (typeof VALUE_TYPE)[keyof typeof VALUE_TYPE];
 
   export type Number = number;
-/**
- * Short label prefixed with `$`, max 5 alphanumeric chars (`[a-zA-Z0-9_]`).
- * @example $color
- */
+  /**
+   * Short label prefixed with `$`, max 5 alphanumeric chars (`[a-zA-Z0-9_]`).
+   * @example $color
+   */
+  export type Label = string;
   export type Timestamp = number;
   export type Percentage = number;
   export type Date = string;
