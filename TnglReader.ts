@@ -146,7 +146,7 @@ export class TnglReader {
     return this.#dataView.byteLength - this.#index;
   }
 
-  forward(byteCount: number) {
+  moveForward(byteCount: number) {
     if (this.#index + byteCount <= this.#dataView.byteLength) {
       this.#index += byteCount;
     } else {
@@ -154,11 +154,21 @@ export class TnglReader {
     }
   }
 
-  back(byteCount: number) {
+  /* @deprecated use moveForward instead */
+  forward(byteCount: number) {
+    this.moveForward(byteCount);
+  }
+
+  moveBack(byteCount: number) {
     if (this.#index >= byteCount) {
       this.#index -= byteCount;
     } else {
       this.#index = 0;
     }
+  }
+
+  /* @deprecated use moveBack instead */
+  back(byteCount: number) {
+    this.moveBack(byteCount);
   }
 }
