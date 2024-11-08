@@ -40,9 +40,23 @@ export type NetworkSignature = string;
  */
 export type NetworkKey = string;
 
-  export type PcbCode = number; // 0-16535
-  export type ProductCode = number; // 0-16535
-  export type TnglBank = number; // 0-255
+/**
+ * PCB (Printed Circuit Board) code.
+ * Range: 0 - 16535
+ */
+export type PcbCode = number;
+
+/**
+ * Product code for specific models.
+ * Range: 0 - 16535
+ */
+export type ProductCode = number;
+
+/**
+ * TNGL bank identifier.
+ * Range: 0 - 255
+ */
+export type TnglBank = number;
 
   // NUMBER: 29,
   // LABEL: 31,
