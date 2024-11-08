@@ -1,10 +1,8 @@
-// TODO fix TSC in spectoda-js
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-nocheck
 
 import { logging } from "../logging";
 
-const WASM_VERSION = "DEBUG_DEV_0.12.0_20241030";
+const WASM_VERSION = "DEBUG_DEV_0.12.0_20241101";
 
 /// ========== DEBUG_DEV_0.12.0_20241030.d.ts ========== ///
 
@@ -171,19 +169,19 @@ export interface SpectodaEvent {
 }
 
 export interface Spectoda_WASMImplementation {
-  // void _onTnglUpdate(const std::vector<uint8_t>& tngl_bytes) override
+  // bool _onTnglUpdate(const std::vector<uint8_t>& tngl_bytes) override
   // {
-  //     return call<void>("_onTnglUpdate", tngl_bytes);
+  //     return call<bool>("_onTnglUpdate", tngl_bytes);
   // }
 
-  // void _onEvents(const val& event_array) override
+  // bool _onEvents(const val& event_array) override
   // {
-  //     return call<void>("_onEvents", event_array);
+  //     return call<bool>("_onEvents", event_array);
   // }
 
-  // void _onEventStateUpdates(const val& event_array) override
+  // bool _onEventStateUpdates(const val& event_state_updates_array) override
   // {
-  //     return call<void>("_onEventStateUpdates", event_array);
+  //     return call<bool>("_onEventStateUpdates", event_state_updates_array);
   // }
 
   // bool _onExecute(const std::vector<uint8_t>& execute_bytecode) override
@@ -196,9 +194,18 @@ export interface Spectoda_WASMImplementation {
   //     return call<bool>("_onRequest", request_ticket_number, request_bytecode_vector, destination_connection);
   // }
 
-  // bool _onSynchronize(const val synchronization) override
+  // bool _onSynchronize(const val& synchronization) override
   // {
   //     return call<bool>("_onSynchronize", synchronization);
+  // }
+
+  // bool _onProcess(const val& options) override
+  // {
+  //     val process_options = val::object();
+  //     process_options.set("skip_berry_plugin_update", bool(options.skip_berry_plugin_update));
+  //     process_options.set("skip_eventstate_updates", bool(options.skip_eventstate_updates));
+  //
+  //     return call<bool>("_onProcess", options);
   // }
 
   // interface_error_t _handlePeerConnected(const std::string& peer_mac) override
@@ -211,9 +218,9 @@ export interface Spectoda_WASMImplementation {
   //     return call<interface_error_t>("_handlePeerDisconnected", peer_mac);
   // }
 
-  // interface_error_t _handleTimelineManipulation(const int32_t timeline_timestamp, const bool timeline_paused, const double clock_timestamp) override
+  // interface_error_t _handleTimelineManipulation(const timeline_ms timeline_timestamp, const bool timeline_paused, const std::string& timeline_date) override
   // {
-  //     return call<interface_error_t>("_handleTimelineManipulation", timeline_timestamp, timeline_paused, clock_timestamp);
+  //     return call<interface_error_t>("_handleTimelineManipulation", timeline_timestamp, timeline_paused, timeline_date);
   // }
 
   // interface_error_t _handleReboot() override
@@ -228,15 +235,16 @@ export interface Spectoda_WASMImplementation {
 
   // // __construct: function () {}
   // // __destruct: function () {}
-  _onTnglUpdate(tngl_bytes: Uint8Vector): void;
-  _onEvents(event_array: SpectodaEvent[]): void;
-  _onEventStateUpdates(event_array: SpectodaEvent[]): void;
+  _onTnglUpdate(tngl_bytes: Uint8Vector): boolean;
+  _onEvents(event_array: SpectodaEvent[]): boolean;
+  _onEventStateUpdates(event_array: SpectodaEvent[]): boolean;
   _onExecute(execute_bytecode: Uint8Vector): boolean;
   _onRequest(request_ticket_number: number, request_bytecode_vector: Uint8Vector, destination_connection: Connection): boolean;
   _onSynchronize(synchronization: Synchronization): boolean;
+  _onProcess(options: { skip_berry_plugin_update: boolean; skip_eventstate_updates: boolean }): boolean;
   _handlePeerConnected(peer_mac: string): interface_error_t;
   _handlePeerDisconnected(peer_mac: string): interface_error_t;
-  _handleTimelineManipulation(timeline_timestamp: number, timeline_paused: boolean, clock_timestamp: number): interface_error_t;
+  _handleTimelineManipulation(timeline_timestamp: number, timeline_paused: boolean, timeline_date: string): interface_error_t;
   _handleReboot(): interface_error_t;
   _onLog(level: number, where: string, message: string): void;
 }
@@ -257,27 +265,27 @@ export interface IConnector_WASMImplementation {
   //     return call<bool>("_userConnect", criteria_json, timeout, result_out);
   // }
 
-  // bool _disconnect(const Connection& connection) override
+  // bool _disconnect(const val& connection) override
   // {
   //     return call<bool>("_disconnect", connection);
   // }
 
-  // void _sendExecute(const std::vector<uint8_t>& command_bytes, const Connection& source_connection) override
+  // void _sendExecute(const std::vector<uint8_t>& command_bytes, const val& source_connection) override
   // {
   //     return call<void>("_sendExecute", command_bytes, source_connection);
   // }
 
-  // bool _sendRequest(const int32_t request_ticket_number, std::vector<uint8_t>& request_bytecode, const Connection& destination_connection) override
+  // bool _sendRequest(const int32_t request_ticket_number, std::vector<uint8_t>& request_bytecode, const val& destination_connection) override
   // {
   //     return call<bool>("_sendRequest", request_ticket_number, request_bytecode, destination_connection);
   // }
 
-  // bool _sendResponse(const int32_t request_ticket_number, const int32_t request_result, std::vector<uint8_t>& response_bytecode, const Connection& destination_connection) override
+  // bool _sendResponse(const int32_t request_ticket_number, const int32_t request_result, std::vector<uint8_t>& response_bytecode, const val& destination_connection) override
   // {
   //     return call<bool>("_sendResponse", request_ticket_number, request_result, response_bytecode, destination_connection);
   // }
 
-  // void _sendSynchronize(const Synchronization& synchronization, const Connection& source_connection) override
+  // void _sendSynchronize(const val& synchronization, const val& source_connection) override
   // {
   //     return call<void>("_sendSynchronize", synchronization, source_connection);
   // }
@@ -548,6 +556,7 @@ function loadWasm(wasmVersion: string) {
   }
   // NODE enviroment
   else if (!process.env.NEXT_PUBLIC_VERSION) {
+    // @ts-ignore
     globalThis.Module = require(`../../../webassembly/${wasmVersion}.js`); //! dont know how to declare Module for globalThis in TS
     onWasmLoad();
   }

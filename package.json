@@ -8,10 +8,10 @@
   },
   "dependencies": {
     "@spectoda/spectoda-utils": "^1.0.0",
-    "@types/w3c-web-serial": "^1.0.6",
+    "@types/w3c-web-serial": "^1.0.7",
     "nanoevents": "^7.0.1",
     "nanoid": "^4.0.0",
-    "serialport": "^12.0.0",
-    "node-ble": "^1.9.0"
+    "node-ble": "^1.9.0",
+    "serialport": "^12.0.0"
   }
 }

@@ -44,6 +44,9 @@ export const logging = {
     logging.verbose = logging.level >= 5 ? logging.logCallback : () => {};
   },
 
+  /**
+   * @deprecated use setLoggingLevel
+   */
   setDebugLevel: (level: number) => {
     logging.setLoggingLevel(level);
   },

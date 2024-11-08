@@ -1,13 +1,99 @@
-// TODO fix TSC in spectoda-js
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-nocheck
 
+import { VALUE_TYPE } from "../constants";
 import { sleep } from "../functions";
 import { logging } from "../logging";
 import { SpectodaRuntime } from "./SpectodaRuntime";
-import { Connection, IConnector_WASMImplementation, SpectodaEvent, SpectodaWasm, Spectoda_WASM, Spectoda_WASMImplementation, Synchronization, Uint8Vector } from "./SpectodaWasm";
+import { Connection, IConnector_WASM, IConnector_WASMImplementation, SpectodaEvent, SpectodaWasm, Spectoda_WASM, Spectoda_WASMImplementation, Synchronization, Uint8Vector, interface_error_t } from "./SpectodaWasm";
+
+export namespace SpectodaTypes {
+  export type ConnectorType = "default" | "bluetooth" | "serial" | "websockets" | "simulated" | "dummy";
+  export type ConnectionState = "connected" | "connecting" | "disconnected" | "disconnecting";
+  export type WebsocketConnectionState = "connecting-websockets" | "connected-websockets" | "disconnecting-websockets" | "disconnected-websockets";
+
+  export type ConnectionJSEvent = ConnectionState;
+  export type WebsocketJSEvent = WebsocketConnectionState;
+  export type PeerJSEvent = "peer_connected" | "peer_disconnected";
+  export type OtaJSEvent = "ota_status" | "ota_progress";
+  export type OtaStatus = "begin" | "success" | "fail";
+
+  export type JsEvent = ConnectionJSEvent | WebsocketJSEvent | PeerJSEvent | OtaJSEvent;
+
+  type criteria_generic = { connector?: string; mac?: string; name?: string; nameprefix?: string; network?: string; fw?: string; product?: number; commisionable?: boolean };
+  type criteria_ble = criteria_generic;
+  type criteria_serial = criteria_generic & { path?: string; manufacturer?: string; serialNumber?: string; pnpId?: string; locationId?: string; productId?: string; vendorId?: string; baudrate?: number; baudRate?: number };
+  type criteria_dummy = criteria_generic;
+  type criteria_simulated = criteria_generic;
+  type criteria = criteria_ble & criteria_serial & criteria_dummy & criteria_simulated;
+  export type Criterium = criteria;
+  export type Criteria = criteria | criteria[];
+  export type Tngl = { code: string | undefined; bytecode: Uint8Array | undefined };
+/**
+ * Unique network identifier as a 32-character lowercase hexadecimal string.
+ * Format: `"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"` (characters: `a-f`, `0-9`)
+ */
+export type NetworkSignature = string;
+
+/**
+ * Secure 32-character hexadecimal key for network access.
+ * Format: `"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"` (characters: `a-f`, `0-9`)
+ */
+export type NetworkKey = string;
+
+/**
+ * PCB (Printed Circuit Board) code.
+ * Range: 0 - 16535
+ */
+export type PcbCode = number;
+
+/**
+ * Product code for specific models.
+ * Range: 0 - 16535
+ */
+export type ProductCode = number;
+
+/**
+ * TNGL bank identifier.
+ * Range: 0 - 255
+ */
+export type TnglBank = number;
+
+  // NUMBER: 29,
+  // LABEL: 31,
+  // TIME: 32,
+  // PERCENTAGE: 30,
+  // DATE: 28,
+  // COLOR: 26,
+  // PIXELS: 19,
+  // BOOLEAN: 2,
+  // NULL: 1,
+  // UNDEFINED: 0,
+
+  export type ValueType = (typeof VALUE_TYPE)[keyof typeof VALUE_TYPE];
+
+  export type Number = number;
+/**
+ * Short label prefixed with `$`, max 5 alphanumeric chars (`[a-zA-Z0-9_]`).
+ * @example $color
+ */
+  export type Timestamp = number;
+  export type Percentage = number;
+  export type Date = string;
+  export type Color = string;
+  export type Pixels = number;
+  export type Boolean = boolean;
+  export type Null = null;
+  export type Undefined = undefined;
+
+  export type ID = number;
+  export type IDs = ID | ID[];
+
+  export type Event = SpectodaEvent;
+}
 
 export const APP_MAC_ADDRESS = "00:00:12:34:56:78";
+export const USE_ALL_CONNECTIONS = ["*/ff:ff:ff:ff:ff:ff"];
+export const DEFAULT_TIMEOUT = null;
 
 export const COMMAND_FLAGS = Object.freeze({
   FLAG_UNSUPPORTED_COMMND_RESPONSE: 255, // TODO change FLAG_OTA_BEGIN to not be 255.
@@ -141,7 +227,7 @@ export class Spectoda_JS {
   #runtimeReference;
 
   #spectoda_wasm: Spectoda_WASM | undefined;
-  #connectors: IConnector_WASMImplementation[];
+  #connectors: IConnector_WASM[];
 
   constructor(runtimeReference: SpectodaRuntime) {
     this.#runtimeReference = runtimeReference;
@@ -369,7 +455,7 @@ export class Spectoda_JS {
         },
 
         // virtual interface_error_t _handleTimelineManipulation(const int32_t timeline_timestamp, const bool timeline_paused, const double clock_timestamp) = 0;
-        _handleTimelineManipulation: (timeline_timestamp: number, timeline_paused: boolean, timeline_date: string) => {
+        _handleTimelineManipulation: (timeline_timestamp: number, timeline_paused: boolean, timeline_date: string): interface_error_t => {
           logging.debug(`Spectoda_JS::_handleTimelineManipulation(timeline_timestamp=${timeline_timestamp}, timeline_paused=${timeline_paused}, timeline_date=${timeline_date})`);
 
           // TODO! Refactor timeline mechanics to inclute date
@@ -502,7 +588,7 @@ export class Spectoda_JS {
 
       this.#connectors = [];
       this.#connectors.push(SpectodaWasm.IConnector_WASM.implement(WasmConnectorImplementation));
-      this.#spectoda_wasm.registerConnector(this.#connectors[0]);
+      this.registerConnector(this.#connectors[0]);
 
       this.#spectoda_wasm.begin();
     });
@@ -530,6 +616,14 @@ export class Spectoda_JS {
     }
 
     return this.#spectoda_wasm.makePort(port_label, port_config);
+  }
+
+  registerConnector(connector: IConnector_WASM) {
+    if (!this.#spectoda_wasm) {
+      throw "NotConstructed";
+    }
+
+    this.#spectoda_wasm.registerConnector(connector);
   }
 
   setClockTimestamp(clock_timestamp: number) {
