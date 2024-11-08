@@ -567,13 +567,13 @@ criteria example:
 
     this.#promise = new Promise((resolve, reject) => {
       // @ts-ignore
-      window.flutterConnection.resolve = function (j) {
+      window.flutterConnection.resolve = function (json) {
         // the resolve returns JSON string or null
-        if (j) {
-          j = j.replace(/\0/g, ""); //! [BUG] Flutter app on Android tends to return nulls as strings with a null character at the end. This is a workaround for that.
-          j = JSON.parse(j);
+        if (json) {
+          json = json.replace(/\0/g, ""); //! [BUG] Flutter app on Android tends to return nulls as strings with a null character at the end. This is a workaround for that.
+          json = JSON.parse(json);
         }
-        resolve(j);
+        resolve(json);
       };
       // @ts-ignore
       window.flutterConnection.reject = reject;
@@ -617,13 +617,13 @@ criteria example:
 
     this.#promise = new Promise((resolve, reject) => {
       // @ts-ignore
-      window.flutterConnection.resolve = function (j) {
+      window.flutterConnection.resolve = function (json) {
         // the resolve returns JSON string or null
-        if (j) {
-          j = j.replace(/\0/g, ""); //! [BUG] Flutter app on Android tends to return nulls as strings with a null character at the end. This is a workaround for that.
-          j = JSON.parse(j);
+        if (json) {
+          json = json.replace(/\0/g, ""); //! [BUG] Flutter app on Android tends to return nulls as strings with a null character at the end. This is a workaround for that.
+          json = JSON.parse(json);
         }
-        resolve(j);
+        resolve(json);
       };
 
       // @ts-ignore
@@ -644,11 +644,6 @@ criteria example:
     // @ts-ignore
     window.flutter_inappwebview.callHandler("autoSelect", criteria_json, Math.max(MINIMAL_AUTOSELECT_SCAN_DURATION, scan_duration_number), Math.max(MINIMAL_AUTOSELECT_TIMEOUT, scan_duration_number));
 
-    //? Leaving this code here for possible benchmarking. Comment out .callHandler("connect" and uncomment this code to use it
-    // setTimeout(() => {
-    //   window.flutterConnection.reject("SimulatedError");
-    // }, MINIMAL_AUTOSELECT_TIMEOUT);
-
     const FLUTTER_RESPONSE_TIMEOUT = Math.max(MINIMAL_AUTOSELECT_TIMEOUT, scan_duration_number) + Math.max(MINIMAL_AUTOSELECT_TIMEOUT, timeout_number) + 5000;
     return this.#applyTimeout(this.#promise, FLUTTER_RESPONSE_TIMEOUT, "autoSelect");
   }
@@ -658,13 +653,13 @@ criteria example:
 
     this.#promise = new Promise((resolve, reject) => {
       // @ts-ignore
-      window.flutterConnection.resolve = function (j) {
+      window.flutterConnection.resolve = function (json) {
         // the resolve returns JSON string or null
-        if (j) {
-          j = j.replace(/\0/g, ""); //! [BUG] Flutter app on Android tends to return nulls as strings with a null character at the end. This is a workaround for that.
-          j = JSON.parse(j);
+        if (json) {
+          json = json.replace(/\0/g, ""); //! [BUG] Flutter app on Android tends to return nulls as strings with a null character at the end. This is a workaround for that.
+          json = JSON.parse(json);
         }
-        resolve(j);
+        resolve(json);
       };
       // @ts-ignore
       window.flutterConnection.reject = reject;
@@ -710,13 +705,13 @@ criteria example:
 
     this.#promise = new Promise((resolve, reject) => {
       // @ts-ignore
-      window.flutterConnection.resolve = function (j) {
+      window.flutterConnection.resolve = function (json) {
         // the resolve returns JSON string or null
-        if (j) {
-          j = j.replace(/\0/g, ""); //! [BUG] Flutter app on Android tends to return nulls as strings with a null character at the end. This is a workaround for that.
-          j = JSON.parse(j);
+        if (json) {
+          json = json.replace(/\0/g, ""); //! [BUG] Flutter app on Android tends to return nulls as strings with a null character at the end. This is a workaround for that.
+          json = JSON.parse(json);
         }
-        resolve(j);
+        resolve(json);
       };
       // @ts-ignore
       window.flutterConnection.reject = reject;
@@ -752,13 +747,13 @@ criteria example:
     //? becouse other devices needs a long timeout for connection to be successful
     this.#promise = new Promise((resolve, reject) => {
       // @ts-ignore
-      window.flutterConnection.resolve = function (j) {
+      window.flutterConnection.resolve = function (json) {
         // the resolve returns JSON string or null
-        if (j) {
-          j = j.replace(/\0/g, ""); //! [BUG] Flutter app on Android tends to return nulls as strings with a null character at the end. This is a workaround for that.
-          j = JSON.parse(j);
+        if (json) {
+          json = json.replace(/\0/g, ""); //! [BUG] Flutter app on Android tends to return nulls as strings with a null character at the end. This is a workaround for that.
+          json = JSON.parse(json);
         }
-        resolve(j);
+        resolve(json);
       };
       // @ts-ignore
       window.flutterConnection.reject = function (e) {
@@ -815,11 +810,11 @@ criteria example:
 
     this.#promise = new Promise((resolve, reject) => {
       // @ts-ignore
-      window.flutterConnection.resolve = function (j) {
+      window.flutterConnection.resolve = function (json) {
         // the resolve returns JSON string or null
-        if (j) {
-          j = j.replace(/\0/g, ""); //! [BUG] Flutter app on Android tends to return nulls as strings with a null character at the end. This is a workaround for that.
-          const criteria = JSON.parse(j);
+        if (json) {
+          json = json.replace(/\0/g, ""); //! [BUG] Flutter app on Android tends to return nulls as strings with a null character at the end. This is a workaround for that.
+          const criteria = JSON.parse(json);
           resolve(criteria);
         } else {
           resolve(null);
@@ -953,7 +948,7 @@ criteria example:
     logging.debug("getClock()");
 
     return new Promise(async (resolve, reject) => {
-      for (let index = 0; index < 3; index++) {
+      for (let tries = 0; tries < 3; tries++) {
         await sleep(100); // ! wait for the controller to be ready
         try {
           // tries to ASAP read a timestamp from the clock characteristics.
@@ -972,7 +967,7 @@ criteria example:
           const FLUTTER_RESPONSE_TIMEOUT = 5000;
           const bytes = await this.#applyTimeout(this.#promise, FLUTTER_RESPONSE_TIMEOUT, "readClock");
 
-          const reader = new TnglReader(new DataView(new Uint8Array(bytes).buffer));
+          const reader = new TnglReader(new Uint8Array(bytes));
           const timestamp = reader.readUint64();
 
           // const timestamp = await this.#promise;
@@ -1166,7 +1161,7 @@ criteria example:
     }
 
     return new Promise(async (resolve, reject) => {
-      for (let index = 0; index < 1; index++) {
+      for (let tries = 0; tries < 1; tries++) {
         try {
           // tryes to ASAP write a timestamp to the clock characteristics.
           // if the ASAP write fails, then try it once more
