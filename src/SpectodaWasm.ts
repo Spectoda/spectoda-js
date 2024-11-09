@@ -2,9 +2,9 @@
 
 import { logging } from "../logging";
 
-const WASM_VERSION = "DEBUG_DEV_0.12.0_20241101";
+const WASM_VERSION = "DEBUG_DEV_0.12.0_20241109";
 
-/// ========== DEBUG_DEV_0.12.0_20241030.d.ts ========== ///
+/// ========== DEBUG_DEV_0.12.0_20241109.d.ts ========== ///
 
 export interface interface_error_tValue<T extends number> {
   value: T;
@@ -94,7 +94,7 @@ export interface Spectoda_WASM {
   registerConnector(_0: IConnector_WASM): void;
   _onTnglUpdate(_0: Uint8Vector): boolean;
   _onExecute(_0: Uint8Vector): boolean;
-  process(_0: boolean, _1: boolean): void;
+  process(_0: boolean, _1: boolean, _2: boolean, _3: boolean): void;
   render(_0: number): void;
   registerDeviceContext(_0: number): boolean;
   execute(_0: number, _1: Connection): boolean;
@@ -155,7 +155,7 @@ export interface MainModule {
   ImplementedSpectoda_WASM: {};
 }
 
-/// ========== DEBUG_DEV_0.12.0_20241030.d.ts ========== ///
+/// ========== DEBUG_DEV_0.12.0_20241109.d.ts ========== ///
 
 /// =================== MANUAL INTERFACES ================= ///
 
@@ -169,6 +169,9 @@ export interface SpectodaEvent {
 }
 
 export interface Spectoda_WASMImplementation {
+  // ! C++ Code the Spectoda_WASMImplementation is mapped to and MUST be in sync for WASM binding to work properly
+  // ! please keep it here as it is used for determining if there are some changes in C++ vs this file. For more info contact @immakermatty
+
   // bool _onTnglUpdate(const std::vector<uint8_t>& tngl_bytes) override
   // {
   //     return call<bool>("_onTnglUpdate", tngl_bytes);
@@ -250,6 +253,9 @@ export interface Spectoda_WASMImplementation {
 }
 
 export interface IConnector_WASMImplementation {
+  // ! C++ Code the IConnector_WASMImplementation is mapped to and MUST be in sync for WASM binding to work properly
+  // ! please keep it here as it is used for determining if there are some changes in C++ vs this file. For more info contact @immakermatty
+
   // bool _scan(const std::string& criteria_json, const int32_t scan_period, const val& result_out) override
   // {
   //     return call<bool>("_scan", criteria_json, scan_period, result_out);

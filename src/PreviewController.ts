@@ -347,14 +347,21 @@ export class PreviewController {
   }
 
   // ? process() is calling compute() and render() in the right order
-  process(options: { skip_berry_plugin_update: boolean; skip_eventstate_updates: boolean } = { skip_berry_plugin_update: false, skip_eventstate_updates: false }) {
+  process(
+    options: { skip_berry_plugin_update: boolean; skip_eventstate_updates: boolean; force_event_emittion: boolean; skip_event_emittion: boolean } = {
+      skip_berry_plugin_update: false,
+      skip_eventstate_updates: false,
+      force_event_emittion: false,
+      skip_event_emittion: false,
+    },
+  ) {
     logging.verbose("PreviewController::process()");
 
     if (!this.#instance) {
       throw "NotConstructed";
     }
 
-    this.#instance.process(options.skip_berry_plugin_update, options.skip_eventstate_updates);
+    this.#instance.process(options.skip_berry_plugin_update, options.skip_eventstate_updates, options.force_event_emittion, options.skip_event_emittion);
   }
 
   // ? render() is forcing a render cycle

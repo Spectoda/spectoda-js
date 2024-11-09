@@ -1527,7 +1527,14 @@ export class SpectodaRuntime {
     return this.spectoda_js.makePort(port_label, JSON.stringify(port_config));
   }
 
-  WIP_process(options: { skip_berry_plugin_update: boolean; skip_eventstate_updates: boolean } = { skip_berry_plugin_update: false, skip_eventstate_updates: false }) {
+  WIP_process(
+    options: { skip_berry_plugin_update: boolean; skip_eventstate_updates: boolean; force_event_emittion: boolean; skip_event_emittion: boolean } = {
+      skip_berry_plugin_update: false,
+      skip_eventstate_updates: false,
+      force_event_emittion: false,
+      skip_event_emittion: false,
+    },
+  ) {
     return this.spectoda_js.process(options);
   }
 

@@ -682,14 +682,21 @@ export class Spectoda_JS {
   }
 
   // ? process() is calling compute() and render() in the right order
-  process(options: { skip_berry_plugin_update: boolean; skip_eventstate_updates: boolean } = { skip_berry_plugin_update: false, skip_eventstate_updates: false }) {
+  process(
+    options: { skip_berry_plugin_update: boolean; skip_eventstate_updates: boolean; force_event_emittion: boolean; skip_event_emittion: boolean } = {
+      skip_berry_plugin_update: false,
+      skip_eventstate_updates: false,
+      force_event_emittion: false,
+      skip_event_emittion: false,
+    },
+  ) {
     logging.verbose("Spectoda_JS::process()");
 
     if (!this.#spectoda_wasm) {
       throw "NotConstructed";
     }
 
-    this.#spectoda_wasm.process(options.skip_berry_plugin_update, options.skip_eventstate_updates);
+    this.#spectoda_wasm.process(options.skip_berry_plugin_update, options.skip_eventstate_updates, options.force_event_emittion, options.skip_event_emittion);
   }
 
   // ? render() is forcing a render cycle
