@@ -404,7 +404,7 @@ export class SpectodaRuntime {
     this.#eventEmitter.on("wasm_clock", (timestamp: number) => {
       for (const previewController of Object.values(this.previewControllers)) {
         try {
-          previewController.setClock(timestamp);
+          previewController.setClockTimestamp(timestamp);
         } catch (error) {
           logging.error(error);
         }
@@ -827,49 +827,6 @@ export class SpectodaRuntime {
     this.#process(item);
     return item.promise;
   }
-
-  // syncClock() {
-  //   logging.verbose("syncClock()");
-
-  //   const item = new Query(Query.TYPE_GET_CLOCK, this.clock);
-
-  //   for (let i = 0; i < this.#queue.length; i++) {
-  //     if (this.#queue[i].type === Query.TYPE_GET_CLOCK) {
-  //       this.#queue[i].reject("MultipleClockReads");
-  //       this.#queue.splice(i, 1);
-  //       break;
-  //     }
-  //   }
-
-  //   this.#process(item);
-  //   return item.promise.then(clock => {
-  //     logging.debug(`Clock synchronized at time=${clock.millis()}ms`);
-  //     this.clock = clock;
-  //   });
-  // }
-
-  // setClock() {
-  //   logging.verbose("setClock()");
-
-  //   const item = new Query(Query.TYPE_SET_CLOCK, this.clock);
-  //   this.#process(item);
-  //   return item.promise;
-  // }
-
-  // getClock() {
-  //   const item = new Query(Query.TYPE_GET_CLOCK);
-
-  //   for (let i = 0; i < this.#queue.length; i++) {
-  //     if (this.#queue[i].type === Query.TYPE_GET_CLOCK) {
-  //       this.#queue[i].reject("MultipleClockReads");
-  //       this.#queue.splice(i, 1);
-  //       break;
-  //     }
-  //   }
-
-  //   this.#process(item);
-  //   return item.promise;
-  // }
 
   updateFW(firmware_bytes: Uint8Array) {
     logging.verbose("updateFW()");
@@ -1580,6 +1537,14 @@ export class SpectodaRuntime {
 
   WIP_setName(name: string) {
     this.WIP_name = name;
+  }
+
+  WIP_setClockTimestamp(millis: number) {
+    return this.spectoda_js.setClockTimestamp(millis);
+  }
+
+  WIP_getClockTimestamp() {
+    return this.spectoda_js.getClockTimestamp();
   }
 
   getEventState(event_state_name: string, event_state_id: number) {

@@ -624,7 +624,7 @@ export class Spectoda_JS {
     this.#spectoda_wasm.setClockTimestamp(clock_timestamp);
   }
 
-  getClock() {
+  getClockTimestamp() {
     if (!this.#spectoda_wasm) {
       throw "NotConstructed";
     }

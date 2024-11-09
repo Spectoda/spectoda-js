@@ -278,7 +278,7 @@ export class PreviewController {
    * @param {number} clock_timestamp
    * @return {null}
    */
-  setClock(clock_timestamp: number) {
+  setClockTimestamp(clock_timestamp: number) {
     if (!this.#instance) {
       throw "NotConstructed";
     }
@@ -289,7 +289,7 @@ export class PreviewController {
   /**
    * @return {number}
    */
-  getClock() {
+  getClockTimestamp() {
     if (!this.#instance) {
       throw "NotConstructed";
     }

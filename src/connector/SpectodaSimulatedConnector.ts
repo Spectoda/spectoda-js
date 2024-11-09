@@ -471,7 +471,7 @@ export class SpectodaSimulatedConnector {
       this.#clock.setMillis(clock.millis());
 
       for (const controller of this.controllers) {
-        await controller.setClock(clock.millis());
+        await controller.setClockTimestamp(clock.millis());
       }
 
       await sleep(10); // writing clock logic.
@@ -495,7 +495,7 @@ export class SpectodaSimulatedConnector {
 
       // TODO choose the controller I am connected to choosen in userSelect() or autoSelect()
 
-      const clock_timestamp = this.controllers.length > 0 ? this.controllers[0].getClock() : 0;
+      const clock_timestamp = this.controllers.length > 0 ? this.controllers[0].getClockTimestamp() : 0;
       this.#clock.setMillis(clock_timestamp);
 
       await sleep(50); // reading clock logic.
