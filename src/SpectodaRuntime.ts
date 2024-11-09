@@ -806,7 +806,7 @@ export class SpectodaRuntime {
     if (bytes_type) {
       for (let i = 0; i < this.#queue.length; i++) {
         if (this.#queue[i].type === Query.TYPE_EXECUTE && bytes_type === this.#queue[i].b) {
-          logging.info(`Query ${bytes_type} already in queue waiting for execute. Resolving it`);
+          logging.verbose(`Query ${bytes_type} already in queue waiting for execute. Resolving it`);
           this.#queue[i].resolve();
           this.#queue.splice(i, 1);
           break;
@@ -1356,7 +1356,7 @@ export class SpectodaRuntime {
         const response = await previewController.request(new Uint8Array(request_bytes), new SpectodaWasm.Connection("11:11:11:11:11:11", SpectodaWasm.connector_type_t.CONNECTOR_UNDEFINED, SpectodaWasm.connection_rssi_t.RSSI_MAX));
 
         logging.debug("Received response", uint8ArrayToHexString(response));
-        const tempReader = new TnglReader(new DataView(response.buffer));
+        const tempReader = new TnglReader(response);
 
         const response_flag = tempReader.readFlag();
         if (response_flag !== COMMAND_FLAGS.FLAG_READ_PORT_PIXELS_RESPONSE) {
@@ -1379,7 +1379,7 @@ export class SpectodaRuntime {
           const pixelData = tempReader.readBytes(pixelDataSize);
           logging.debug("pixelData=", pixelData);
 
-          tempWriter.writeBytes([COMMAND_FLAGS.FLAG_WRITE_PORT_PIXELS_REQUEST, ...numberToBytes(uuidCounter++, 4), portTag, PIXEL_ENCODING_CODE, ...numberToBytes(pixelDataSize, 2), ...pixelData]);
+          tempWriter.writeBytes(new Uint8Array([COMMAND_FLAGS.FLAG_WRITE_PORT_PIXELS_REQUEST, ...numberToBytes(uuidCounter++, 4), portTag, PIXEL_ENCODING_CODE, ...numberToBytes(pixelDataSize, 2), ...pixelData]));
         }
       }
 
@@ -1389,7 +1389,7 @@ export class SpectodaRuntime {
       const tempWriterDataView = tempWriter.bytes;
       const tempWriterDataArray = new Uint8Array(tempWriterDataView.buffer);
 
-      writer.writeBytes([COMMAND_FLAGS.FLAG_EVALUATE_ON_CONTROLLER_REQUEST, ...numberToBytes(uuidCounter++, 4), ...numberToBytes(controllerIdentifier, 4), ...numberToBytes(tempWriter.written, 2), ...tempWriterDataArray]);
+      writer.writeBytes(new Uint8Array([COMMAND_FLAGS.FLAG_EVALUATE_ON_CONTROLLER_REQUEST, ...numberToBytes(uuidCounter++, 4), ...numberToBytes(controllerIdentifier, 4), ...numberToBytes(tempWriter.written, 2), ...tempWriterDataArray]));
     }
 
     const command_bytes = new Uint8Array(writer.bytes.buffer);
@@ -1427,7 +1427,7 @@ export class SpectodaRuntime {
         const response = previewController.request(new Uint8Array(request_bytes), new SpectodaWasm.Connection("11:11:11:11:11:11", SpectodaWasm.connector_type_t.CONNECTOR_UNDEFINED, SpectodaWasm.connection_rssi_t.RSSI_MAX));
 
         logging.debug("Received response", uint8ArrayToHexString(response));
-        const tempReader = new TnglReader(new DataView(response.buffer));
+        const tempReader = new TnglReader(response);
 
         const response_flag = tempReader.readFlag();
         if (response_flag !== COMMAND_FLAGS.FLAG_READ_PORT_PIXELS_RESPONSE) {
