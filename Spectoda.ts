@@ -645,7 +645,13 @@ export class Spectoda {
         logging.debug("> Synchronizing Network State...");
         return this.requestTimeline()
           .catch(e => {
-            logging.error("Timeline sync after reconnection failed:", e);
+            logging.info("Timeline sync after reconnection failed:", e);
+
+            // ! This is only temporary until @immakermatty figures out how to implement decentralized synchronizing of RTC time
+            logging.info("Setting timeline to day time");
+            return this.syncTimelineToDayTime().catch(e => {
+              logging.error("Setting timeline to daytime failed:", e);
+            });
           })
           .then(() => {
             return this.syncTngl();
