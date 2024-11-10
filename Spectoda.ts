@@ -71,11 +71,11 @@ export class Spectoda {
 
   #criteria: SpectodaTypes.Criteria;
   #reconnecting: boolean;
-  #autonomousConnection: boolean;
+  #autonomousReconnection: boolean;
   #wakeLock: any;
   #isPrioritizedWakelock: boolean;
 
-  #clockSyncIntervalHandle: any;
+  #reconnectionIntervalHandle: any;
 
   // ? This is used for getEmittedEvents() to work properly
   #__events: any;
@@ -112,17 +112,21 @@ export class Spectoda {
     this.#websocketConnectionState = "disconnected";
 
     this.#isPrioritizedWakelock = false;
-    this.#autonomousConnection = false;
-    this.#clockSyncIntervalHandle = undefined;
+    this.#autonomousReconnection = false;
+    this.#reconnectionIntervalHandle = undefined;
     this.#criteria = [];
     this.#__events = undefined;
 
     this.runtime.onConnected = event => {
       logging.debug("> Runtime connected");
+
+      this.#resetReconnectionInterval();
     };
 
     this.runtime.onDisconnected = event => {
       logging.debug("> Runtime disconnected");
+
+      this.#resetReconnectionInterval();
 
       const TIME = 2500;
 
@@ -147,46 +151,23 @@ export class Spectoda {
       }
     };
 
-    this.#clockSyncIntervalHandle = undefined;
-    this.#resetClockSyncInterval();
+    this.#reconnectionIntervalHandle = undefined;
+    this.#resetReconnectionInterval();
   }
 
-  #resetClockSyncInterval() {
-    clearInterval(this.#clockSyncIntervalHandle);
+  #resetReconnectionInterval() {
+    clearInterval(this.#reconnectionIntervalHandle);
 
-    // auto clock sync loop
-    this.#clockSyncIntervalHandle = setInterval(() => {
+    this.#reconnectionIntervalHandle = setInterval(() => {
       // TODO move this to runtime
       if (!this.#updating && this.runtime.connector) {
-        // this.connected().then(connected => {
-        //   if (connected) {
-        //     this.syncClock().then(() => {
-        //       return this.syncTimeline();
-        //     }).catch(error => {
-        //       logging.warn("Catched error:", error);
-        //     });
-        //   }
-        // });
-
-        if (this.#getConnectionState() === "connected") {
-          return;
-          // this.syncClock()
-          //   // .then(() => {
-          //   //   return this.syncTimeline();
-          //   // })
-          //   // .then(() => {
-          //   //   return this.syncEventHistory(); // ! this might slow down stuff for Bukanyr
-          //   // })
-          //   .catch(error => {
-          //     logging.warn(error);
-          //   });
-        } else if (this.#getConnectionState() === "disconnected" && this.#autonomousConnection) {
+        if (this.#getConnectionState() === "disconnected" && this.#autonomousReconnection) {
           return this.#connect(true).catch(error => {
             logging.warn(error);
           });
         }
       }
-    }, 8000); // ! it is set to 8000ms because of the 10s timeout in the serial connector
+    }, 10000);
   }
 
   #setWebSocketConnectionState(websocketConnectionState: SpectodaTypes.WebsocketConnectionState) {
@@ -661,8 +642,6 @@ export class Spectoda {
         return this.runtime.connect();
       })
       .then(connectedDeviceInfo => {
-        this.#resetClockSyncInterval();
-
         logging.debug("> Synchronizing Network State...");
         return this.requestTimeline()
           .catch(e => {
@@ -714,12 +693,12 @@ export class Spectoda {
    *
    * TODO REFACTOR to use only one criteria object instead of this param madness
    */
-  connect(criteria: SpectodaTypes.Criteria, autoConnect = true, ownerSignature = null, ownerKey = null, connectAny = false, fwVersion = "", autonomousConnection = false, overrideConnection = false) {
+  connect(criteria: SpectodaTypes.Criteria, autoConnect = true, ownerSignature = null, ownerKey = null, connectAny = false, fwVersion = "", autonomousReconnection = false, overrideConnection = false) {
     logging.verbose(
-      `connect(criteria=${criteria}, autoConnect=${autoConnect}, ownerSignature=${ownerSignature}, ownerKey=${ownerKey}, connectAny=${connectAny}, fwVersion=${fwVersion}, autonomousConnection=${autonomousConnection}, overrideConnection=${overrideConnection})`,
+      `connect(criteria=${criteria}, autoConnect=${autoConnect}, ownerSignature=${ownerSignature}, ownerKey=${ownerKey}, connectAny=${connectAny}, fwVersion=${fwVersion}, autonomousReconnection=${autonomousReconnection}, overrideConnection=${overrideConnection})`,
     );
 
-    this.#autonomousConnection = autonomousConnection;
+    this.#autonomousReconnection = autonomousReconnection;
 
     if (!overrideConnection && this.#getConnectionState() === "connecting") {
       return Promise.reject("ConnectingInProgress");
@@ -772,7 +751,7 @@ export class Spectoda {
    * Disconnects from the connected controller.
    */
   disconnect() {
-    this.#autonomousConnection = false;
+    this.#autonomousReconnection = false;
 
     logging.debug(`> Disconnecting controller...`);
 
@@ -1119,8 +1098,6 @@ export class Spectoda {
   writeTngl(tngl_code: string | null, tngl_bytes: Uint8Array | null) {
     logging.verbose(`writeTngl(tngl_code=${tngl_code}, tngl_bytes=${tngl_bytes})`);
 
-    this.#resetClockSyncInterval();
-
     logging.info(`> Writing Tngl code...`);
 
     if ((tngl_code === null || tngl_code === undefined) && (tngl_bytes === null || tngl_bytes === undefined)) {
@@ -1147,8 +1124,6 @@ export class Spectoda {
   emitEvent(event_label: SpectodaTypes.Label, device_ids: SpectodaTypes.IDs = 255, force_delivery: boolean = true) {
     logging.verbose(`emitEvent(event_label=${event_label},device_ids=${device_ids},force_delivery=${force_delivery})`);
 
-    this.#resetClockSyncInterval();
-
     const func = (id: number) => {
       const payload: number[] = [COMMAND_FLAGS.FLAG_EMIT_NULL_EVENT, ...labelToBytes(event_label), ...numberToBytes(this.runtime.clock.millis() + 10, 6), ...numberToBytes(id, 1)];
       return this.runtime.execute(payload, "E" + event_label + id);
@@ -1172,8 +1147,6 @@ export class Spectoda {
    */
   emitTimestampEvent(event_label: SpectodaTypes.Label, event_value: SpectodaTypes.Timestamp, device_ids: SpectodaTypes.IDs = 255) {
     logging.verbose(`emitTimestampEvent(label=${event_label},value=${event_value},id=${device_ids})`);
-
-    this.#resetClockSyncInterval();
 
     if (event_value > 86400000) {
       logging.error("Invalid event value");
@@ -1209,8 +1182,6 @@ export class Spectoda {
   emitColorEvent(event_label: SpectodaTypes.Label, event_value: SpectodaTypes.Color, device_ids: SpectodaTypes.IDs = 255) {
     logging.verbose(`emitColorEvent(label=${event_label},value=${event_value},id=${device_ids})`);
 
-    this.#resetClockSyncInterval();
-
     event_value = cssColorToHex(event_value);
 
     if (!event_value || !event_value.match(/#[\dabcdefABCDEF]{6}/g)) {
@@ -1242,8 +1213,6 @@ export class Spectoda {
    */
   emitPercentageEvent(event_label: SpectodaTypes.Label, event_value: SpectodaTypes.Percentage, device_ids: SpectodaTypes.IDs = 255) {
     logging.verbose(`emitPercentageEvent(label=${event_label},value=${event_value},id=${device_ids})`);
-
-    this.#resetClockSyncInterval();
 
     if (event_value > 100.0) {
       logging.error("Invalid event value");
@@ -1286,8 +1255,6 @@ export class Spectoda {
    */
   emitLabelEvent(event_label: SpectodaTypes.Label, event_value: SpectodaTypes.Label, device_ids: SpectodaTypes.IDs = 255) {
     logging.verbose(`emitLabelEvent(label=${event_label},value=${event_value},id=${device_ids})`);
-
-    this.#resetClockSyncInterval();
 
     if (typeof event_value !== "string") {
       logging.error("Invalid event value");
@@ -1771,7 +1738,7 @@ export class Spectoda {
 
       const error_code = reader.readUint8();
       if (error_code !== 0) {
-        throw "Fail";
+        throw "RequestTimelineFailed";
       }
 
       const clock_timestamp = reader.readUint48();
