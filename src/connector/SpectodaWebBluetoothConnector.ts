@@ -865,11 +865,17 @@ export class SpectodaWebBluetoothConnector {
     //   return Promise.resolve();
     // }
 
+    // If the device was choosen previously, then do not show popup
+    if (this.#criteria == criterium_array && this.#webBTDevice) {
+      return Promise.resolve({ connector: this.type });
+    }
+
     this.#criteria = criterium_array;
 
     // Web Bluetooth nepodporuje možnost automatické volby zařízení.
     // Proto je to tady implementováno totožně jako userSelect.
 
+    // Since we cannot auto-select, we fallback to userSelect
     return this.userSelect(criterium_array, timeout_number);
   }
 
