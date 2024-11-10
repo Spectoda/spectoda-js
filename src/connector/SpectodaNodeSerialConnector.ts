@@ -164,7 +164,7 @@ export class SpectodaNodeSerialConnector {
     }
 
     if (!NodeSerialPort || !NodeReadlineParser) {
-      throw "NodeSerialPortNotAvailable";
+      return Promise.reject("NodeSerialPortNotAvailable");
     }
 
     if (this.#serialPort && this.#serialPort.isOpen) {
@@ -190,7 +190,7 @@ export class SpectodaNodeSerialConnector {
 
     // //   if (uart1 != undefined && uart2 != undefined && uart1 == uart2) {
     // //     logging.debug("criteria is matching, keepin the last serial port object");
-    // //     return Promise.resolve({ connector: this.type, criteria: this.#criteria });
+    // //     return Promise.resolve({  connector: this.type });
     // //   }
     // // }
 
@@ -228,14 +228,14 @@ export class SpectodaNodeSerialConnector {
 
       logging.debug("serial port selected");
 
-      return Promise.resolve({ connector: this.type, criteria: this.#criteria });
+      return Promise.resolve({ connector: this.type });
     } //
     else {
       return this.scan(criterium_array, scan_duration_number).then(ports => {
         logging.verbose("ports=", ports);
 
         if (!ports.length) {
-          throw "NoDeviceFound";
+          return Promise.reject("NoDeviceFound");
         }
 
         let port_options = PORT_OPTIONS;
@@ -251,7 +251,7 @@ export class SpectodaNodeSerialConnector {
         logging.verbose("this.#serialPort=", this.#serialPort);
         logging.verbose("this.#criteria=", this.#criteria);
 
-        return { connector: this.type, criteria: this.#criteria };
+        return { connector: this.type };
       });
     }
   }
@@ -259,7 +259,7 @@ export class SpectodaNodeSerialConnector {
   selected(): Promise<SpectodaTypes.Criterium | null> {
     logging.verbose("selected()");
 
-    return Promise.resolve(this.#serialPort ? { connector: this.type, criteria: this.#criteria } : null);
+    return Promise.resolve(this.#serialPort ? { connector: this.type } : null);
   }
 
   unselect(): Promise<null> {
@@ -295,7 +295,7 @@ export class SpectodaNodeSerialConnector {
     return new Promise(async (resolve, reject) => {
       try {
         if (!NodeSerialPort) {
-          throw "NodeSerialPortNotAvailableOnThisPlatform";
+          return Promise.reject("NodeSerialPortNotAvailableOnThisPlatform");
         }
         // TODO! fix TSC
         // @ts-ignore
@@ -319,13 +319,13 @@ export class SpectodaNodeSerialConnector {
 
     if (timeout_number <= 0) {
       logging.warn("Connect timeout have expired");
-      throw "ConnectionFailed";
+      return Promise.reject("ConnectionFailed");
     }
 
     const start = Date.now();
 
     if (!this.#serialPort) {
-      throw "NotSelected";
+      return Promise.reject("NotSelected");
     }
 
     if (this.#interfaceConnected) {
@@ -586,7 +586,7 @@ export class SpectodaNodeSerialConnector {
     logging.verbose("this.#serialPort=", this.#serialPort);
     logging.verbose("this.#serialPort.isOpen=", this.#serialPort?.isOpen);
 
-    return Promise.resolve(this.#serialPort && this.#serialPort.isOpen ? { connector: this.type, criteria: this.#criteria } : null);
+    return Promise.resolve(this.#serialPort && this.#serialPort.isOpen ? { connector: this.type } : null);
   }
 
   // disconnect Connector from the connected Spectoda Device. But keep it selected
@@ -701,18 +701,18 @@ export class SpectodaNodeSerialConnector {
 
     if (tries <= 0) {
       logging.error("ERROR nhkw45390");
-      throw "InvalidParameter";
+      return Promise.reject("NoCommunicationTriesLeft");
     }
 
     if (timeout <= 0) {
       logging.error("ERROR sauioczx98");
-      throw "InvalidParameter";
+      return Promise.reject("CommunicationTimeout");
     }
 
     // TODO check if the payload is a valid Uint8Array
     if (typeof payload !== "object" || !payload) {
       logging.error("ERROR xcv90870dsa", typeof payload);
-      throw "InvalidParameter";
+      return Promise.reject("InvalidParameter");
     }
 
     if (this.#writing) {
@@ -841,7 +841,7 @@ export class SpectodaNodeSerialConnector {
     logging.verbose(`deliver(payload=${payload_bytes})`);
 
     if (!this.#serialPort || !this.#serialPort.isOpen) {
-      throw "DeviceDisconnected";
+      return Promise.reject("DeviceDisconnected");
     }
 
     if (!payload_bytes) {
@@ -860,7 +860,7 @@ export class SpectodaNodeSerialConnector {
     logging.verbose(`transmit(payload=${payload_bytes})`);
 
     if (!this.#serialPort || !this.#serialPort.isOpen) {
-      throw "DeviceDisconnected";
+      return Promise.reject("DeviceDisconnected");
     }
 
     if (!payload_bytes) {
@@ -879,12 +879,12 @@ export class SpectodaNodeSerialConnector {
     logging.verbose(`request(payload=${payload_bytes})`);
 
     if (!this.#serialPort || !this.#serialPort.isOpen) {
-      throw "DeviceDisconnected";
+      return Promise.reject("DeviceDisconnected");
     }
 
     // TODO make this check on Interface level if its not already
     if (!payload_bytes) {
-      throw "InvalidPayload";
+      return Promise.reject("InvalidPayload");
     }
 
     return this.#request(CHANNEL_DEVICE, payload_bytes, read_response, timeout_number);
@@ -896,7 +896,7 @@ export class SpectodaNodeSerialConnector {
     logging.verbose(`setClock(clock.millis()=${clock.millis()})`);
 
     if (!this.#serialPort || !this.#serialPort.isOpen) {
-      throw "DeviceDisconnected";
+      return Promise.reject("DeviceDisconnected");
     }
 
     return new Promise(async (resolve, reject) => {
@@ -923,7 +923,7 @@ export class SpectodaNodeSerialConnector {
     logging.verbose(`getClock()`);
 
     if (!this.#serialPort || !this.#serialPort.isOpen) {
-      throw "DeviceDisconnected";
+      return Promise.reject("DeviceDisconnected");
     }
 
     return new Promise(async (resolve, reject) => {
@@ -962,7 +962,7 @@ export class SpectodaNodeSerialConnector {
 
     if (!this.#serialPort) {
       logging.warn("Serial Port is null");
-      throw "UpdateFailed";
+      return Promise.reject("UpdateFailed");
     }
 
     return new Promise(async (resolve, reject) => {
@@ -1085,7 +1085,7 @@ export class SpectodaNodeSerialConnector {
     }
 
     if (!this.#serialPort || !this.#serialPort.isOpen) {
-      throw "DeviceDisconnected";
+      return Promise.reject("DeviceDisconnected");
     }
 
     return this.#write(CHANNEL_NETWORK, command_bytes, 1000);
@@ -1102,7 +1102,7 @@ export class SpectodaNodeSerialConnector {
     }
 
     if (!this.#serialPort || !this.#serialPort.isOpen) {
-      throw "DeviceDisconnected";
+      return Promise.reject("DeviceDisconnected");
     }
 
     return this.#write(CHANNEL_DEVICE, request_bytecode, 1000);
@@ -1125,7 +1125,7 @@ export class SpectodaNodeSerialConnector {
     }
 
     if (!this.#serialPort || !this.#serialPort.isOpen) {
-      throw "DeviceDisconnected";
+      return Promise.reject("DeviceDisconnected");
     }
 
     return this.#write(CHANNEL_CLOCK, synchronization.toUint8Array(), 1000);
