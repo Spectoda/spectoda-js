@@ -174,7 +174,6 @@ export class SpectodaWebSerialConnector {
 
   #interfaceConnected: boolean;
   #disconnecting: boolean;
-  #disconnectingResolve: ((value: unknown) => void) | undefined;
 
   #timeoutMultiplier: number;
 
@@ -199,7 +198,6 @@ export class SpectodaWebSerialConnector {
 
     this.#interfaceConnected = false;
     this.#disconnecting = false;
-    this.#disconnectingResolve = undefined;
 
     this.#timeoutMultiplier = 1.2;
 
@@ -347,20 +345,7 @@ export class SpectodaWebSerialConnector {
         // Flush the serial buffer
         try {
           const tempReader = port.readable.getReader();
-          const flushTimeout = 10; // milliseconds
-          const flushStartTime = Date.now();
-
-          while (Date.now() - flushStartTime < flushTimeout) {
-            const { value, done } = await tempReader.read();
-            if (done) {
-              break;
-            }
-            if (value && value.length > 0) {
-              // Discard value
-            } else {
-              break;
-            }
-          }
+          await tempReader.read();
           await tempReader.cancel();
           tempReader.releaseLock();
           logging.verbose("Serial buffer flushed.");
@@ -448,7 +433,7 @@ export class SpectodaWebSerialConnector {
 
                             switch (data_header.data_type) {
                               case NETWORK_WRITE: {
-                                logging.info("SERIAL >>>NETWORK_WRITE<<<");
+                                logging.debug("SERIAL >>>NETWORK_WRITE<<<");
 
                                 const DUMMY_NODESERIAL_CONNECTION = new SpectodaWasm.Connection("11:11:11:11:11:11", SpectodaWasm.connector_type_t.CONNECTOR_SERIAL, SpectodaWasm.connection_rssi_t.RSSI_MAX);
                                 this.#runtimeReference.spectoda_js.execute(new Uint8Array(data_bytes), DUMMY_NODESERIAL_CONNECTION);
@@ -456,7 +441,7 @@ export class SpectodaWebSerialConnector {
                                 break;
                               }
                               case CLOCK_WRITE: {
-                                logging.info("SERIAL >>>CLOCK_WRITE<<<");
+                                logging.debug("SERIAL >>>CLOCK_WRITE<<<");
 
                                 const synchronization: Synchronization = SpectodaWasm.Synchronization.fromUint8Array(new Uint8Array(data_bytes));
                                 const DUMMY_NODESERIAL_CONNECTION = new SpectodaWasm.Connection("11:11:11:11:11:11", SpectodaWasm.connector_type_t.CONNECTOR_SERIAL, SpectodaWasm.connection_rssi_t.RSSI_MAX);
@@ -465,7 +450,7 @@ export class SpectodaWebSerialConnector {
                                 break;
                               }
                               case DEVICE_WRITE: {
-                                logging.info("SERIAL >>>DEVICE_WRITE<<<");
+                                logging.debug("SERIAL >>>DEVICE_WRITE<<<");
 
                                 const DUMMY_NODESERIAL_CONNECTION = new SpectodaWasm.Connection("11:11:11:11:11:11", SpectodaWasm.connector_type_t.CONNECTOR_SERIAL, SpectodaWasm.connection_rssi_t.RSSI_MAX);
                                 this.#runtimeReference.spectoda_js.request(new Uint8Array(data_bytes), DUMMY_NODESERIAL_CONNECTION);
@@ -594,7 +579,7 @@ export class SpectodaWebSerialConnector {
     logging.verbose("disconnect()");
 
     if (!this.#serialPort) {
-      logging.warn("No Serial Port selected do disconnect");
+      logging.warn("No Serial Port selected to disconnect");
       return Promise.resolve(null);
     }
 
@@ -611,21 +596,12 @@ export class SpectodaWebSerialConnector {
 
     this.#disconnecting = true;
 
-    const disconnectingPromise = new Promise(async (resolve, reject) => {
-      const timeout_handle = setTimeout(async () => {
+    return new Promise(async (resolve, reject) => {
+      const timeout_handle = setTimeout(() => {
         logging.error("Finishing Serial TIMEOUT");
-
-        this.#disconnectingResolve = undefined;
-        await this.#disconnect().finally(() => {
-          reject("DisconnectTimeout");
-        });
+        this.#disconnecting = false;
+        reject("DisconnectTimeout");
       }, 5000);
-
-      this.#disconnectingResolve = (value: unknown) => {
-        this.#disconnectingResolve = undefined;
-        clearTimeout(timeout_handle);
-        resolve(value);
-      };
 
       try {
         logging.info("> Finishing Serial...");
@@ -636,24 +612,24 @@ export class SpectodaWebSerialConnector {
         this.#reader = undefined;
         await this.#serialPort?.close();
 
+        clearTimeout(timeout_handle);
+
         this.#disconnecting = false;
-        if (this.#disconnectingResolve !== undefined) {
-          this.#disconnectingResolve(null);
-        }
         if (this.#interfaceConnected) {
           this.#interfaceConnected = false;
           this.#runtimeReference.emit("#disconnected");
         }
+        resolve(null);
       } catch (error) {
+        clearTimeout(timeout_handle);
+        this.#disconnecting = false;
         logging.error("Error during disconnect:", error);
         reject(error);
       }
     });
-
-    return disconnectingPromise;
   }
 
-  #disconnect() {
+  #disconnect(): Promise<unknown> {
     logging.verbose("#disconnect()");
 
     if (!this.#serialPort) {
@@ -674,27 +650,25 @@ export class SpectodaWebSerialConnector {
 
     this.#disconnecting = true;
 
-    logging.verbose("> Closing serial port...");
-
     return new Promise(async (resolve, reject) => {
       try {
+        logging.verbose("> Closing serial port...");
         await this.#writer?.close();
         this.#writer = undefined;
         await this.#reader?.cancel();
         this.#reader = undefined;
         await this.#serialPort?.close();
+
         this.#disconnecting = false;
-        if (this.#disconnectingResolve !== undefined) {
-          this.#disconnectingResolve(null);
-        }
         if (this.#interfaceConnected) {
           this.#interfaceConnected = false;
           this.#runtimeReference.emit("#disconnected");
         }
         resolve(null);
       } catch (error) {
-        logging.error(error);
-        resolve(null);
+        this.#disconnecting = false;
+        logging.error("Error during #disconnect:", error);
+        reject(error);
       }
     });
   }
