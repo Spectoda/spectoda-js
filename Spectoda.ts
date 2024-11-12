@@ -2257,15 +2257,24 @@ export class Spectoda {
    * Changes the network of the controller Spectoda.js is `connect`ed to.
    */
   writeOwner(ownerSignature: SpectodaTypes.NetworkSignature = "00000000000000000000000000000000", ownerKey: SpectodaTypes.NetworkKey = "00000000000000000000000000000000") {
-    logging.verbose("writeOwner(ownerSignature=", ownerSignature, "ownerKey=", ownerKey, ")");
+    logging.debug(`writeOwner(ownerSignature=${ownerSignature}, ownerKey=${ownerKey})`);
 
-    logging.debug("> Writing owner to device...");
+    logging.info("> Writing owner to controller...");
+
+    if (!ownerSignature || !ownerKey) {
+      throw "InvalidParameters";
+    }
+
+    if (ownerSignature == "00000000000000000000000000000000" && ownerKey == "00000000000000000000000000000000") {
+      logging.warn("> Removing owner instead of writing all zero owner");
+      return this.removeOwner();
+    }
 
     const owner_signature_bytes = hexStringToUint8Array(ownerSignature, 16);
     const owner_key_bytes = hexStringToUint8Array(ownerKey, 16);
 
-    logging.verbose("owner_signature_bytes=", owner_signature_bytes);
-    logging.verbose("owner_key_bytes=", owner_key_bytes);
+    logging.verbose("owner_signature_bytes", owner_signature_bytes);
+    logging.verbose("owner_key_bytes", owner_key_bytes);
 
     const request_uuid = this.#getUUID();
     const bytes = [COMMAND_FLAGS.FLAG_ADOPT_REQUEST, ...numberToBytes(request_uuid, 4), ...owner_signature_bytes, ...owner_key_bytes];
@@ -2333,9 +2342,18 @@ export class Spectoda {
    * Changes the network of ALL controllers in the network Spectoda.js is `connect`ed to.
    */
   writeNetworkOwner(ownerSignature: SpectodaTypes.NetworkSignature = "00000000000000000000000000000000", ownerKey: SpectodaTypes.NetworkKey = "00000000000000000000000000000000") {
-    logging.verbose("writeNetworkOwner(ownerSignature=", ownerSignature, "ownerKey=", ownerKey, ")");
+    logging.debug(`writeNetworkOwner(ownerSignature=${ownerSignature}, ownerKey=${ownerKey})`);
 
-    logging.debug("> Writing owner to network...");
+    logging.info("> Writing owner to network...");
+
+    if (!ownerSignature || !ownerKey) {
+      throw "InvalidParameters";
+    }
+
+    if (ownerSignature == "00000000000000000000000000000000" && ownerKey == "00000000000000000000000000000000") {
+      logging.warn("> Removing owner instead of writing all zero owner");
+      return this.removeNetworkOwner();
+    }
 
     const owner_signature_bytes = hexStringToUint8Array(ownerSignature, 16);
     const owner_key_bytes = hexStringToUint8Array(ownerKey, 16);
