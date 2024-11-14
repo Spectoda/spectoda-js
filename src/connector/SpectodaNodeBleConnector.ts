@@ -416,7 +416,7 @@ export class NodeBLEConnection {
     // logging.verbose("dataView", dataView);
     // logging.verbose("uint8Array", uint8Array);
 
-    const DUMMY_NODEBLE_CONNECTION = new SpectodaWasm.Connection("11:11:11:11:11:11", SpectodaWasm.connector_type_t.CONNECTOR_BLE, SpectodaWasm.connection_rssi_t.RSSI_MAX);
+    const DUMMY_NODEBLE_CONNECTION = SpectodaWasm.Connection.make("11:11:11:11:11:11", SpectodaWasm.connector_type_t.CONNECTOR_BLE, SpectodaWasm.connection_rssi_t.RSSI_MAX);
     this.#runtimeReference.spectoda_js.execute(command_bytes, DUMMY_NODEBLE_CONNECTION);
   }
 
@@ -439,9 +439,9 @@ export class NodeBLEConnection {
       return;
     }
 
-    const synchronization = SpectodaWasm.Synchronization.fromUint8Array(synchronization_bytes);
+    const synchronization = SpectodaWasm.Synchronization.makeFromUint8Array(synchronization_bytes);
 
-    const DUMMY_NODEBLE_CONNECTION = new SpectodaWasm.Connection("11:11:11:11:11:11", SpectodaWasm.connector_type_t.CONNECTOR_BLE, SpectodaWasm.connection_rssi_t.RSSI_MAX);
+    const DUMMY_NODEBLE_CONNECTION = SpectodaWasm.Connection.make("11:11:11:11:11:11", SpectodaWasm.connector_type_t.CONNECTOR_BLE, SpectodaWasm.connection_rssi_t.RSSI_MAX);
     this.#runtimeReference.spectoda_js.synchronize(synchronization, DUMMY_NODEBLE_CONNECTION);
   }
 

@@ -396,7 +396,7 @@ export class SpectodaSimulatedConnector {
       }
 
       for (const controller of this.controllers) {
-        await controller.execute(payload_bytes, new SpectodaWasm.Connection(APP_MAC_ADDRESS, SpectodaWasm.connector_type_t.CONNECTOR_SIMULATED, SpectodaWasm.connection_rssi_t.RSSI_MAX));
+        await controller.execute(payload_bytes, SpectodaWasm.Connection.make(APP_MAC_ADDRESS, SpectodaWasm.connector_type_t.CONNECTOR_SIMULATED, SpectodaWasm.connection_rssi_t.RSSI_MAX));
       }
 
       await sleep(25); // delivering logic
@@ -420,7 +420,7 @@ export class SpectodaSimulatedConnector {
       }
 
       for (const controller of this.controllers) {
-        await controller.execute(payload_bytes, new SpectodaWasm.Connection(APP_MAC_ADDRESS, SpectodaWasm.connector_type_t.CONNECTOR_UNDEFINED, SpectodaWasm.connection_rssi_t.RSSI_MAX));
+        await controller.execute(payload_bytes, SpectodaWasm.Connection.make(APP_MAC_ADDRESS, SpectodaWasm.connector_type_t.CONNECTOR_UNDEFINED, SpectodaWasm.connection_rssi_t.RSSI_MAX));
       }
 
       await sleep(10); // transmiting logic
@@ -445,7 +445,7 @@ export class SpectodaSimulatedConnector {
       // TODO choose the controller I am connected to choosen in userSelect() or autoSelect()
 
       const response =
-        this.controllers.length > 0 ? this.controllers[0].request(payload_bytes, new SpectodaWasm.Connection(APP_MAC_ADDRESS, SpectodaWasm.connector_type_t.CONNECTOR_UNDEFINED, SpectodaWasm.connection_rssi_t.RSSI_MAX)) : new Uint8Array();
+        this.controllers.length > 0 ? this.controllers[0].request(payload_bytes, SpectodaWasm.Connection.make(APP_MAC_ADDRESS, SpectodaWasm.connector_type_t.CONNECTOR_UNDEFINED, SpectodaWasm.connection_rssi_t.RSSI_MAX)) : new Uint8Array();
 
       if (read_response) {
         await sleep(50); // requesting logic

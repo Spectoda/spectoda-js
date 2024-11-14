@@ -2,9 +2,9 @@
 
 import { logging } from "../logging";
 
-const WASM_VERSION = "DEBUG_DEV_0.12.0_20241110";
+const WASM_VERSION = "DEBUG_DEV_0.12.0_20241113";
 
-/// ========== DEBUG_DEV_0.12.0_20241109.d.ts ========== ///
+/// ========== DEBUG_DEV_0.12.0_20241113.d.ts ========== ///
 
 export interface interface_error_tValue<T extends number> {
   value: T;
@@ -94,6 +94,7 @@ export interface Spectoda_WASM {
   registerConnector(_0: IConnector_WASM): void;
   _onTnglUpdate(_0: Uint8Vector): boolean;
   _onExecute(_0: Uint8Vector): boolean;
+  _onSynchronize(_0: Synchronization): boolean;
   process(_0: boolean, _1: boolean, _2: boolean, _3: boolean): void;
   render(_0: number): void;
   registerDeviceContext(_0: number): boolean;
@@ -114,7 +115,6 @@ export interface Spectoda_WASM {
   _onEvents(_0: any): boolean;
   _onEventStateUpdates(_0: any): boolean;
   _onRequest(_0: number, _1: Uint8Vector, _2: any): boolean;
-  _onSynchronize(_0: any): boolean;
   _onProcess(_0: any): boolean;
   makePort(_0: ArrayBuffer | Uint8Array | Uint8ClampedArray | Int8Array | string, _1: ArrayBuffer | Uint8Array | Uint8ClampedArray | Int8Array | string): any;
   readVariableAddress(_0: number, _1: number): any;
@@ -141,13 +141,9 @@ export interface MainModule {
     CONNECTOR_MAX: connector_type_tValue<7>;
   };
   connection_rssi_t: { RSSI_MAX: connection_rssi_tValue<127>; RSSI_MIN: connection_rssi_tValue<-128> };
-  Connection: { new (_0: ArrayBuffer | Uint8Array | Uint8ClampedArray | Int8Array | string, _1: connector_type_t, _2: connection_rssi_t): Connection };
-  Value: { new (): Value };
-  Synchronization: {
-    new (_0: number, _1: ArrayBuffer | Uint8Array | Uint8ClampedArray | Int8Array | string, _2: number, _3: number, _4: number, _5: number, _6: number): Synchronization;
-    make(_0: number, _1: ArrayBuffer | Uint8Array | Uint8ClampedArray | Int8Array | string, _2: number, _3: number, _4: number, _5: number, _6: number): any;
-    fromUint8Array(_0: any): any;
-  };
+  Connection: { make(_0: ArrayBuffer | Uint8Array | Uint8ClampedArray | Int8Array | string, _1: connector_type_t, _2: connection_rssi_t): Connection };
+  Value: { makePercentage(_0: number): Value };
+  Synchronization: { make(_0: number, _1: ArrayBuffer | Uint8Array | Uint8ClampedArray | Int8Array | string, _2: number, _3: number, _4: number, _5: number, _6: number): Synchronization; makeFromUint8Array(_0: any): Synchronization };
   Uint8Vector: { new (): Uint8Vector };
   IConnector_WASM: { implement(_0: any): ImplementedIConnector_WASM; extend(_0: ArrayBuffer | Uint8Array | Uint8ClampedArray | Int8Array | string, _1: any): any };
   ImplementedIConnector_WASM: {};
@@ -155,7 +151,7 @@ export interface MainModule {
   ImplementedSpectoda_WASM: {};
 }
 
-/// ========== DEBUG_DEV_0.12.0_20241109.d.ts ========== ///
+/// ========== DEBUG_DEV_0.12.0_20241113.d.ts ========== ///
 
 /// =================== MANUAL INTERFACES ================= ///
 

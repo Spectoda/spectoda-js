@@ -335,7 +335,7 @@ export class Spectoda_JS {
 
           // try {
           //   const command_bytecode = SpectodaWasm.convertUint8VectorUint8Array(commands_bytecode_vector);
-          //   const THIS_CONTROLLER_CONNECTION = new SpectodaWasm.Connection("00:00:00:00:00:00", SpectodaWasm.connector_type_t.CONNECTOR_UNDEFINED, SpectodaWasm.connection_rssi_t.RSSI_MAX);
+          //   const THIS_CONTROLLER_CONNECTION = SpectodaWasm.Connection.make("00:00:00:00:00:00", SpectodaWasm.connector_type_t.CONNECTOR_UNDEFINED, SpectodaWasm.connection_rssi_t.RSSI_MAX);
           //   this.#runtimeReference.sendExecute(command_bytecode, THIS_CONTROLLER_CONNECTION).catch(e => {
           //     logging.error(e);
           //     return false;
@@ -727,9 +727,7 @@ export class Spectoda_JS {
       throw "NotConstructed";
     }
 
-    const event_value = new SpectodaWasm.Value();
-    event_value.setPercentage(event_percentage_value);
-
+    const event_value = SpectodaWasm.Value.makePercentage(event_percentage_value);
     this.#spectoda_wasm.emitEvent(event_label, event_value, event_id, true);
   }
 

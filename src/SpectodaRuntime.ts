@@ -394,7 +394,7 @@ export class SpectodaRuntime {
       logging.debug("wasm_execute", command);
       for (const previewController of Object.values(this.previewControllers)) {
         try {
-          previewController.execute(command, new SpectodaWasm.Connection("11:11:11:11:11:11", SpectodaWasm.connector_type_t.CONNECTOR_UNDEFINED, SpectodaWasm.connection_rssi_t.RSSI_MAX));
+          previewController.execute(command, SpectodaWasm.Connection.make("11:11:11:11:11:11", SpectodaWasm.connector_type_t.CONNECTOR_UNDEFINED, SpectodaWasm.connection_rssi_t.RSSI_MAX));
         } catch (error) {
           logging.error(error);
         }
@@ -1067,7 +1067,7 @@ export class SpectodaRuntime {
                   // logging.debug("EXECUTE", uint8ArrayToHexString(merged_payload));
 
                   try {
-                    this.spectoda_js.execute(merged_payload, new SpectodaWasm.Connection(APP_MAC_ADDRESS, SpectodaWasm.connector_type_t.CONNECTOR_UNDEFINED, SpectodaWasm.connection_rssi_t.RSSI_MAX));
+                    this.spectoda_js.execute(merged_payload, SpectodaWasm.Connection.make(APP_MAC_ADDRESS, SpectodaWasm.connector_type_t.CONNECTOR_UNDEFINED, SpectodaWasm.connection_rssi_t.RSSI_MAX));
                     for (const element of executesInPayload) element.resolve();
                   } catch (error) {
                     for (const element of executesInPayload) element.reject(error);
@@ -1353,7 +1353,7 @@ export class SpectodaRuntime {
         const request_bytes = [COMMAND_FLAGS.FLAG_READ_PORT_PIXELS_REQUEST, ...numberToBytes(request_uuid, 4), portTag, PIXEL_ENCODING_CODE];
 
         logging.debug("Sending request", uint8ArrayToHexString(request_bytes));
-        const response = await previewController.request(new Uint8Array(request_bytes), new SpectodaWasm.Connection("11:11:11:11:11:11", SpectodaWasm.connector_type_t.CONNECTOR_UNDEFINED, SpectodaWasm.connection_rssi_t.RSSI_MAX));
+        const response = await previewController.request(new Uint8Array(request_bytes), SpectodaWasm.Connection.make("11:11:11:11:11:11", SpectodaWasm.connector_type_t.CONNECTOR_UNDEFINED, SpectodaWasm.connection_rssi_t.RSSI_MAX));
 
         logging.debug("Received response", uint8ArrayToHexString(response));
         const tempReader = new TnglReader(response);
@@ -1424,7 +1424,7 @@ export class SpectodaRuntime {
         const request_bytes = [COMMAND_FLAGS.FLAG_READ_PORT_PIXELS_REQUEST, ...numberToBytes(request_uuid, 4), portTag, PIXEL_ENCODING_CODE];
 
         logging.debug("Sending request", uint8ArrayToHexString(request_bytes));
-        const response = previewController.request(new Uint8Array(request_bytes), new SpectodaWasm.Connection("11:11:11:11:11:11", SpectodaWasm.connector_type_t.CONNECTOR_UNDEFINED, SpectodaWasm.connection_rssi_t.RSSI_MAX));
+        const response = previewController.request(new Uint8Array(request_bytes), SpectodaWasm.Connection.make("11:11:11:11:11:11", SpectodaWasm.connector_type_t.CONNECTOR_UNDEFINED, SpectodaWasm.connection_rssi_t.RSSI_MAX));
 
         logging.debug("Received response", uint8ArrayToHexString(response));
         const tempReader = new TnglReader(response);

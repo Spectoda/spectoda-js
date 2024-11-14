@@ -438,7 +438,7 @@ export class SpectodaNodeSerialConnector {
                         case NETWORK_WRITE: {
                           logging.debug("SERIAL >>>NETWORK_WRITE<<<");
 
-                          const DUMMY_NODESERIAL_CONNECTION = new SpectodaWasm.Connection("11:11:11:11:11:11", SpectodaWasm.connector_type_t.CONNECTOR_SERIAL, SpectodaWasm.connection_rssi_t.RSSI_MAX);
+                          const DUMMY_NODESERIAL_CONNECTION = SpectodaWasm.Connection.make("11:11:11:11:11:11", SpectodaWasm.connector_type_t.CONNECTOR_SERIAL, SpectodaWasm.connection_rssi_t.RSSI_MAX);
                           this.#runtimeReference.spectoda_js.execute(new Uint8Array(data_bytes), DUMMY_NODESERIAL_CONNECTION);
 
                           break;
@@ -446,8 +446,8 @@ export class SpectodaNodeSerialConnector {
                         case CLOCK_WRITE: {
                           logging.debug("SERIAL >>>CLOCK_WRITE<<<");
 
-                          const synchronization: Synchronization = SpectodaWasm.Synchronization.fromUint8Array(new Uint8Array(data_bytes));
-                          const DUMMY_NODESERIAL_CONNECTION = new SpectodaWasm.Connection("11:11:11:11:11:11", SpectodaWasm.connector_type_t.CONNECTOR_SERIAL, SpectodaWasm.connection_rssi_t.RSSI_MAX);
+                          const synchronization: Synchronization = SpectodaWasm.Synchronization.makeFromUint8Array(new Uint8Array(data_bytes));
+                          const DUMMY_NODESERIAL_CONNECTION = SpectodaWasm.Connection.make("11:11:11:11:11:11", SpectodaWasm.connector_type_t.CONNECTOR_SERIAL, SpectodaWasm.connection_rssi_t.RSSI_MAX);
                           this.#runtimeReference.spectoda_js.synchronize(synchronization, DUMMY_NODESERIAL_CONNECTION);
 
                           break;
@@ -455,7 +455,7 @@ export class SpectodaNodeSerialConnector {
                         case DEVICE_WRITE: {
                           logging.debug("SERIAL >>>DEVICE_WRITE<<<");
 
-                          const DUMMY_NODESERIAL_CONNECTION = new SpectodaWasm.Connection("11:11:11:11:11:11", SpectodaWasm.connector_type_t.CONNECTOR_SERIAL, SpectodaWasm.connection_rssi_t.RSSI_MAX);
+                          const DUMMY_NODESERIAL_CONNECTION = SpectodaWasm.Connection.make("11:11:11:11:11:11", SpectodaWasm.connector_type_t.CONNECTOR_SERIAL, SpectodaWasm.connection_rssi_t.RSSI_MAX);
                           this.#runtimeReference.spectoda_js.request(new Uint8Array(data_bytes), DUMMY_NODESERIAL_CONNECTION);
 
                           break;

@@ -478,7 +478,7 @@ export class SpectodaConnectConnector extends FlutterConnection {
 
     // @ts-ignore
     window.flutterConnection.process = bytes => {
-      const CONNECTION = new SpectodaWasm.Connection("11:11:11:11:11:11", SpectodaWasm.connector_type_t.CONNECTOR_BLE, SpectodaWasm.connection_rssi_t.RSSI_MAX);
+      const CONNECTION = SpectodaWasm.Connection.make("11:11:11:11:11:11", SpectodaWasm.connector_type_t.CONNECTOR_BLE, SpectodaWasm.connection_rssi_t.RSSI_MAX);
       this.#runtimeReference.spectoda_js.execute(new Uint8Array(bytes), CONNECTION);
     };
   }

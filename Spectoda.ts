@@ -1085,7 +1085,7 @@ export class Spectoda {
         const tngl_bytecode = reader.readBytes(tngl_bytecode_size);
         logging.info(`tngl_bytecode=[${tngl_bytecode}]`);
 
-        const DUMMY_CONNECTION = new SpectodaWasm.Connection("00:00:00:00:00:00", SpectodaWasm.connector_type_t.CONNECTOR_UNDEFINED, SpectodaWasm.connection_rssi_t.RSSI_MAX);
+        const DUMMY_CONNECTION = SpectodaWasm.Connection.make("00:00:00:00:00:00", SpectodaWasm.connector_type_t.CONNECTOR_UNDEFINED, SpectodaWasm.connection_rssi_t.RSSI_MAX);
         this.runtime.spectoda_js.request(new Uint8Array(tngl_bytecode), DUMMY_CONNECTION);
       } else {
         // maybe no TNGL in the controller
@@ -2194,7 +2194,7 @@ export class Spectoda {
 
         this.runtime.spectoda_js.eraseHistory();
 
-        const DUMMY_CONNECTION = new SpectodaWasm.Connection("00:00:00:00:00:00", SpectodaWasm.connector_type_t.CONNECTOR_UNDEFINED, SpectodaWasm.connection_rssi_t.RSSI_MAX);
+        const DUMMY_CONNECTION = SpectodaWasm.Connection.make("00:00:00:00:00:00", SpectodaWasm.connector_type_t.CONNECTOR_UNDEFINED, SpectodaWasm.connection_rssi_t.RSSI_MAX);
         this.runtime.spectoda_js.request(new Uint8Array(historic_events_bytecode), DUMMY_CONNECTION);
       } else {
         logging.error("ERROR cxzv982io");
