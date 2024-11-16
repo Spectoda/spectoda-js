@@ -62,8 +62,8 @@ export class PreviewController {
         //   this.__parent.__destruct.call(this);
         // },
 
-        _onTnglUpdate: (tngl_bytes_vector, used_ids) => {
-          this.logging.verbose("PreviewController::_onTnglUpdate", tngl_bytes_vector, used_ids);
+        _onTnglUpdate: (tngl_bytes_vector, used_ids_vector) => {
+          this.logging.verbose("PreviewController::_onTnglUpdate", tngl_bytes_vector, used_ids_vector);
 
           return true;
         },

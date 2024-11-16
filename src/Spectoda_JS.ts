@@ -260,12 +260,13 @@ export class Spectoda_JS {
         //   this.__parent.__destruct.call(this);
         // },
 
-        _onTnglUpdate: (tngl_bytes_vector, used_ids) => {
-          logging.verbose("Spectoda_JS::_onTnglUpdate", tngl_bytes_vector, used_ids);
+        _onTnglUpdate: (tngl_bytes_vector, used_ids_vector) => {
+          logging.verbose("Spectoda_JS::_onTnglUpdate", tngl_bytes_vector, used_ids_vector);
 
           try {
             // dont know how to make Uint8Array in C++ yet. So I am forced to give data out in C++ std::vector
             const tngl_bytes = SpectodaWasm.convertUint8VectorUint8Array(tngl_bytes_vector);
+            const used_ids = SpectodaWasm.convertUint8VectorUint8Array(used_ids_vector);
             this.#runtimeReference.emit("tngl_update", { tngl_bytes: tngl_bytes, used_ids: used_ids });
           } catch {
             //
