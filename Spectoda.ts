@@ -1036,6 +1036,45 @@ export class Spectoda {
       tngl_code = processedCode;
     }
 
+    // Clean up the whitespaces in TNGL code
+    {
+      tngl_code = tngl_code
+        // Remove empty lines with only whitespace
+        .replace(/^\s*[\r\n]/gm, "")
+
+        // Remove multiple consecutive empty lines
+        .replace(/[\r\n]{3,}/g, "\n\n")
+
+        // Remove trailing whitespace at end of lines
+        .replace(/[ \t]+$/gm, "")
+
+        // Remove multiple spaces between words/tokens (preserving indentation)
+        .replace(/([^ \t\r\n])[ \t]{2,}([^ \t\r\n])/g, "$1 $2")
+
+        // Standardize line endings to \n
+        .replace(/\r\n|\r/g, "\n")
+
+        // Remove spaces before commas and semicolons
+        .replace(/\s+([,;])/g, "$1")
+
+        // Remove multiple spaces after commas (but preserve line indentation)
+        .replace(/([,;])[ \t]{2,}/g, "$1 ")
+
+        // Remove spaces around parentheses while preserving indentation
+        .replace(/\(\s+/g, "(")
+        .replace(/\s+\)/g, ")")
+
+        // Remove extra spaces around operators while preserving indentation
+        .replace(/(\S)[ \t]{2,}([=+\-*/%<>])/g, "$1 $2")
+        .replace(/([=+\-*/%<>])[ \t]{2,}(\S)/g, "$1 $2")
+
+        // Remove duplicate spaces after line indentation
+        .replace(/^([ \t]*?)[ \t]{2,}/gm, "$1")
+
+        // Remove extra whitespace at the start and end of the file
+        .trim();
+    }
+
     logging.debug(tngl_code);
 
     return tngl_code;
