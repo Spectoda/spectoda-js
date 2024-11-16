@@ -879,14 +879,14 @@ export class SpectodaRuntime {
 
         await sleep(0.001); // short delay to let fill up the queue to merge the execute items if possible
 
-        let item: Query;
-
         try {
           await this.#updateConnector();
 
           while (this.#queue.length > 0) {
-            // @ts-ignore it is never undefined because of (this.#queue.length > 0)
-            item = this.#queue.shift();
+            const item = this.#queue.shift();
+            if (!item) {
+              continue;
+            }
 
             if (!this.connector) {
               item.reject("ConnectorNotAssigned");
