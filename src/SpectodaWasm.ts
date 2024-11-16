@@ -2,10 +2,10 @@
 
 import { logging } from "../logging";
 
-const WASM_VERSION = "DEBUG_DEV_0.12.0_20241115";
+const WASM_VERSION = "DEBUG_DEV_0.12.0_20241116";
 
 /// === auto-generated from Emscripten build process === ///
-/// ========== DEBUG_DEV_0.12.0_20241113.d.ts ========== ///
+/// ========== DEBUG_DEV_0.12.0_20241116.d.ts ========== ///
 
 export interface interface_error_tValue<T extends number> {
   value: T;
@@ -118,7 +118,7 @@ export interface Spectoda_WASM {
   eraseTimeline(): void;
   eraseTngl(): void;
   registerConnector(_0: IConnector_WASM): void;
-  _onTnglUpdate(_0: Uint8Vector): boolean;
+  _onTnglUpdate(_0: Uint8Vector, _1: Uint8Vector): boolean;
   _onExecute(_0: Uint8Vector): boolean;
   _onSynchronize(_0: Synchronization): boolean;
   process(_0: boolean, _1: boolean, _2: boolean, _3: boolean): void;
@@ -204,20 +204,21 @@ export interface SpectodaEvent {
 export interface Spectoda_WASMImplementation {
   // ! C++ Code the Spectoda_WASMImplementation is mapped to and MUST be in sync for WASM binding to work properly
   // ! please keep it here as it is used for determining if there are some changes in C++ vs this file. For more info contact @immakermatty
+  // ? class ImplementedSpectoda_WASM : public wrapper<Spectoda_WASM>
 
-  // bool _onTnglUpdate(const std::vector<uint8_t>& tngl_bytes) override
+  // bool _onTnglUpdate(const std::vector<uint8_t>& tngl_bytes, const std::vector<uint8_t>& used_ids) override
   // {
-  //     return call<bool>("_onTnglUpdate", tngl_bytes);
+  //     return call<bool>("_onTnglUpdate", tngl_bytes, used_ids);
   // }
 
-  // bool _onEvents(const val& event_array) override
+  // bool _onEvents(val&& event_array) override
   // {
-  //     return call<bool>("_onEvents", event_array);
+  //     return call<bool>("_onEvents", std::move(event_array));
   // }
 
-  // bool _onEventStateUpdates(const val& event_state_updates_array) override
+  // bool _onEventStateUpdates(val&& event_state_updates_array) override
   // {
-  //     return call<bool>("_onEventStateUpdates", event_state_updates_array);
+  //     return call<bool>("_onEventStateUpdates", std::move(event_state_updates_array));
   // }
 
   // bool _onExecute(const std::vector<uint8_t>& execute_bytecode) override
@@ -225,23 +226,19 @@ export interface Spectoda_WASMImplementation {
   //     return call<bool>("_onExecute", execute_bytecode);
   // }
 
-  // bool _onRequest(const int32_t request_ticket_number, const std::vector<uint8_t>& request_bytecode_vector, const val& destination_connection) override
+  // bool _onRequest(const int32_t request_ticket_number, const std::vector<uint8_t>& request_bytecode_vector, Connection&& destination_connection) override
   // {
-  //     return call<bool>("_onRequest", request_ticket_number, request_bytecode_vector, destination_connection);
+  //     return call<bool>("_onRequest", request_ticket_number, request_bytecode_vector, val(std::move(destination_connection)));
   // }
 
-  // bool _onSynchronize(const val& synchronization) override
+  // bool _onSynchronize(Synchronization&& synchronization) override
   // {
-  //     return call<bool>("_onSynchronize", synchronization);
+  //     return call<bool>("_onSynchronize", val(std::move(synchronization)));
   // }
 
-  // bool _onProcess(const val& options) override
+  // bool _onProcess(val&& options) override
   // {
-  //     val process_options = val::object();
-  //     process_options.set("skip_berry_plugin_update", bool(options.skip_berry_plugin_update));
-  //     process_options.set("skip_eventstate_updates", bool(options.skip_eventstate_updates));
-  //
-  //     return call<bool>("_onProcess", options);
+  //     return call<bool>("_onProcess", std::move(options));
   // }
 
   // interface_error_t _handlePeerConnected(const std::string& peer_mac) override
@@ -271,7 +268,7 @@ export interface Spectoda_WASMImplementation {
 
   // // __construct: function () {}
   // // __destruct: function () {}
-  _onTnglUpdate(tngl_bytes: Uint8Vector): boolean;
+  _onTnglUpdate(tngl_bytes: Uint8Vector, used_ids: Uint8Vector): boolean;
   _onEvents(event_array: SpectodaEvent[]): boolean;
   _onEventStateUpdates(event_array: SpectodaEvent[]): boolean;
   _onExecute(execute_bytecode: Uint8Vector): boolean;
@@ -288,6 +285,7 @@ export interface Spectoda_WASMImplementation {
 export interface IConnector_WASMImplementation {
   // ! C++ Code the IConnector_WASMImplementation is mapped to and MUST be in sync for WASM binding to work properly
   // ! please keep it here as it is used for determining if there are some changes in C++ vs this file. For more info contact @immakermatty
+  // ? class ImplementedIConnector_WASM : public wrapper<IConnector_WASM>
 
   // bool _scan(const std::string& criteria_json, const int32_t scan_period, const val& result_out) override
   // {
@@ -304,29 +302,29 @@ export interface IConnector_WASMImplementation {
   //     return call<bool>("_userConnect", criteria_json, timeout, result_out);
   // }
 
-  // bool _disconnect(const val& connection) override
+  // bool _disconnect(Connection&& connection) override
   // {
-  //     return call<bool>("_disconnect", connection);
+  //     return call<bool>("_disconnect", val(std::move(connection)));
   // }
 
-  // void _sendExecute(const std::vector<uint8_t>& command_bytes, const val& source_connection) override
+  // void _sendExecute(const std::vector<uint8_t>& command_bytes, Connection&& source_connection) override
   // {
-  //     return call<void>("_sendExecute", command_bytes, source_connection);
+  //     return call<void>("_sendExecute", command_bytes, val(std::move(source_connection)));
   // }
 
-  // bool _sendRequest(const int32_t request_ticket_number, std::vector<uint8_t>& request_bytecode, const val& destination_connection) override
+  // bool _sendRequest(const int32_t request_ticket_number, std::vector<uint8_t>& request_bytecode, Connection&& destination_connection) override
   // {
-  //     return call<bool>("_sendRequest", request_ticket_number, request_bytecode, destination_connection);
+  //     return call<bool>("_sendRequest", request_ticket_number, request_bytecode, val(std::move(destination_connection)));
   // }
 
-  // bool _sendResponse(const int32_t request_ticket_number, const int32_t request_result, std::vector<uint8_t>& response_bytecode, const val& destination_connection) override
+  // bool _sendResponse(const int32_t request_ticket_number, const int32_t request_result, std::vector<uint8_t>& response_bytecode, Connection&& destination_connection) override
   // {
-  //     return call<bool>("_sendResponse", request_ticket_number, request_result, response_bytecode, destination_connection);
+  //     return call<bool>("_sendResponse", request_ticket_number, request_result, response_bytecode, val(std::move(destination_connection)));
   // }
 
-  // void _sendSynchronize(const val& synchronization, const val& source_connection) override
+  // void _sendSynchronize(Synchronization&& synchronization, Connection&& source_connection) override
   // {
-  //     return call<void>("_sendSynchronize", synchronization, source_connection);
+  //     return call<void>("_sendSynchronize", val(std::move(synchronization)), val(std::move(source_connection)));
   // }
 
   // void _process() override
