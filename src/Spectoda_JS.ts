@@ -7,17 +7,20 @@ import { SpectodaRuntime } from "./SpectodaRuntime";
 import { Connection, IConnector_WASM, IConnector_WASMImplementation, SpectodaEvent, SpectodaWasm, Spectoda_WASM, Spectoda_WASMImplementation, Synchronization, Uint8Vector, Value, interface_error_t } from "./SpectodaWasm";
 
 export namespace SpectodaTypes {
-  export type ConnectorType = "default" | "bluetooth" | "serial" | "websockets" | "simulated" | "dummy";
+  export type ConnectorType = "none" | "default" | "bluetooth" | "serial" | "websockets" | "simulated" | "dummy";
   export type ConnectionState = "connected" | "connecting" | "disconnected" | "disconnecting";
   export type WebsocketConnectionState = "connecting-websockets" | "connected-websockets" | "disconnecting-websockets" | "disconnected-websockets";
 
   export type ConnectionJSEvent = ConnectionState;
   export type WebsocketJSEvent = WebsocketConnectionState;
+  export type LegacyPreviewJSEvent = "wasm_clock" | "wasm_execute" | "wasm_request";
+  export type RuntimeJSEvent = "emittedevents" | "eventstateupdates" | "#connected" | "#disconnected";
   export type PeerJSEvent = "peer_connected" | "peer_disconnected";
-  export type OtaJSEvent = "ota_status" | "ota_progress";
+  export type OtaJSEvent = "ota_status" | "ota_progress" | "ota_timeleft";
   export type OtaStatus = "begin" | "success" | "fail";
+  export type TnglEvent = "tngl_update";
 
-  export type JsEvent = ConnectionJSEvent | WebsocketJSEvent | PeerJSEvent | OtaJSEvent;
+  export type JsEvent = ConnectionJSEvent | WebsocketJSEvent | LegacyPreviewJSEvent | RuntimeJSEvent | PeerJSEvent | OtaJSEvent | TnglEvent;
 
   type criteria_generic = { connector?: string; mac?: string; name?: string; nameprefix?: string; network?: string; fw?: string; product?: number; commisionable?: boolean };
   type criteria_ble = criteria_generic;
@@ -79,6 +82,7 @@ export namespace SpectodaTypes {
   export type IDs = ID | ID[];
 
   export type Event = SpectodaEvent;
+  export type EventStateValue = SpectodaEvent;
 }
 
 export const APP_MAC_ADDRESS = "00:00:12:34:56:78";
@@ -318,11 +322,13 @@ export class Spectoda_JS {
           // TODO! refactor "emitted_events" for the needs of the Store
           for (const element of event_state_updates_array) {
             // ! This will be removed after Store is implemented
+            // @ts-ignore
             element.timestamp_utc = Date.now();
           }
           this.#runtimeReference.emit("eventstateupdates", event_state_updates_array);
 
           // ! emitted_events is deprecated
+          // @ts-ignore
           this.#runtimeReference.emit("emitted_events", event_state_updates_array);
 
           return true;
@@ -815,7 +821,7 @@ export class Spectoda_JS {
     this.#spectoda_wasm.eraseTngl();
   }
 
-  getEventState(event_state_name: string, event_state_id: number): SpectodaEvent | undefined {
+  getEventState(event_state_name: string, event_state_id: number): SpectodaTypes.EventStateValue | undefined {
     logging.verbose(`Spectoda_JS::getEventState(event_state_name=${event_state_name}, event_state_id=${event_state_id})`);
 
     if (!this.#spectoda_wasm) {
@@ -833,7 +839,7 @@ export class Spectoda_JS {
     return this.#spectoda_wasm.getDateTime();
   }
 
-  registerDeviceContext(device_id: number) {
+  registerDeviceContext(device_id: number): boolean {
     logging.verbose(`Spectoda_JS::registerDeviceContext(device_id=${device_id})`);
 
     if (!this.#spectoda_wasm) {

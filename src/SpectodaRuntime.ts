@@ -494,17 +494,17 @@ export class SpectodaRuntime {
    * @returns {Function} unbind function
    */
 
-  addEventListener(event: string, callback: Function) {
+  addEventListener(event: SpectodaTypes.JsEvent, callback: Function) {
     return this.on(event, callback);
   }
   /**
    * @alias this.addEventListener
    */
-  on(event: string, callback: Function) {
+  on(event: SpectodaTypes.JsEvent, callback: Function) {
     return this.#eventEmitter.on(event, callback);
   }
 
-  emit(event: string, ...arg: any) {
+  emit(event: SpectodaTypes.JsEvent, ...arg: any) {
     this.#eventEmitter.emit(event, ...arg);
   }
 

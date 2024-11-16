@@ -5,7 +5,7 @@ import { TnglReader } from "./TnglReader";
 import "./TnglWriter";
 import { colorToBytes, cssColorToHex, detectNode, detectSpectodaConnect, hexStringToUint8Array, labelToBytes, numberToBytes, sleep, strMacToBytes, stringToBytes, uint8ArrayToHexString, fetchFirmware } from "./functions";
 
-import { logging, LoggingLevel } from "./logging";
+import { logging } from "./logging";
 import { SpectodaWasm } from "./src/SpectodaWasm";
 import { COMMAND_FLAGS, DEFAULT_TIMEOUT, TNGL_SIZE_CONSIDERED_BIG, SpectodaTypes } from "./src/Spectoda_JS";
 
@@ -97,7 +97,7 @@ export class Spectoda {
     this.runtime = new SpectodaRuntime(this);
     this.socket = undefined;
 
-    if (connectorType) {
+    if (connectorType !== "none") {
       try {
         this.runtime.assignConnector(connectorType);
       } catch (e) {
@@ -598,14 +598,14 @@ export class Spectoda {
    * TODO I think this should expose an "off" method to remove the listener
    * @returns {Function} unbind function
    */
-  addEventListener(event: string, callback: Function) {
+  addEventListener(event: SpectodaTypes.JsEvent, callback: Function) {
     return this.runtime.addEventListener(event, callback);
   }
 
   /**
    * @alias this.addEventListener
    */
-  on(event: string, callback: Function) {
+  on(event: SpectodaTypes.JsEvent, callback: Function) {
     return this.runtime.on(event, callback);
   }
 
@@ -2148,7 +2148,7 @@ export class Spectoda {
   /**
    * Set the debug level of the Spectoda.js library
    */
-  setDebugLevel(level: LoggingLevel) {
+  setDebugLevel(level: number) {
     logging.setLoggingLevel(level);
   }
 
