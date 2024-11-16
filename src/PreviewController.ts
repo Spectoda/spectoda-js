@@ -116,8 +116,8 @@ export class PreviewController {
           return true;
         },
 
-        _onProcess: () => {
-          this.logging.verbose("PreviewController::_onProcess");
+        _onProcess: options => {
+          this.logging.verbose("PreviewController::_onProcess", options);
 
           return true;
         },

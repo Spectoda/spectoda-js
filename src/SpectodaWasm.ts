@@ -188,9 +188,41 @@ export interface MainModule {
   ImplementedSpectoda_WASM: {};
 }
 
-/// ========== DEBUG_DEV_0.12.0_20241115.d.ts ========== ///
+/// ========== DEBUG_DEV_0.12.0_20241116.d.ts ========== ///
 
-/// =================== MANUAL INTERFACES ================= ///
+/// =================== MANUALLY DEFINED INTERFACES ================= ///
+
+// ! from C++ types.h in Spectoda_Firmware
+// struct process_options_t {
+//   bool skip_berry_plugin_update = false;
+//   bool skip_eventstate_updates = false;
+//   bool force_event_emittion = false;
+//   bool skip_event_emittion = false;
+//   // internal
+//   timestamp_t __timeline_time = TIMESTAMP(0);
+//   date_t __timeline_date = DATE::DATE_UNDEFINED;
+//   clock_ms __clock_timestamp = clock_ms(0);
+// };
+
+export interface ProcessOptions {
+  skip_berry_plugin_update: boolean;
+  skip_eventstate_updates: boolean;
+  force_event_emittion: boolean;
+  skip_event_emittion: boolean;
+}
+
+// ! from C++ types.h in Spectoda_Firmware
+// struct render_options_t {
+//   bool force_clear_ports_flag = false;
+//   bool force_bake_flag = false;
+//   uint8_t power = 255;
+// };
+
+export interface RenderOptions {
+  force_clear_ports_flag: boolean;
+  force_bake_flag: boolean;
+  power: number;
+}
 
 export interface SpectodaEvent {
   debug: string;
@@ -274,7 +306,7 @@ export interface Spectoda_WASMImplementation {
   _onExecute(execute_bytecode: Uint8Vector): boolean;
   _onRequest(request_ticket_number: number, request_bytecode_vector: Uint8Vector, destination_connection: Connection): boolean;
   _onSynchronize(synchronization: Synchronization): boolean;
-  _onProcess(options: { skip_berry_plugin_update: boolean; skip_eventstate_updates: boolean }): boolean;
+  _onProcess(options: ProcessOptions): boolean;
   _handlePeerConnected(peer_mac: string): interface_error_t;
   _handlePeerDisconnected(peer_mac: string): interface_error_t;
   _handleTimelineManipulation(timeline_timestamp: number, timeline_paused: boolean, timeline_date: string): interface_error_t;

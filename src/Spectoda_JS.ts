@@ -392,8 +392,8 @@ export class Spectoda_JS {
           return true;
         },
 
-        _onProcess: () => {
-          logging.verbose("Spectoda_JS::_onProcess");
+        _onProcess: options => {
+          logging.verbose("Spectoda_JS::_onProcess", options);
 
           return true;
         },
