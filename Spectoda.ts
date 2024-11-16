@@ -1119,10 +1119,10 @@ export class Spectoda {
 
       if (error_code === 0) {
         const tngl_bytecode_size = reader.readUint16();
-        logging.info(`tngl_bytecode_size=${tngl_bytecode_size}`);
+        logging.debug(`tngl_bytecode_size=${tngl_bytecode_size}`);
 
         const tngl_bytecode = reader.readBytes(tngl_bytecode_size);
-        logging.info(`tngl_bytecode=[${tngl_bytecode}]`);
+        logging.debug(`tngl_bytecode=[${tngl_bytecode}]`);
 
         const DUMMY_CONNECTION = SpectodaWasm.Connection.make("00:00:00:00:00:00", SpectodaWasm.connector_type_t.CONNECTOR_UNDEFINED, SpectodaWasm.connection_rssi_t.RSSI_MAX);
         this.runtime.spectoda_js.request(new Uint8Array(tngl_bytecode), DUMMY_CONNECTION);
@@ -2202,10 +2202,10 @@ export class Spectoda {
           });
         }
 
-        // logging.info(`count=${count}, peers=`, peers);
-        logging.info(`count=${count}, peers=\n${peers.map(x => `mac:${x.mac},rssi:${x.rssi}`).join("\n")}`);
-        // this.runtime.eraseConnectedPeers();
-        // this.runtime.setConnectedPeers(peers.map(x => x.mac));
+        logging.debug(`count=${count}, peers=\n${peers.map(x => `mac:${x.mac},rssi:${x.rssi}`).join("\n")}`);
+
+        logging.info(`Connected peers:\n${peers.map(x => `mac:${x.mac},rssi:${x.rssi}`).join("\n")}`);
+
         return peers;
       } else {
         throw "Fail";
@@ -2248,10 +2248,10 @@ export class Spectoda {
 
       if (error_code === 0) {
         const historic_events_bytecode_size = reader.readUint16();
-        logging.info(`historic_events_bytecode_size=${historic_events_bytecode_size}`);
+        logging.debug(`historic_events_bytecode_size=${historic_events_bytecode_size}`);
 
         const historic_events_bytecode = reader.readBytes(historic_events_bytecode_size);
-        logging.info(`historic_events_bytecode=[${historic_events_bytecode}]`);
+        logging.debug(`historic_events_bytecode=[${historic_events_bytecode}]`);
 
         this.runtime.spectoda_js.eraseHistory();
 

@@ -482,7 +482,7 @@ function injectScript(src: string) {
 }
 
 function onWasmLoad() {
-  logging.info("Webassembly loaded");
+  logging.info("WASM loaded");
 
   const resolveWaitingQueue = () => {
     for (const wait of waitingQueue) {
@@ -495,7 +495,7 @@ function onWasmLoad() {
   Module.onRuntimeInitialized = () => {
     moduleInitilized = true;
 
-    logging.info("Webassembly runtime initilized");
+    logging.info("WASM runtime initilized");
 
     // static interface_error_t: MainModule["interface_error_t"];
     // static connector_type_t: MainModule["connector_type_t"];
