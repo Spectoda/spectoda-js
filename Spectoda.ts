@@ -7,7 +7,7 @@ import { colorToBytes, cssColorToHex, detectNode, detectSpectodaConnect, hexStri
 
 import { logging, LoggingLevel } from "./logging";
 import { SpectodaWasm } from "./src/SpectodaWasm";
-import { COMMAND_FLAGS, DEFAULT_TIMEOUT, SpectodaTypes } from "./src/Spectoda_JS";
+import { COMMAND_FLAGS, DEFAULT_TIMEOUT, TNGL_SIZE_CONSIDERED_BIG, SpectodaTypes } from "./src/Spectoda_JS";
 
 import { io } from "socket.io-client";
 import customParser from "socket.io-msgpack-parser";
@@ -1116,9 +1116,16 @@ export class Spectoda {
 
     const reinterpret_bytecode = [COMMAND_FLAGS.FLAG_LOAD_TNGL, ...numberToBytes(this.runtime.clock.millis(), 6), 0, ...numberToBytes(tngl_bytes.length, 4), ...tngl_bytes];
 
-    return this.runtime.execute(reinterpret_bytecode, "TNGL").then(() => {
-      // logging.debug("Written");
-    });
+    if (tngl_bytes.length >= TNGL_SIZE_CONSIDERED_BIG) {
+      const erase_tngl_uuid = this.#getUUID();
+      const erase_tngl_bytecode = [COMMAND_FLAGS.FLAG_ERASE_TNGL_BYTECODE_REQUEST, ...numberToBytes(erase_tngl_uuid, 4)];
+
+      return this.runtime.execute(erase_tngl_bytecode, undefined).then(() => {
+        return this.runtime.execute(reinterpret_bytecode, "TNGL");
+      });
+    } else {
+      return this.runtime.execute(reinterpret_bytecode, "TNGL");
+    }
   }
 
   /**

@@ -84,6 +84,7 @@ export namespace SpectodaTypes {
 export const APP_MAC_ADDRESS = "00:00:12:34:56:78";
 export const USE_ALL_CONNECTIONS = ["*/ff:ff:ff:ff:ff:ff"];
 export const DEFAULT_TIMEOUT = null;
+export const TNGL_SIZE_CONSIDERED_BIG = 12288;
 
 export const COMMAND_FLAGS = Object.freeze({
   FLAG_UNSUPPORTED_COMMND_RESPONSE: 255, // TODO change FLAG_OTA_BEGIN to not be 255.
