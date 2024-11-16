@@ -1554,7 +1554,15 @@ export class SpectodaRuntime {
     return this.spectoda_js.getClockTimestamp();
   }
 
-  getEventState(event_state_name: string, event_state_id: number) {
+  getEventStates(event_state_name: string, event_state_ids: SpectodaTypes.IDs): (SpectodaTypes.EventStateValue | undefined)[] {
+    if (Array.isArray(event_state_ids)) {
+      return event_state_ids.map(id => this.spectoda_js.getEventState(event_state_name, id));
+    } else {
+      return [this.spectoda_js.getEventState(event_state_name, event_state_ids)];
+    }
+  }
+
+  getEventState(event_state_name: string, event_state_id: SpectodaTypes.ID): SpectodaTypes.EventStateValue | undefined {
     return this.spectoda_js.getEventState(event_state_name, event_state_id);
   }
 
@@ -1562,8 +1570,16 @@ export class SpectodaRuntime {
     return this.spectoda_js.getDateTime();
   }
 
-  registerDeviceContext(device_id: number) {
-    return this.spectoda_js.registerDeviceContext(device_id);
+  registerDeviceContexts(ids: SpectodaTypes.IDs): boolean[] {
+    if (Array.isArray(ids)) {
+      return ids.map(id => this.spectoda_js.registerDeviceContext(id));
+    } else {
+      return [this.spectoda_js.registerDeviceContext(ids)];
+    }
+  }
+
+  registerDeviceContext(id: SpectodaTypes.ID): boolean {
+    return this.spectoda_js.registerDeviceContext(id);
   }
 
   // ====================================================================================================

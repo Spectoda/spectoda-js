@@ -2824,12 +2824,20 @@ export class Spectoda {
     return this.runtime.execute(command_bytes, undefined);
   }
 
+  getEventStates(event_state_label: SpectodaTypes.Label, event_state_ids: SpectodaTypes.IDs) {
+    return this.runtime.getEventStates(event_state_label, event_state_ids);
+  }
+
   getEventState(event_state_label: SpectodaTypes.Label, event_state_id: SpectodaTypes.ID) {
     return this.runtime.getEventState(event_state_label, event_state_id);
   }
 
   getDateTime() {
     return this.runtime.getDateTime();
+  }
+
+  registerDeviceContexts(ids: SpectodaTypes.IDs) {
+    return this.runtime.registerDeviceContexts(ids);
   }
 
   registerDeviceContext(id: SpectodaTypes.ID) {
