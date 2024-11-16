@@ -1130,127 +1130,15 @@ export class Spectoda {
 
   /**
    * ! Useful
-   * Emit a null event
-   *
-   * TODO change the function to emitEvent(label, value, ids)
+   * Emits Spectoda Event with null value.
    */
   emitEvent(event_label: SpectodaTypes.Label, device_ids: SpectodaTypes.IDs = 255, force_delivery: boolean = true) {
     logging.verbose(`emitEvent(event_label=${event_label},device_ids=${device_ids},force_delivery=${force_delivery})`);
 
-    const func = (id: number) => {
-      const payload: number[] = [COMMAND_FLAGS.FLAG_EMIT_NULL_EVENT, ...labelToBytes(event_label), ...numberToBytes(this.runtime.clock.millis() + 10, 6), ...numberToBytes(id, 1)];
-      return this.runtime.execute(payload, "E" + event_label + id);
-    };
-
-    if (typeof device_ids === "object") {
-      let promises = device_ids.map(func);
-      return Promise.all(promises);
-    } else {
-      return func(device_ids);
-    }
-  }
-
-  // TODO transform emitEvent to this new name emitNullEvent(label, ids)
-  emitNullEvent = this.emitEvent;
-
-  /**
-   * ! Useful
-   * E.g. event "time" to 1000
-   * value range is (-86400000, 86400000)
-   */
-  emitTimestampEvent(event_label: SpectodaTypes.Label, event_value: SpectodaTypes.Timestamp, device_ids: SpectodaTypes.IDs = 255) {
-    logging.verbose(`emitTimestampEvent(label=${event_label},value=${event_value},id=${device_ids})`);
-
-    if (event_value > 86400000) {
-      logging.error("Invalid event value");
-      event_value = 86400000;
-    }
-
-    if (event_value < -86400000) {
-      logging.error("Invalid event value");
-      event_value = -86400000;
-    }
-
     const func = (id: SpectodaTypes.ID) => {
-      const payload = [COMMAND_FLAGS.FLAG_EMIT_TIMESTAMP_EVENT, ...numberToBytes(event_value, 4), ...labelToBytes(event_label), ...numberToBytes(this.runtime.clock.millis() + 10, 6), ...numberToBytes(id, 1)];
-      return this.runtime.execute(payload, "E" + event_label + id);
-    };
-
-    if (typeof device_ids === "object") {
-      let promises = device_ids.map(func);
-      return Promise.all(promises);
-    } else {
-      return func(device_ids);
-    }
-  }
-
-  /**
-   * E.g. event "color" to value "#00aaff"
-   *
-   * @param {string} event_label
-   * @param {string} event_value
-   * @param {number[] | number} device_ids
-   * @param {boolean} force_delivery
-   */
-  emitColorEvent(event_label: SpectodaTypes.Label, event_value: SpectodaTypes.Color, device_ids: SpectodaTypes.IDs = 255) {
-    logging.verbose(`emitColorEvent(label=${event_label},value=${event_value},id=${device_ids})`);
-
-    event_value = cssColorToHex(event_value);
-
-    if (!event_value || !event_value.match(/#[\dabcdefABCDEF]{6}/g)) {
-      logging.error("Invalid event value. event_value=", event_value);
-      event_value = "#000000";
-    }
-
-    const func = (id: SpectodaTypes.ID) => {
-      const payload = [COMMAND_FLAGS.FLAG_EMIT_COLOR_EVENT, ...colorToBytes(event_value), ...labelToBytes(event_label), ...numberToBytes(this.runtime.clock.millis() + 10, 6), ...numberToBytes(id, 1)];
-      return this.runtime.execute(payload, "E" + event_label + id);
-    };
-
-    if (typeof device_ids === "object") {
-      let promises = device_ids.map(func);
-      return Promise.all(promises);
-    } else {
-      return func(device_ids);
-    }
-  }
-
-  /**
-   * E.g. event "brigh" to value 100.
-   * value range is (-100,100)
-   *
-   * @param {string} event_label
-   * @param {number} event_value
-   * @param {number[] | number} device_ids
-   * @param {boolean} force_delivery
-   */
-  emitPercentageEvent(event_label: SpectodaTypes.Label, event_value: SpectodaTypes.Percentage, device_ids: SpectodaTypes.IDs = 255) {
-    logging.verbose(`emitPercentageEvent(label=${event_label},value=${event_value},id=${device_ids})`);
-
-    if (event_value > 100.0) {
-      logging.error("Invalid event value");
-      event_value = 100.0;
-    }
-
-    if (event_value < -100.0) {
-      logging.error("Invalid event value");
-      event_value = -100.0;
-    }
-
-    // const func = id => {
-    //   const payload = [COMMAND_FLAGS.FLAG_EMIT_PERCENTAGE_EVENT, ...percentageToBytes(event_value), ...labelToBytes(event_label), ...numberToBytes(this.runtime.clock.millis() + 10, 6), numberToBytes(id, 1)];
-    //   return this.runtime.execute(payload, force_delivery ? null : "E" + event_label + id);
-    // };
-
-    // if (typeof device_ids === "object") {
-    //   let promises = device_ids.map(func);
-    //   return Promise.all(promises);
-    // } else {
-    //   return func(device_ids);
-    // }
-
-    const func = (id: SpectodaTypes.ID) => {
-      this.runtime.spectoda_js.emitPercentageEvent(event_label, event_value, id);
+      if (!this.runtime.spectoda_js.emitNull(event_label, id)) {
+        return Promise.reject("EventEmitFailed");
+      }
       return Promise.resolve();
     };
 
@@ -1263,11 +1151,131 @@ export class Spectoda {
   }
 
   /**
-   * E.g. event "anima" to value "a_001"
-   *
+   * @deprecated Use emitEvent() instead to match the function names with BerryLang codebase
    */
-  emitLabelEvent(event_label: SpectodaTypes.Label, event_value: SpectodaTypes.Label, device_ids: SpectodaTypes.IDs = 255) {
-    logging.verbose(`emitLabelEvent(label=${event_label},value=${event_value},id=${device_ids})`);
+  emitNullEvent = this.emitEvent;
+
+  /**
+   * @deprecated Use emitEvent() instead to match the function names with BerryLang codebase
+   */
+  emitNull = this.emitEvent;
+
+  /**
+   * ! Useful
+   * Emits Spectoda Event with timestamp value.
+   * Timestamp value range is (-86400000, 86400000)
+   */
+  emitTimestamp(event_label: SpectodaTypes.Label, event_value: SpectodaTypes.Timestamp, device_ids: SpectodaTypes.IDs = 255) {
+    logging.verbose(`emitTimestamp(label=${event_label},value=${event_value},id=${device_ids})`);
+
+    if (event_value > 86400000) {
+      logging.error("Invalid event value");
+      event_value = 86400000;
+    }
+
+    if (event_value < -86400000) {
+      logging.error("Invalid event value");
+      event_value = -86400000;
+    }
+
+    const func = (id: SpectodaTypes.ID) => {
+      if (!this.runtime.spectoda_js.emitTimestamp(event_label, event_value, id)) {
+        return Promise.reject("EventEmitFailed");
+      }
+      return Promise.resolve();
+    };
+
+    if (typeof device_ids === "object") {
+      let promises = device_ids.map(func);
+      return Promise.all(promises);
+    } else {
+      return func(device_ids);
+    }
+  }
+
+  /**
+   * @deprecated Use emitTimestamp() instead to match the function names with BerryLang codebase
+   */
+  emitTimestampEvent = this.emitTimestamp;
+
+  /**
+   * ! Useful
+   * Emits Spectoda Event with color value.
+   * Color value must be a string in hex format with or without "#" prefix.
+   */
+  emitColor(event_label: SpectodaTypes.Label, event_value: SpectodaTypes.Color, device_ids: SpectodaTypes.IDs = 255) {
+    logging.verbose(`emitColor(label=${event_label},value=${event_value},id=${device_ids})`);
+
+    event_value = cssColorToHex(event_value);
+
+    if (!event_value || !event_value.match(/#?[\dabcdefABCDEF]{6}/g)) {
+      logging.error("Invalid event value. event_value=", event_value);
+      event_value = "#000000";
+    }
+
+    const func = (id: SpectodaTypes.ID) => {
+      if (!this.runtime.spectoda_js.emitColor(event_label, event_value, id)) {
+        return Promise.reject("EventEmitFailed");
+      }
+      return Promise.resolve();
+    };
+
+    if (typeof device_ids === "object") {
+      let promises = device_ids.map(func);
+      return Promise.all(promises);
+    } else {
+      return func(device_ids);
+    }
+  }
+
+  /**
+   * @deprecated Use emitColor() instead to match the function names with BerryLang codebase
+   */
+  emitColorEvent = this.emitColor;
+
+  /**
+   * ! Useful
+   * Emits Spectoda Event with percentage value
+   * value range is (-100,100)
+   */
+  emitPercentage(event_label: SpectodaTypes.Label, event_value: SpectodaTypes.Percentage, device_ids: SpectodaTypes.IDs = 255) {
+    logging.verbose(`emitPercentage(label=${event_label},value=${event_value},id=${device_ids})`);
+
+    if (event_value > 100.0) {
+      logging.error("Invalid event value");
+      event_value = 100.0;
+    }
+
+    if (event_value < -100.0) {
+      logging.error("Invalid event value");
+      event_value = -100.0;
+    }
+
+    const func = (id: SpectodaTypes.ID) => {
+      if (!this.runtime.spectoda_js.emitPercentage(event_label, event_value, id)) {
+        return Promise.reject("EventEmitFailed");
+      }
+      return Promise.resolve();
+    };
+
+    if (typeof device_ids === "object") {
+      let promises = device_ids.map(func);
+      return Promise.all(promises);
+    } else {
+      return func(device_ids);
+    }
+  }
+
+  /**
+   * @deprecated Use emitPercentage() instead to match the function names with BerryLang codebase
+   */
+  emitPercentageEvent = this.emitPercentage;
+
+  /**
+   * E.g. event "anima" to value "a_001"
+   */
+  emitLabel(event_label: SpectodaTypes.Label, event_value: SpectodaTypes.Label, device_ids: SpectodaTypes.IDs = 255) {
+    logging.verbose(`emitLabel(label=${event_label},value=${event_value},id=${device_ids})`);
 
     if (typeof event_value !== "string") {
       logging.error("Invalid event value");
@@ -1280,8 +1288,10 @@ export class Spectoda {
     }
 
     const func = (id: SpectodaTypes.ID) => {
-      const payload = [COMMAND_FLAGS.FLAG_EMIT_LABEL_EVENT, ...labelToBytes(event_value), ...labelToBytes(event_label), ...numberToBytes(this.runtime.clock.millis() + 10, 6), ...numberToBytes(id, 1)];
-      return this.runtime.execute(payload, "E" + event_label + id);
+      if (!this.runtime.spectoda_js.emitLabel(event_label, event_value, id)) {
+        return Promise.reject("EventEmitFailed");
+      }
+      return Promise.resolve();
     };
 
     if (typeof device_ids === "object") {
@@ -1291,6 +1301,11 @@ export class Spectoda {
       return func(device_ids);
     }
   }
+
+  /**
+   * @deprecated Use emitLabel() instead to match the function names with BerryLang codebase
+   */
+  emitLabelEvent = this.emitLabel;
 
   /**
    * Sets the timeline to the current time of the day and unpauses it.

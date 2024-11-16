@@ -4,7 +4,7 @@ import { VALUE_TYPE } from "../constants";
 import { sleep } from "../functions";
 import { logging } from "../logging";
 import { SpectodaRuntime } from "./SpectodaRuntime";
-import { Connection, IConnector_WASM, IConnector_WASMImplementation, SpectodaEvent, SpectodaWasm, Spectoda_WASM, Spectoda_WASMImplementation, Synchronization, Uint8Vector, interface_error_t } from "./SpectodaWasm";
+import { Connection, IConnector_WASM, IConnector_WASMImplementation, SpectodaEvent, SpectodaWasm, Spectoda_WASM, Spectoda_WASMImplementation, Synchronization, Uint8Vector, Value, interface_error_t } from "./SpectodaWasm";
 
 export namespace SpectodaTypes {
   export type ConnectorType = "default" | "bluetooth" | "serial" | "websockets" | "simulated" | "dummy";
@@ -721,15 +721,68 @@ export class Spectoda_JS {
     return this.#spectoda_wasm.readVariableAddress(variable_address, device_id);
   }
 
-  emitPercentageEvent(event_label: string, event_percentage_value: number, event_id: number) {
-    logging.verbose(`Spectoda_JS::emitPercentageEvent(event_label=${event_label}, event_percentage_value=${event_percentage_value}, event_id=${event_id})`);
+  emitValue(event_label: string, event_value: Value, event_id: number) {
+    logging.verbose(`Spectoda_JS::emitValue(event_label=${event_label}, event_value=${event_value}, event_id=${event_id})`);
 
     if (!this.#spectoda_wasm) {
       throw "NotConstructed";
     }
 
-    const event_value = SpectodaWasm.Value.makePercentage(event_percentage_value);
-    this.#spectoda_wasm.emitEvent(event_label, event_value, event_id, true);
+    return this.#spectoda_wasm.emitValue(event_label, event_value, event_id, true);
+  }
+
+  emitNumber(event_label: string, event_number_value: number, event_id: number) {
+    logging.verbose(`Spectoda_JS::emitNumber(event_label=${event_label}, event_number_value=${event_number_value}, event_id=${event_id})`);
+
+    return this.emitValue(event_label, SpectodaWasm.Value.makeNumber(event_number_value), event_id);
+  }
+
+  emitLabel(event_label: string, event_label_value: string, event_id: number) {
+    logging.verbose(`Spectoda_JS::emitLabel(event_label=${event_label}, event_label_value=${event_label_value}, event_id=${event_id})`);
+
+    return this.emitValue(event_label, SpectodaWasm.Value.makeLabel(event_label_value), event_id);
+  }
+
+  emitTimestamp(event_label: string, event_timestamp_value: number, event_id: number) {
+    logging.verbose(`Spectoda_JS::emitTimestamp(event_label=${event_label}, event_timestamp_value=${event_timestamp_value}, event_id=${event_id})`);
+
+    return this.emitValue(event_label, SpectodaWasm.Value.makeTimestamp(event_timestamp_value), event_id);
+  }
+
+  emitPercentage(event_label: string, event_percentage_value: number, event_id: number) {
+    logging.verbose(`Spectoda_JS::emitPercentage(event_label=${event_label}, event_percentage_value=${event_percentage_value}, event_id=${event_id})`);
+
+    return this.emitValue(event_label, SpectodaWasm.Value.makePercentage(event_percentage_value), event_id);
+  }
+
+  emitDate(event_label: string, event_date_value: string, event_id: number) {
+    logging.verbose(`Spectoda_JS::emitDate(event_label=${event_label}, event_date_value=${event_date_value}, event_id=${event_id})`);
+
+    return this.emitValue(event_label, SpectodaWasm.Value.makeDate(event_date_value), event_id);
+  }
+
+  emitColor(event_label: string, event_color_value: string, event_id: number) {
+    logging.verbose(`Spectoda_JS::emitColor(event_label=${event_label}, event_color_value=${event_color_value}, event_id=${event_id})`);
+
+    return this.emitValue(event_label, SpectodaWasm.Value.makeColor(event_color_value), event_id);
+  }
+
+  emitPixels(event_label: string, event_pixels_value: number, event_id: number) {
+    logging.verbose(`Spectoda_JS::emitPixels(event_label=${event_label}, event_pixels_value=${event_pixels_value}, event_id=${event_id})`);
+
+    return this.emitValue(event_label, SpectodaWasm.Value.makePixels(event_pixels_value), event_id);
+  }
+
+  emitBoolean(event_label: string, event_boolean_value: boolean, event_id: number) {
+    logging.verbose(`Spectoda_JS::emitBoolean(event_label=${event_label}, event_boolean_value=${event_boolean_value}, event_id=${event_id})`);
+
+    return this.emitValue(event_label, SpectodaWasm.Value.makeBoolean(event_boolean_value), event_id);
+  }
+
+  emitNull(event_label: string, event_id: number) {
+    logging.verbose(`Spectoda_JS::emitNull(event_label=${event_label}, event_id=${event_id})`);
+
+    return this.emitValue(event_label, SpectodaWasm.Value.makeNull(), event_id);
   }
 
   eraseHistory() {

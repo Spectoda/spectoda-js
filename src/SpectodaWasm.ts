@@ -2,8 +2,9 @@
 
 import { logging } from "../logging";
 
-const WASM_VERSION = "DEBUG_DEV_0.12.0_20241113";
+const WASM_VERSION = "DEBUG_DEV_0.12.0_20241115";
 
+/// === auto-generated from Emscripten build process === ///
 /// ========== DEBUG_DEV_0.12.0_20241113.d.ts ========== ///
 
 export interface interface_error_tValue<T extends number> {
@@ -37,9 +38,34 @@ export interface Connection {
 }
 
 export interface Value {
+  setNull(): void;
+  setUndefined(): void;
+  isNumber(): boolean;
+  isLabel(): boolean;
+  isTimestamp(): boolean;
   isPercentage(): boolean;
+  isDate(): boolean;
+  isColor(): boolean;
+  isPixels(): boolean;
+  isBoolean(): boolean;
+  isNull(): boolean;
+  isUndefined(): boolean;
+  setBoolean(_0: boolean): void;
+  getBoolean(): boolean;
+  setNumber(_0: number): void;
+  setTimestamp(_0: number): void;
+  setPixels(_0: number): void;
+  getNumber(): number;
+  getTimestamp(): number;
+  getPixels(): number;
   setPercentage(_0: number): void;
-  asPercentage(): number;
+  getPercentage(): number;
+  setLabel(_0: ArrayBuffer | Uint8Array | Uint8ClampedArray | Int8Array | string): void;
+  setDate(_0: ArrayBuffer | Uint8Array | Uint8ClampedArray | Int8Array | string): void;
+  setColor(_0: ArrayBuffer | Uint8Array | Uint8ClampedArray | Int8Array | string): void;
+  getLabel(): string;
+  getDate(): string;
+  getColor(): string;
   delete(): void;
 }
 
@@ -111,7 +137,7 @@ export interface Spectoda_WASM {
   getLabel(): string;
   writeIO(_0: ArrayBuffer | Uint8Array | Uint8ClampedArray | Int8Array | string, _1: number, _2: Value): boolean;
   readIO(_0: ArrayBuffer | Uint8Array | Uint8ClampedArray | Int8Array | string, _1: number, _2: Value): boolean;
-  emitEvent(_0: ArrayBuffer | Uint8Array | Uint8ClampedArray | Int8Array | string, _1: Value, _2: number, _3: boolean): void;
+  emitValue(_0: ArrayBuffer | Uint8Array | Uint8ClampedArray | Int8Array | string, _1: Value, _2: number, _3: boolean): boolean;
   _onEvents(_0: any): boolean;
   _onEventStateUpdates(_0: any): boolean;
   _onRequest(_0: number, _1: Uint8Vector, _2: any): boolean;
@@ -141,9 +167,18 @@ export interface MainModule {
     CONNECTOR_MAX: connector_type_tValue<7>;
   };
   connection_rssi_t: { RSSI_MAX: connection_rssi_tValue<127>; RSSI_MIN: connection_rssi_tValue<-128> };
-  Connection: { make(_0: ArrayBuffer | Uint8Array | Uint8ClampedArray | Int8Array | string, _1: connector_type_t, _2: connection_rssi_t): Connection };
-  Value: { makePercentage(_0: number): Value };
-  Synchronization: { make(_0: number, _1: ArrayBuffer | Uint8Array | Uint8ClampedArray | Int8Array | string, _2: number, _3: number, _4: number, _5: number, _6: number): Synchronization; makeFromUint8Array(_0: any): Synchronization };
+  Value: {
+    makeNumber(_0: number): any;
+    makeLabel(_0: ArrayBuffer | Uint8Array | Uint8ClampedArray | Int8Array | string): any;
+    makeTimestamp(_0: number): any;
+    makePercentage(_0: number): any;
+    makeDate(_0: ArrayBuffer | Uint8Array | Uint8ClampedArray | Int8Array | string): any;
+    makeColor(_0: ArrayBuffer | Uint8Array | Uint8ClampedArray | Int8Array | string): any;
+    makePixels(_0: number): any;
+    makeBoolean(_0: boolean): any;
+    makeNull(): any;
+    makeUndefined(): any;
+  };
   Uint8Vector: { new (): Uint8Vector };
   IConnector_WASM: { implement(_0: any): ImplementedIConnector_WASM; extend(_0: ArrayBuffer | Uint8Array | Uint8ClampedArray | Int8Array | string, _1: any): any };
   ImplementedIConnector_WASM: {};
