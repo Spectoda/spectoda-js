@@ -1818,11 +1818,9 @@ export class Spectoda {
 
       logging.info(`clock_timestamp=${clock_timestamp}, timeline_timestamp=${timeline_timestamp}, timeline_paused=${timeline_paused}, timeline_date=${timeline_date}`);
 
-      if (timeline_paused) {
-        this.syncTimeline(timeline_timestamp, true, timeline_date);
-      } else {
-        this.syncTimeline(timeline_timestamp + (this.runtime.clock.millis() - clock_timestamp), false, timeline_date);
-      }
+      const flags = timeline_paused ? 0b00010000 : 0b00000000; // flags: [reserved,reserved,reserved,timeline_paused,reserved,reserved,reserved,reserved]
+      const payload = [COMMAND_FLAGS.FLAG_TIMELINE_WRITE, ...numberToBytes(clock_timestamp, 6), ...numberToBytes(timeline_timestamp, 4), flags, ...numberToBytes(timeline_date_number, 4)];
+      return this.runtime.execute(payload, "TMLN");
     });
   }
 
