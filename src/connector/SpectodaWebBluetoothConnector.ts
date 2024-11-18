@@ -960,8 +960,12 @@ export class SpectodaWebBluetoothConnector {
       } catch (error: any) {
         logging.error(error);
 
-        logging.info(this.#webBTDevice);
+        logging.debug(this.#webBTDevice);
         this.#webBTDevice?.gatt?.disconnect();
+
+        if (error.toString().includes("Bluetooth Device is no longer in range")) {
+          throw "ConnectionFailed";
+        }
 
         // If the device is far away, sometimes this "NetworkError" happens
         if (error.name === "NetworkError") {
