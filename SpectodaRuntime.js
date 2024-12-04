@@ -425,6 +425,10 @@ export class SpectodaRuntime {
     let choosen_connector = undefined;
 
     if (desired_connector == "default" || desired_connector == "automatic") {
+      console.log({
+        detectSpectodaConnect: detectSpectodaConnect(),
+      });
+
       if (detectSpectodaConnect()) {
         desired_connector = "serial";
       } else {
@@ -440,6 +444,19 @@ export class SpectodaRuntime {
       } else if (detectNode()) {
         choosen_connector = "nodebluetooth";
       } else {
+        console.log({
+          detectSpectodaConnect: detectSpectodaConnect(),
+          firstIf: {
+            detectAndroid: detectAndroid(),
+            detectChrome: detectChrome(),
+            detectMacintosh: detectMacintosh(),
+            detectWindows: detectWindows(),
+            detectLinux: detectLinux(),
+          },
+          secondIf: {
+            detectNode: detectNode(),
+          },
+        });
         throw "UnsupportedConnectorPlatform";
       }
     }
@@ -450,6 +467,15 @@ export class SpectodaRuntime {
       } else if ((detectMacintosh() && detectChrome()) || (detectWindows() && detectChrome()) || (detectLinux() && detectChrome())) {
         choosen_connector = "webserial";
       } else {
+        console.log({
+          detectNode: detectNode(),
+          firstIf: {
+            detectMacintosh: detectMacintosh(),
+            detectChrome: detectChrome(),
+            detectWindows: detectWindows(),
+            detectLinux: detectLinux(),
+          },
+        });
         throw "UnsupportedConnectorPlatform";
       }
     }
