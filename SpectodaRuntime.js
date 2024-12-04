@@ -5,7 +5,22 @@ import { TimeTrack } from "./TimeTrack";
 import "./TnglReader";
 import { TnglReader } from "./TnglReader";
 import "./TnglWriter";
-import { createNanoEventsWithWrappedEmit, detectAndroid, detectChrome, detectLinux, detectMacintosh, detectNode, detectSpectodaConnect, detectWindows, emitHandler, mapValue, rgbToHex, sleep, uint8ArrayToHexString } from "./functions";
+import {
+  createNanoEventsWithWrappedEmit,
+  detectAndroid,
+  detectChrome,
+  detectGateway,
+  detectLinux,
+  detectMacintosh,
+  detectNode,
+  detectSpectodaConnect,
+  detectWindows,
+  emitHandler,
+  mapValue,
+  rgbToHex,
+  sleep,
+  uint8ArrayToHexString,
+} from "./functions";
 import { logging } from "./logging";
 import { SpectodaWebSerialConnector } from "./src/connector/SpectodaWebSerialConnector";
 
@@ -425,11 +440,7 @@ export class SpectodaRuntime {
     let choosen_connector = undefined;
 
     if (desired_connector == "default" || desired_connector == "automatic") {
-      console.log({
-        detectSpectodaConnect: detectSpectodaConnect(),
-      });
-
-      if (detectSpectodaConnect()) {
+      if (detectGateway()) {
         desired_connector = "serial";
       } else {
         desired_connector = "bluetooth";
@@ -444,19 +455,6 @@ export class SpectodaRuntime {
       } else if (detectNode()) {
         choosen_connector = "nodebluetooth";
       } else {
-        console.log({
-          detectSpectodaConnect: detectSpectodaConnect(),
-          firstIf: {
-            detectAndroid: detectAndroid(),
-            detectChrome: detectChrome(),
-            detectMacintosh: detectMacintosh(),
-            detectWindows: detectWindows(),
-            detectLinux: detectLinux(),
-          },
-          secondIf: {
-            detectNode: detectNode(),
-          },
-        });
         throw "UnsupportedConnectorPlatform";
       }
     }
@@ -467,15 +465,6 @@ export class SpectodaRuntime {
       } else if ((detectMacintosh() && detectChrome()) || (detectWindows() && detectChrome()) || (detectLinux() && detectChrome())) {
         choosen_connector = "webserial";
       } else {
-        console.log({
-          detectNode: detectNode(),
-          firstIf: {
-            detectMacintosh: detectMacintosh(),
-            detectChrome: detectChrome(),
-            detectWindows: detectWindows(),
-            detectLinux: detectLinux(),
-          },
-        });
         throw "UnsupportedConnectorPlatform";
       }
     }

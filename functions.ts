@@ -258,6 +258,10 @@ export function detectSafari() {
   return safariDetected && !spectodaConnectDetected;
 }
 
+export function detectGateway() {
+  return detectNode() && detectLinux();
+}
+
 //////////////////////////////////////////////////////
 
 export function computeTnglFingerprint(tngl_bytes: Uint8Array | ArrayBuffer, tngl_label = "fingerprint") {
