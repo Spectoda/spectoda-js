@@ -7,7 +7,8 @@ import { detectAndroid, hexStringToUint8Array, numberToBytes, sleep, toBytes, ui
 import { logging } from "../../logging";
 import { TimeTrack } from "../../TimeTrack.js";
 import { TnglReader } from "../../TnglReader";
-import { COMMAND_FLAGS, DEFAULT_TIMEOUT, SpectodaTypes } from "../Spectoda_JS";
+import { COMMAND_FLAGS, DEFAULT_TIMEOUT } from "../Spectoda_JS";
+import { SpectodaTypes } from "../types";
 import { SpectodaRuntime } from "../SpectodaRuntime";
 import { Connection, SpectodaWasm, Synchronization } from "../SpectodaWasm";
 

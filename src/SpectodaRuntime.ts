@@ -23,7 +23,8 @@ import { SpectodaWebSerialConnector } from "./connector/SpectodaWebSerialConnect
 import { TimeTrack } from "../TimeTrack";
 import { PreviewController } from "./PreviewController";
 import { Connection, SpectodaWasm, Synchronization } from "./SpectodaWasm";
-import { APP_MAC_ADDRESS, COMMAND_FLAGS, Spectoda_JS, DEFAULT_TIMEOUT, SpectodaTypes } from "./Spectoda_JS";
+import { APP_MAC_ADDRESS, COMMAND_FLAGS, Spectoda_JS, DEFAULT_TIMEOUT } from "./Spectoda_JS";
+import { SpectodaTypes } from "./types";
 import { SpectodaConnectConnector } from "./connector/SpectodaConnectConnector";
 
 import { Spectoda } from "../Spectoda";

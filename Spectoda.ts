@@ -7,7 +7,8 @@ import { colorToBytes, cssColorToHex, detectNode, detectSpectodaConnect, hexStri
 
 import { logging } from "./logging";
 import { SpectodaWasm } from "./src/SpectodaWasm";
-import { COMMAND_FLAGS, DEFAULT_TIMEOUT, TNGL_SIZE_CONSIDERED_BIG, SpectodaTypes } from "./src/Spectoda_JS";
+import { COMMAND_FLAGS, DEFAULT_TIMEOUT, TNGL_SIZE_CONSIDERED_BIG } from "./src/Spectoda_JS";
+import { SpectodaTypes } from "./src/types";
 
 import { io } from "socket.io-client";
 import customParser from "socket.io-msgpack-parser";

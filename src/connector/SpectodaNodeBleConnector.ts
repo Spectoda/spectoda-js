@@ -4,7 +4,8 @@ import { detectGW, numberToBytes, sleep, toBytes } from "../../functions";
 import { logging } from "../../logging";
 import { TimeTrack } from "../../TimeTrack";
 import { TnglReader } from "../../TnglReader";
-import { COMMAND_FLAGS, DEFAULT_TIMEOUT, SpectodaTypes } from "../Spectoda_JS";
+import { COMMAND_FLAGS, DEFAULT_TIMEOUT } from "../Spectoda_JS";
+import { SpectodaTypes } from "../types";
 import { SpectodaRuntime } from "../SpectodaRuntime";
 import { Connection, SpectodaWasm, Synchronization } from "../SpectodaWasm";
 
