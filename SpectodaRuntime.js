@@ -1,7 +1,6 @@
 import { FlutterConnector } from "./FlutterConnector";
 import { SpectodaDummyConnector } from "./SpectodaDummyConnector";
 import { SpectodaWebBluetoothConnector } from "./SpectodaWebBluetoothConnector";
-import { SpectodaWebSerialConnector } from "./src/connector/SpectodaWebSerialConnector";
 import { TimeTrack } from "./TimeTrack";
 import "./TnglReader";
 import { TnglReader } from "./TnglReader";
@@ -10,7 +9,7 @@ import {
   createNanoEventsWithWrappedEmit,
   detectAndroid,
   detectChrome,
-  detectIPhone,
+  detectGateway,
   detectLinux,
   detectMacintosh,
   detectNode,
@@ -23,6 +22,7 @@ import {
   uint8ArrayToHexString,
 } from "./functions";
 import { logging } from "./logging";
+import { SpectodaWebSerialConnector } from "./src/connector/SpectodaWebSerialConnector";
 
 export const NULL_VALUE = null;
 
@@ -435,10 +435,12 @@ export class SpectodaRuntime {
   assignConnector(desired_connector = "default") {
     logging.verbose(`assignConnector(desired_connector=${desired_connector})`);
 
+    console.log("assignConnector", desired_connector);
+
     let choosen_connector = undefined;
 
     if (desired_connector == "default" || desired_connector == "automatic") {
-      if (detectSpectodaConnect()) {
+      if (detectGateway()) {
         desired_connector = "serial";
       } else {
         desired_connector = "bluetooth";
