@@ -1987,7 +1987,7 @@ export class Spectoda {
     logging.debug("> Getting TNGL fingerprint...");
 
     const request_uuid = this.#getUUID();
-    const bytes = [COMMAND_FLAGS.FLAG_TNGL_FINGERPRINT_REQUEST, ...numberToBytes(request_uuid, 4), 0];
+    const bytes = [COMMAND_FLAGS.FLAG_TNGL_FINGERPRINT_REQUEST, ...numberToBytes(request_uuid, 4)];
 
     return this.runtime.request(bytes, true).then(response => {
       if (response === null) {
