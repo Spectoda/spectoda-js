@@ -8,11 +8,6 @@ type PeerEvents = { name: "peer_connected"; props: [mac: string] } | { name: "pe
 
 type WebsocketEvents = { name: "connecting-websockets" } | { name: "connected-websockets" } | { name: "disconnecting-websockets" } | { name: "disconnected-websockets" };
 
-type WasmEvents =
-  | { name: "wasm_clock"; props: [timestamp: number] }
-  | { name: "wasm_execute"; props: [command: any] } // todo @immakermatty add types
-  | { name: "wasm_request" }; // todo @immakermatty add types
-
 type EventEvents = { name: "emittedevents"; props: [events: SpectodaEvent[]] } | { name: "eventstateupdates"; props: [events: SpectodaEvent[]] };
 
 type OTAStatus = "begin" | "success" | "fail";
@@ -20,7 +15,7 @@ type OTAEvents = { name: "ota_status"; props: [status: OTAStatus] } | { name: "o
 
 type TnglEvent = { name: "tngl_update"; props: { tngl_bytes: TnglBytes; used_ids: UsedIds } };
 
-type SpectodaEvents = ConnectionEvents | PeerEvents | WebsocketEvents | WasmEvents | EventEvents | OTAEvents | TnglEvent;
+type SpectodaEvents = ConnectionEvents | PeerEvents | WebsocketEvents | EventEvents | OTAEvents | TnglEvent;
 
 export type SpectodaEventsType = SpectodaEvents["name"];
 
