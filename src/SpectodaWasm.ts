@@ -2,7 +2,7 @@
 
 import { logging } from "../logging";
 
-const WASM_VERSION = "DEBUG_DEV_0.12.1_20241117";
+const WASM_VERSION = "DEBUG_DEV_0.12.2_20241206";
 
 /// === auto-generated from Emscripten build process === ///
 /// ========== DEBUG_DEV_0.12.0_20241116.d.ts ========== ///
