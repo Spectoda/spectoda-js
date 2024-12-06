@@ -855,16 +855,14 @@ export class Spectoda {
      * @returns {string} - The minified BERRY code.
      */
     function minifyBerryCode(berryCode: string): string {
-      // Step 1: Remove all BERRY-specific comments (lines starting with #)
-      const berryCommentRegex = /^\s*#.*$/gm;
-      let minified = berryCode.replace(berryCommentRegex, "");
+      let minified = berryCode;
 
-      // Step 2: Replace specific patterns A, B, C, D
+      // Step 1: Replace specific patterns A, B, C, D
 
       // Pattern A: Hex Color Codes - /#[0-9a-f]{6}/i
       const colorRegex = /#([0-9a-f]{6})/gi;
       minified = minified.replace(colorRegex, (match, p1) => {
-        return `Value.Color("${p1}")`;
+        return `Value.Color("${p1.toLowerCase()}")`;
       });
 
       // Pattern B: Timestamps - /([+-]?(\d+\.\d+|\d+|\.\d+))(d|h|m(?!s)|s|ms|t)\b/gi
@@ -885,6 +883,17 @@ export class Spectoda {
       minified = minified.replace(percentageRegex, (match, p1) => {
         return `Value.Percentage(${parseFloat(p1)})`;
       });
+
+      // Step 2: Remove BERRY-specific comments
+      // First remove multiline comments (#- ... -#)
+      // Match #- followed by any characters (including newlines) until -#
+      // Ignore lines starting with dash/hyphen within the comment
+      const berryMultilineCommentRegex = /#-[^]*?(?<!-)-#/g;
+      minified = minified.replace(berryMultilineCommentRegex, "");
+
+      // Then remove single line comments (# ...)
+      const berryCommentRegex = /#.*$/gm;
+      minified = minified.replace(berryCommentRegex, "");
 
       // Step 3: Remove leading and trailing whitespace from each line
       minified = minified
