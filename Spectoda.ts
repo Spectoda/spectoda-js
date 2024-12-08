@@ -3,7 +3,7 @@ import { TimeTrack } from "./TimeTrack";
 import "./TnglReader";
 import { TnglReader } from "./TnglReader";
 import "./TnglWriter";
-import { colorToBytes, cssColorToHex, detectNode, detectSpectodaConnect, hexStringToUint8Array, labelToBytes, numberToBytes, sleep, strMacToBytes, stringToBytes, uint8ArrayToHexString, fetchFirmware } from "./functions";
+import { cssColorToHex, detectNode, detectSpectodaConnect, fetchFirmware, hexStringToUint8Array, numberToBytes, sleep, strMacToBytes, stringToBytes, uint8ArrayToHexString } from "./functions";
 
 import { logging } from "./logging";
 import { SpectodaWasm } from "./src/SpectodaWasm";
@@ -18,9 +18,7 @@ import "./TnglWriter";
 import { VALUE_LIMITS, VALUE_TYPE } from "./constants";
 import { SpectodaRuntime, allEventsEmitter } from "./src/SpectodaRuntime";
 
-import { sendTnglToApi, fetchTnglFromApiById } from "./tnglapi";
-import { Color } from "three";
-import { Socket } from "./lib/socketio";
+import { fetchTnglFromApiById, sendTnglToApi } from "./tnglapi";
 
 /**
  * ----- INTRODUCTION ------
@@ -344,6 +342,8 @@ export class Spectoda {
    * Alias for assignConnector
    * Assigns with which "connector" you want to `connect`. E.g. "webbluetooth", "serial", "websockets", "simulated".
    * The name `connector` legacy term, but we don't have a better name for it yer.
+   * TODO: @immakermatty remove assignConnector and make it a parameter of connect()
+   * For now this is handled via spectoda-core
    */
   setConnector(connector_type: SpectodaTypes.ConnectorType, connector_param = null) {
     return this.runtime.assignConnector(connector_type, connector_param);
@@ -351,6 +351,8 @@ export class Spectoda {
 
   /**
    * ! Useful
+   * TODO: @immakermatty remove assignConnector and make it a parameter of connect()
+   * For now this is handled via spectoda-core
    * @alias this.setConnector
    */
   assignConnector(connector_type: SpectodaTypes.ConnectorType, connector_param = null) {
@@ -770,12 +772,12 @@ export class Spectoda {
     this.#setConnectionState("disconnecting");
 
     return this.runtime.disconnect().finally(() => {
-      this.#setConnectionState("disconnected");
     });
   }
 
   /**
-   * @deprecated Use states in spectoda-core instead
+   * Used only for debugging
+   * TODO: @immakermatty rename to isConnected()
    */
   connected() {
     return this.#getConnectionState() === "connected" ? this.runtime.connected() : Promise.resolve(null);

@@ -1,6 +1,5 @@
 import { SpectodaEvent } from "../SpectodaWasm";
-import { TnglBytes } from "./primitives";
-import { UsedIds } from "./primitives";
+import { TnglBytes, UsedIds } from "./primitives";
 
 type ConnectionEvents = { name: "connected" } | { name: "disconnected" } | { name: "connecting" } | { name: "disconnecting" };
 
@@ -11,6 +10,7 @@ type WebsocketEvents = { name: "connecting-websockets" } | { name: "connected-we
 type EventEvents = { name: "emittedevents"; props: [events: SpectodaEvent[]] } | { name: "eventstateupdates"; props: [events: SpectodaEvent[]] };
 
 type OTAStatus = "begin" | "success" | "fail";
+
 type OTAEvents = { name: "ota_status"; props: [status: OTAStatus] } | { name: "ota_progress"; props: [percentageProgress: number] } | { name: "ota_timeleft"; props: [timeleftSeconds: number] };
 
 type TnglEvent = { name: "tngl_update"; props: { tngl_bytes: TnglBytes; used_ids: UsedIds } };
