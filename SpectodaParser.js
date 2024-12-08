@@ -1,5 +1,5 @@
 import { TnglWriter } from "./TnglWriter";
-import { VALUE_LIMITS } from "./constants";
+import { VALUE_LIMITS } from "./src/constants";
 import { mapValue, uint8ArrayToHexString } from "./functions";
 import { logging } from "./logging";
 
