@@ -1,7 +1,6 @@
-export * from "./constants";
+export * from "./src/constants";
 export * from "./functions";
 export * from "./logging";
 export * from "./Spectoda";
-export * from "./store/index";
+export * from "./deprecated_store/index";
 export type * from "./types";
-

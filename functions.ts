@@ -3,7 +3,7 @@
 // @ts-nocheck
 
 import { TnglCodeParser } from "./SpectodaParser";
-import { VALUE_LIMITS } from "./constants";
+import { VALUE_LIMITS } from "./src/constants";
 import { logging } from "./logging";
 
 export const createNanoEvents = () => ({

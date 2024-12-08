@@ -1,11 +1,11 @@
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 
-import { spectoda } from "@spectoda/spectoda-utils";
 import { createNanoEvents, sleep } from "../functions";
 import { logging } from "../logging";
 import { LogEntry, RingLogBuffer } from "./LogBuffer";
-import { Connection, IConnector_WASM, IConnector_WASMImplementation, interface_error_t, Spectoda_WASM, Spectoda_WASMImplementation, SpectodaWasm, Synchronization, Uint8Vector } from "./SpectodaWasm";
+import { Connection, interface_error_t, Spectoda_WASM, Spectoda_WASMImplementation, Synchronization, Uint8Vector } from "./types/wasm";
 import { IConnector_JS } from "./connector/IConnector_JS";
+import { SpectodaWasm } from "./SpectodaWasm";
 
 // TODO: Deprecate and instead use SimulatedController
 export class PreviewController {

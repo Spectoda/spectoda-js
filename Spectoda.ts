@@ -7,18 +7,21 @@ import { cssColorToHex, detectNode, detectSpectodaConnect, fetchFirmware, hexStr
 
 import { logging } from "./logging";
 import { SpectodaWasm } from "./src/SpectodaWasm";
-import { COMMAND_FLAGS, DEFAULT_TIMEOUT, TNGL_SIZE_CONSIDERED_BIG } from "./src/Spectoda_JS";
-import { SpectodaTypes } from "./src/types";
+import { COMMAND_FLAGS } from "./src/constants";
+import { DEFAULT_TIMEOUT, TNGL_SIZE_CONSIDERED_BIG } from "./src/constants";
 
 import { io } from "socket.io-client";
 import customParser from "socket.io-msgpack-parser";
 import { WEBSOCKET_URL } from "./SpectodaWebSocketsConnector";
 import "./TnglReader";
 import "./TnglWriter";
-import { VALUE_LIMITS, VALUE_TYPE } from "./constants";
+import { VALUE_LIMITS, VALUE_TYPE } from "./src/constants";
 import { SpectodaRuntime, allEventsEmitter } from "./src/SpectodaRuntime";
-
+import { ConnectorType } from "./src/types/connect";
 import { fetchTnglFromApiById, sendTnglToApi } from "./tnglapi";
+import { SpectodaTypes } from "./src/types/primitives";
+import { SpectodaJsEventName as SpectodaJsEventType, SpectodaJsEventName, SpectodaJsEventMap } from "./src/types/js-events";
+import { Event } from "./src/types/event";
 
 /**
  * ----- INTRODUCTION ------
@@ -84,7 +87,7 @@ export class Spectoda {
 
   socket: any;
 
-  constructor(connectorType: SpectodaTypes.ConnectorType = "default", reconnecting = true) {
+  constructor(connectorType: ConnectorType = "default", reconnecting = true) {
     this.#parser = new TnglCodeParser();
 
     this.#uuidCounter = Math.floor(Math.random() * 0xffffffff);
@@ -345,7 +348,7 @@ export class Spectoda {
    * TODO: @immakermatty remove assignConnector and make it a parameter of connect()
    * For now this is handled via spectoda-core
    */
-  setConnector(connector_type: SpectodaTypes.ConnectorType, connector_param = null) {
+  setConnector(connector_type: ConnectorType, connector_param = null) {
     return this.runtime.assignConnector(connector_type, connector_param);
   }
 
@@ -355,7 +358,7 @@ export class Spectoda {
    * For now this is handled via spectoda-core
    * @alias this.setConnector
    */
-  assignConnector(connector_type: SpectodaTypes.ConnectorType, connector_param = null) {
+  assignConnector(connector_type: ConnectorType, connector_param = null) {
     return this.setConnector(connector_type, connector_param);
   }
 
@@ -601,14 +604,14 @@ export class Spectoda {
    * TODO I think this should expose an "off" method to remove the listener
    * @returns {Function} unbind function
    */
-  addEventListener(event: SpectodaTypes.JsEvent, callback: Function) {
+  addEventListener(event: SpectodaJsEventName, callback: Function) {
     return this.runtime.addEventListener(event, callback);
   }
 
   /**
    * @alias this.addEventListener
    */
-  on(event: SpectodaTypes.JsEvent, callback: Function) {
+  on<K extends keyof SpectodaJsEventMap>(event: K, callback: (props: SpectodaJsEventMap[K]) => void) {
     return this.runtime.on(event, callback);
   }
 
@@ -771,8 +774,7 @@ export class Spectoda {
 
     this.#setConnectionState("disconnecting");
 
-    return this.runtime.disconnect().finally(() => {
-    });
+    return this.runtime.disconnect().finally(() => {});
   }
 
   /**
@@ -2730,7 +2732,7 @@ export class Spectoda {
   /**
    * Emits JS events like "connected" or "eventstateupdates"
    */
-  emit(event: SpectodaTypes.JsEvent, value: any) {
+  emit(event: SpectodaJsEventType, value: any) {
     this.runtime.emit(event, value);
   }
 
@@ -2870,7 +2872,7 @@ export class Spectoda {
       this.#__events[id] = {};
     }
 
-    const unregisterListenerEmittedevents = this.runtime.on("emittedevents", (events: SpectodaTypes.Event[]) => {
+    const unregisterListenerEmittedevents = this.runtime.on("emittedevents", (events: Event[]) => {
       for (const event of events) {
         if (event.id === 255) {
           for (let id = 0; id < 256; id++) {
@@ -2933,7 +2935,7 @@ export class Spectoda {
       });
   }
 
-  emitEvents(events: SpectodaTypes.Event[] | { label: SpectodaTypes.Label; type: string | SpectodaTypes.ValueType; value: null | string | number | boolean; id: SpectodaTypes.ID; timestamp: number }[]) {
+  emitEvents(events: Event[] | { label: SpectodaTypes.Label; type: string | SpectodaTypes.ValueType; value: null | string | number | boolean; id: SpectodaTypes.ID; timestamp: number }[]) {
     logging.verbose("emitEvents(events=", events, ")");
 
     logging.info("> Emitting events...");
