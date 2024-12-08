@@ -21,7 +21,8 @@ import { crc32, detectProductionBuild, numberToBytes, sleep, toBytes } from "../
 import { logging } from "../../logging";
 import { SpectodaRuntime } from "../SpectodaRuntime";
 import { Connection, SpectodaWasm, Synchronization } from "../SpectodaWasm";
-import { COMMAND_FLAGS, DEFAULT_TIMEOUT, SpectodaTypes } from "../Spectoda_JS";
+import { COMMAND_FLAGS, DEFAULT_TIMEOUT } from "../Spectoda_JS";
+import { SpectodaTypes } from "../types";
 
 // ! === TODO fix TSC ===
 
