@@ -1,26 +1,56 @@
 import { Event } from "./event";
 import { SpectodaTypes } from "./primitives";
 
-type ConnectionEvents = { name: "connected" } | { name: "disconnected" } | { name: "connecting" } | { name: "disconnecting" };
+type PropsMap = {
+  connected: undefined;
+  disconnected: undefined;
+  connecting: undefined;
+  disconnecting: undefined;
 
-type PeerEvents = { name: "peer_connected"; props: [mac: string] } | { name: "peer_disconnected"; props: [mac: string] };
+  peer_connected: [mac: string];
+  peer_disconnected: [mac: string];
 
-type WebsocketEvents = { name: "connecting-websockets" } | { name: "connected-websockets" } | { name: "disconnecting-websockets" } | { name: "disconnected-websockets" };
+  ota_status: ["begin" | "success" | "fail"];
+  ota_progress: [percentageProgress: number];
+  ota_timeleft: [timeleftSeconds: number];
 
-type EventEvents = { name: "emittedevents"; props: [events: Event[]] } | { name: "eventstateupdates"; props: [events: Event[]] };
+  tngl_update: { tngl_bytes: SpectodaTypes.TnglBytes; used_ids: SpectodaTypes.UsedIds };
 
-type OTAStatus = "begin" | "success" | "fail";
+  emitted_events: [events: Event[]];
+  event_state_updates: [events: Event[]];
 
-type OTAEvents = { name: "ota_status"; props: [status: OTAStatus] } | { name: "ota_progress"; props: [percentageProgress: number] } | { name: "ota_timeleft"; props: [timeleftSeconds: number] };
+  "#connected": undefined;
+  "#disconnected": undefined;
+  "controller-log": [log: string];
+};
 
-type TnglEvent = { name: "tngl_update"; props: { tngl_bytes: SpectodaTypes.TnglBytes; used_ids: SpectodaTypes.UsedIds } };
+export const SpectodaJsEvents: {
+  [K in Uppercase<keyof PropsMap>]: Lowercase<keyof PropsMap>;
+} = {
+  CONNECTED: "connected",
+  DISCONNECTED: "disconnected",
+  CONNECTING: "connecting",
+  DISCONNECTING: "disconnecting",
 
-type InternalEvents = { name: "#connected" } | { name: "#disconnected" } | { name: "controller-log" } | { name: "wasm_clock" } | { name: "wasm_execute" };
+  PEER_CONNECTED: "peer_connected",
+  PEER_DISCONNECTED: "peer_disconnected",
 
-export type SpectodaJsEventsWithAttributes = ConnectionEvents | PeerEvents | WebsocketEvents | EventEvents | OTAEvents | TnglEvent | InternalEvents;
+  OTA_STATUS: "ota_status",
+  OTA_PROGRESS: "ota_progress",
+  OTA_TIMELEFT: "ota_timeleft",
 
-export type SpectodaJsEventName = SpectodaJsEventsWithAttributes["name"];
+  TNGL_UPDATE: "tngl_update",
+
+  EMITTED_EVENTS: "emitted_events",
+  EVENT_STATE_UPDATES: "event_state_updates",
+
+  "#CONNECTED": "#connected",
+  "#DISCONNECTED": "#disconnected",
+  "CONTROLLER-LOG": "controller-log",
+} as const;
+
+export type SpectodaJsEventName = (typeof SpectodaJsEvents)[keyof typeof SpectodaJsEvents];
 
 export type SpectodaJsEventMap = {
-  [E in SpectodaJsEventsWithAttributes as E["name"]]: E extends { props: infer P } ? (P extends [infer Single] ? Single : P) : undefined;
+  [K in SpectodaJsEventName]: PropsMap[K];
 };

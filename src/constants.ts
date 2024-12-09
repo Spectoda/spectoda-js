@@ -24,6 +24,7 @@ export const VALUE_LIMITS = {
 
 export const BROADCAST_ID = 255;
 
+// todo Object.freeze + uppercase?
 export const connectors = {
   NONE: "none",
   DEFAULT: "default",
@@ -34,7 +35,7 @@ export const connectors = {
 
   SIMULATED: "simulated",
   DUMMY: "dummy",
-};
+} as const;
 
 /** Default MAC address for the app */
 export const APP_MAC_ADDRESS = "00:00:12:34:56:78";
