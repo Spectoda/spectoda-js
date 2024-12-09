@@ -604,7 +604,7 @@ export class Spectoda {
    * TODO I think this should expose an "off" method to remove the listener
    * @returns {Function} unbind function
    */
-  addEventListener(event: SpectodaJsEventName, callback: Function) {
+  addEventListener<K extends keyof SpectodaJsEventMap>(event: K, callback: (props: SpectodaJsEventMap[K]) => void) {
     return this.runtime.addEventListener(event, callback);
   }
 

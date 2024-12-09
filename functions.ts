@@ -7,14 +7,14 @@ import { VALUE_LIMITS } from "./src/constants";
 import { logging } from "./logging";
 
 export const createNanoEvents = () => ({
-  emit(event, ...args) {
+  emit<K extends keyof SpectodaJsEventMap>(event: K, ...args: SpectodaJsEventMap[K]) {
     const callbacks = this.events[event] || [];
     for (let i = 0, length = callbacks.length; i < length; i++) {
       callbacks[i](...args);
     }
   },
   events: {},
-  on(event, cb) {
+  on<K extends keyof SpectodaJsEventMap>(event: K, cb: (props: SpectodaJsEventMap[K]) => void) {
     this.events[event]?.push(cb) || (this.events[event] = [cb]);
     return () => {
       this.events[event] = this.events[event]?.filter(i => cb !== i);
@@ -23,7 +23,7 @@ export const createNanoEvents = () => ({
 });
 
 export const createNanoEventsWithWrappedEmit = emitHandler => ({
-  emit(event, ...args) {
+  emit<K extends keyof SpectodaJsEventMap>(event: K, ...args: SpectodaJsEventMap[K]) {
     emitHandler({ event, args });
 
     const callbacks = this.events[event] || [];
@@ -32,7 +32,7 @@ export const createNanoEventsWithWrappedEmit = emitHandler => ({
     }
   },
   events: {},
-  on(event, cb) {
+  on<K extends keyof SpectodaJsEventMap>(event: K, cb: (props: SpectodaJsEventMap[K]) => void) {
     this.events[event]?.push(cb) || (this.events[event] = [cb]);
     return () => {
       this.events[event] = this.events[event]?.filter(i => cb !== i);

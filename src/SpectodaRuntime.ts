@@ -37,7 +37,7 @@ import { SpectodaSimulatedConnector } from "./connector/SpectodaSimulatedConnect
 import { SpectodaTypes } from "./types/primitives";
 import { Synchronization } from "./types/wasm";
 import { Connection } from "./types/wasm";
-import { Event, EventStateValue } from "./types/event";
+import { EventStateValue } from "./types/event";
 import { SpectodaJsEventName } from "./types/js-events";
 import { ConnectorType } from "./types/connect";
 
