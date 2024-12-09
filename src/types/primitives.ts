@@ -25,30 +25,35 @@ export namespace SpectodaTypes {
 
   /**
    * Unique network identifier as a 32-character lowercase hexadecimal string.
+   *
    * Format: `"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"` (characters: `a-f`, `0-9`)
    */
   export type NetworkSignature = string;
 
   /**
    * Secure 32-character hexadecimal key for network access.
+   *
    * Format: `"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"` (characters: `a-f`, `0-9`)
    */
   export type NetworkKey = string;
 
   /**
    * PCB (Printed Circuit Board) code.
+   *
    * Range: 0 - 16535
    */
   export type PcbCode = number;
 
   /**
    * Product code for specific models.
+   *
    * Range: 0 - 16535
    */
   export type ProductCode = number;
 
   /**
    * TNGL bank identifier.
+   *
    * Range: 0 - 255
    */
   export type TnglBank = number;
@@ -59,6 +64,7 @@ export namespace SpectodaTypes {
 
   /**
    * Short label prefixed with `$`, max 5 alphanumeric chars (`[a-zA-Z0-9_]`).
+   *
    * @example $color
    */
   export type Label = string;
@@ -81,6 +87,7 @@ export namespace SpectodaTypes {
 
   /**
    * ID of an event or segment.
+   *
    * Range: 0 - 255
    */
   export type ID = number;
