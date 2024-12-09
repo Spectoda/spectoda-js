@@ -1,6 +1,6 @@
-import { connectors } from "../constants";
+import { CONNECTORS } from "../constants";
 import { SpectodaTypes } from "./primitives";
 
-export type ConnectorType = (typeof connectors)[keyof typeof connectors];
+export type ConnectorType = (typeof CONNECTORS)[keyof typeof CONNECTORS];
 
 export type ConnectorCriteria = SpectodaTypes.Criteria;

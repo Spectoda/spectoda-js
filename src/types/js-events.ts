@@ -54,3 +54,5 @@ export type SpectodaJsEventName = (typeof SpectodaJsEvents)[keyof typeof Spectod
 export type SpectodaJsEventMap = {
   [K in SpectodaJsEventName]: PropsMap[K];
 };
+
+export const SPECTODA_JS_EVENTS = Object.freeze(SpectodaJsEvents);

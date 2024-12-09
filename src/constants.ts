@@ -1,4 +1,4 @@
-export const VALUE_TYPE = {
+export const VALUE_TYPE = Object.freeze({
   NUMBER: 29,
   LABEL: 31,
   TIME: 32,
@@ -9,9 +9,9 @@ export const VALUE_TYPE = {
   BOOLEAN: 2,
   NULL: 1,
   UNDEFINED: 0,
-} as const;
+});
 
-export const VALUE_LIMITS = {
+export const VALUE_LIMITS = Object.freeze({
   NUMBER_MAX: 1000000000,
   NUMBER_MIN: -100000000000,
   TIMESTAMP_MAX: 86400000,
@@ -20,12 +20,11 @@ export const VALUE_LIMITS = {
   PERCENTAGE_100: 100000000,
   PERCENTAGE_0: 0,
   PERCENTAGE_MINUS_100: -100000000,
-} as const;
+});
 
 export const BROADCAST_ID = 255;
 
-// todo Object.freeze + uppercase?
-export const connectors = {
+export const CONNECTORS = Object.freeze({
   NONE: "none",
   DEFAULT: "default",
 
@@ -35,7 +34,7 @@ export const connectors = {
 
   SIMULATED: "simulated",
   DUMMY: "dummy",
-} as const;
+});
 
 /** Default MAC address for the app */
 export const APP_MAC_ADDRESS = "00:00:12:34:56:78";
