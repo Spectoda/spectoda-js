@@ -16,9 +16,19 @@ type PropsMap = {
 
   tngl_update: { tngl_bytes: SpectodaTypes.TnglBytes; used_ids: SpectodaTypes.UsedIds };
 
+  // todo: @immakermatty have only one name convention
   emitted_events: [events: Event[]];
+  emittedevents: [events: Event[]];
+  eventstateupdates: [events: Event[]];
   event_state_updates: [events: Event[]];
 
+  "connecting-websockets": undefined;
+  "connected-websockets": undefined;
+  "disconnecting-websockets": undefined;
+  "disconnected-websockets": undefined;
+
+  wasm_execute: [command: string];
+  wasm_clock: [clock: number];
   "#connected": undefined;
   "#disconnected": undefined;
   "controller-log": [log: string];
@@ -42,7 +52,17 @@ export const SpectodaJsEvents: {
   TNGL_UPDATE: "tngl_update",
 
   EMITTED_EVENTS: "emitted_events",
+  EMITTEDEVENTS: "emittedevents",
   EVENT_STATE_UPDATES: "event_state_updates",
+  EVENTSTATEUPDATES: "eventstateupdates",
+
+  "CONNECTING-WEBSOCKETS": "connecting-websockets",
+  "CONNECTED-WEBSOCKETS": "connected-websockets",
+  "DISCONNECTING-WEBSOCKETS": "disconnecting-websockets",
+  "DISCONNECTED-WEBSOCKETS": "disconnected-websockets",
+
+  WASM_EXECUTE: "wasm_execute",
+  WASM_CLOCK: "wasm_clock",
 
   "#CONNECTED": "#connected",
   "#DISCONNECTED": "#disconnected",
