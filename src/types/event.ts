@@ -3,13 +3,13 @@ import { SpectodaTypes } from "./primitives";
 import { VALUE_TYPE } from "../constants";
 
 type EventBase = {
-  // TODO define type
+  /** Readonly string with more information about the event value */
   debug: string;
 
   label: SpectodaTypes.Label;
 
   type: typeof VALUE_TYPE;
-  value: any;
+  value: unknown;
 
   /** When was event emitted */
   timestamp: SpectodaTypes.Timestamp;

@@ -25,15 +25,26 @@ type PropsMap = WebsocketConnectionStateProps & {
 
   tngl_update: { tngl_bytes: SpectodaTypes.TnglBytes; used_ids: SpectodaTypes.UsedIds };
 
-  emitted_events: [events: Event[]];
-  emittedevents: [events: Event[]];
-  eventstateupdates: [events: Event[]];
-  event_state_updates: [events: Event[]];
-
-  wasm_execute: [commands: any]; // todo add type
-  wasm_clock: [clock: number];
+  // Private events
   "#connected": undefined;
   "#disconnected": undefined;
+
+  // TODO deprecate @immakermatty
+  emitted_events: [events: Event[]];
+
+  // TODO deprecate @immakermatty
+  event_state_updates: [events: Event[]];
+
+  emittedevents: [events: Event[]];
+  eventstateupdates: [events: Event[]];
+
+  // TODO deprecate @immakermatty
+  wasm_execute: [commands: any];
+
+  // TODO deprecate @immakermatty
+  wasm_clock: [clock: number];
+
+  // TODO deprecate @immakermatty
   "controller-log": [log: string];
 };
 
