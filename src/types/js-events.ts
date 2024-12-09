@@ -30,7 +30,7 @@ type PropsMap = WebsocketConnectionStateProps & {
   eventstateupdates: [events: Event[]];
   event_state_updates: [events: Event[]];
 
-  wasm_execute: [command: string];
+  wasm_execute: [commands: any]; // todo add type
   wasm_clock: [clock: number];
   "#connected": undefined;
   "#disconnected": undefined;

@@ -38,7 +38,7 @@ import { SpectodaTypes } from "./types/primitives";
 import { Synchronization } from "./types/wasm";
 import { Connection } from "./types/wasm";
 import { EventStateValue } from "./types/event";
-import { SpectodaJsEventName } from "./types/js-events";
+import { SpectodaJsEventMap, SpectodaJsEventName } from "./types/js-events";
 import { ConnectorType } from "./types/connect";
 
 // Spectoda.js -> SpectodaRuntime.js -> | SpectodaXXXConnector.js ->
@@ -502,18 +502,18 @@ export class SpectodaRuntime {
    * @returns {Function} unbind function
    */
 
-  addEventListener(event: SpectodaJsEventName, callback: Function) {
+  addEventListener<K extends keyof SpectodaJsEventMap>(event: K, callback: (props: SpectodaJsEventMap[K]) => void) {
     return this.on(event, callback);
   }
   /**
    * @alias this.addEventListener
    */
-  on(event: SpectodaJsEventName, callback: Function) {
+  on<K extends keyof SpectodaJsEventMap>(event: K, callback: (props: SpectodaJsEventMap[K]) => void) {
     return this.#eventEmitter.on(event, callback);
   }
 
-  emit(event: SpectodaJsEventName, ...arg: any) {
-    this.#eventEmitter.emit(event, ...arg);
+  emit<K extends keyof SpectodaJsEventMap>(event: K, ...args: SpectodaJsEventMap[K] extends any[] ? SpectodaJsEventMap[K] : [SpectodaJsEventMap[K]] | []) {
+    this.#eventEmitter.emit(event, ...args);
   }
 
   /**
