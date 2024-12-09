@@ -1,3 +1,4 @@
+import { WebsocketConnectionState } from "./src/types/js-events";
 import { TnglCodeParser } from "./SpectodaParser";
 import { TimeTrack } from "./TimeTrack";
 import "./TnglReader";
@@ -171,7 +172,7 @@ export class Spectoda {
     }, 10000);
   }
 
-  #setWebSocketConnectionState(websocketConnectionState: SpectodaTypes.WebsocketConnectionState) {
+  #setWebSocketConnectionState(websocketConnectionState: WebsocketConnectionState) {
     switch (websocketConnectionState) {
       case "connecting-websockets":
         if (websocketConnectionState !== this.#websocketConnectionState) {

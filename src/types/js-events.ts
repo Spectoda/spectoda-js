@@ -1,7 +1,16 @@
 import { Event } from "./event";
 import { SpectodaTypes } from "./primitives";
 
-type PropsMap = {
+type WebsocketConnectionStateProps = {
+  "connecting-websockets": undefined;
+  "connected-websockets": undefined;
+  "disconnecting-websockets": undefined;
+  "disconnected-websockets": undefined;
+};
+
+export type WebsocketConnectionState = keyof WebsocketConnectionStateProps;
+
+type PropsMap = WebsocketConnectionStateProps & {
   connected: undefined;
   disconnected: undefined;
   connecting: undefined;
@@ -16,16 +25,10 @@ type PropsMap = {
 
   tngl_update: { tngl_bytes: SpectodaTypes.TnglBytes; used_ids: SpectodaTypes.UsedIds };
 
-  // todo: @immakermatty have only one name convention
   emitted_events: [events: Event[]];
   emittedevents: [events: Event[]];
   eventstateupdates: [events: Event[]];
   event_state_updates: [events: Event[]];
-
-  "connecting-websockets": undefined;
-  "connected-websockets": undefined;
-  "disconnecting-websockets": undefined;
-  "disconnected-websockets": undefined;
 
   wasm_execute: [command: string];
   wasm_clock: [clock: number];
