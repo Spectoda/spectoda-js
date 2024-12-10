@@ -4,10 +4,11 @@ import { detectGW, numberToBytes, sleep, toBytes } from "../../functions";
 import { logging } from "../../logging";
 import { TimeTrack } from "../../TimeTrack";
 import { TnglReader } from "../../TnglReader";
-import { COMMAND_FLAGS, DEFAULT_TIMEOUT } from "../Spectoda_JS";
-import { SpectodaTypes } from "../types";
+import { COMMAND_FLAGS, DEFAULT_TIMEOUT } from "../constants";
 import { SpectodaRuntime } from "../SpectodaRuntime";
-import { Connection, SpectodaWasm, Synchronization } from "../SpectodaWasm";
+import { SpectodaWasm } from "../SpectodaWasm";
+import { SpectodaTypes } from "../types/primitives";
+import { Connection, Synchronization } from "../types/wasm";
 
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore

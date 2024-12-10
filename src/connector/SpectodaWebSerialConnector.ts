@@ -7,10 +7,11 @@ import { TnglReader } from "../../TnglReader";
 import { TnglWriter } from "../../TnglWriter";
 import { crc32, numberToBytes, sleep, toBytes } from "../../functions";
 import { logging } from "../../logging";
+import { COMMAND_FLAGS, DEFAULT_TIMEOUT } from "../constants";
 import { SpectodaRuntime } from "../SpectodaRuntime";
-import { Connection, SpectodaWasm, Synchronization } from "../SpectodaWasm";
-import { COMMAND_FLAGS, DEFAULT_TIMEOUT } from "../Spectoda_JS";
-import { SpectodaTypes } from "../types";
+import { SpectodaWasm } from "../SpectodaWasm";
+import { SpectodaTypes } from "../types/primitives";
+import { Connection, Synchronization } from "../types/wasm";
 
 // ! ======= from "@types/w3c-web-serial" =======
 

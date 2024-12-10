@@ -22,9 +22,10 @@ import { SpectodaWebSerialConnector } from "./connector/SpectodaWebSerialConnect
 // import { SpectodaConnectConnector } from "./SpectodaConnectConnector";
 import { TimeTrack } from "../TimeTrack";
 import { PreviewController } from "./PreviewController";
-import { Connection, SpectodaWasm, Synchronization } from "./SpectodaWasm";
-import { APP_MAC_ADDRESS, COMMAND_FLAGS, Spectoda_JS, DEFAULT_TIMEOUT } from "./Spectoda_JS";
-import { SpectodaTypes } from "./types";
+import { SpectodaWasm } from "./SpectodaWasm";
+import { Spectoda_JS } from "./Spectoda_JS";
+import { COMMAND_FLAGS } from "./constants";
+import { APP_MAC_ADDRESS, DEFAULT_TIMEOUT } from "./constants";
 import { SpectodaConnectConnector } from "./connector/SpectodaConnectConnector";
 
 import { Spectoda } from "../Spectoda";
@@ -33,6 +34,12 @@ import { TnglWriter } from "../TnglWriter";
 import { SpectodaNodeBluetoothConnector } from "./connector/SpectodaNodeBleConnector";
 import { SpectodaNodeSerialConnector } from "./connector/SpectodaNodeSerialConnector";
 import { SpectodaSimulatedConnector } from "./connector/SpectodaSimulatedConnector";
+import { SpectodaTypes } from "./types/primitives";
+import { Synchronization } from "./types/wasm";
+import { Connection } from "./types/wasm";
+import { EventStateValue } from "./types/event";
+import { SpectodaJsEventMap, SpectodaJsEventName } from "./types/js-events";
+import { ConnectorType } from "./types/connect";
 
 // Spectoda.js -> SpectodaRuntime.js -> | SpectodaXXXConnector.js ->
 
@@ -495,18 +502,18 @@ export class SpectodaRuntime {
    * @returns {Function} unbind function
    */
 
-  addEventListener(event: SpectodaTypes.JsEvent, callback: Function) {
+  addEventListener<K extends keyof SpectodaJsEventMap>(event: K, callback: (props: SpectodaJsEventMap[K]) => void) {
     return this.on(event, callback);
   }
   /**
    * @alias this.addEventListener
    */
-  on(event: SpectodaTypes.JsEvent, callback: Function) {
+  on<K extends keyof SpectodaJsEventMap>(event: K, callback: (props: SpectodaJsEventMap[K]) => void) {
     return this.#eventEmitter.on(event, callback);
   }
 
-  emit(event: SpectodaTypes.JsEvent, ...arg: any) {
-    this.#eventEmitter.emit(event, ...arg);
+  emit<K extends keyof SpectodaJsEventMap>(event: K, ...args: SpectodaJsEventMap[K] extends any[] ? SpectodaJsEventMap[K] : [SpectodaJsEventMap[K]] | []) {
+    this.#eventEmitter.emit(event, ...args);
   }
 
   /**
@@ -514,7 +521,7 @@ export class SpectodaRuntime {
    * @param desired_connector
    * @param connector_parameter WIP - still figuring out what is can be used for. Right now it is used for simulated connector to pass the parameters for the simulated network.
    */
-  assignConnector(desired_connector: SpectodaTypes.ConnectorType = "default", connector_parameter: any = null) {
+  assignConnector(desired_connector: ConnectorType = "default", connector_parameter: any = null) {
     logging.verbose(`assignConnector(desired_connector=${desired_connector})`);
 
     let choosen_connector = undefined;
@@ -1555,7 +1562,7 @@ export class SpectodaRuntime {
     return this.spectoda_js.getClockTimestamp();
   }
 
-  getEventStates(event_state_name: string, event_state_ids: SpectodaTypes.IDs): (SpectodaTypes.EventStateValue | undefined)[] {
+  getEventStates(event_state_name: string, event_state_ids: SpectodaTypes.IDs): (EventStateValue | undefined)[] {
     if (Array.isArray(event_state_ids)) {
       return event_state_ids.map(id => this.spectoda_js.getEventState(event_state_name, id));
     } else {
@@ -1563,7 +1570,7 @@ export class SpectodaRuntime {
     }
   }
 
-  getEventState(event_state_name: string, event_state_id: SpectodaTypes.ID): SpectodaTypes.EventStateValue | undefined {
+  getEventState(event_state_name: string, event_state_id: SpectodaTypes.ID): EventStateValue | undefined {
     return this.spectoda_js.getEventState(event_state_name, event_state_id);
   }
 

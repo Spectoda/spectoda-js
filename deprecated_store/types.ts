@@ -1,3 +1,5 @@
+/** @deprecated TODO REMOVE THIS FILE */
+
 import { z } from "zod";
 import { DeviceConnectionCriteria } from "../types";
 

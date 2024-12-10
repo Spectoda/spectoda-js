@@ -4,10 +4,11 @@ import { sleep } from "../../functions";
 import { logging } from "../../logging";
 import { TimeTrack } from "../../TimeTrack";
 import { PreviewController } from "../PreviewController";
-import { APP_MAC_ADDRESS, DEFAULT_TIMEOUT } from "../Spectoda_JS";
-import { SpectodaTypes } from "../types";
+import { APP_MAC_ADDRESS, DEFAULT_TIMEOUT } from "../constants";
 import { SpectodaRuntime } from "../SpectodaRuntime";
-import { Connection, SpectodaWasm, Synchronization, Uint8Vector } from "../SpectodaWasm";
+import { SpectodaWasm } from "../SpectodaWasm";
+import { SpectodaTypes } from "../types/primitives";
+import { Connection, Synchronization, Uint8Vector } from "../types/wasm";
 import { IConnector_JS } from "./IConnector_JS";
 
 export const SIMULATED_MAC_ADDRESS = "00:00:23:34:45:56";

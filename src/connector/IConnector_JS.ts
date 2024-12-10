@@ -1,7 +1,8 @@
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 
 import { logging } from "../../logging";
-import { IConnector_WASM, SpectodaWasm, connector_type_t } from "../SpectodaWasm";
+import { SpectodaWasm } from "../SpectodaWasm";
+import { IConnector_WASM, connector_type_t } from "../types/wasm";
 
 export class IConnector_JS {
   #instance: IConnector_WASM | undefined;

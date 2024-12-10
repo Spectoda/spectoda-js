@@ -7,10 +7,11 @@ import { detectAndroid, hexStringToUint8Array, numberToBytes, sleep, toBytes, ui
 import { logging } from "../../logging";
 import { TimeTrack } from "../../TimeTrack.js";
 import { TnglReader } from "../../TnglReader";
-import { COMMAND_FLAGS, DEFAULT_TIMEOUT } from "../Spectoda_JS";
-import { SpectodaTypes } from "../types";
+import { COMMAND_FLAGS, DEFAULT_TIMEOUT } from "../constants";
 import { SpectodaRuntime } from "../SpectodaRuntime";
-import { Connection, SpectodaWasm, Synchronization } from "../SpectodaWasm";
+import { SpectodaWasm } from "../SpectodaWasm";
+import { SpectodaTypes } from "../types/primitives";
+import { Connection, Synchronization } from "../types/wasm";
 
 // od 0.8.0 maji vsechny spectoda enabled BLE zarizeni jednotne SPECTODA_DEVICE_UUID.
 // kazdy typ (produkt) Spectoda Zarizeni ma svuj kod v manufacturer data
