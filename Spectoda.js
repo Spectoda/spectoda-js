@@ -30,6 +30,8 @@ export class Spectoda {
   #eventHistory;
 
   constructor(connectorType = "default") {
+    console.log("> LOADED SPECTODA.JS v0.9");
+
     // nextjs
     if (typeof window === "undefined") {
       return;
