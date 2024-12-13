@@ -24,7 +24,7 @@ import { SpectodaTypes } from "./src/types/primitives";
 import { SpectodaClass } from "./src/types/spectodaClass";
 import { fetchTnglFromApiById, sendTnglToApi } from "./tnglapi";
 
-const MAX_FIRMWARE_LENGTH = 10000;
+const MIN_FIRMWARE_LENGTH = 10000;
 const DEFAULT_RECONNECTION_TIME = 2500;
 const DEFAULT_RECONNECTION_INTERVAL = 10000;
 
@@ -1427,7 +1427,7 @@ export class Spectoda implements SpectodaClass {
 
     logging.debug(`> Updating Controller FW...`);
 
-    if (!firmware || firmware.length < MAX_FIRMWARE_LENGTH) {
+    if (!firmware || firmware.length < MIN_FIRMWARE_LENGTH) {
       logging.error("Invalid firmware");
       return Promise.reject("InvalidFirmware");
     }
