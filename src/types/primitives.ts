@@ -5,13 +5,13 @@ export namespace SpectodaTypes {
 
   type criteria_ble = criteria_generic;
 
-  type criteria_serial = criteria_generic & { path?: string; manufacturer?: string; serialNumber?: string; pnpId?: string; locationId?: string; productId?: string; vendorId?: string; baudrate?: number; baudRate?: number };
+  type criteria_serial = criteria_generic | { path?: string; manufacturer?: string; serialNumber?: string; pnpId?: string; locationId?: string; productId?: string; vendorId?: string; baudrate?: number; baudRate?: number };
 
   type criteria_dummy = criteria_generic;
 
   type criteria_simulated = criteria_generic;
 
-  type criteria = criteria_ble & criteria_serial & criteria_dummy & criteria_simulated;
+  type criteria = criteria_ble | criteria_serial | criteria_dummy | criteria_simulated;
 
   export type TnglBytes = Uint8Array;
 
