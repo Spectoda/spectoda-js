@@ -1,4 +1,3 @@
-import { WebsocketConnectionState } from "./src/types/js-events";
 import { TnglCodeParser } from "./SpectodaParser";
 import { TimeTrack } from "./TimeTrack";
 import "./TnglReader";
@@ -8,20 +7,26 @@ import { cssColorToHex, detectNode, detectSpectodaConnect, fetchFirmware, hexStr
 
 import { logging } from "./logging";
 import { SpectodaWasm } from "./src/SpectodaWasm";
-import { COMMAND_FLAGS, DEFAULT_TIMEOUT, TNGL_SIZE_CONSIDERED_BIG } from "./src/constants";
+import { COMMAND_FLAGS, CONNECTORS, DEFAULT_CONNECTOR, DEFAULT_TIMEOUT, NO_NETWORK_KEY, NO_NETWORK_SIGNATURE, TNGL_SIZE_CONSIDERED_BIG } from "./src/constants";
 
 import { io } from "socket.io-client";
 import customParser from "socket.io-msgpack-parser";
 import { WEBSOCKET_URL } from "./SpectodaWebSocketsConnector";
 import "./TnglReader";
 import "./TnglWriter";
-import { VALUE_LIMITS, VALUE_TYPE } from "./src/constants";
+import { ConnectionStatus } from "./deprecated_store/types";
 import { SpectodaRuntime, allEventsEmitter } from "./src/SpectodaRuntime";
-import { ConnectorType } from "./src/types/connect";
-import { fetchTnglFromApiById, sendTnglToApi } from "./tnglapi";
-import { SpectodaTypes } from "./src/types/primitives";
-import { SpectodaJsEventName as SpectodaJsEventType, SpectodaJsEventName, SpectodaJsEventMap } from "./src/types/js-events";
+import { VALUE_LIMITS, VALUE_TYPE } from "./src/constants";
+import { CONNECTION_STATUS, ConnectorType, WEBSOCKET_CONNECTION_STATE, WebsocketConnectionState } from "./src/types/connect";
 import { Event } from "./src/types/event";
+import { SpectodaJsEventMap, SpectodaJsEventName as SpectodaJsEventType } from "./src/types/js-events";
+import { SpectodaTypes } from "./src/types/primitives";
+import { SpectodaClass } from "./src/types/spectodaClass";
+import { fetchTnglFromApiById, sendTnglToApi } from "./tnglapi";
+
+const MAX_FIRMWARE_LENGTH = 10000;
+const DEFAULT_RECONNECTION_TIME = 2500;
+const DEFAULT_RECONNECTION_INTERVAL = 10000;
 
 /**
  * ----- INTRODUCTION ------
@@ -60,21 +65,21 @@ import { Event } from "./src/types/event";
 // TODO - kdyz zavolam funkci connect a uz jsem pripojeny, tak vyslu event connected, pokud si myslim ze nejsem pripojeny.
 // TODO - "watchdog timer" pro resolve/reject z TC
 
-export class Spectoda {
-  #parser;
+export class Spectoda implements SpectodaClass {
+  #parser: TnglCodeParser;
 
-  #uuidCounter;
-  #ownerSignature;
-  #ownerKey;
-  #updating;
+  #uuidCounter: number;
+  #ownerSignature: SpectodaTypes.NetworkSignature;
+  #ownerKey: SpectodaTypes.NetworkKey;
+  #updating: boolean;
 
-  #connectionState;
-  #websocketConnectionState;
+  #connectionState: ConnectionStatus;
+  #websocketConnectionState: WebsocketConnectionState;
 
   #criteria: SpectodaTypes.Criteria;
   #reconnecting: boolean;
   #autonomousReconnection: boolean;
-  #wakeLock: any;
+  #wakeLock: WakeLockSentinel | null | undefined;
   #isPrioritizedWakelock: boolean;
 
   #reconnectionIntervalHandle: any;
@@ -87,19 +92,19 @@ export class Spectoda {
 
   socket: any;
 
-  constructor(connectorType: ConnectorType = "default", reconnecting = true) {
+  constructor(connectorType: ConnectorType = DEFAULT_CONNECTOR, reconnecting = true) {
     this.#parser = new TnglCodeParser();
 
     this.#uuidCounter = Math.floor(Math.random() * 0xffffffff);
 
-    this.#ownerSignature = "00000000000000000000000000000000";
-    this.#ownerKey = "00000000000000000000000000000000";
+    this.#ownerSignature = NO_NETWORK_SIGNATURE;
+    this.#ownerKey = NO_NETWORK_KEY;
 
     this.timeline = new TimeTrack(0, true);
     this.runtime = new SpectodaRuntime(this);
     this.socket = undefined;
 
-    if (connectorType !== "none") {
+    if (connectorType !== CONNECTORS.NONE) {
       try {
         this.runtime.assignConnector(connectorType);
       } catch (e) {
@@ -110,8 +115,8 @@ export class Spectoda {
     this.#updating = false;
 
     this.#reconnecting = reconnecting ? true : false;
-    this.#connectionState = "disconnected";
-    this.#websocketConnectionState = "disconnected";
+    this.#connectionState = CONNECTION_STATUS.DISCONNECTED;
+    this.#websocketConnectionState = WEBSOCKET_CONNECTION_STATE.DISCONNECTED;
 
     this.#isPrioritizedWakelock = false;
     this.#autonomousReconnection = false;
@@ -130,13 +135,11 @@ export class Spectoda {
 
       this.#resetReconnectionInterval();
 
-      const TIME = 2500;
-
       if (this.#getConnectionState() === "connected" && this.#reconnecting) {
-        logging.debug(`Reconnecting in ${TIME}ms..`);
+        logging.debug(`Reconnecting in ${DEFAULT_RECONNECTION_TIME}ms..`);
         this.#setConnectionState("connecting");
 
-        return sleep(TIME)
+        return sleep(DEFAULT_RECONNECTION_TIME)
           .then(() => {
             return this.#connect(true);
           })
@@ -163,39 +166,39 @@ export class Spectoda {
     this.#reconnectionIntervalHandle = setInterval(() => {
       // TODO move this to runtime
       if (!this.#updating && this.runtime.connector) {
-        if (this.#getConnectionState() === "disconnected" && this.#autonomousReconnection) {
+        if (this.#getConnectionState() === CONNECTION_STATUS.DISCONNECTED && this.#autonomousReconnection) {
           return this.#connect(true).catch(error => {
             logging.warn(error);
           });
         }
       }
-    }, 10000);
+    }, DEFAULT_RECONNECTION_INTERVAL);
   }
 
   #setWebSocketConnectionState(websocketConnectionState: WebsocketConnectionState) {
     switch (websocketConnectionState) {
-      case "connecting-websockets":
+      case WEBSOCKET_CONNECTION_STATE.CONNECTING:
         if (websocketConnectionState !== this.#websocketConnectionState) {
           logging.warn("> Spectoda websockets connecting");
           this.#websocketConnectionState = websocketConnectionState;
           this.runtime.emit("connecting-websockets");
         }
         break;
-      case "connected-websockets":
+      case WEBSOCKET_CONNECTION_STATE.CONNECTED:
         if (websocketConnectionState !== this.#websocketConnectionState) {
           logging.warn("> Spectoda websockets connected");
           this.#websocketConnectionState = websocketConnectionState;
           this.runtime.emit("connected-websockets");
         }
         break;
-      case "disconnecting-websockets":
+      case WEBSOCKET_CONNECTION_STATE.DISCONNECTING:
         if (websocketConnectionState !== this.#websocketConnectionState) {
           logging.warn("> Spectoda websockets disconnecting");
           this.#websocketConnectionState = websocketConnectionState;
           this.runtime.emit("disconnecting-websockets");
         }
         break;
-      case "disconnected-websockets":
+      case WEBSOCKET_CONNECTION_STATE.DISCONNECTED:
         if (websocketConnectionState !== this.#websocketConnectionState) {
           logging.warn("> Spectoda websockets disconnected");
           this.#websocketConnectionState = websocketConnectionState;
@@ -207,9 +210,9 @@ export class Spectoda {
     }
   }
 
-  #setConnectionState(connectionState: string) {
+  #setConnectionState(connectionState: ConnectionStatus) {
     switch (connectionState) {
-      case "connecting":
+      case CONNECTION_STATUS.CONNECTING:
         if (connectionState !== this.#connectionState) {
           logging.warn("> Spectoda connecting");
           this.#connectionState = connectionState;
@@ -217,7 +220,7 @@ export class Spectoda {
           this.runtime.emit("connecting" /*{ target: this }*/);
         }
         break;
-      case "connected":
+      case CONNECTION_STATUS.CONNECTED:
         if (connectionState !== this.#connectionState) {
           logging.warn("> Spectoda connected");
           this.#connectionState = connectionState;
@@ -225,7 +228,7 @@ export class Spectoda {
           this.runtime.emit("connected" /*{ target: this }*/);
         }
         break;
-      case "disconnecting":
+      case CONNECTION_STATUS.DISCONNECTING:
         if (connectionState !== this.#connectionState) {
           logging.warn("> Spectoda disconnecting");
           this.#connectionState = connectionState;
@@ -233,7 +236,7 @@ export class Spectoda {
           this.runtime.emit("disconnecting" /*{ target: this }*/);
         }
         break;
-      case "disconnected":
+      case CONNECTION_STATUS.DISCONNECTED:
         if (connectionState !== this.#connectionState) {
           logging.warn("> Spectoda disconnected");
           this.#connectionState = connectionState;
@@ -533,24 +536,24 @@ export class Spectoda {
           const roomNumber = response?.roomNumber;
 
           if (response?.status === "success") {
-            this.#setWebSocketConnectionState("connected-websockets");
+            this.#setWebSocketConnectionState(WEBSOCKET_CONNECTION_STATE.CONNECTED);
             setConnectionSocketData();
 
             logging.debug("Remote control session joined successfully", roomNumber);
 
             resolve({ status: "success", roomNumber });
           } else {
-            this.#setWebSocketConnectionState("disconnected-websockets");
+            this.#setWebSocketConnectionState(WEBSOCKET_CONNECTION_STATE.DISCONNECTED);
             logging.debug("Remote control session join failed, does not exist");
           }
         } else if (signature) {
           // Handle signature-based logic
-          this.#setWebSocketConnectionState("connecting-websockets");
+          this.#setWebSocketConnectionState(WEBSOCKET_CONNECTION_STATE.CONNECTING);
           logging.debug("Joining network remotely", signature, key);
           await this.socket
             .emitWithAck("join", { signature, key })
             .then((e: any) => {
-              this.#setWebSocketConnectionState("connected-websockets");
+              this.#setWebSocketConnectionState(WEBSOCKET_CONNECTION_STATE.CONNECTED);
               setConnectionSocketData();
 
               logging.info("> Connected and joined network remotely");
@@ -558,7 +561,7 @@ export class Spectoda {
               resolve({ status: "success" });
             })
             .catch((e: any) => {
-              this.#setWebSocketConnectionState("disconnected-websockets");
+              this.#setWebSocketConnectionState(WEBSOCKET_CONNECTION_STATE.DISCONNECTED);
               reject(e);
             });
         }
@@ -631,7 +634,7 @@ export class Spectoda {
 
     logging.debug("> Connecting Spectoda Controller");
 
-    this.#setConnectionState("connecting");
+    this.#setConnectionState(CONNECTION_STATUS.CONNECTING);
 
     logging.debug("> Selecting controller...");
     return (autoConnect ? this.runtime.autoSelect(this.#criteria, 1000, 10000) : this.runtime.userSelect(this.#criteria))
@@ -678,14 +681,14 @@ export class Spectoda {
             if (!connected) {
               throw "ConnectionFailed";
             }
-            this.#setConnectionState("connected");
+            this.#setConnectionState(CONNECTION_STATUS.CONNECTED);
             return connectedDeviceInfo;
           });
       })
       .catch(error => {
         logging.error("Error during connect():", error);
 
-        this.#setConnectionState("disconnected");
+        this.#setConnectionState(CONNECTION_STATUS.DISCONNECTED);
 
         if (typeof error != "string") {
           throw "ConnectionFailed";
@@ -712,7 +715,7 @@ export class Spectoda {
 
     this.#autonomousReconnection = autonomousReconnection;
 
-    if (!overrideConnection && this.#getConnectionState() === "connecting") {
+    if (!overrideConnection && this.#getConnectionState() === CONNECTION_STATUS.CONNECTING) {
       return Promise.reject("ConnectingInProgress");
     }
 
@@ -767,12 +770,12 @@ export class Spectoda {
 
     logging.debug(`> Disconnecting controller...`);
 
-    if (this.#getConnectionState() === "disconnected") {
+    if (this.#getConnectionState() === CONNECTION_STATUS.DISCONNECTED) {
       logging.warn("> Controller already disconnected");
       return Promise.resolve();
     }
 
-    this.#setConnectionState("disconnecting");
+    this.#setConnectionState(CONNECTION_STATUS.DISCONNECTING);
 
     return this.runtime.disconnect().finally(() => {});
   }
@@ -782,7 +785,7 @@ export class Spectoda {
    * TODO: @immakermatty rename to isConnected()
    */
   connected() {
-    return this.#getConnectionState() === "connected" ? this.runtime.connected() : Promise.resolve(null);
+    return this.#getConnectionState() === CONNECTION_STATUS.CONNECTED ? this.runtime.connected() : Promise.resolve(null);
   }
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -1457,7 +1460,7 @@ export class Spectoda {
 
     logging.debug(`> Updating Controller FW...`);
 
-    if (!firmware || firmware.length < 10000) {
+    if (!firmware || firmware.length < MAX_FIRMWARE_LENGTH) {
       logging.error("Invalid firmware");
       return Promise.reject("InvalidFirmware");
     }
