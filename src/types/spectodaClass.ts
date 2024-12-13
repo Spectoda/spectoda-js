@@ -32,8 +32,8 @@ export interface SpectodaClass {
   getOwnerKey(): SpectodaTypes.NetworkKey;
 
   // Event handling
-  addEventListener<K extends keyof SpectodaJsEventMap>(event: K, callback: (props: SpectodaJsEventMap[K]) => void): Function;
-  on<K extends keyof SpectodaJsEventMap>(event: K, callback: (props: SpectodaJsEventMap[K]) => void): Function;
+  addEventListener<K extends keyof SpectodaJsEventMap>(event: K, callback: (props: SpectodaJsEventMap[K]) => void): () => void;
+  on<K extends keyof SpectodaJsEventMap>(event: K, callback: (props: SpectodaJsEventMap[K]) => void): () => void;
 
   // TNGL methods
   preprocessTngl(tngl_code: string): Promise<string>;
