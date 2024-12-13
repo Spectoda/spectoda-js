@@ -28,39 +28,6 @@ const MAX_FIRMWARE_LENGTH = 10000;
 const DEFAULT_RECONNECTION_TIME = 2500;
 const DEFAULT_RECONNECTION_INTERVAL = 10000;
 
-/**
- * ----- INTRODUCTION ------
- *
- * Controllers are physical devices that you can connect with an Spectoda.js instance. They always belong in a network, which is identified with a `signature` (deprecated terminology "ownerSignature") and `key` (deprecated terminology "ownerKey") - with the key being a secret value.
- * Each controller has a unique MAC address, which is used to identify it in the network.
- * Everyone in the network is called a node - whether it is a physical controller or a virtual controller.
-
- * ----- CONTROLLER SYNCHRONIZATION ------
- *
- * If more contorllers have the same signature + key = they are in the same network.
- * If more contorller have the same FW version + are in the same network, they will synchronize with each other:
- * - TNGL code
- * - Event history
- * - Timeline
-
- * ----- NO NETWORK ------
- *
- * When controller is not in a network, it is in a mode that anyone can connect to it and move it to his own network. Think of this as a "pairing mode" of Bluetooth mode. Althought in Spectoda THIS IS NOT CALLED PAIRING.
- 
- * ----- LABELS ------
- *
- * "label" is a specific type, that can have at max 5 characters [a-zA-Z0-9_]. It is always prefixed with "$" (e.g. $label)
-
- * ----- Refactoring suggestions by&ensp;@mchlkucera: ------
- *
- * All reading, getting, fetching, should be just called `getResource`
- * All writing, setting, sending, should be just called `setResource`
- * Spectoda.js should be just for firmware communication
- * - Flutter-specific functions should be separated (e.g. hideHomeButton)
- * - Client-specific functions should be separated (e.g. reload)
- * - More refactoring suggestions are ready in the `0.13-dev` branch
- */
-
 // TODO - kdyz zavolam spectoda.connect(), kdyz jsem pripojeny, tak nechci aby se do interfacu poslal select
 // TODO - kdyz zavolam funkci connect a uz jsem pripojeny, tak vyslu event connected, pokud si myslim ze nejsem pripojeny.
 // TODO - "watchdog timer" pro resolve/reject z TC
