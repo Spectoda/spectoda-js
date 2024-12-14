@@ -618,7 +618,20 @@ export class Spectoda {
   /**
    * ! Useful
    * Scans for controllers that match the given criteria around the user.
-   */
+  
+    *
+    * TODO: Fix types!!! Returned value should be in format:
+    * Array<{
+    *   commissionable: boolean;
+    *   fw: string;
+    *   name: string;
+    *   network: string;
+    *   product: number;
+    *   rssi: number;
+    * }>
+    *
+
+  */
   scan(scan_criteria: object[] = [{}], scan_period: number | typeof DEFAULT_TIMEOUT = DEFAULT_TIMEOUT) {
     logging.verbose(`scan(scan_criteria=${scan_criteria}, scan_period=${scan_period})`);
 
