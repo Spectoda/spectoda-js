@@ -81,6 +81,13 @@ const TNGL_FLAGS = Object.freeze({
   ANIMATION_COLOR_GRADIENT4: 42,
   ANIMATION_STREAM: 43,
 
+  MUTATOR_REORDER: 100,
+  MUTATOR_CORRECTION: 101,
+  MUTATOR_BRIGHTNESS: 102,
+  MUTATOR_TRANSLATION: 103,
+  MUTATOR_MASK: 104,
+  MUTATOR_REMAP: 105,
+
   ANIMATION_INL_ANI: 126,
   ANIMATION_DEFINED: 127,
 
@@ -616,6 +623,25 @@ export class TnglCompiler {
         break;
       case "animColorGradient5":
         this.#tnglWriter.writeFlag(TNGL_FLAGS.ANIMATION_COLOR_GRADIENT5);
+        break;
+
+      case "applyReorder":
+        this.#tnglWriter.writeFlag(TNGL_FLAGS.MUTATOR_REORDER);
+        break;
+      case "applyCorrection":
+        this.#tnglWriter.writeFlag(TNGL_FLAGS.MUTATOR_CORRECTION);
+        break;
+      case "applyBrightness":
+        this.#tnglWriter.writeFlag(TNGL_FLAGS.MUTATOR_BRIGHTNESS);
+        break;
+      case "applyTranslation":
+        this.#tnglWriter.writeFlag(TNGL_FLAGS.MUTATOR_TRANSLATION);
+        break;
+      case "applyMask":
+        this.#tnglWriter.writeFlag(TNGL_FLAGS.MUTATOR_MASK);
+        break;
+      case "applyRemap":
+        this.#tnglWriter.writeFlag(TNGL_FLAGS.MUTATOR_REMAP);
         break;
 
       // === handlers ===

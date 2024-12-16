@@ -3,7 +3,7 @@
 import { logging } from "../logging";
 import { MainModule, Uint8Vector } from "./types/wasm";
 
-const WASM_VERSION = "DEBUG_DEV_0.12.2_20241210";
+const WASM_VERSION = "DEBUG_DEV_0.12.2_20241216";
 
 let moduleInitilizing = false;
 let moduleInitilized = false;
