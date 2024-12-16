@@ -855,6 +855,15 @@ export class Spectoda implements SpectodaClass {
     function minifyBerryCode(berryCode: string): string {
       let minified = berryCode;
 
+      // Step 0: Determine flags
+
+      let flag_no_minify = false;
+
+      if (minified.includes("@no-minify")) {
+        minified = minified.replace("@no-minify", "");
+        flag_no_minify = true;
+      }
+
       // Step 1: Replace specific patterns A, B, C, D
 
       // Pattern A: Hex Color Codes - /#[0-9a-f]{6}/i
@@ -893,30 +902,29 @@ export class Spectoda implements SpectodaClass {
       const berryCommentRegex = /#.*$/gm;
       minified = minified.replace(berryCommentRegex, "");
 
-      // Step 3: Remove leading and trailing whitespace from each line
+      // Step 3: Remove unnecessary semicolons (if BerryLang allows)
+      minified = minified.replace(/;+/g, " ");
+
+      // Step 4: Remove leading and trailing whitespace from each line
       minified = minified
         .split("\n")
         .map(line => line.trim())
         .filter(line => line.length > 0) // Remove empty lines
         .join("\n"); // Preserve line breaks
 
-      // Step 5: Replace multiple spaces with a single space within each line
-      minified = minified.replace(/\s+/g, " ");
+      if (!flag_no_minify) {
+        // Step 6: Remove spaces before and after specific characters
+        const charsToRemoveSpaceAround = [";", ",", "{", "}", "(", ")", "=", "<", ">", "+", "-", "*", "/", "%", "&", "|", "!", ":", "?"];
+        charsToRemoveSpaceAround.forEach(char => {
+          // Remove space before the character
+          const beforeRegex = new RegExp(`\\s+\\${char}`, "g");
+          minified = minified.replace(beforeRegex, char);
 
-      // Step 6: Remove spaces before and after specific characters
-      const charsToRemoveSpaceAround = [";", ",", "{", "}", "(", ")", "=", "<", ">", "+", "-", "*", "/", "%", "&", "|", "!", ":", "?"];
-      charsToRemoveSpaceAround.forEach(char => {
-        // Remove space before the character
-        const beforeRegex = new RegExp(`\\s+\\${char}`, "g");
-        minified = minified.replace(beforeRegex, char);
-
-        // Remove space after the character
-        const afterRegex = new RegExp(`\\${char}\\s+`, "g");
-        minified = minified.replace(afterRegex, char);
-      });
-
-      // Step 6: Optionally, remove unnecessary semicolons (if BerryLang allows)
-      minified = minified.replace(/;+/g, " ");
+          // Remove space after the character
+          const afterRegex = new RegExp(`\\${char}\\s+`, "g");
+          minified = minified.replace(afterRegex, char);
+        });
+      }
 
       return minified;
     }
