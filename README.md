@@ -1,43 +1,131 @@
-spectoda-js
+# Introduction
 
-is a javascript library for interfacing a network of spectoda powered devices. It defines a SpectodaTerminal class. Configure the terminal to connect with your devices.
+Controllers are physical devices that you can connect with a Spectoda.js instance. They always belong in a network, which is identified with:
 
-let spectoda = new SpectodaTerminal();
+- A `signature` (deprecated terminology "ownerSignature")
+- A `key` (deprecated terminology "ownerKey") - this is a secret value
 
-## How to translate
+Each controller has a unique MAC address, which is used to identify it in the network. Everyone in the network is called a node - whether it is a physical controller or a virtual controller.
 
-1. import `t` function into file
-2. call your (static) string with t function, it will be used as a key
-3. go into this folder and run `npm run extract`
+# Controller Synchronization
 
-## About the inner workings
+When multiple controllers have the same signature + key, they belong to the same network. If controllers have the same FW version + are in the same network, they will synchronize:
 
-Interface
+- TNGL code
+- Event history
+- Timeline
 
-Interface is Controller data processor. Interface keeps track of other connected Interfaces a.k.a controllers that it has access to. Interface builds, encrypts and decrypts packets send via Connections of Connectors. Interface is the keeper of the clock time. Messages are encrypted using timestamps.
+---
 
-interface.execute(command, grouping, timeout, ttl) // (Handles queue of execute commands. Merges togetner commands with the same grouping (spam protection). Merged commands one by one hands to connected interfaces over sendExecute()) interface.request(command, timeout) // (Handles queue of request commands. Commands one by one requests at the interface)
+# Getting started
 
-interface is connected to other interfaces via available Connectors. Access to another Interface though Connector is called Connection.
+```ts
+const spectoda = new Spectoda();
+spectoda.connect();
+```
 
-...
+---
 
-// execute is used for network shared commands that are backed by its own synchronize guarantee mechanizm (SMG). Execute relies on the SGM for delivery guarantee sendExecute(paylaod, size, timeout, ttl) // one way communication to all controllers without guarantee of delivery to all controllers. // request is used for controller specific commands that don't have its own synchnonize guarantee mechanizm (SMG). Request relies on acnoligements for delivery guarantee sendRequest(paylaod, size, timeout) // request only given interface, chain requests over interfaces via mac addresses, or recursive request over all detected interfaces (as scan does).
+# No Network Mode
 
-// handles for SCBLE connection, WEBUSB connection COM1, WEBUSB connection COM2 and so on (SCBLE and WEBUSB are Connectors)
+When a controller is not in a network, it enters a mode where anyone can connect to it and move it to their own network. This is similar to a "pairing mode" in Bluetooth, though in Spectoda this is NOT called pairing. Controllers in no network have signature `00000000000000000000000000000000` (defined as [`NO_NETWORK_SIGNATURE`](./src/constants/index.ts) constant) and key `00000000000000000000000000000000` (defined as [`NO_NETWORK_KEY`](./src/constants/index.ts) constant).
 
-let spectoda = new Spectoda(); // figure out unique MAC address for the "virtual" spectoda controller
+# Connection Types
 
-let connection1 = spectoda.connect(...); // default connection let connection2 = spectoda.connect["webbluetooth"](...); // webbluetooth connection let connection3 = spectoda.connect.webbluetooth(...); // webbluetooth connection let connection4 = spectoda.connect["webserial"](...); // webserial connection let connection5 = spectoda.connect.webserial(...); // webserial connection
+Spectoda supports multiple connection types (defined as [`CONNECTORS`](./src/constants/index.ts)):
+
+- `bluetooth` - Bluetooth connection
+- `websockets` - WebSocket connection
+- `serial` - Serial port connection
+- `simulated` - Simulated connection for testing
+- `dummy` - Dummy connection for testing
+- `none` - No connection
+- `default` - Default connection type
+
+# Value Types
+
+Spectoda supports various value types for communication (defined in [`VALUE_TYPE`](./src/constants/index.ts)):
+
+- `NUMBER` - Numeric values
+- `LABEL` - Label values (max 5 characters)
+- `TIME` - Time values
+- `PERCENTAGE` - Percentage values
+- `DATE` - Date values
+- `COLOR` - Color values
+- `PIXELS` - Pixel values
+- `BOOLEAN` - Boolean values
+- `NULL` - Null values
+- `UNDEFINED` - Undefined values
+
+# Labels
+
+A "label" is a specific type that:
+
+- Can have max 5 characters [a-zA-Z0-9_]
+- Is always prefixed with "$" (e.g. $label)
+- Is internally converted to bytes using `labelToBytes()` function
+
+# Refactoring Suggestions
+
+> Proposed by @mchlkucera
+
+- All fetching operations should be called `readResource`
+- All getting operations should be called `getResource`
+- All writing operations should be called `setResource`
+- Spectoda.js should focus only on firmware communication
+  - Flutter-specific functions should be separated (e.g. hideHomeButton)
+  - Client-specific functions should be separated (e.g. reload)
+  - Additional refactoring suggestions are available in the `0.13-dev` branch
+
+# About the internal workings
+
+### Interface
+
+The Interface is a Controller data processor that:
+
+- Manages connections with other controllers
+- Handles packet encryption/decryption
+- Maintains clock synchronization
+- Processes messages using timestamps for encryption
+
+#### Core Methods
+
+```typescript
+interface.execute(command, grouping, timeout, ttl);
+// Handles queued execute commands
+// Merges commands with same grouping (spam protection)
+// Forwards merged commands to connected interfaces via sendExecute()
+
+interface.request(command, timeout);
+// Handles queued request commands
+// Processes commands one by one at the interface
+```
+
+#### Communication Methods
+
+```typescript
+// Network-wide commands with synchronization guarantee mechanism (SGM)
+sendExecute(payload, size, timeout, ttl);
+// Broadcasts to all controllers (delivery not guaranteed)
+
+// Controller-specific commands using acknowledgment-based delivery
+sendRequest(payload, size, timeout);
+// Targets specific interface, can chain via MAC addresses
+// Can recursively request across all detected interfaces
+```
+
+#### Connection Examples
+
+```typescript
+// Create Spectoda instance with virtual MAC address
+let spectoda = new Spectoda();
+
+// Connection methods
+let connection1 = spectoda.connect(); // default
+let connection2 = spectoda.connect.webbluetooth(); // Bluetooth
+let connection3 = spectoda.connect.webserial(); // Serial
 
 connection1.disconnect();
+```
 
-spectoda.readConfig("01:23:45:67:78:89");
-
-## How to use WASM in your project
-
-- you can use our CDN (this will be default behaviour)
-
-## For Matty and other FW developers
-
-- WASM active development WASM must be build in public/ folder, because most of the transpilers can't use WASM as a dependency
+Note: Connections are managed through Connectors (like SCBLE and WEBUSB) which provide access to other Interfaces.
