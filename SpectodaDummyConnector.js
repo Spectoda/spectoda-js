@@ -364,6 +364,12 @@ export class SpectodaDummyConnector {
     });
   }
 
+  cancel() {
+    logging.verbose(`cancel()`);
+
+    // NOP
+  }
+
   destroy() {
     logging.verbose(`destroy()`);
 

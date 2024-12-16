@@ -798,6 +798,14 @@ export class SpectodaRuntime {
     return item.promise;
   }
 
+  cancel(): Promise<unknown> {
+    if (this.connector) {
+      this.connector.cancel();
+    }
+
+    return Promise.resolve(null);
+  }
+
   // ! bytes_type is deprecated and will be removed in the future
   execute(bytecode: number[] | Uint8Array, bytes_type: string | undefined): Promise<unknown> {
     logging.verbose("execute", { bytecode, bytes_type });

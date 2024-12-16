@@ -76,6 +76,7 @@ class FlutterConnection {
         window.flutterConnection.reject(value);
       });
 
+      // TODO deprecate #emit and replace with #connected and #disconnected
       window.addEventListener("#emit", e => {
         // @ts-ignore
         const event = e.detail.value;
@@ -115,6 +116,17 @@ class FlutterConnection {
         const bytes = e.detail.value;
         logging.info(`Triggered #clock: [${bytes}]`, bytes);
       });
+
+      window.addEventListener("#scan", e => {
+        // @ts-ignore
+        const json = e.detail.value;
+        logging.debug(`> Triggered #scan: [${json}]`);
+
+        // @ts-ignore
+        window.flutterConnection.emit("scan", json);
+      });
+
+      logging.verbose("> FlutterConnection inited");
     } else {
       logging.debug("flutter_inappwebview in window NOT detected");
       logging.info("Simulating Flutter Functions");

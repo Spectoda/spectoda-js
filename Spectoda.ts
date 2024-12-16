@@ -768,6 +768,16 @@ export class Spectoda implements SpectodaClass {
     return this.#getConnectionState() === CONNECTION_STATUS.CONNECTED ? this.runtime.connected() : Promise.resolve(null);
   }
 
+  /**
+   * ! Useful
+   * Cancels the current connect or scan operation.
+   */
+  cancel() {
+    logging.verbose("cancel()");
+
+    return this.runtime.cancel();
+  }
+
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
   /**
