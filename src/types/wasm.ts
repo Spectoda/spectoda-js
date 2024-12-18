@@ -1,7 +1,7 @@
-/// === auto-generated from Emscripten build process === ///
-/// ========== DEBUG_DEV_0.12.0_20241116.d.ts ========== ///
-
 import { Event } from "./event";
+
+/// === auto-generated from Emscripten build process === ///
+/// ========== DEBUG_DEV_0.12.3_20241218.d.ts ========== ///
 
 export interface interface_error_tValue<T extends number> {
   value: T;
@@ -184,7 +184,7 @@ export interface MainModule {
   ImplementedSpectoda_WASM: {};
 }
 
-/// ========== DEBUG_DEV_0.12.0_20241116.d.ts ========== ///
+/// ========== DEBUG_DEV_0.12.3_20241218.d.ts ========== ///
 
 /// =================== MANUALLY DEFINED INTERFACES ================= ///
 
