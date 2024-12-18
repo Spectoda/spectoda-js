@@ -17,12 +17,12 @@ type PropsMap = WebsocketConnectionStateProps &
     connecting: undefined;
     disconnecting: undefined;
 
-    peer_connected: [mac: string];
-    peer_disconnected: [mac: string];
+    peer_connected: { mac: string };
+    peer_disconnected: { mac: string };
 
-    ota_status: ["begin" | "success" | "fail"];
-    ota_progress: [percentageProgress: number];
-    ota_timeleft: [timeleftSeconds: number];
+    ota_status: "begin" | "success" | "fail";
+    ota_progress: { percentageProgress: number };
+    ota_timeleft: { timeleftSeconds: number };
 
     tngl_update: { tngl_bytes: SpectodaTypes.TnglBytes; used_ids: SpectodaTypes.UsedIds };
 
@@ -31,22 +31,22 @@ type PropsMap = WebsocketConnectionStateProps &
     "#disconnected": undefined;
 
     // TODO deprecate @immakermatty
-    emitted_events: [events: Event[]];
+    emitted_events: { events: Event[] };
 
     // TODO deprecate @immakermatty
-    event_state_updates: [events: Event[]];
+    event_state_updates: { events: Event[] };
 
-    emittedevents: [events: Event[]];
-    eventstateupdates: [events: Event[]];
-
-    // TODO deprecate @immakermatty
-    wasm_execute: [commands: any];
+    emittedevents: { events: Event[] };
+    eventstateupdates: { events: Event[] };
 
     // TODO deprecate @immakermatty
-    wasm_clock: [clock: number];
+    wasm_execute: { commands: any } ;
 
     // TODO deprecate @immakermatty
-    "controller-log": [log: string];
+    wasm_clock: { clock: number };
+
+    // TODO deprecate @immakermatty
+    "controller-log": { log: string };
   };
 
 export const SpectodaJsEvents = {
