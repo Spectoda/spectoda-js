@@ -179,3 +179,5 @@ export const COMMAND_FLAGS = Object.freeze({
   FLAG_ADOPT_REQUEST: 240,
   FLAG_ADOPT_RESPONSE: 241,
 });
+
+export { STANDARD_EVENT_LABELS } from "./standard-events";

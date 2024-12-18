@@ -49,9 +49,7 @@ type PropsMap = WebsocketConnectionStateProps &
     "controller-log": [log: string];
   };
 
-export const SpectodaJsEvents: {
-  [K in Uppercase<keyof PropsMap>]: Lowercase<keyof PropsMap>;
-} = {
+export const SpectodaJsEvents = {
   ...CONNECTION_STATUS,
 
   "CONNECTING-WEBSOCKETS": WEBSOCKET_CONNECTION_STATE.CONNECTING,
