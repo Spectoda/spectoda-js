@@ -433,7 +433,7 @@ export class SpectodaRuntime {
           name: this.WIP_name,
         },
         console: {
-          debug: 4,
+          debug: logging.level,
         },
         io: {
           DUMMY: {

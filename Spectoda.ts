@@ -2538,9 +2538,10 @@ export class Spectoda implements SpectodaClass {
   readVariableAddress(variable_address: number, id: SpectodaTypes.ID = 255) {
     logging.debug("> Reading variable address...");
 
-    if (this.#getConnectionState() !== "connected") {
-      throw "DeviceDisconnected";
-    }
+    const memory_stack = this.#parser.getMemoryStack();
+    logging.verbose(`memory_stack=${memory_stack}`);
+
+    logging.info(`Reading memory address ${variable_address} for ID${id} with description: "${memory_stack[variable_address]}" ...`);
 
     return this.runtime.readVariableAddress(variable_address, id);
   }
