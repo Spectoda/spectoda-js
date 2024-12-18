@@ -69,9 +69,10 @@ A "label" is a specific type that:
 
 > Proposed by @mchlkucera
 
-- All fetching operations should be called `readResource`
-- All getting operations should be called `getResource`
-- All writing operations should be called `setResource`
+- All asynchronous getting should be `readResource`
+- All synchronous getting should be `getResource`
+- All asynchronous setting should be `writeResource`
+- All synchronous setting should be `setResource`
 - Spectoda.js should focus only on firmware communication
   - Flutter-specific functions should be separated (e.g. hideHomeButton)
   - Client-specific functions should be separated (e.g. reload)
