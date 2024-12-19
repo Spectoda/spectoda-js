@@ -632,16 +632,18 @@ export class Spectoda implements SpectodaClass {
       })
       .then(connectedDeviceInfo => {
         logging.debug("> Synchronizing Network State...");
-        return this.requestTimeline()
-          .catch(e => {
-            logging.info("Timeline sync after reconnection failed:", e);
 
-            // ! This is only temporary until @immakermatty figures out how to implement decentralized synchronizing of RTC time
-            logging.info("Setting timeline to day time");
-            return this.syncTimelineToDayTime().catch(e => {
-              logging.error("Setting timeline to daytime failed:", e);
-            });
-          })
+        // return this.requestTimeline()
+        //   .catch(e => {
+        //     logging.info("Timeline sync after reconnection failed:", e);
+        //     // ! This is only temporary until @immakermatty figures out how to implement decentralized synchronizing of RTC time
+        //     logging.info("Setting timeline to day time");
+        //     return this.syncTimelineToDayTime().catch(e => {
+        //       logging.error("Setting timeline to daytime failed:", e);
+        //     });
+        //   })
+        // ! For now on every connection, force sync timeline to day time
+        return this.syncTimelineToDayTime()
           .then(() => {
             return this.syncTngl();
           })
