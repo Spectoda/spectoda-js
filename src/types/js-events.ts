@@ -17,12 +17,17 @@ type PropsMap = WebsocketConnectionStateProps &
     connecting: undefined;
     disconnecting: undefined;
 
-    peer_connected: { mac: string };
-    peer_disconnected: { mac: string };
+    // TODO for future payload key: `mac`
+    peer_connected: string;
+    // TODO for future payload key: `mac`
+    peer_disconnected: string;
 
+    // TODO for future payload key: `status`
     ota_status: "begin" | "success" | "fail";
-    ota_progress: { percentageProgress: number };
-    ota_timeleft: { timeleftSeconds: number };
+    // TODO for future payload key: `percentageProgress`
+    ota_progress: number;
+    // TODO for future payload key: `timeleftSeconds`
+    ota_timeleft: number;
 
     tngl_update: { tngl_bytes: SpectodaTypes.TnglBytes; used_ids: SpectodaTypes.UsedIds };
 
@@ -31,22 +36,29 @@ type PropsMap = WebsocketConnectionStateProps &
     "#disconnected": undefined;
 
     // TODO deprecate @immakermatty
-    emitted_events: { events: Event[] };
+    // TODO for future payload key: `events`
+    emitted_events: Event[];
 
     // TODO deprecate @immakermatty
-    event_state_updates: { events: Event[] };
+    // TODO for future payload key: `events`
+    event_state_updates: Event[];
 
-    emittedevents: { events: Event[] };
-    eventstateupdates: { events: Event[] };
-
-    // TODO deprecate @immakermatty
-    wasm_execute: { commands: any } ;
-
-    // TODO deprecate @immakermatty
-    wasm_clock: { clock: number };
+    // TODO for future payload key: `events`
+    emittedevents: Event[];
+    // TODO for future payload key: `events`
+    eventstateupdates: Event[];
 
     // TODO deprecate @immakermatty
-    "controller-log": { log: string };
+    // TODO for future payload key: `command`
+    wasm_execute: any ;
+
+    // TODO deprecate @immakermatty
+    // TODO for future payload key: `clock`
+    wasm_clock: number;
+
+    // TODO deprecate @immakermatty
+    // TODO for future payload key: `log`
+    "controller-log": string;
   };
 
 export const SpectodaJsEvents = {
