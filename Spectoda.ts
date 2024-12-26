@@ -19,7 +19,7 @@ import { SpectodaRuntime, allEventsEmitter } from "./src/SpectodaRuntime";
 import { VALUE_LIMITS, VALUE_TYPE } from "./src/constants";
 import { CONNECTION_STATUS, ConnectorType, WEBSOCKET_CONNECTION_STATE, WebsocketConnectionState } from "./src/types/connect";
 import { Event } from "./src/types/event";
-import { SpectodaJsEventMap, SpectodaJsEventName as SpectodaJsEventType } from "./src/types/js-events";
+import { SpectodaJsEventMap, SpectodaJsEventName as SpectodaJsEventType } from "./src/types/spectoda-js-events";
 import { SpectodaTypes } from "./src/types/primitives";
 import { SpectodaClass } from "./src/types/spectodaClass";
 import { fetchTnglFromApiById, sendTnglToApi } from "./tnglapi";
