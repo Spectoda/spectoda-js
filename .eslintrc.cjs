@@ -1,5 +1,5 @@
 module.exports = {
-  extends: ["../../.eslintrc.cjs"],
+  extends: ["../../.eslintrc.json"],
   parserOptions: {
     project: ["./packages/spectoda-js/tsconfig.json"],
   },

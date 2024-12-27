@@ -1,7 +1,7 @@
 import { TimeTrack } from "../../TimeTrack";
 import { SpectodaRuntime } from "../SpectodaRuntime";
 import { ConnectorType } from "./connect";
-import { SpectodaJsEventMap } from "./js-events";
+import { SpectodaJsEventMap } from "./spectoda-js-events";
 import { SpectodaTypes } from "./primitives";
 
 export interface SpectodaClass {
