@@ -24,9 +24,8 @@ import { TimeTrack } from "../TimeTrack";
 import { PreviewController } from "./PreviewController";
 import { SpectodaWasm } from "./SpectodaWasm";
 import { Spectoda_JS } from "./Spectoda_JS";
-import { COMMAND_FLAGS } from "./constants";
-import { APP_MAC_ADDRESS, DEFAULT_TIMEOUT } from "./constants";
 import { SpectodaConnectConnector } from "./connector/SpectodaConnectConnector";
+import { APP_MAC_ADDRESS, COMMAND_FLAGS, DEFAULT_TIMEOUT } from "./constants";
 
 import { Spectoda } from "../Spectoda";
 import { TnglReader } from "../TnglReader";
@@ -34,12 +33,11 @@ import { TnglWriter } from "../TnglWriter";
 import { SpectodaNodeBluetoothConnector } from "./connector/SpectodaNodeBleConnector";
 import { SpectodaNodeSerialConnector } from "./connector/SpectodaNodeSerialConnector";
 import { SpectodaSimulatedConnector } from "./connector/SpectodaSimulatedConnector";
-import { SpectodaTypes } from "./types/primitives";
-import { Synchronization } from "./types/wasm";
-import { Connection } from "./types/wasm";
-import { EventStateValue } from "./types/event";
-import { SpectodaJsEventMap, SpectodaJsEventName } from "./types/spectoda-js-events";
+import { SpectodaAppEventMap } from "./types/app-events";
 import { ConnectorType } from "./types/connect";
+import { SpectodaEventStateValue } from "./types/event";
+import { SpectodaTypes } from "./types/primitives";
+import { Connection, Synchronization } from "./types/wasm";
 
 // Spectoda.js -> SpectodaRuntime.js -> | SpectodaXXXConnector.js ->
 
@@ -502,17 +500,17 @@ export class SpectodaRuntime {
    * @returns {Function} unbind function
    */
 
-  addEventListener<K extends keyof SpectodaJsEventMap>(event: K, callback: (props: SpectodaJsEventMap[K]) => void) {
+  addEventListener<K extends keyof SpectodaAppEventMap>(event: K, callback: (props: SpectodaAppEventMap[K]) => void) {
     return this.on(event, callback);
   }
   /**
    * @alias this.addEventListener
    */
-  on<K extends keyof SpectodaJsEventMap>(event: K, callback: (props: SpectodaJsEventMap[K]) => void) {
+  on<K extends keyof SpectodaAppEventMap>(event: K, callback: (props: SpectodaAppEventMap[K]) => void) {
     return this.#eventEmitter.on(event, callback);
   }
 
-  emit<K extends keyof SpectodaJsEventMap>(event: K, ...args: SpectodaJsEventMap[K] extends any[] ? SpectodaJsEventMap[K] : [SpectodaJsEventMap[K]] | []) {
+  emit<K extends keyof SpectodaAppEventMap>(event: K, ...args: SpectodaAppEventMap[K] extends any[] ? SpectodaAppEventMap[K] : [SpectodaAppEventMap[K]] | []) {
     this.#eventEmitter.emit(event, ...args);
   }
 
@@ -1570,7 +1568,7 @@ export class SpectodaRuntime {
     return this.spectoda_js.getClockTimestamp();
   }
 
-  getEventStates(event_state_name: string, event_state_ids: SpectodaTypes.IDs): (EventStateValue | undefined)[] {
+  getEventStates(event_state_name: string, event_state_ids: SpectodaTypes.IDs): (SpectodaEventStateValue | undefined)[] {
     if (Array.isArray(event_state_ids)) {
       return event_state_ids.map(id => this.spectoda_js.getEventState(event_state_name, id));
     } else {
@@ -1578,7 +1576,7 @@ export class SpectodaRuntime {
     }
   }
 
-  getEventState(event_state_name: string, event_state_id: SpectodaTypes.ID): EventStateValue | undefined {
+  getEventState(event_state_name: string, event_state_id: SpectodaTypes.ID): SpectodaEventStateValue | undefined {
     return this.spectoda_js.getEventState(event_state_name, event_state_id);
   }
 

@@ -4,7 +4,7 @@ import { sleep } from "../functions";
 import { logging } from "../logging";
 import { SpectodaRuntime } from "./SpectodaRuntime";
 import { SpectodaWasm } from "./SpectodaWasm";
-import { EventStateValue } from "./types/event";
+import { SpectodaEventStateValue } from "./types/event";
 import { Connection, IConnector_WASM, IConnector_WASMImplementation, Spectoda_WASM, Spectoda_WASMImplementation, Synchronization, Uint8Vector, Value, interface_error_t } from "./types/wasm";
 
 // Implements Spectoda_JS in javascript
@@ -615,7 +615,7 @@ export class Spectoda_JS {
     this.#spectoda_wasm.eraseTngl();
   }
 
-  getEventState(event_state_name: string, event_state_id: number): EventStateValue | undefined {
+  getEventState(event_state_name: string, event_state_id: number): SpectodaEventStateValue | undefined {
     logging.verbose(`Spectoda_JS::getEventState(event_state_name=${event_state_name}, event_state_id=${event_state_id})`);
 
     if (!this.#spectoda_wasm) {

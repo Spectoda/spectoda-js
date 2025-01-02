@@ -17,9 +17,9 @@ import "./TnglWriter";
 import { ConnectionStatus } from "./deprecated_store/types";
 import { SpectodaRuntime, allEventsEmitter } from "./src/SpectodaRuntime";
 import { VALUE_LIMITS, VALUE_TYPE } from "./src/constants";
+import { SpectodaAppEventMap, SpectodaAppEventName as SpectodaJsEventType } from "./src/types/app-events";
 import { CONNECTION_STATUS, ConnectorType, WEBSOCKET_CONNECTION_STATE, WebsocketConnectionState } from "./src/types/connect";
-import { Event } from "./src/types/event";
-import { SpectodaJsEventMap, SpectodaJsEventName as SpectodaJsEventType } from "./src/types/spectoda-js-events";
+import { SpectodaEvent } from "./src/types/event";
 import { SpectodaTypes } from "./src/types/primitives";
 import { SpectodaClass } from "./src/types/spectodaClass";
 import { fetchTnglFromApiById, sendTnglToApi } from "./tnglapi";
@@ -574,14 +574,14 @@ export class Spectoda implements SpectodaClass {
    * TODO I think this should expose an "off" method to remove the listener
    * @returns {Function} unbind function
    */
-  addEventListener<K extends keyof SpectodaJsEventMap>(event: K, callback: (props: SpectodaJsEventMap[K]) => void) {
+  addEventListener<K extends keyof SpectodaAppEventMap>(event: K, callback: (props: SpectodaAppEventMap[K]) => void) {
     return this.runtime.addEventListener(event, callback);
   }
 
   /**
    * @alias this.addEventListener
    */
-  on<K extends keyof SpectodaJsEventMap>(event: K, callback: (props: SpectodaJsEventMap[K]) => void) {
+  on<K extends keyof SpectodaAppEventMap>(event: K, callback: (props: SpectodaAppEventMap[K]) => void) {
     return this.runtime.on(event, callback);
   }
 
@@ -2876,7 +2876,7 @@ export class Spectoda implements SpectodaClass {
       this.#__events[id] = {};
     }
 
-    const unregisterListenerEmittedevents = this.runtime.on("emittedevents", (events: Event[]) => {
+    const unregisterListenerEmittedevents = this.runtime.on("emittedevents", (events: SpectodaEvent[]) => {
       for (const event of events) {
         if (event.id === 255) {
           for (let id = 0; id < 256; id++) {
@@ -2939,7 +2939,7 @@ export class Spectoda implements SpectodaClass {
       });
   }
 
-  emitEvents(events: Event[] | { label: SpectodaTypes.Label; type: string | SpectodaTypes.ValueType; value: null | string | number | boolean; id: SpectodaTypes.ID; timestamp: number }[]) {
+  emitEvents(events: SpectodaEvent[] | { label: SpectodaTypes.Label; type: string | SpectodaTypes.ValueType; value: null | string | number | boolean; id: SpectodaTypes.ID; timestamp: number }[]) {
     logging.verbose("emitEvents(events=", events, ")");
 
     logging.info("> Emitting events...");

@@ -2,7 +2,7 @@ import { SpectodaTypes } from "./primitives";
 
 import { VALUE_TYPE } from "../constants";
 
-type EventBase = {
+type SpectodaEventBase = {
   /** Readonly string with more information about the event value */
   debug: string;
 
@@ -17,56 +17,56 @@ type EventBase = {
   id: SpectodaTypes.ID;
 };
 
-type NumberEvent = EventBase & {
+type SpectodaNumberEvent = SpectodaEventBase & {
   type: typeof VALUE_TYPE.NUMBER;
   value: SpectodaTypes.Number;
 };
 
-type LabelEvent = EventBase & {
+type SpectodaLabelEvent = SpectodaEventBase & {
   type: typeof VALUE_TYPE.LABEL;
   value: SpectodaTypes.Label;
 };
 
-type PercentageEvent = EventBase & {
+type SpectodaPercentageEvent = SpectodaEventBase & {
   type: typeof VALUE_TYPE.PERCENTAGE;
   value: SpectodaTypes.Percentage;
 };
 
-type TimestampEvent = EventBase & {
+type SpectodaTimestampEvent = SpectodaEventBase & {
   type: typeof VALUE_TYPE.TIME;
   value: SpectodaTypes.Timestamp;
 };
 
-type ColorEvent = EventBase & {
+type SpectodaColorEvent = SpectodaEventBase & {
   type: typeof VALUE_TYPE.COLOR;
   value: SpectodaTypes.Color;
 };
 
-type PixelsEvent = EventBase & {
+type SpectodaPixelsEvent = SpectodaEventBase & {
   type: typeof VALUE_TYPE.PIXELS;
   value: SpectodaTypes.Pixels;
 };
 
-type BooleanEvent = EventBase & {
+type SpectodaBooleanEvent = SpectodaEventBase & {
   type: typeof VALUE_TYPE.BOOLEAN;
   value: SpectodaTypes.Boolean;
 };
 
-type NullEvent = EventBase & {
+type SpectodaNullEvent = SpectodaEventBase & {
   type: typeof VALUE_TYPE.NULL;
   value: SpectodaTypes.Null;
 };
 
-type UndefinedEvent = EventBase & {
+type SpectodaUndefinedEvent = SpectodaEventBase & {
   type: typeof VALUE_TYPE.UNDEFINED;
   value: SpectodaTypes.Undefined;
 };
 
-export type Event = NumberEvent | LabelEvent | PercentageEvent | TimestampEvent | ColorEvent | PixelsEvent | BooleanEvent | NullEvent | UndefinedEvent;
+export type SpectodaEvent = SpectodaNumberEvent | SpectodaLabelEvent | SpectodaPercentageEvent | SpectodaTimestampEvent | SpectodaColorEvent | SpectodaPixelsEvent | SpectodaBooleanEvent | SpectodaNullEvent | SpectodaUndefinedEvent;
 
 /**
- * EventStateValue type is equivalent to Event
+ * SpectodaEventStateValue type is equivalent to SpectodaEvent
  *
- * @alias Event
+ * @alias SpectodaEvent
  */
-export type EventStateValue = Event;
+export type SpectodaEventStateValue = SpectodaEvent;

@@ -1,5 +1,5 @@
 import { CONNECTION_STATUS, ConnectionStatus, WEBSOCKET_CONNECTION_STATE, WebsocketConnectionState } from "./connect";
-import { Event } from "./event";
+import { SpectodaEvent } from "./event";
 import { SpectodaTypes } from "./primitives";
 
 type WebsocketConnectionStateProps = {
@@ -37,20 +37,20 @@ type PropsMap = WebsocketConnectionStateProps &
 
     // TODO deprecate @immakermatty
     // TODO for future payload key: `events`
-    emitted_events: Event[];
+    emitted_events: SpectodaEvent[];
 
     // TODO deprecate @immakermatty
     // TODO for future payload key: `events`
-    event_state_updates: Event[];
+    event_state_updates: SpectodaEvent[];
 
     // TODO for future payload key: `events`
-    emittedevents: Event[];
+    emittedevents: SpectodaEvent[];
     // TODO for future payload key: `events`
-    eventstateupdates: Event[];
+    eventstateupdates: SpectodaEvent[];
 
     // TODO deprecate @immakermatty
     // TODO for future payload key: `command`
-    wasm_execute: any ;
+    wasm_execute: any;
 
     // TODO deprecate @immakermatty
     // TODO for future payload key: `clock`
@@ -61,7 +61,7 @@ type PropsMap = WebsocketConnectionStateProps &
     "controller-log": string;
   };
 
-export const SpectodaJsEvents = {
+export const SpectodaAppEvents = {
   ...CONNECTION_STATUS,
 
   "CONNECTING-WEBSOCKETS": WEBSOCKET_CONNECTION_STATE.CONNECTING,
@@ -91,10 +91,10 @@ export const SpectodaJsEvents = {
   "CONTROLLER-LOG": "controller-log",
 } as const;
 
-export type SpectodaJsEventName = (typeof SpectodaJsEvents)[keyof typeof SpectodaJsEvents];
+export type SpectodaAppEventName = (typeof SpectodaAppEvents)[keyof typeof SpectodaAppEvents];
 
-export type SpectodaJsEventMap = {
-  [K in SpectodaJsEventName]: PropsMap[K];
+export type SpectodaAppEventMap = {
+  [K in SpectodaAppEventName]: PropsMap[K];
 };
 
-export const SPECTODA_JS_EVENTS = Object.freeze(SpectodaJsEvents);
+export const SPECTODA_APP_EVENTS = Object.freeze(SpectodaAppEvents);
