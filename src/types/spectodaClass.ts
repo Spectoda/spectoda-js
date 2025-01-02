@@ -1,7 +1,7 @@
 import { TimeTrack } from "../../TimeTrack";
 import { SpectodaRuntime } from "../SpectodaRuntime";
+import { SpectodaAppEventMap } from "./app-events";
 import { ConnectorType } from "./connect";
-import { SpectodaJsEventMap } from "./spectoda-js-events";
 import { SpectodaTypes } from "./primitives";
 
 export interface SpectodaClass {
@@ -32,8 +32,8 @@ export interface SpectodaClass {
   getOwnerKey(): SpectodaTypes.NetworkKey;
 
   // Event handling
-  addEventListener<K extends keyof SpectodaJsEventMap>(event: K, callback: (props: SpectodaJsEventMap[K]) => void): () => void;
-  on<K extends keyof SpectodaJsEventMap>(event: K, callback: (props: SpectodaJsEventMap[K]) => void): () => void;
+  addEventListener<K extends keyof SpectodaAppEventMap>(event: K, callback: (props: SpectodaAppEventMap[K]) => void): () => void;
+  on<K extends keyof SpectodaAppEventMap>(event: K, callback: (props: SpectodaAppEventMap[K]) => void): () => void;
 
   // TNGL methods
   preprocessTngl(tngl_code: string): Promise<string>;

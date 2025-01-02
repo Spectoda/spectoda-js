@@ -1,4 +1,4 @@
-import { Event } from "./event";
+import { SpectodaEvent } from "./event";
 
 /// === auto-generated from Emscripten build process === ///
 /// ========== DEBUG_DEV_0.12.3_20241218.d.ts ========== ///
@@ -288,8 +288,8 @@ export interface Spectoda_WASMImplementation {
   // // __construct: function () {}
   // // __destruct: function () {}
   _onTnglUpdate(tngl_bytes: Uint8Vector, used_ids: Uint8Vector): boolean;
-  _onEvents(event_array: Event[]): boolean;
-  _onEventStateUpdates(event_array: Event[]): boolean;
+  _onEvents(event_array: SpectodaEvent[]): boolean;
+  _onEventStateUpdates(event_array: SpectodaEvent[]): boolean;
   _onExecute(execute_bytecode: Uint8Vector): boolean;
   _onRequest(request_ticket_number: number, request_bytecode_vector: Uint8Vector, destination_connection: Connection): boolean;
   _onSynchronize(synchronization: Synchronization): boolean;
