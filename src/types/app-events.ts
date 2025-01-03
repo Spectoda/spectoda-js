@@ -1,100 +1,109 @@
-import { CONNECTION_STATUS, ConnectionStatus, WEBSOCKET_CONNECTION_STATE, WebsocketConnectionState } from "./connect";
-import { SpectodaEvent } from "./event";
-import { SpectodaTypes } from "./primitives";
+import {
+  CONNECTION_STATUS,
+  ConnectionStatus,
+  WEBSOCKET_CONNECTION_STATE,
+  WebsocketConnectionState,
+} from './connect'
+import { SpectodaEvent } from './event'
+import { SpectodaTypes } from './primitives'
 
 type WebsocketConnectionStateProps = {
-  [K in WebsocketConnectionState]: undefined;
-};
+  [K in WebsocketConnectionState]: undefined
+}
 
 type ConnectionStatusProps = {
-  [K in ConnectionStatus]: undefined;
-};
+  [K in ConnectionStatus]: undefined
+}
 
 type PropsMap = WebsocketConnectionStateProps &
   ConnectionStatusProps & {
-    connected: undefined;
-    disconnected: undefined;
-    connecting: undefined;
-    disconnecting: undefined;
+    connected: undefined
+    disconnected: undefined
+    connecting: undefined
+    disconnecting: undefined
 
     // TODO for future payload key: `mac`
-    peer_connected: string;
+    peer_connected: string
     // TODO for future payload key: `mac`
-    peer_disconnected: string;
+    peer_disconnected: string
 
     // TODO for future payload key: `status`
-    ota_status: "begin" | "success" | "fail";
+    ota_status: 'begin' | 'success' | 'fail'
     // TODO for future payload key: `percentageProgress`
-    ota_progress: number;
+    ota_progress: number
     // TODO for future payload key: `timeleftSeconds`
-    ota_timeleft: number;
+    ota_timeleft: number
 
-    tngl_update: { tngl_bytes: SpectodaTypes.TnglBytes; used_ids: SpectodaTypes.UsedIds };
+    tngl_update: {
+      tngl_bytes: SpectodaTypes.TnglBytes
+      used_ids: SpectodaTypes.UsedIds
+    }
 
     // Private events
-    "#connected": undefined;
-    "#disconnected": undefined;
+    '#connected': undefined
+    '#disconnected': undefined
 
     // TODO deprecate @immakermatty
     // TODO for future payload key: `events`
-    emitted_events: SpectodaEvent[];
+    emitted_events: SpectodaEvent[]
 
     // TODO deprecate @immakermatty
     // TODO for future payload key: `events`
-    event_state_updates: SpectodaEvent[];
+    event_state_updates: SpectodaEvent[]
 
     // TODO for future payload key: `events`
-    emittedevents: SpectodaEvent[];
+    emittedevents: SpectodaEvent[]
     // TODO for future payload key: `events`
-    eventstateupdates: SpectodaEvent[];
+    eventstateupdates: SpectodaEvent[]
 
     // TODO deprecate @immakermatty
     // TODO for future payload key: `command`
-    wasm_execute: any;
+    wasm_execute: any
 
     // TODO deprecate @immakermatty
     // TODO for future payload key: `clock`
-    wasm_clock: number;
+    wasm_clock: number
 
     // TODO deprecate @immakermatty
     // TODO for future payload key: `log`
-    "controller-log": string;
-  };
+    'controller-log': string
+  }
 
 export const SpectodaAppEvents = {
   ...CONNECTION_STATUS,
 
-  "CONNECTING-WEBSOCKETS": WEBSOCKET_CONNECTION_STATE.CONNECTING,
-  "CONNECTED-WEBSOCKETS": WEBSOCKET_CONNECTION_STATE.CONNECTED,
-  "DISCONNECTING-WEBSOCKETS": WEBSOCKET_CONNECTION_STATE.DISCONNECTING,
-  "DISCONNECTED-WEBSOCKETS": WEBSOCKET_CONNECTION_STATE.DISCONNECTED,
+  'CONNECTING-WEBSOCKETS': WEBSOCKET_CONNECTION_STATE.CONNECTING,
+  'CONNECTED-WEBSOCKETS': WEBSOCKET_CONNECTION_STATE.CONNECTED,
+  'DISCONNECTING-WEBSOCKETS': WEBSOCKET_CONNECTION_STATE.DISCONNECTING,
+  'DISCONNECTED-WEBSOCKETS': WEBSOCKET_CONNECTION_STATE.DISCONNECTED,
 
-  PEER_CONNECTED: "peer_connected",
-  PEER_DISCONNECTED: "peer_disconnected",
+  PEER_CONNECTED: 'peer_connected',
+  PEER_DISCONNECTED: 'peer_disconnected',
 
-  OTA_STATUS: "ota_status",
-  OTA_PROGRESS: "ota_progress",
-  OTA_TIMELEFT: "ota_timeleft",
+  OTA_STATUS: 'ota_status',
+  OTA_PROGRESS: 'ota_progress',
+  OTA_TIMELEFT: 'ota_timeleft',
 
-  TNGL_UPDATE: "tngl_update",
+  TNGL_UPDATE: 'tngl_update',
 
-  EMITTED_EVENTS: "emitted_events",
-  EMITTEDEVENTS: "emittedevents",
-  EVENT_STATE_UPDATES: "event_state_updates",
-  EVENTSTATEUPDATES: "eventstateupdates",
+  EMITTED_EVENTS: 'emitted_events',
+  EMITTEDEVENTS: 'emittedevents',
+  EVENT_STATE_UPDATES: 'event_state_updates',
+  EVENTSTATEUPDATES: 'eventstateupdates',
 
-  WASM_EXECUTE: "wasm_execute",
-  WASM_CLOCK: "wasm_clock",
+  WASM_EXECUTE: 'wasm_execute',
+  WASM_CLOCK: 'wasm_clock',
 
-  "#CONNECTED": "#connected",
-  "#DISCONNECTED": "#disconnected",
-  "CONTROLLER-LOG": "controller-log",
-} as const;
+  '#CONNECTED': '#connected',
+  '#DISCONNECTED': '#disconnected',
+  'CONTROLLER-LOG': 'controller-log',
+} as const
 
-export type SpectodaAppEventName = (typeof SpectodaAppEvents)[keyof typeof SpectodaAppEvents];
+export type SpectodaAppEventName =
+  (typeof SpectodaAppEvents)[keyof typeof SpectodaAppEvents]
 
 export type SpectodaAppEventMap = {
-  [K in SpectodaAppEventName]: PropsMap[K];
-};
+  [K in SpectodaAppEventName]: PropsMap[K]
+}
 
-export const SPECTODA_APP_EVENTS = Object.freeze(SpectodaAppEvents);
+export const SPECTODA_APP_EVENTS = Object.freeze(SpectodaAppEvents)
