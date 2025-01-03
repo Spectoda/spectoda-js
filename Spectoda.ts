@@ -765,6 +765,7 @@ export class Spectoda implements SpectodaClass {
   /**
    * Used only for debugging
    * TODO: @immakermatty rename to isConnected()
+   * TODO: @immakermatty shoudl return Promise<boolean>
    */
   connected() {
     return this.#getConnectionState() === CONNECTION_STATUS.CONNECTED ? this.runtime.connected() : Promise.resolve(null);

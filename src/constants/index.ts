@@ -1,4 +1,4 @@
-import { SpectodaTypes } from "../types/primitives";
+import { SpectodaTypes } from '../types/primitives'
 
 export const VALUE_TYPE = Object.freeze({
   NUMBER: 29,
@@ -11,7 +11,7 @@ export const VALUE_TYPE = Object.freeze({
   BOOLEAN: 2,
   NULL: 1,
   UNDEFINED: 0,
-});
+})
 
 export const VALUE_LIMITS = Object.freeze({
   NUMBER_MAX: 1000000000,
@@ -22,41 +22,43 @@ export const VALUE_LIMITS = Object.freeze({
   PERCENTAGE_100: 100000000,
   PERCENTAGE_0: 0,
   PERCENTAGE_MINUS_100: -100000000,
-});
+})
 
-export const BROADCAST_ID = 255;
+export const BROADCAST_ID = 255
 
 export const CONNECTORS = Object.freeze({
-  NONE: "none",
-  DEFAULT: "default",
+  NONE: 'none',
+  DEFAULT: 'default',
 
-  BLUETOOTH: "bluetooth",
-  WEBSOCKETS: "websockets",
-  SERIAL: "serial",
+  BLUETOOTH: 'bluetooth',
+  WEBSOCKETS: 'websockets',
+  SERIAL: 'serial',
 
-  SIMULATED: "simulated",
-  DUMMY: "dummy",
-});
+  SIMULATED: 'simulated',
+  DUMMY: 'dummy',
+})
 
-export const DEFAULT_CONNECTOR = CONNECTORS.DEFAULT;
+export const DEFAULT_CONNECTOR = CONNECTORS.DEFAULT
 
 /** No Network Signature */
-export const NO_NETWORK_SIGNATURE: SpectodaTypes.NetworkSignature = "00000000000000000000000000000000";
+export const NO_NETWORK_SIGNATURE: SpectodaTypes.NetworkSignature =
+  '00000000000000000000000000000000'
 
 /** No Network Key */
-export const NO_NETWORK_KEY: SpectodaTypes.NetworkKey = "00000000000000000000000000000000";
+export const NO_NETWORK_KEY: SpectodaTypes.NetworkKey =
+  '00000000000000000000000000000000'
 
 /** Default MAC address for the app */
-export const APP_MAC_ADDRESS = "00:00:12:34:56:78";
+export const APP_MAC_ADDRESS = '00:00:12:34:56:78'
 
 /** TODO: ADD description */
-export const USE_ALL_CONNECTIONS = ["*/ff:ff:ff:ff:ff:ff"];
+export const USE_ALL_CONNECTIONS = ['*/ff:ff:ff:ff:ff:ff']
 
 /** TODO: ADD description */
-export const DEFAULT_TIMEOUT = null;
+export const DEFAULT_TIMEOUT = null
 
 /** TODO: ADD description */
-export const TNGL_SIZE_CONSIDERED_BIG = 12288;
+export const TNGL_SIZE_CONSIDERED_BIG = 12288
 
 /** TODO: ADD description */
 export const COMMAND_FLAGS = Object.freeze({
@@ -178,6 +180,6 @@ export const COMMAND_FLAGS = Object.freeze({
   FLAG_CONNECT_RESPONSE: 239,
   FLAG_ADOPT_REQUEST: 240,
   FLAG_ADOPT_RESPONSE: 241,
-});
+})
 
-export { STANDARD_EVENT_LABELS } from "./standard-events";
+export { STANDARD_EVENT_LABELS } from './standard-events'
