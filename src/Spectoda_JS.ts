@@ -360,7 +360,7 @@ export class Spectoda_JS {
           this.#runtimeReference.sendSynchronize(synchronization, source_connection).catch(e => {
             // ! DISABLED 11. 9. 2024 By @mchlkucera
             // Because of console.error spamming on frontend
-            // logging.error(e);
+            logging.warn(e);
           });
         },
 
@@ -378,8 +378,12 @@ export class Spectoda_JS {
       this.#spectoda_wasm.init(constroller_mac_address, cosntroller_config_json);
 
       this.#connectors = [];
-      this.#connectors.push(SpectodaWasm.IConnector_WASM.implement(WasmConnectorImplementation));
-      this.registerConnector(this.#connectors[0]);
+
+      const connector = SpectodaWasm.IConnector_WASM.implement(WasmConnectorImplementation);
+      connector.init(SpectodaWasm.connector_type_t.CONNECTOR_BLE);
+      this.registerConnector(connector);
+
+      this.#connectors.push(connector);
 
       this.#spectoda_wasm.begin();
     });
