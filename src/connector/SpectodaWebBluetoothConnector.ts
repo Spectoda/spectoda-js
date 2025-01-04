@@ -37,7 +37,7 @@ export class WebBLEConnection {
   #writing;
   #uuidCounter;
 
-  #deviceNotification: number[];
+  #networkNotificationBuffer: Uint8Array | null;
 
   constructor(runtimeReference: SpectodaRuntime) {
     this.#runtimeReference = runtimeReference;
@@ -80,7 +80,7 @@ export class WebBLEConnection {
 
     this.#uuidCounter = Math.floor(Math.random() * 4294967295);
 
-    this.#deviceNotification = [];
+    this.#networkNotificationBuffer = null;
   }
 
   #getUUID() {
@@ -164,54 +164,69 @@ export class WebBLEConnection {
   // WIP, event handling from spectoda network to application
   // timeline changes from spectoda network to application ...
   #onNetworkNotification(event: Event) {
-    logging.verbose("#onNetworkNotification", event);
-    //! Here is a bug, where if the command is too long, it will be split into multiple notifications
+    logging.verbose(`WebBLEConnection::#onNetworkNotification()`, event);
 
-    // @ts-ignore
-    if (!event?.target?.value?.buffer) return;
-    // @ts-ignore
-    const data_bytes = new Uint8Array(event.target.value.buffer);
+    const bluetoothCharacteristic = event.target as BluetoothRemoteGATTCharacteristic | null;
+    if (!bluetoothCharacteristic?.value?.buffer) return;
 
-    logging.verbose(`data_bytes: ${uint8ArrayToHexString(data_bytes)}`);
+    const payload = new Uint8Array(bluetoothCharacteristic.value.buffer);
+    logging.debug(`payload.length=${payload.length}`, payload);
 
-    const DUMMY_WEBBLE_CONNECTION = SpectodaWasm.Connection.make("11:11:11:11:11:11", SpectodaWasm.connector_type_t.CONNECTOR_BLE, SpectodaWasm.connection_rssi_t.RSSI_MAX);
-    this.#runtimeReference.spectoda_js.execute(data_bytes, DUMMY_WEBBLE_CONNECTION);
+    if (this.#networkNotificationBuffer == null) {
+      this.#networkNotificationBuffer = payload;
+    } else {
+      // Create new array with combined length
+      const newBuffer = new Uint8Array(this.#networkNotificationBuffer.length + payload.length);
+      // Copy existing buffer
+      newBuffer.set(this.#networkNotificationBuffer);
+      // Append new payload at the end
+      newBuffer.set(payload, this.#networkNotificationBuffer.length);
+      this.#networkNotificationBuffer = newBuffer;
+    }
+
+    const PACKET_SIZE_INDICATING_MULTIPACKET_MESSAGE = 208;
+    if (payload.length == PACKET_SIZE_INDICATING_MULTIPACKET_MESSAGE) {
+      // if the payload is equal to PACKET_SIZE_INDICATING_MULTIPACKET_MESSAGE, then another payload will be send that continues the overall message.
+      return;
+    }
+    //
+    else {
+      // this was the last payload of the message and the message is complete
+      const commandBytes = this.#networkNotificationBuffer;
+      this.#networkNotificationBuffer = null;
+
+      if (commandBytes.length == 0) {
+        return;
+      }
+
+      const DUMMY_WEBBLE_CONNECTION = SpectodaWasm.Connection.make("11:11:11:11:11:11", SpectodaWasm.connector_type_t.CONNECTOR_BLE, SpectodaWasm.connection_rssi_t.RSSI_MAX);
+      this.#runtimeReference.spectoda_js.execute(commandBytes, DUMMY_WEBBLE_CONNECTION);
+    }
   }
 
-  // WIP
   #onDeviceNotification(event: Event) {
-    logging.verbose("#onDeviceNotification", event);
+    logging.debug("WebBLEConnection::#onDeviceNotification", event);
 
-    // @ts-ignore
-    if (!event?.target?.value?.buffer) return;
-    // @ts-ignore
-    const data_bytes = new Uint8Array(event.target.value.buffer);
+    const bluetoothCharacteristic = event.target as BluetoothRemoteGATTCharacteristic | null;
+    if (!bluetoothCharacteristic?.value?.buffer) return;
 
-    // logging.verbose(`data_bytes: ${uint8ArrayToHexString(data_bytes)}`);
+    const commandBytes = new Uint8Array(bluetoothCharacteristic.value.buffer);
+    logging.verbose(`commandBytes=${uint8ArrayToHexString(commandBytes)}`);
 
     // // TODO process request
     // const DUMMY_WEBBLE_CONNECTION = SpectodaWasm.Connection.make("11:11:11:11:11:11", SpectodaWasm.connector_type_t.CONNECTOR_BLE, SpectodaWasm.connection_rssi_t.RSSI_MAX);
-    // const response = this.#runtimeReference.spectoda_js.request(command_bytes, DUMMY_WEBBLE_CONNECTION);
+    // const response = this.#runtimeReference.spectoda_js.request(commandBytes, DUMMY_WEBBLE_CONNECTION);
 
     // logging.info("Response:", response);
   }
 
-  // WIP
   #onClockNotification(event: Event) {
-    logging.verbose("#onClockNotification", event);
+    logging.debug("WebBLEConnection::#onClockNotification", event);
 
-    // @ts-ignore
-    if (!event?.target?.value?.buffer) return;
-    // @ts-ignore
-    const data_bytes = new Uint8Array(event.target.value.buffer);
+    const bluetoothCharacteristic = event.target as BluetoothRemoteGATTCharacteristic | null;
+    if (!bluetoothCharacteristic?.value?.buffer) return;
 
-    // let value = event.target.value;
-    // let a = [];
-    // for (let i = 0; i < value.byteLength; i++) {
-    //   a.push("0x" + ("00" + value.getUint8(i).toString(16)).slice(-2));
-    // }
-    // logging.debug("> " + a.join(" "));
-    // this.#runtimeReference.process(event.target.value);
+    const synchronizationBytes = new Uint8Array(bluetoothCharacteristic.value.buffer);
 
     // uint64_t clock_timestamp;
     // uint64_t origin_address_handle;
@@ -220,12 +235,13 @@ export class WebBLEConnection {
     // uint64_t timeline_clock_timestamp;
     // uint64_t tngl_clock_timestamp;
 
-    if (data_bytes.length < 48) {
-      logging.error("event.target.value.buffer.length < 48");
+    const SYNCHRONIZATION_BYTE_SIZE = 48;
+    if (synchronizationBytes.length < SYNCHRONIZATION_BYTE_SIZE) {
+      logging.error("synchronizationBytes.length < SYNCHRONIZATION_BYTE_SIZE");
       return;
     }
 
-    const synchronization = SpectodaWasm.Synchronization.makeFromUint8Array(data_bytes);
+    const synchronization = SpectodaWasm.Synchronization.makeFromUint8Array(synchronizationBytes);
 
     const DUMMY_WEBBLE_CONNECTION = SpectodaWasm.Connection.make("11:11:11:11:11:11", SpectodaWasm.connector_type_t.CONNECTOR_BLE, SpectodaWasm.connection_rssi_t.RSSI_MAX);
     this.#runtimeReference.spectoda_js.synchronize(synchronization, DUMMY_WEBBLE_CONNECTION);
@@ -565,7 +581,7 @@ export class WebBLEConnection {
     this.#clockChar = null;
     this.#deviceChar = null;
     this.#writing = false;
-    this.#deviceNotification = [];
+    this.#networkNotificationBuffer = null;
   }
 
   destroy(): void {

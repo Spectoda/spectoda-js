@@ -16,14 +16,18 @@ import { Connection, Synchronization } from "../types/wasm";
 const simulatedFails = false;
 
 class FlutterConnection {
+  #networkNotificationBuffer: Uint8Array | null;
+
   constructor() {
+    logging.debug("Initing FlutterConnection");
+
+    this.#networkNotificationBuffer = null;
+
     // @ts-ignore
     if (window.flutterConnection) {
       logging.debug("FlutterConnection already inited");
       return;
     }
-
-    logging.debug("Initing FlutterConnection");
 
     // @ts-ignore
     window.flutterConnection = {};
@@ -96,25 +100,76 @@ class FlutterConnection {
         window.flutterConnection.process(bytes);
       });
 
+      // network characteristics notification
       window.addEventListener("#network", e => {
         // @ts-ignore
-        const bytes = e.detail.value;
-        logging.info(`Triggered #network: [${bytes}]`, bytes);
+        const payload = new Uint8Array(e.detail.value);
+        logging.info(`Triggered #network: [${payload}]`, payload);
 
-        // @ts-ignore
-        window.flutterConnection.process(bytes);
+        if (this.#networkNotificationBuffer == null) {
+          this.#networkNotificationBuffer = payload;
+        } else {
+          // Create new array with combined length
+          const newBuffer = new Uint8Array(this.#networkNotificationBuffer.length + payload.length);
+          // Copy existing buffer
+          newBuffer.set(this.#networkNotificationBuffer);
+          // Append new payload at the end
+          newBuffer.set(payload, this.#networkNotificationBuffer.length);
+          this.#networkNotificationBuffer = newBuffer;
+        }
+
+        const PACKET_SIZE_INDICATING_MULTIPACKET_MESSAGE = 208;
+        if (payload.length == PACKET_SIZE_INDICATING_MULTIPACKET_MESSAGE) {
+          // if the payload is equal to PACKET_SIZE_INDICATING_MULTIPACKET_MESSAGE, then another payload will be send that continues the overall message.
+          return;
+        }
+        //
+        else {
+          // this was the last payload of the message and the message is complete
+          const commandBytes = this.#networkNotificationBuffer;
+          this.#networkNotificationBuffer = null;
+
+          if (commandBytes.length == 0) {
+            return;
+          }
+
+          // @ts-ignore
+          window.flutterConnection.execute(commandBytes);
+        }
       });
 
+      // device characteristics notification
       window.addEventListener("#device", e => {
         // @ts-ignore
-        const bytes = e.detail.value;
+        const bytes = new Uint8Array(e.detail.value);
         logging.info(`Triggered #device: [${bytes}]`, bytes);
+
+        // ? NOP - device characteristics should not notify
       });
 
+      // clock characteristics notification
       window.addEventListener("#clock", e => {
         // @ts-ignore
-        const bytes = e.detail.value;
-        logging.info(`Triggered #clock: [${bytes}]`, bytes);
+        const synchronizationBytes = new Uint8Array(e.detail.value);
+        logging.info(`Triggered #clock: [${synchronizationBytes}]`, synchronizationBytes);
+
+        // uint64_t clock_timestamp;
+        // uint64_t origin_address_handle;
+        // uint32_t history_fingerprint;
+        // uint32_t tngl_fingerprint;
+        // uint64_t timeline_clock_timestamp;
+        // uint64_t tngl_clock_timestamp;
+
+        const SYNCHRONIZATION_BYTE_SIZE = 48;
+        if (synchronizationBytes.length < SYNCHRONIZATION_BYTE_SIZE) {
+          logging.error("synchronizationBytes.length < SYNCHRONIZATION_BYTE_SIZE");
+          return;
+        }
+
+        const synchronization = SpectodaWasm.Synchronization.makeFromUint8Array(synchronizationBytes);
+
+        // @ts-ignore
+        window.flutterConnection.synchronize(synchronization);
       });
 
       window.addEventListener("#scan", e => {
@@ -492,9 +547,19 @@ export class SpectodaConnectConnector extends FlutterConnection {
     };
 
     // @ts-ignore
-    window.flutterConnection.process = bytes => {
-      const CONNECTION = SpectodaWasm.Connection.make("11:11:11:11:11:11", SpectodaWasm.connector_type_t.CONNECTOR_BLE, SpectodaWasm.connection_rssi_t.RSSI_MAX);
-      this.#runtimeReference.spectoda_js.execute(new Uint8Array(bytes), CONNECTION);
+    window.flutterConnection.execute = (commandBytes: Uint8Array) => {
+      logging.debug(`flutterConnection.execute(commandBytes=${commandBytes})`);
+
+      const DUMMY_BLE_CONNECTION = SpectodaWasm.Connection.make("11:11:11:11:11:11", SpectodaWasm.connector_type_t.CONNECTOR_BLE, SpectodaWasm.connection_rssi_t.RSSI_MAX);
+      this.#runtimeReference.spectoda_js.execute(commandBytes, DUMMY_BLE_CONNECTION);
+    };
+
+    // @ts-ignore
+    window.flutterConnection.synchronize = (synchronization: Synchronization) => {
+      logging.debug(`flutterConnection.synchronize(synchronization=${synchronization})`);
+
+      const DUMMY_BLE_CONNECTION = SpectodaWasm.Connection.make("11:11:11:11:11:11", SpectodaWasm.connector_type_t.CONNECTOR_BLE, SpectodaWasm.connection_rssi_t.RSSI_MAX);
+      this.#runtimeReference.spectoda_js.synchronize(synchronization, DUMMY_BLE_CONNECTION);
     };
   }
 
