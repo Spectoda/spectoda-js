@@ -620,38 +620,6 @@ export class SpectodaConnectConnector extends FlutterConnection {
     return this.#applyTimeout(this.#promise, FLUTTER_RESPONSE_TIMEOUT, "ping");
   }
 
-  /*
-
-criteria: JSON pole objektu, kde plati: [{ tohle AND tamto AND toto } OR { tohle AND tamto }]
-
-možnosti:
-  name: string
-  nameprefix: string
-  fwVersion: string
-  network: string
-  product: number
-  adoptionFlag: bool
-
-criteria example:
-[
-  // all Devices that are named "NARA Aplha", are on 0.9.2 fw and are
-  // adopted by the owner with "baf2398ff5e6a7b8c9d097d54a9f865f" signature.
-  // Product code is 1 what means NARA Alpha, pcbCode 2 means NARA Controller
-  {
-    name: "NARA Alpha",
-    fwVersion: "0.9.2",
-    network: "baf2398ff5e6a7b8c9d097d54a9f865f",
-    product: 1
-  },
-  {
-    nameprefix: "NARA",
-    fwVersion: "!0.8.3",
-    pcbCode: 2,
-    adoptionFlag: true
-  }
-]
-
-*/
   // choose one Spectoda device (user chooses which device to connect to via a popup)
   // if no criteria are set, then show all Spectoda devices visible.
   // first bonds the BLE device with the PC/Phone/Tablet if it is needed.
@@ -664,18 +632,60 @@ criteria example:
     const criteria_json = JSON.stringify(criterium_array);
     logging.debug(`userSelect(criteria=${criteria_json}, timeout=${timeout_number})`);
 
+    /**
+     * Creates an invisible overlay that blocks all user interactions.
+     * This is a workaround for a Flutter bug where the BLE device selection popup
+     * does not properly block gestures from reaching the underlying WebView.
+     * Ideally this should be handled on the Flutter side, but we have not found
+     * a way to do that yet. The overlay prevents any touch, scroll, click or context
+     * menu events from reaching the WebView while the device selection popup is shown.
+     * 
+     * call overlay.remove() to disable
+     */
+    const makeGestureBlockingOverlay = () => {
+      const overlay = document.createElement("div");
+      overlay.style.position = "fixed";
+      overlay.style.top = "0";
+      overlay.style.left = "0"; 
+      overlay.style.width = "100%";
+      overlay.style.height = "100%";
+      overlay.style.backgroundColor = "rgba(0,0,0,0)";
+      overlay.style.zIndex = "999999";
+      // Block all interactions
+      overlay.addEventListener("touchstart", e => e.preventDefault(), { passive: false });
+      overlay.addEventListener("touchmove", e => e.preventDefault(), { passive: false });
+      overlay.addEventListener("touchend", e => e.preventDefault(), { passive: false });
+      overlay.addEventListener("wheel", e => e.preventDefault(), { passive: false });
+      overlay.addEventListener("click", e => e.preventDefault());
+      overlay.addEventListener("contextmenu", e => e.preventDefault());
+      // apply to document.body
+      document.body.appendChild(overlay);
+      return overlay;
+    };
+
+    const overlay = makeGestureBlockingOverlay();
+
     this.#promise = new Promise((resolve, reject) => {
       // @ts-ignore
       window.flutterConnection.resolve = function (json) {
+        // Remove blocking overlay
+        overlay.remove();
+
         // the resolve returns JSON string or null
         if (json) {
           json = json.replace(/\0/g, ""); //! [BUG] Flutter app on Android tends to return nulls as strings with a null character at the end. This is a workaround for that.
           json = JSON.parse(json);
         }
+
         resolve(json);
       };
       // @ts-ignore
-      window.flutterConnection.reject = reject;
+      window.flutterConnection.reject = function (error) {
+        // Remove blocking overlay
+        overlay.remove();
+
+        reject(error);
+      };
     });
 
     // @ts-ignore
