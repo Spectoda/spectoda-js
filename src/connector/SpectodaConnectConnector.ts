@@ -80,24 +80,43 @@ class FlutterConnection {
         window.flutterConnection.reject(value);
       });
 
-      // TODO deprecate #emit and replace with #connected and #disconnected
-      window.addEventListener("#emit", e => {
+      // ! deprecated, was replaced by #connected and #disconnected
+      // // window.addEventListener("#emit", e => {
+      // //   // @ts-ignore
+      // //   const event = e.detail.value;
+      // //   logging.info(`Triggered #emit: ${event}`, event);
+
+      // //   if (event == "#connect" || event == "#disconnect") {
+      // //     // ? reset #networkNotificationBuffer
+      // //     this.#networkNotificationBuffer = null;
+      // //   }
+
+      // //   // @ts-ignore
+      // //   window.flutterConnection.emit(event);
+      // // });
+
+      window.addEventListener("#connected", e => {
         // @ts-ignore
-        const event = e.detail.value;
-        logging.info(`Triggered #emit: ${event}`, event);
+        const value = e.detail.value;
+        logging.info(`Triggered #connected: ${value}`, value);
+
+        // ? reset #networkNotificationBuffer on connect
+        this.#networkNotificationBuffer = null;
 
         // @ts-ignore
-        window.flutterConnection.emit(event);
+        window.flutterConnection.emit("#connected", value);
       });
 
-      // ! deprecated
-      window.addEventListener("#process", e => {
+      window.addEventListener("#disconnected", e => {
         // @ts-ignore
-        const bytes = e.detail.value;
-        logging.info(`Triggered #process: [${bytes}]`, bytes);
+        const value = e.detail.value;
+        logging.info(`Triggered #disconnected: ${value}`, value);
+
+        // ? reset #networkNotificationBuffer on disconnect
+        this.#networkNotificationBuffer = null;
 
         // @ts-ignore
-        window.flutterConnection.process(bytes);
+        window.flutterConnection.emit("#disconnected", value);
       });
 
       // network characteristics notification
