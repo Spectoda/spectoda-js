@@ -3052,10 +3052,11 @@ export class Spectoda implements SpectodaClass {
   }
 
 /**
- * Implemented in 0.12.4. Returns information about the connected controller 
- * @returns {object} Controller information object containing information about the controller
+ * Returns information object about the connected controller 
+ * 
+ * Implemented in FW 0.12.4
  */
-readControllerInfo() {
+async readControllerInfo() {
   logging.info("> Requesting controller info...");
 
   const request_uuid = this.#getUUID();
