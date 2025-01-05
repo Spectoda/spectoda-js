@@ -706,7 +706,11 @@ export class Spectoda implements SpectodaClass {
     return this.runtime.scan(scan_criteria, scan_period)
   }
 
-  #connect(autoConnect: boolean) {
+  #connect(
+    autoConnect: boolean,
+    scanPeriod: number | typeof DEFAULT_TIMEOUT = DEFAULT_TIMEOUT,
+    scanTimeout: number | typeof DEFAULT_TIMEOUT = DEFAULT_TIMEOUT,
+  ) {
     logging.verbose(`#connect(autoConnect=${autoConnect})`)
 
     logging.debug('> Connecting Spectoda Controller')
@@ -716,8 +720,8 @@ export class Spectoda implements SpectodaClass {
     logging.debug('> Selecting controller...')
     return (
       autoConnect
-        ? this.runtime.autoSelect(this.#criteria, 1000, 10000)
-        : this.runtime.userSelect(this.#criteria)
+        ? this.runtime.autoSelect(this.#criteria, scanPeriod, scanTimeout)
+        : this.runtime.userSelect(this.#criteria, scanTimeout)
     )
       .then(() => {
         logging.debug('> Connecting controller...')
