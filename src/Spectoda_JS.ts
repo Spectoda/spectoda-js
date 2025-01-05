@@ -360,7 +360,7 @@ export class Spectoda_JS {
           this.#runtimeReference.sendSynchronize(synchronization, source_connection).catch(e => {
             // ! DISABLED 11. 9. 2024 By @mchlkucera
             // Because of console.error spamming on frontend
-            // logging.error(e);
+            logging.warn(e);
           });
         },
 
@@ -378,10 +378,14 @@ export class Spectoda_JS {
       this.#spectoda_wasm.init(constroller_mac_address, cosntroller_config_json);
 
       this.#connectors = [];
-      this.#connectors.push(SpectodaWasm.IConnector_WASM.implement(WasmConnectorImplementation));
-      this.registerConnector(this.#connectors[0]);
 
-      this.#spectoda_wasm.begin();
+      const connector = SpectodaWasm.IConnector_WASM.implement(WasmConnectorImplementation);
+      connector.init(SpectodaWasm.connector_type_t.CONNECTOR_BLE);
+      this.registerConnector(connector);
+
+      this.#connectors.push(connector);
+
+      this.#spectoda_wasm.begin("00000000000000000000000000000000", "00000000000000000000000000000000");
     });
   }
 
@@ -631,6 +635,36 @@ export class Spectoda_JS {
     }
 
     return this.#spectoda_wasm.getDateTime();
+  }
+
+  /**
+   * Retrieves the currently running TNGL fingerprint.
+   * This function returns a 32-byte hash of the TNGL in hex string format.
+   * 
+   * @throws {string} Throws "NotConstructed" if the WASM module is not initialized.
+   * @returns {string} The TNGL fingerprint as a hex string.
+   */
+  getTnglFingerprint(): string {
+    if (!this.#spectoda_wasm) {
+      throw "NotConstructed";
+    }
+
+    return this.#spectoda_wasm.getTnglFingerprint();
+  }
+
+  /**
+   * Retrieves the fingerprint or EventStore.
+   * This function returns a 32-byte hash of the EventStore in hex string format.
+   * 
+   * @throws {string} Throws "NotConstructed" if the WASM module is not initialized.
+   * @returns {string} The EventStore fingerprint as a hex string.
+   */
+  getEventStoreFingerprint(): string {
+    if (!this.#spectoda_wasm) {
+      throw "NotConstructed";
+    }
+
+    return this.#spectoda_wasm.getEventStoreFingerprint();
   }
 
   registerDeviceContext(device_id: number): boolean {

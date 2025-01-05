@@ -272,6 +272,8 @@ export class NodeBLEConnection {
   #writing;
   #uuidCounter;
 
+  #networkNotificationBuffer: Uint8Array | null;
+
   constructor(runtimeReference: SpectodaRuntime) {
     this.#runtimeReference = runtimeReference;
 
@@ -310,6 +312,9 @@ export class NodeBLEConnection {
     this.#writing = false;
 
     this.#uuidCounter = Math.floor(Math.random() * 4294967295);
+
+    this.#networkNotificationBuffer = null;
+
   }
 
   #getUUID() {
@@ -413,20 +418,39 @@ export class NodeBLEConnection {
 
     // const bytes = new Uint8Array(data.buffer, data.byteOffset, data.byteLength);
     const dataView = new DataView(data.buffer, data.byteOffset, data.byteLength);
-    const command_bytes = new Uint8Array(dataView.buffer, dataView.byteOffset, dataView.byteLength);
+    const payload = new Uint8Array(dataView.buffer, dataView.byteOffset, dataView.byteLength);
+    logging.debug(`payload.length=${payload.length}`, payload);
 
-    // logging.verbose("dataView", dataView);
-    // logging.verbose("uint8Array", uint8Array);
+    if (this.#networkNotificationBuffer == null) {
+      this.#networkNotificationBuffer = payload;
+    } else {
+      // Create new array with combined length
+      const newBuffer = new Uint8Array(this.#networkNotificationBuffer.length + payload.length);
+      // Copy existing buffer
+      newBuffer.set(this.#networkNotificationBuffer);
+      // Append new payload at the end
+      newBuffer.set(payload, this.#networkNotificationBuffer.length);
+      this.#networkNotificationBuffer = newBuffer;
+    }
 
-    const DUMMY_NODEBLE_CONNECTION = SpectodaWasm.Connection.make("11:11:11:11:11:11", SpectodaWasm.connector_type_t.CONNECTOR_BLE, SpectodaWasm.connection_rssi_t.RSSI_MAX);
-    this.#runtimeReference.spectoda_js.execute(command_bytes, DUMMY_NODEBLE_CONNECTION);
-  }
+    const PACKET_SIZE_INDICATING_MULTIPACKET_MESSAGE = 208;
+    if (payload.length == PACKET_SIZE_INDICATING_MULTIPACKET_MESSAGE) {
+      // if the payload is equal to PACKET_SIZE_INDICATING_MULTIPACKET_MESSAGE, then another payload will be send that continues the overall message.
+      return;
+    }
+    //
+    else {
+      // this was the last payload of the message and the message is complete
+      const commandBytes = this.#networkNotificationBuffer;
+      this.#networkNotificationBuffer = null;
 
-  // WIP
-  #onDeviceNotification(data: Buffer) {
-    logging.verbose("onDeviceNotification()", data);
+      if (commandBytes.length == 0) {
+        return;
+      }
 
-    // logging.warn(event);
+      const DUMMY_WEBBLE_CONNECTION = SpectodaWasm.Connection.make("11:11:11:11:11:11", SpectodaWasm.connector_type_t.CONNECTOR_BLE, SpectodaWasm.connection_rssi_t.RSSI_MAX);
+      this.#runtimeReference.spectoda_js.execute(commandBytes, DUMMY_WEBBLE_CONNECTION);
+    }
   }
 
   // WIP
@@ -434,17 +458,25 @@ export class NodeBLEConnection {
     logging.verbose("onClockNotification()", data);
 
     const dataView = new DataView(data.buffer, data.byteOffset, data.byteLength);
-    const synchronization_bytes = new Uint8Array(dataView.buffer, dataView.byteOffset, dataView.byteLength);
+    const synchronizationBytes = new Uint8Array(dataView.buffer, dataView.byteOffset, dataView.byteLength);
 
-    if (synchronization_bytes.length < 48) {
-      logging.error("synchronization_bytes.length < 48");
+    // uint64_t clock_timestamp;
+    // uint64_t origin_address_handle;
+    // uint32_t history_fingerprint;
+    // uint32_t tngl_fingerprint;
+    // uint64_t timeline_clock_timestamp;
+    // uint64_t tngl_clock_timestamp;
+
+    const SYNCHRONIZATION_BYTE_SIZE = 48;
+    if (synchronizationBytes.length < SYNCHRONIZATION_BYTE_SIZE) {
+      logging.error("synchronizationBytes.length < SYNCHRONIZATION_BYTE_SIZE");
       return;
     }
 
-    const synchronization = SpectodaWasm.Synchronization.makeFromUint8Array(synchronization_bytes);
+    const synchronization = SpectodaWasm.Synchronization.makeFromUint8Array(synchronizationBytes);
 
-    const DUMMY_NODEBLE_CONNECTION = SpectodaWasm.Connection.make("11:11:11:11:11:11", SpectodaWasm.connector_type_t.CONNECTOR_BLE, SpectodaWasm.connection_rssi_t.RSSI_MAX);
-    this.#runtimeReference.spectoda_js.synchronize(synchronization, DUMMY_NODEBLE_CONNECTION);
+    const DUMMY_WEBBLE_CONNECTION = SpectodaWasm.Connection.make("11:11:11:11:11:11", SpectodaWasm.connector_type_t.CONNECTOR_BLE, SpectodaWasm.connection_rssi_t.RSSI_MAX);
+    this.#runtimeReference.spectoda_js.synchronize(synchronization, DUMMY_WEBBLE_CONNECTION);
   }
 
   attach(service: NodeBle.GattService, networkUUID: string, clockUUID: string, deviceUUID: string) {
@@ -509,18 +541,7 @@ export class NodeBLEConnection {
         logging.verbose("#deviceChar", characteristic);
         this.#deviceChar = characteristic;
 
-        return this.#deviceChar
-          ?.startNotifications()
-          .then(() => {
-            logging.info("> Device notifications started");
-            this.#deviceChar?.on("valuechanged", event => {
-              this.#onDeviceNotification(event);
-            });
-          })
-          .catch(e => {
-            logging.info("> Device notifications failed");
-            logging.warn(e);
-          });
+        // ! Device characteristics does not implement notifications as it collides with write/read functionality
       })
       .catch(e => {
         logging.warn(e);
@@ -800,6 +821,8 @@ export class NodeBLEConnection {
 
     this.#service = undefined;
     this.#writing = false;
+
+    this.#networkNotificationBuffer = null;
   }
 
   destroy(): void {

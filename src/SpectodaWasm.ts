@@ -3,7 +3,7 @@
 import { logging } from "../logging";
 import { MainModule, Uint8Vector } from "./types/wasm";
 
-const WASM_VERSION = "DEBUG_DEV_0.12.3_20241220";
+const WASM_VERSION = "DEBUG_DEV_0.12.4_20250105";
 
 let moduleInitilizing = false;
 let moduleInitilized = false;
@@ -107,20 +107,34 @@ export class SpectodaWasm {
   }
 
   static loadFS() {
-    // @ts-ignore - FS is a global object of Emscripten
-    return Module.FS.syncfs(true, (err: any) => {
-      if (err) {
-        logging.error("FS.syncfs error:", err);
-      }
+    return new Promise((resolve, reject) => {
+      // @ts-ignore - FS is a global object of Emscripten
+      Module.FS.syncfs(true, (err: any) => {
+        if (err) {
+          logging.error("FS.syncfs error:", err);
+          console.log("Failed to load WASM Filesystem");
+          reject(err);
+        } else {
+          console.log("WASM Filesystem was loaded");
+          resolve(null);
+        }
+      });
     });
   }
 
   static saveFS() {
-    // @ts-ignore - FS is a global object of Emscripten
-    return Module.FS.syncfs(false, (err: any) => {
-      if (err) {
-        logging.error("FS.syncfs error:", err);
-      }
+    return new Promise((resolve, reject) => {
+      // @ts-ignore - FS is a global object of Emscripten
+      Module.FS.syncfs(false, (err: any) => {
+        if (err) {
+          logging.error("FS.syncfs error:", err);
+          console.log("Failed to save WASM Filesystem");
+          reject(err);
+        } else {
+          console.log("WASM Filesystem was saved");
+          resolve(null);
+        }
+      });
     });
   }
 }
@@ -183,23 +197,17 @@ function onWasmLoad() {
     // @ts-ignore - Module is a global object of Emscripten
     SpectodaWasm.IConnector_WASM = Module.IConnector_WASM;
 
+    // ? BROWSER: mounting FS
     if (typeof window !== "undefined") {
       // @ts-ignore - FS is a global object of Emscripten
       Module.FS.mkdir("/littlefs");
       // @ts-ignore - FS and IDBFS are global objects of Emscripten
       Module.FS.mount(IDBFS, {}, "/littlefs");
-
-      // @ts-ignore - FS is a global objects of Emscripten
-      Module.FS.syncfs(true, function (err: any) {
-        if (err) {
-          logging.error("ERROR ds8a769s:", err);
-        }
-        resolveWaitingQueue();
-      });
     }
-    // ? Node.js enviroment
+    // ? NODE.JS: mounting FS
     else if (!process.env.NEXT_PUBLIC_VERSION) {
-      // Node.js make "filesystem" folder in root
+
+      // TODO make "filesystem" folder in root, if it does not exist
       // const fs = require("fs");
       // if (!fs.existsSync("filesystem")) {
       //   fs.mkdirSync("filesystem");
@@ -209,23 +217,27 @@ function onWasmLoad() {
       Module.FS.mkdir("/littlefs");
       // @ts-ignore - FS is a global object of Emscripten
       Module.FS.mount(Module.FS.filesystems.NODEFS, { root: "./filesystem" }, "/littlefs");
-
-      // @ts-ignore - FS is a global object of Emscripten
-      Module.FS.syncfs(true, function (err: any) {
-        if (err) {
-          logging.error("ERROR ds798asa:", err);
-        }
-        resolveWaitingQueue();
-      });
     }
 
-    // TODO Save filesystem before window unload after we switch to network authenticaiton
-    // if (typeof window !== "undefined") {
-    //   window.addEventListener("beforeunload", () => {
-    //     SpectodaWasm.saveFS();
-    //   });
-    // }
+    // ? Load WASM filesystem from mounted system filesystem
+    SpectodaWasm.loadFS()
+    .finally(()=>{
+      resolveWaitingQueue();
+    });
 
+    // ? BROWSER: Save WASM filesystem before window unload
+    if (typeof window !== "undefined") {
+      window.addEventListener("beforeunload", () => {
+        SpectodaWasm.saveFS();
+      });
+    }
+    // ? NODE.JS: enviroment save WASM filesystem before app exit
+    else if (!process.env.NEXT_PUBLIC_VERSION) {
+      process.on('exit', () => {
+        SpectodaWasm.saveFS();
+      });
+    }
+    
     // @ts-ignore - Module is a global objects of Emscripten
     Module.onRuntimeInitialized = undefined;
   };

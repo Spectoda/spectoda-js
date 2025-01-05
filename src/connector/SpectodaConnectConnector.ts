@@ -16,14 +16,18 @@ import { Connection, Synchronization } from "../types/wasm";
 const simulatedFails = false;
 
 class FlutterConnection {
+  #networkNotificationBuffer: Uint8Array | null;
+
   constructor() {
+    logging.debug("Initing FlutterConnection");
+
+    this.#networkNotificationBuffer = null;
+
     // @ts-ignore
     if (window.flutterConnection) {
       logging.debug("FlutterConnection already inited");
       return;
     }
-
-    logging.debug("Initing FlutterConnection");
 
     // @ts-ignore
     window.flutterConnection = {};
@@ -76,45 +80,115 @@ class FlutterConnection {
         window.flutterConnection.reject(value);
       });
 
-      // TODO deprecate #emit and replace with #connected and #disconnected
-      window.addEventListener("#emit", e => {
+      // ! deprecated, was replaced by #connected and #disconnected
+      // // window.addEventListener("#emit", e => {
+      // //   // @ts-ignore
+      // //   const event = e.detail.value;
+      // //   logging.info(`Triggered #emit: ${event}`, event);
+
+      // //   if (event == "#connect" || event == "#disconnect") {
+      // //     // ? reset #networkNotificationBuffer
+      // //     this.#networkNotificationBuffer = null;
+      // //   }
+
+      // //   // @ts-ignore
+      // //   window.flutterConnection.emit(event);
+      // // });
+
+      window.addEventListener("#connected", e => {
         // @ts-ignore
-        const event = e.detail.value;
-        logging.info(`Triggered #emit: ${event}`, event);
+        const value = e.detail.value;
+        logging.info(`Triggered #connected: ${value}`, value);
+
+        // ? reset #networkNotificationBuffer on connect
+        this.#networkNotificationBuffer = null;
 
         // @ts-ignore
-        window.flutterConnection.emit(event);
+        window.flutterConnection.emit("#connected", value);
       });
 
-      // ! deprecated
-      window.addEventListener("#process", e => {
+      window.addEventListener("#disconnected", e => {
         // @ts-ignore
-        const bytes = e.detail.value;
-        logging.info(`Triggered #process: [${bytes}]`, bytes);
+        const value = e.detail.value;
+        logging.info(`Triggered #disconnected: ${value}`, value);
+
+        // ? reset #networkNotificationBuffer on disconnect
+        this.#networkNotificationBuffer = null;
 
         // @ts-ignore
-        window.flutterConnection.process(bytes);
+        window.flutterConnection.emit("#disconnected", value);
       });
 
+      // network characteristics notification
       window.addEventListener("#network", e => {
         // @ts-ignore
-        const bytes = e.detail.value;
-        logging.info(`Triggered #network: [${bytes}]`, bytes);
+        const payload = new Uint8Array(e.detail.value);
+        logging.info(`Triggered #network: [${payload}]`, payload);
 
-        // @ts-ignore
-        window.flutterConnection.process(bytes);
+        if (this.#networkNotificationBuffer == null) {
+          this.#networkNotificationBuffer = payload;
+        } else {
+          // Create new array with combined length
+          const newBuffer = new Uint8Array(this.#networkNotificationBuffer.length + payload.length);
+          // Copy existing buffer
+          newBuffer.set(this.#networkNotificationBuffer);
+          // Append new payload at the end
+          newBuffer.set(payload, this.#networkNotificationBuffer.length);
+          this.#networkNotificationBuffer = newBuffer;
+        }
+
+        const PACKET_SIZE_INDICATING_MULTIPACKET_MESSAGE = 208;
+        if (payload.length == PACKET_SIZE_INDICATING_MULTIPACKET_MESSAGE) {
+          // if the payload is equal to PACKET_SIZE_INDICATING_MULTIPACKET_MESSAGE, then another payload will be send that continues the overall message.
+          return;
+        }
+        //
+        else {
+          // this was the last payload of the message and the message is complete
+          const commandBytes = this.#networkNotificationBuffer;
+          this.#networkNotificationBuffer = null;
+
+          if (commandBytes.length == 0) {
+            return;
+          }
+
+          // @ts-ignore
+          window.flutterConnection.execute(commandBytes);
+        }
       });
 
+      // device characteristics notification
       window.addEventListener("#device", e => {
         // @ts-ignore
-        const bytes = e.detail.value;
+        const bytes = new Uint8Array(e.detail.value);
         logging.info(`Triggered #device: [${bytes}]`, bytes);
+
+        // ? NOP - device characteristics should not notify
       });
 
+      // clock characteristics notification
       window.addEventListener("#clock", e => {
         // @ts-ignore
-        const bytes = e.detail.value;
-        logging.info(`Triggered #clock: [${bytes}]`, bytes);
+        const synchronizationBytes = new Uint8Array(e.detail.value);
+        logging.info(`Triggered #clock: [${synchronizationBytes}]`, synchronizationBytes);
+
+        // uint64_t clock_timestamp;
+        // uint64_t origin_address_handle;
+        // uint32_t history_fingerprint;
+        // uint32_t tngl_fingerprint;
+        // uint64_t timeline_clock_timestamp;
+        // uint64_t tngl_clock_timestamp;
+
+        const SYNCHRONIZATION_BYTE_SIZE = 48;
+        if (synchronizationBytes.length < SYNCHRONIZATION_BYTE_SIZE) {
+          logging.error("synchronizationBytes.length < SYNCHRONIZATION_BYTE_SIZE");
+          return;
+        }
+
+        const synchronization = SpectodaWasm.Synchronization.makeFromUint8Array(synchronizationBytes);
+
+        // @ts-ignore
+        window.flutterConnection.synchronize(synchronization);
       });
 
       window.addEventListener("#scan", e => {
@@ -492,9 +566,19 @@ export class SpectodaConnectConnector extends FlutterConnection {
     };
 
     // @ts-ignore
-    window.flutterConnection.process = bytes => {
-      const CONNECTION = SpectodaWasm.Connection.make("11:11:11:11:11:11", SpectodaWasm.connector_type_t.CONNECTOR_BLE, SpectodaWasm.connection_rssi_t.RSSI_MAX);
-      this.#runtimeReference.spectoda_js.execute(new Uint8Array(bytes), CONNECTION);
+    window.flutterConnection.execute = (commandBytes: Uint8Array) => {
+      logging.debug(`flutterConnection.execute(commandBytes=${commandBytes})`);
+
+      const DUMMY_BLE_CONNECTION = SpectodaWasm.Connection.make("11:11:11:11:11:11", SpectodaWasm.connector_type_t.CONNECTOR_BLE, SpectodaWasm.connection_rssi_t.RSSI_MAX);
+      this.#runtimeReference.spectoda_js.execute(commandBytes, DUMMY_BLE_CONNECTION);
+    };
+
+    // @ts-ignore
+    window.flutterConnection.synchronize = (synchronization: Synchronization) => {
+      logging.debug(`flutterConnection.synchronize(synchronization=${synchronization})`);
+
+      const DUMMY_BLE_CONNECTION = SpectodaWasm.Connection.make("11:11:11:11:11:11", SpectodaWasm.connector_type_t.CONNECTOR_BLE, SpectodaWasm.connection_rssi_t.RSSI_MAX);
+      this.#runtimeReference.spectoda_js.synchronize(synchronization, DUMMY_BLE_CONNECTION);
     };
   }
 
@@ -536,38 +620,6 @@ export class SpectodaConnectConnector extends FlutterConnection {
     return this.#applyTimeout(this.#promise, FLUTTER_RESPONSE_TIMEOUT, "ping");
   }
 
-  /*
-
-criteria: JSON pole objektu, kde plati: [{ tohle AND tamto AND toto } OR { tohle AND tamto }]
-
-možnosti:
-  name: string
-  nameprefix: string
-  fwVersion: string
-  network: string
-  product: number
-  adoptionFlag: bool
-
-criteria example:
-[
-  // all Devices that are named "NARA Aplha", are on 0.9.2 fw and are
-  // adopted by the owner with "baf2398ff5e6a7b8c9d097d54a9f865f" signature.
-  // Product code is 1 what means NARA Alpha, pcbCode 2 means NARA Controller
-  {
-    name: "NARA Alpha",
-    fwVersion: "0.9.2",
-    network: "baf2398ff5e6a7b8c9d097d54a9f865f",
-    product: 1
-  },
-  {
-    nameprefix: "NARA",
-    fwVersion: "!0.8.3",
-    pcbCode: 2,
-    adoptionFlag: true
-  }
-]
-
-*/
   // choose one Spectoda device (user chooses which device to connect to via a popup)
   // if no criteria are set, then show all Spectoda devices visible.
   // first bonds the BLE device with the PC/Phone/Tablet if it is needed.
@@ -580,18 +632,60 @@ criteria example:
     const criteria_json = JSON.stringify(criterium_array);
     logging.debug(`userSelect(criteria=${criteria_json}, timeout=${timeout_number})`);
 
+    /**
+     * Creates an invisible overlay that blocks all user interactions.
+     * This is a workaround for a Flutter bug where the BLE device selection popup
+     * does not properly block gestures from reaching the underlying WebView.
+     * Ideally this should be handled on the Flutter side, but we have not found
+     * a way to do that yet. The overlay prevents any touch, scroll, click or context
+     * menu events from reaching the WebView while the device selection popup is shown.
+     * 
+     * call overlay.remove() to disable
+     */
+    const makeGestureBlockingOverlay = () => {
+      const overlay = document.createElement("div");
+      overlay.style.position = "fixed";
+      overlay.style.top = "0";
+      overlay.style.left = "0"; 
+      overlay.style.width = "100%";
+      overlay.style.height = "100%";
+      overlay.style.backgroundColor = "rgba(0,0,0,0)";
+      overlay.style.zIndex = "999999";
+      // Block all interactions
+      overlay.addEventListener("touchstart", e => e.preventDefault(), { passive: false });
+      overlay.addEventListener("touchmove", e => e.preventDefault(), { passive: false });
+      overlay.addEventListener("touchend", e => e.preventDefault(), { passive: false });
+      overlay.addEventListener("wheel", e => e.preventDefault(), { passive: false });
+      overlay.addEventListener("click", e => e.preventDefault());
+      overlay.addEventListener("contextmenu", e => e.preventDefault());
+      // apply to document.body
+      document.body.appendChild(overlay);
+      return overlay;
+    };
+
+    const overlay = makeGestureBlockingOverlay();
+
     this.#promise = new Promise((resolve, reject) => {
       // @ts-ignore
       window.flutterConnection.resolve = function (json) {
+        // Remove blocking overlay
+        overlay.remove();
+
         // the resolve returns JSON string or null
         if (json) {
           json = json.replace(/\0/g, ""); //! [BUG] Flutter app on Android tends to return nulls as strings with a null character at the end. This is a workaround for that.
           json = JSON.parse(json);
         }
+
         resolve(json);
       };
       // @ts-ignore
-      window.flutterConnection.reject = reject;
+      window.flutterConnection.reject = function (error) {
+        // Remove blocking overlay
+        overlay.remove();
+
+        reject(error);
+      };
     });
 
     // @ts-ignore
