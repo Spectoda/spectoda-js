@@ -17,11 +17,15 @@ export class Spectoda_JS {
   #spectoda_wasm: Spectoda_WASM | undefined;
   #connectors: IConnector_WASM[];
 
+  #eventSaveFsTimeoutHandle : NodeJS.Timeout | null;
+
   constructor(runtimeReference: SpectodaRuntime) {
     this.#runtimeReference = runtimeReference;
 
     this.#spectoda_wasm = undefined;
     this.#connectors = [];
+
+    this.#eventSaveFsTimeoutHandle = null;
   }
 
   inicilize() {
@@ -56,6 +60,11 @@ export class Spectoda_JS {
         _onTnglUpdate: (tngl_bytes_vector, used_ids_vector) => {
           logging.verbose("Spectoda_JS::_onTnglUpdate", tngl_bytes_vector, used_ids_vector);
 
+          {
+            // Save FS after TNGL upload
+            SpectodaWasm.saveFS();
+          }
+        
           try {
             // dont know how to make Uint8Array in C++ yet. So I am forced to give data out in C++ std::vector
             const tngl_bytes = SpectodaWasm.convertUint8VectorUint8Array(tngl_bytes_vector);
@@ -70,6 +79,20 @@ export class Spectoda_JS {
 
         _onEvents: event_array => {
           logging.verbose("Spectoda_JS::_onEvents", event_array);
+
+          {
+            // Save FW after 11 seconds of Event Inactivity
+            const SAVE_FS_AFTER_MS = 11000
+            // if event is called in the 11s window, then reset the timeout
+            if (this.#eventSaveFsTimeoutHandle) {
+              clearTimeout(this.#eventSaveFsTimeoutHandle);
+            }
+            // after events are emitted wait and if it is quiet, then save FS
+            this.#eventSaveFsTimeoutHandle = setTimeout(() => {
+              SpectodaWasm.saveFS();
+              this.#eventSaveFsTimeoutHandle = null;
+            }, SAVE_FS_AFTER_MS);
+          }
 
           if (logging.level >= 1 && event_array.length > 0) {
             let debug_log = "";
