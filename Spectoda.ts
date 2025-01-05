@@ -3053,30 +3053,7 @@ export class Spectoda implements SpectodaClass {
 
 /**
  * Implemented in 0.12.4. Returns information about the connected controller 
- * @returns {object} Controller information object containing:
- * {
- *   connectionCriteria: {
- *     name: string = "SC_01",
- *     product: number = 2,
- *     mac: string = "01:23:45:56:ab:cd",
- *     fw: number = "0.12.4",
- *     network: string = "14fe7f8214fe7f8214fe7f8214fe7f82",
- *     commissionable: boolean = false
- *   }
- *   fullName: string = "SC_01",
- *   controllerLabel: string = "SC_01",
- *   commissionable: boolean = false,
- *   pcbCode: number = 1,
- *   productCode: number = 2,
- *   macAddress: string = "01:23:45:56:ab:cd",
- *   fwVersion: string = "FW_0.12.1_20241117",
- *   fwVersionCode: number = 1201,
- *   fwCompilationTimestamp: number = 1700000000000,
- *   networkSignature: string = "14fe7f8214fe7f8214fe7f8214fe7f82",
- *   tnglFingerprint: string = "839dfa03839dfa03839dfa03839dfa03",
- *   eventStoreFingerprint: string = "4629fade4629fade4629fade4629fade",
- *   configFingerprint: string = "27390fa027390fa027390fa027390fa0"
- * }
+ * @returns {object} Controller information object containing information about the controller
  */
 readControllerInfo() {
   logging.info("> Requesting controller info...");
@@ -3148,9 +3125,36 @@ readControllerInfo() {
       const event_store_fingerprint_hex = uint8ArrayToHexString(event_store_fingerprint);
       const config_fingerprint_hex = uint8ArrayToHexString(config_fingerprint);
 
+      // Mock data:
+      /* {
+      *   connectionCriteria: {
+      *     name: string = "SC_01",
+      *     product: number = 2,
+      *     mac: string = "01:23:45:56:ab:cd",
+      *     fw: string = "0.12.4",
+      *     network: string = "14fe7f8214fe7f8214fe7f8214fe7f82",
+      *     commissionable: boolean = false
+      *   }
+      *   fullName: string = "SC_01",
+      *   controllerLabel: string = "SC_01",
+      *   commissionable: boolean = false,
+      *   pcbCode: number = 1,
+      *   productCode: number = 2,
+      *   macAddress: string = "01:23:45:56:ab:cd",
+      *   fwVersionFull: string = "FW_0.12.1_20241117",
+      *   fwVersion: : string = "0.12.1",
+      *   fwVersionCode: number = 1201,
+      *   fwCompilationUnixTimestamp: number = 1743879238912,
+      *   networkSignature: string = "14fe7f8214fe7f8214fe7f8214fe7f82",
+      *   tnglFingerprint: string = "839dfa03839dfa03839dfa03839dfa03",
+      *   eventStoreFingerprint: string = "4629fade4629fade4629fade4629fade",
+      *   configFingerprint: string = "27390fa027390fa027390fa027390fa0"
+      * }
+      */
+
       const info = {
         connectionCriteria: {
-          name: label,
+          name: label, // ! criteria expects controller 5 letter label not the fullName. Should it be renamed?
           product: product_code,
           mac: mac_address,
           fw: fw_version_short,
@@ -3163,8 +3167,8 @@ readControllerInfo() {
         pcbCode: pcb_code,
         productCode: product_code,
         macAddress: mac_address,
-        fwVersion: fw_version_full,
-        fwVersionShort: fw_version_short,
+        fwVersionFull: fw_version_full,
+        fwVersion: fw_version_short,
         fwVersionCode: fw_version_code,
         fwCompilationUnixTimestamp: fw_compilation_unix_timestamp,
         networkSignature: network_signature_hex,
