@@ -1068,6 +1068,13 @@ export class Spectoda implements SpectodaClass {
         return `Value.Percentage(${parseFloat(p1)})`
       })
 
+      // Pattern E: IDs (0 to 255)
+      const idRegex = /\bID(0|[1-9]\d?|1\d\d|2[0-4]\d|25[0-5])\b/g;
+
+      minified = minified.replace(idRegex, (match, p1) => {
+        return `${p1}`;
+      });
+
       // Step 2: Remove BERRY-specific comments
       // First remove multiline comments (#- ... -#)
       // Match #- followed by any characters (including newlines) until -#
