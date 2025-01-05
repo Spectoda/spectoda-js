@@ -637,6 +637,36 @@ export class Spectoda_JS {
     return this.#spectoda_wasm.getDateTime();
   }
 
+  /**
+   * Retrieves the currently running TNGL fingerprint.
+   * This function returns a 32-byte hash of the TNGL in hex string format.
+   * 
+   * @throws {string} Throws "NotConstructed" if the WASM module is not initialized.
+   * @returns {string} The TNGL fingerprint as a hex string.
+   */
+  getTnglFingerprint(): string {
+    if (!this.#spectoda_wasm) {
+      throw "NotConstructed";
+    }
+
+    return this.#spectoda_wasm.getTnglFingerprint();
+  }
+
+  /**
+   * Retrieves the fingerprint or EventStore.
+   * This function returns a 32-byte hash of the EventStore in hex string format.
+   * 
+   * @throws {string} Throws "NotConstructed" if the WASM module is not initialized.
+   * @returns {string} The EventStore fingerprint as a hex string.
+   */
+  getEventStoreFingerprint(): string {
+    if (!this.#spectoda_wasm) {
+      throw "NotConstructed";
+    }
+
+    return this.#spectoda_wasm.getEventStoreFingerprint();
+  }
+
   registerDeviceContext(device_id: number): boolean {
     logging.verbose(`Spectoda_JS::registerDeviceContext(device_id=${device_id})`);
 

@@ -135,6 +135,8 @@ export interface Spectoda_WASM {
   writeIO(_0: ArrayBuffer | Uint8Array | Uint8ClampedArray | Int8Array | string, _1: number, _2: Value): boolean;
   readIO(_0: ArrayBuffer | Uint8Array | Uint8ClampedArray | Int8Array | string, _1: number, _2: Value): boolean;
   emitValue(_0: ArrayBuffer | Uint8Array | Uint8ClampedArray | Int8Array | string, _1: Value, _2: number, _3: boolean): boolean;
+  getTnglFingerprint(): string;
+  getEventStoreFingerprint(): string;
   _onEvents(_0: any): boolean;
   _onEventStateUpdates(_0: any): boolean;
   _onProcess(_0: any): boolean;
