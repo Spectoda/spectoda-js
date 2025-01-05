@@ -107,7 +107,7 @@ export interface ImplementedIConnector_WASM extends IConnector_WASM {
 
 export interface Spectoda_WASM {
   _handleReboot(): interface_error_t;
-  begin(): void;
+  begin(_0: ArrayBuffer|Uint8Array|Uint8ClampedArray|Int8Array|string, _1: ArrayBuffer|Uint8Array|Uint8ClampedArray|Int8Array|string): void;
   end(): void;
   synchronize(_0: Synchronization, _1: Connection): void;
   eraseHistory(): void;

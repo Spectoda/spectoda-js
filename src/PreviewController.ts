@@ -193,7 +193,7 @@ export class PreviewController {
               this.#instance = SpectodaWasm.Spectoda_WASM.implement(PreviewControllerImplementation);
 
               this.#instance.init(this.#macAddress, JSON.stringify(this.#config));
-              this.#instance.begin();
+              this.#instance.begin("00000000000000000000000000000000", "00000000000000000000000000000000");
 
               if (this.#connector !== undefined) {
                 this.#instance.registerConnector(this.#connector.getWasmInstance());
@@ -218,7 +218,7 @@ export class PreviewController {
       this.#instance = SpectodaWasm.Spectoda_WASM.implement(PreviewControllerImplementation);
 
       this.#instance.init(this.#macAddress, JSON.stringify(this.#config));
-      this.#instance.begin();
+      this.#instance.begin("00000000000000000000000000000000", "00000000000000000000000000000000");
 
       if (this.#connector !== undefined) {
         this.#instance.registerConnector(this.#connector.getWasmInstance());

@@ -385,7 +385,7 @@ export class Spectoda_JS {
 
       this.#connectors.push(connector);
 
-      this.#spectoda_wasm.begin();
+      this.#spectoda_wasm.begin("00000000000000000000000000000000", "00000000000000000000000000000000");
     });
   }
 
