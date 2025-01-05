@@ -164,7 +164,7 @@ export class WebBLEConnection {
   // WIP, event handling from spectoda network to application
   // timeline changes from spectoda network to application ...
   #onNetworkNotification(event: Event) {
-    logging.verbose(`WebBLEConnection::#onNetworkNotification()`, event);
+    logging.info(`WebBLEConnection::#onNetworkNotification()`, event);
 
     const bluetoothCharacteristic = event.target as BluetoothRemoteGATTCharacteristic | null;
     if (!bluetoothCharacteristic?.value?.buffer) return;
@@ -204,21 +204,6 @@ export class WebBLEConnection {
     }
   }
 
-  #onDeviceNotification(event: Event) {
-    logging.debug("WebBLEConnection::#onDeviceNotification", event);
-
-    const bluetoothCharacteristic = event.target as BluetoothRemoteGATTCharacteristic | null;
-    if (!bluetoothCharacteristic?.value?.buffer) return;
-
-    const commandBytes = new Uint8Array(bluetoothCharacteristic.value.buffer);
-    logging.verbose(`commandBytes=${uint8ArrayToHexString(commandBytes)}`);
-
-    // // TODO process request
-    // const DUMMY_WEBBLE_CONNECTION = SpectodaWasm.Connection.make("11:11:11:11:11:11", SpectodaWasm.connector_type_t.CONNECTOR_BLE, SpectodaWasm.connection_rssi_t.RSSI_MAX);
-    // const response = this.#runtimeReference.spectoda_js.request(commandBytes, DUMMY_WEBBLE_CONNECTION);
-
-    // logging.info("Response:", response);
-  }
 
   #onClockNotification(event: Event) {
     logging.debug("WebBLEConnection::#onClockNotification", event);
@@ -306,18 +291,8 @@ export class WebBLEConnection {
       .then(characteristic => {
         this.#deviceChar = characteristic;
 
-        return this.#deviceChar
-          .startNotifications()
-          .then(() => {
-            logging.info("> Device notifications started");
-            if (!this.#deviceChar) throw "DeviceCharactristicsNull";
-            this.#deviceChar.oncharacteristicvaluechanged = event => {
-              this.#onDeviceNotification(event);
-            };
-          })
-          .catch(e => {
-            logging.warn("this.#deviceChar.startNotifications() exception:", e);
-          });
+        // ! Device characteristics does not implement notifications as it collides with write/read functionality
+
       })
       .catch(e => {
         logging.warn(e);
