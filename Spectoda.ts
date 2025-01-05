@@ -740,76 +740,76 @@ export class Spectoda implements SpectodaClass {
         //     });
         //   })
         // ! For now on every connection, force sync timeline to day time
-        return (
-          this.syncTimelineToDayTime()
-            .then(() => {
-              return this.readControllerInfo().then(async info => {
-
-                // 0.12.4 and up implements readControllerInfo() which give a hash (fingerprint) of 
-                // TNGL and EventStore on the Controller. If the TNGL and EventStore 
-                // FP cashed in localstorage are equal, then the app does not need to 
+        return this.syncTimelineToDayTime()
+          .then(() => {
+            return this.readControllerInfo()
+              .then(async (info) => {
+                // 0.12.4 and up implements readControllerInfo() which give a hash (fingerprint) of
+                // TNGL and EventStore on the Controller. If the TNGL and EventStore
+                // FP cashed in localstorage are equal, then the app does not need to
                 // "fetch" the TNGL and EventStore from Controller.
 
-                const tnglFingerprint = this.runtime.spectoda_js.getTnglFingerprint();
-                const eventStoreFingerprint = this.runtime.spectoda_js.getEventStoreFingerprint();
+                const tnglFingerprint =
+                  this.runtime.spectoda_js.getTnglFingerprint()
+                const eventStoreFingerprint =
+                  this.runtime.spectoda_js.getEventStoreFingerprint()
 
                 // First erase in localstorage
                 if (info.tnglFingerprint != tnglFingerprint) {
-                  this.runtime.spectoda_js.eraseTngl();
+                  this.runtime.spectoda_js.eraseTngl()
                 }
 
                 if (info.eventStoreFingerprint != eventStoreFingerprint) {
-                  this.runtime.spectoda_js.eraseHistory();
+                  this.runtime.spectoda_js.eraseHistory()
                 }
 
                 // Then read from Controller
                 if (info.tnglFingerprint != tnglFingerprint) {
                   // "fetch" the TNGL from Controller to App localstorage
-                  await this.syncTngl().catch(e => {
-                    logging.error("Tngl sync after reconnection failed:", e);
-                  });
+                  await this.syncTngl().catch((e) => {
+                    logging.error('Tngl sync after reconnection failed:', e)
+                  })
                 }
 
-                if (info.eventStoreFingerprint != eventStoreFingerprint) {                  
+                if (info.eventStoreFingerprint != eventStoreFingerprint) {
                   // "fetch" the EventStore from Controller to App localstorage
-                  await this.syncEventHistory().catch(e => {
-                    logging.error("History sync after reconnection failed:", e);
-                  });
+                  await this.syncEventHistory().catch((e) => {
+                    logging.error('History sync after reconnection failed:', e)
+                  })
                 }
               }) //
-              .catch(async e => {
-                logging.warn(e);
+              .catch(async (e) => {
+                logging.warn(e)
 
                 // App connected to FW that does not support readControllerInfo(),
                 // so remove cashed TNGL and EventStore (EventHistory) from localstogare
                 // and read it from the Controller
 
                 // first clean all
-                this.runtime.spectoda_js.eraseTngl();
-                this.runtime.spectoda_js.eraseHistory();
-        
+                this.runtime.spectoda_js.eraseTngl()
+                this.runtime.spectoda_js.eraseHistory()
+
                 // "fetch" the TNGL from Controller to App localstorage
-                await this.syncTngl().catch(e => {
-                  logging.error("Tngl sync after reconnection failed:", e);
-                });
+                await this.syncTngl().catch((e) => {
+                  logging.error('Tngl sync after reconnection failed:', e)
+                })
 
                 // "fetch" the EventStore from Controller to App localstorage
-                await this.syncEventHistory().catch(e => {
-                  logging.error("History sync after reconnection failed:", e);
-                });
+                await this.syncEventHistory().catch((e) => {
+                  logging.error('History sync after reconnection failed:', e)
+                })
               }) //
-              .then(()=>{
-                return this.runtime.connected();
-              });
-            })//
-            .then(connected => {
-              if (!connected) {
-                throw "ConnectionFailed";
-              }
-              this.#setConnectionState(CONNECTION_STATUS.CONNECTED);
-              return connectedDeviceInfo;
-            })
-        );
+              .then(() => {
+                return this.runtime.connected()
+              })
+          }) //
+          .then((connected) => {
+            if (!connected) {
+              throw 'ConnectionFailed'
+            }
+            this.#setConnectionState(CONNECTION_STATUS.CONNECTED)
+            return connectedDeviceInfo
+          })
       })
       .catch((error) => {
         logging.error('Error during connect():', error)
@@ -1069,11 +1069,11 @@ export class Spectoda implements SpectodaClass {
       })
 
       // Pattern E: IDs (0 to 255)
-      const idRegex = /\bID(0|[1-9]\d?|1\d\d|2[0-4]\d|25[0-5])\b/g;
+      const idRegex = /\bID(0|[1-9]\d?|1\d\d|2[0-4]\d|25[0-5])\b/g
 
       minified = minified.replace(idRegex, (match, p1) => {
-        return `${p1}`;
-      });
+        return `${p1}`
+      })
 
       // Step 2: Remove BERRY-specific comments
       // First remove multiline comments (#- ... -#)
@@ -2317,7 +2317,7 @@ export class Spectoda implements SpectodaClass {
             removed_device_mac = Array.from(
               removed_device_mac_bytes,
               function (byte) {
-                return ('0' + (byte & 0xFF).toString(16)).slice(-2)
+                return ('0' + (byte & 0xff).toString(16)).slice(-2)
               },
             ).join(':')
           }
@@ -3595,142 +3595,151 @@ export class Spectoda implements SpectodaClass {
     }
   }
 
-/**
- * Returns information object about the connected controller 
- * 
- * Implemented in FW 0.12.4
- */
-async readControllerInfo() {
-  logging.info("> Requesting controller info...");
+  /**
+   * Returns information object about the connected controller
+   *
+   * Implemented in FW 0.12.4
+   */
+  async readControllerInfo() {
+    logging.info('> Requesting controller info...')
 
-  const request_uuid = this.#getUUID();
-  const bytes = [COMMAND_FLAGS.FLAG_READ_CONTROLLER_INFO_REQUEST, ...numberToBytes(request_uuid, 4)];
+    const request_uuid = this.#getUUID()
+    const bytes = [
+      COMMAND_FLAGS.FLAG_READ_CONTROLLER_INFO_REQUEST,
+      ...numberToBytes(request_uuid, 4),
+    ]
 
-  return this.runtime.request(bytes, true).then(response => {
-    if (response === null) {
-      logging.error("No response received from controller");
-      throw "NoResponseReceived";
-    }
+    return this.runtime.request(bytes, true).then((response) => {
+      if (response === null) {
+        logging.error('No response received from controller')
+        throw 'NoResponseReceived'
+      }
 
-    let reader = new TnglReader(response);
+      let reader = new TnglReader(response)
 
-    logging.verbose(`response.byteLength=${response.byteLength}`);
+      logging.verbose(`response.byteLength=${response.byteLength}`)
 
-    const responseFlag = reader.readFlag();
+      const responseFlag = reader.readFlag()
 
-    if (responseFlag !== COMMAND_FLAGS.FLAG_READ_CONTROLLER_INFO_RESPONSE) {
-      logging.error(`Invalid response flag received: ${responseFlag}`);
-      throw "InvalidResponseFlag";
-    }
+      if (responseFlag !== COMMAND_FLAGS.FLAG_READ_CONTROLLER_INFO_RESPONSE) {
+        logging.error(`Invalid response flag received: ${responseFlag}`)
+        throw 'InvalidResponseFlag'
+      }
 
-    const response_uuid = reader.readUint32();
+      const response_uuid = reader.readUint32()
 
-    if (response_uuid != request_uuid) {
-      logging.error(`UUID mismatch - Request: ${request_uuid}, Response: ${response_uuid}`);
-      throw "InvalidResponseUuid";
-    }
+      if (response_uuid != request_uuid) {
+        logging.error(
+          `UUID mismatch - Request: ${request_uuid}, Response: ${response_uuid}`,
+        )
+        throw 'InvalidResponseUuid'
+      }
 
-    const error_code = reader.readUint8();
-    logging.verbose(`error_code=${error_code}`);
+      const error_code = reader.readUint8()
+      logging.verbose(`error_code=${error_code}`)
 
-    if (error_code === 0) {
+      if (error_code === 0) {
+        // Read all the controller info fields in order matching interface.cpp
+        const full_name = reader.readString(16).trim() // NAME_STRING_MAX_SIZE
+        const label = reader.readString(6).trim() // 5 chars + null terminator
+        const mac_bytes = reader.readBytes(6) // MAC_SIZE
+        const controller_flags = reader.readUint8()
+        reader.readUint8() // reserved for flags increase
+        const pcb_code = reader.readUint16()
+        const product_code = reader.readUint16()
+        const fw_version_code = reader.readUint16()
+        reader.readUint16() // reserved for another code
+        const fw_compilation_unix_timestamp = reader.readUint64()
+        reader.readUint64() // reserved
+        const fw_version_full = reader.readString(32).trim() // FW_VERSION_STRING_MAX_SIZE
+        const tngl_fingerprint = reader.readBytes(32) // TNGL_FINGERPRINT_SIZE
+        const event_store_fingerprint = reader.readBytes(32) // HISTORY_FINGERPRINT_SIZE
+        const config_fingerprint = reader.readBytes(32) // CONFIG_FINGERPRINT_SIZE
+        const network_signature = reader.readBytes(16) // NETWORK_SIGNATURE_SIZE
 
-      // Read all the controller info fields in order matching interface.cpp
-      const full_name = reader.readString(16).trim(); // NAME_STRING_MAX_SIZE
-      const label = reader.readString(6).trim(); // 5 chars + null terminator
-      const mac_bytes = reader.readBytes(6); // MAC_SIZE
-      const controller_flags = reader.readUint8();
-      reader.readUint8(); // reserved for flags increase
-      const pcb_code = reader.readUint16();
-      const product_code = reader.readUint16();
-      const fw_version_code = reader.readUint16();
-      reader.readUint16(); // reserved for another code
-      const fw_compilation_unix_timestamp = reader.readUint64();
-      reader.readUint64(); // reserved
-      const fw_version_full = reader.readString(32).trim(); // FW_VERSION_STRING_MAX_SIZE
-      const tngl_fingerprint = reader.readBytes(32); // TNGL_FINGERPRINT_SIZE  
-      const event_store_fingerprint = reader.readBytes(32); // HISTORY_FINGERPRINT_SIZE
-      const config_fingerprint = reader.readBytes(32); // CONFIG_FINGERPRINT_SIZE
-      const network_signature = reader.readBytes(16); // NETWORK_SIGNATURE_SIZE
-      
-      // fw version string from code
-      const fw_version_short = `${Math.floor(fw_version_code/10000)}.${Math.floor((fw_version_code%10000)/100)}.${fw_version_code%100}`;
-      
-      // get Commissionable flag
-      const COMMISSIONABLE_FLAG_BIT_POSITION = 0;
-      const commissionable = !!(controller_flags & (1 << COMMISSIONABLE_FLAG_BIT_POSITION));
+        // fw version string from code
+        const fw_version_short = `${Math.floor(fw_version_code / 10000)}.${Math.floor((fw_version_code % 10000) / 100)}.${fw_version_code % 100}`
 
-      // Format MAC address
-      const mac_address = Array.from(mac_bytes, byte => 
-        byte.toString(16).padStart(2, '0')).join(':');
+        // get Commissionable flag
+        const COMMISSIONABLE_FLAG_BIT_POSITION = 0
+        const commissionable = !!(
+          controller_flags &
+          (1 << COMMISSIONABLE_FLAG_BIT_POSITION)
+        )
 
-      // Format fingerprints and signature as hex strings
-      const network_signature_hex = uint8ArrayToHexString(network_signature);
-      const tngl_fingerprint_hex = uint8ArrayToHexString(tngl_fingerprint);
-      const event_store_fingerprint_hex = uint8ArrayToHexString(event_store_fingerprint);
-      const config_fingerprint_hex = uint8ArrayToHexString(config_fingerprint);
+        // Format MAC address
+        const mac_address = Array.from(mac_bytes, (byte) =>
+          byte.toString(16).padStart(2, '0'),
+        ).join(':')
 
-      // Mock data:
-      /* {
-      *   connectionCriteria: {
-      *     name: string = "SC_01",
-      *     product: number = 2,
-      *     mac: string = "01:23:45:56:ab:cd",
-      *     fw: string = "0.12.4",
-      *     network: string = "14fe7f8214fe7f8214fe7f8214fe7f82",
-      *     commissionable: boolean = false
-      *   }
-      *   fullName: string = "SC_01",
-      *   controllerLabel: string = "SC_01",
-      *   commissionable: boolean = false,
-      *   pcbCode: number = 1,
-      *   productCode: number = 2,
-      *   macAddress: string = "01:23:45:56:ab:cd",
-      *   fwVersionFull: string = "FW_0.12.1_20241117",
-      *   fwVersion: : string = "0.12.1",
-      *   fwVersionCode: number = 1201,
-      *   fwCompilationUnixTimestamp: number = 1743879238912,
-      *   networkSignature: string = "14fe7f8214fe7f8214fe7f8214fe7f82",
-      *   tnglFingerprint: string = "839dfa03839dfa03839dfa03839dfa03",
-      *   eventStoreFingerprint: string = "4629fade4629fade4629fade4629fade",
-      *   configFingerprint: string = "27390fa027390fa027390fa027390fa0"
-      * }
-      */
+        // Format fingerprints and signature as hex strings
+        const network_signature_hex = uint8ArrayToHexString(network_signature)
+        const tngl_fingerprint_hex = uint8ArrayToHexString(tngl_fingerprint)
+        const event_store_fingerprint_hex = uint8ArrayToHexString(
+          event_store_fingerprint,
+        )
+        const config_fingerprint_hex = uint8ArrayToHexString(config_fingerprint)
 
-      const info = {
-        connectionCriteria: {
-          name: label, // ! criteria expects controller 5 letter label not the fullName. Should it be renamed?
-          product: product_code,
-          mac: mac_address,
-          fw: fw_version_short,
-          network: network_signature_hex,
-          commissionable: commissionable
-        },
-        fullName: full_name,
-        controllerLabel: label,
-        commissionable: commissionable,
-        pcbCode: pcb_code,
-        productCode: product_code,
-        macAddress: mac_address,
-        fwVersionFull: fw_version_full,
-        fwVersion: fw_version_short,
-        fwVersionCode: fw_version_code,
-        fwCompilationUnixTimestamp: fw_compilation_unix_timestamp,
-        networkSignature: network_signature_hex,
-        tnglFingerprint: tngl_fingerprint_hex,
-        eventStoreFingerprint: event_store_fingerprint_hex,
-        configFingerprint: config_fingerprint_hex
-      };
+        // Mock data:
+        /* {
+         *   connectionCriteria: {
+         *     name: string = "SC_01",
+         *     product: number = 2,
+         *     mac: string = "01:23:45:56:ab:cd",
+         *     fw: string = "0.12.4",
+         *     network: string = "14fe7f8214fe7f8214fe7f8214fe7f82",
+         *     commissionable: boolean = false
+         *   }
+         *   fullName: string = "SC_01",
+         *   controllerLabel: string = "SC_01",
+         *   commissionable: boolean = false,
+         *   pcbCode: number = 1,
+         *   productCode: number = 2,
+         *   macAddress: string = "01:23:45:56:ab:cd",
+         *   fwVersionFull: string = "FW_0.12.1_20241117",
+         *   fwVersion: : string = "0.12.1",
+         *   fwVersionCode: number = 1201,
+         *   fwCompilationUnixTimestamp: number = 1743879238912,
+         *   networkSignature: string = "14fe7f8214fe7f8214fe7f8214fe7f82",
+         *   tnglFingerprint: string = "839dfa03839dfa03839dfa03839dfa03",
+         *   eventStoreFingerprint: string = "4629fade4629fade4629fade4629fade",
+         *   configFingerprint: string = "27390fa027390fa027390fa027390fa0"
+         * }
+         */
 
-      logging.info(`> Controller Info:`, info);
-      return info;
-    } else {
-      logging.error(`Request failed with error code: ${error_code}`);
-      throw "Fail";
-    }
-  });
-}
+        const info = {
+          connectionCriteria: {
+            name: label, // ! criteria expects controller 5 letter label not the fullName. Should it be renamed?
+            product: product_code,
+            mac: mac_address,
+            fw: fw_version_short,
+            network: network_signature_hex,
+            commissionable: commissionable,
+          },
+          fullName: full_name,
+          controllerLabel: label,
+          commissionable: commissionable,
+          pcbCode: pcb_code,
+          productCode: product_code,
+          macAddress: mac_address,
+          fwVersionFull: fw_version_full,
+          fwVersion: fw_version_short,
+          fwVersionCode: fw_version_code,
+          fwCompilationUnixTimestamp: fw_compilation_unix_timestamp,
+          networkSignature: network_signature_hex,
+          tnglFingerprint: tngl_fingerprint_hex,
+          eventStoreFingerprint: event_store_fingerprint_hex,
+          configFingerprint: config_fingerprint_hex,
+        }
 
+        logging.info(`> Controller Info:`, info)
+        return info
+      } else {
+        logging.error(`Request failed with error code: ${error_code}`)
+        throw 'Fail'
+      }
+    })
+  }
 }
 // ====== NEW PARADIAGM FUNCTIONS ====== //
 
