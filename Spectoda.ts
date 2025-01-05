@@ -621,10 +621,6 @@ export class Spectoda implements SpectodaClass {
       .then(() => {
         logging.debug("> Connecting controller...");
 
-        // ? eraseTngl to discard TNGL from the previous session
-        this.runtime.spectoda_js.eraseTngl();
-        // ? eraseHistory to discard Event History from the previous session
-        this.runtime.spectoda_js.eraseHistory();
         // ? eraseTimeline to discard Timeline from the previous session
         this.runtime.spectoda_js.eraseTimeline();
 
@@ -643,29 +639,76 @@ export class Spectoda implements SpectodaClass {
         //     });
         //   })
         // ! For now on every connection, force sync timeline to day time
-        return this.syncTimelineToDayTime()
-          .then(() => {
-            return this.syncTngl();
-          })
-          .catch(e => {
-            logging.error("Tngl sync after reconnection failed:", e);
-          })
-          .then(() => {
-            return this.syncEventHistory();
-          })
-          .catch(e => {
-            logging.error("History sync after reconnection failed:", e);
-          })
-          .then(() => {
-            return this.runtime.connected();
-          })
-          .then(connected => {
-            if (!connected) {
-              throw "ConnectionFailed";
-            }
-            this.#setConnectionState(CONNECTION_STATUS.CONNECTED);
-            return connectedDeviceInfo;
-          });
+        return (
+          this.syncTimelineToDayTime()
+            .then(() => {
+              return this.readControllerInfo().then(async info => {
+
+                // 0.12.4 and up implements readControllerInfo() which give a hash (fingerprint) of 
+                // TNGL and EventStore on the Controller. If the TNGL and EventStore 
+                // FP cashed in localstorage are equal, then the app does not need to 
+                // "fetch" the TNGL and EventStore from Controller.
+
+                const tnglFingerprint = this.runtime.spectoda_js.getTnglFingerprint();
+                const eventStoreFingerprint = this.runtime.spectoda_js.getEventStoreFingerprint();
+
+                // First erase in localstorage
+                if (info.tnglFingerprint != tnglFingerprint) {
+                  this.runtime.spectoda_js.eraseTngl();
+                }
+
+                if (info.eventStoreFingerprint != eventStoreFingerprint) {
+                  this.runtime.spectoda_js.eraseHistory();
+                }
+
+                // Then read from Controller
+                if (info.tnglFingerprint != tnglFingerprint) {
+                  // "fetch" the TNGL from Controller to App localstorage
+                  await this.syncTngl().catch(e => {
+                    logging.error("Tngl sync after reconnection failed:", e);
+                  });
+                }
+
+                if (info.eventStoreFingerprint != eventStoreFingerprint) {                  
+                  // "fetch" the EventStore from Controller to App localstorage
+                  await this.syncEventHistory().catch(e => {
+                    logging.error("History sync after reconnection failed:", e);
+                  });
+                }
+              }) //
+              .catch(async e => {
+                logging.warn(e);
+
+                // App connected to FW that does not support readControllerInfo(),
+                // so remove cashed TNGL and EventStore (EventHistory) from localstogare
+                // and read it from the Controller
+
+                // first clean all
+                this.runtime.spectoda_js.eraseTngl();
+                this.runtime.spectoda_js.eraseHistory();
+        
+                // "fetch" the TNGL from Controller to App localstorage
+                await this.syncTngl().catch(e => {
+                  logging.error("Tngl sync after reconnection failed:", e);
+                });
+
+                // "fetch" the EventStore from Controller to App localstorage
+                await this.syncEventHistory().catch(e => {
+                  logging.error("History sync after reconnection failed:", e);
+                });
+              }) //
+              .then(()=>{
+                return this.runtime.connected();
+              });
+            })//
+            .then(connected => {
+              if (!connected) {
+                throw "ConnectionFailed";
+              }
+              this.#setConnectionState(CONNECTION_STATUS.CONNECTED);
+              return connectedDeviceInfo;
+            })
+        );
       })
       .catch(error => {
         logging.error("Error during connect():", error);
