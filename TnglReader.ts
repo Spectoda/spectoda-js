@@ -72,12 +72,12 @@ export class TnglReader {
     }
   }
 
-  readString(bufferLength: number) {
-    if (this.#index + bufferLength <= this.#dataView.byteLength) {
+  readString(byteCount: number) {
+    if (this.#index + byteCount <= this.#dataView.byteLength) {
       let string = "";
       let endOfTheString = false;
 
-      for (let i = 0; i < bufferLength; i++) {
+      for (let i = 0; i < byteCount; i++) {
         let charCode = this.#dataView.getUint8(this.#index + i);
         if (charCode === 0) {
           endOfTheString = true;
@@ -87,9 +87,11 @@ export class TnglReader {
         }
       }
 
+      this.forward(byteCount);
+
       return string;
     } else {
-      console.error("readString(): ReadOutOfRange index=", this.#index, "bufferLength=", bufferLength, "byteLength=", this.#dataView.byteLength);
+      console.error("readString(): ReadOutOfRange index=", this.#index, "byteCount=", byteCount, "byteLength=", this.#dataView.byteLength);
       throw "ReadOutOfRange";
     }
   }
