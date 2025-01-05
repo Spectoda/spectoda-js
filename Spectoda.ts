@@ -3007,8 +3007,139 @@ export class Spectoda implements SpectodaClass {
       }
     }
   }
+
+/**
+ * Implemented in 0.12.4. Returns information about the connected controller 
+ * @returns {object} Controller information object containing:
+ * {
+ *   connectionCriteria: {
+ *     name: string = "SC_01",
+ *     product: number = 2,
+ *     mac: string = "01:23:45:56:ab:cd",
+ *     fw: number = "0.12.4",
+ *     network: string = "14fe7f8214fe7f8214fe7f8214fe7f82",
+ *     commissionable: boolean = false
+ *   }
+ *   fullName: string = "SC_01",
+ *   controllerLabel: string = "SC_01",
+ *   commissionable: boolean = false,
+ *   pcbCode: number = 1,
+ *   productCode: number = 2,
+ *   macAddress: string = "01:23:45:56:ab:cd",
+ *   fwVersion: string = "FW_0.12.1_20241117",
+ *   fwVersionCode: number = 1201,
+ *   fwCompilationTimestamp: number = 1700000000000,
+ *   networkSignature: string = "14fe7f8214fe7f8214fe7f8214fe7f82",
+ *   tnglFingerprint: string = "839dfa03839dfa03839dfa03839dfa03",
+ *   eventStoreFingerprint: string = "4629fade4629fade4629fade4629fade",
+ *   configFingerprint: string = "27390fa027390fa027390fa027390fa0"
+ * }
+ */
+readControllerInfo() {
+  logging.info("> Requesting controller info...");
+
+  const request_uuid = this.#getUUID();
+  const bytes = [COMMAND_FLAGS.FLAG_READ_CONTROLLER_INFO_REQUEST, ...numberToBytes(request_uuid, 4)];
+
+  return this.runtime.request(bytes, true).then(response => {
+    if (response === null) {
+      logging.error("No response received from controller");
+      throw "NoResponseReceived";
+    }
+
+    let reader = new TnglReader(response);
+
+    logging.verbose(`response.byteLength=${response.byteLength}`);
+
+    const responseFlag = reader.readFlag();
+
+    if (responseFlag !== COMMAND_FLAGS.FLAG_READ_CONTROLLER_INFO_RESPONSE) {
+      logging.error(`Invalid response flag received: ${responseFlag}`);
+      throw "InvalidResponseFlag";
+    }
+
+    const response_uuid = reader.readUint32();
+
+    if (response_uuid != request_uuid) {
+      logging.error(`UUID mismatch - Request: ${request_uuid}, Response: ${response_uuid}`);
+      throw "InvalidResponseUuid";
+    }
+
+    const error_code = reader.readUint8();
+    logging.verbose(`error_code=${error_code}`);
+
+    if (error_code === 0) {
+
+      // Read all the controller info fields in order matching interface.cpp
+      const full_name = reader.readString(16).trim(); // NAME_STRING_MAX_SIZE
+      const label = reader.readString(6).trim(); // 5 chars + null terminator
+      const mac_bytes = reader.readBytes(6); // MAC_SIZE
+      const controller_flags = reader.readUint8();
+      reader.readUint8(); // reserved for flags increase
+      const pcb_code = reader.readUint16();
+      const product_code = reader.readUint16();
+      const fw_version_code = reader.readUint16();
+      reader.readUint16(); // reserved for another code
+      const fw_compilation_unix_timestamp = reader.readUint64();
+      reader.readUint64(); // reserved
+      const fw_version_full = reader.readString(32).trim(); // FW_VERSION_STRING_MAX_SIZE
+      const tngl_fingerprint = reader.readBytes(32); // TNGL_FINGERPRINT_SIZE  
+      const event_store_fingerprint = reader.readBytes(32); // HISTORY_FINGERPRINT_SIZE
+      const config_fingerprint = reader.readBytes(32); // CONFIG_FINGERPRINT_SIZE
+      const network_signature = reader.readBytes(16); // NETWORK_SIGNATURE_SIZE
+      
+      // fw version string from code
+      const fw_version_short = `${Math.floor(fw_version_code/10000)}.${Math.floor((fw_version_code%10000)/100)}.${fw_version_code%100}`;
+      
+      // get Commissionable flag
+      const COMMISSIONABLE_FLAG_BIT_POSITION = 0;
+      const commissionable = !!(controller_flags & (1 << COMMISSIONABLE_FLAG_BIT_POSITION));
+
+      // Format MAC address
+      const mac_address = Array.from(mac_bytes, byte => 
+        byte.toString(16).padStart(2, '0')).join(':');
+
+      // Format fingerprints and signature as hex strings
+      const network_signature_hex = uint8ArrayToHexString(network_signature);
+      const tngl_fingerprint_hex = uint8ArrayToHexString(tngl_fingerprint);
+      const event_store_fingerprint_hex = uint8ArrayToHexString(event_store_fingerprint);
+      const config_fingerprint_hex = uint8ArrayToHexString(config_fingerprint);
+
+      const info = {
+        connectionCriteria: {
+          name: label,
+          product: product_code,
+          mac: mac_address,
+          fw: fw_version_short,
+          network: network_signature_hex,
+          commissionable: commissionable
+        },
+        fullName: full_name,
+        controllerLabel: label,
+        commissionable: commissionable,
+        pcbCode: pcb_code,
+        productCode: product_code,
+        macAddress: mac_address,
+        fwVersion: fw_version_full,
+        fwVersionShort: fw_version_short,
+        fwVersionCode: fw_version_code,
+        fwCompilationUnixTimestamp: fw_compilation_unix_timestamp,
+        networkSignature: network_signature_hex,
+        tnglFingerprint: tngl_fingerprint_hex,
+        eventStoreFingerprint: event_store_fingerprint_hex,
+        configFingerprint: config_fingerprint_hex
+      };
+
+      logging.info(`> Controller Info:`, info);
+      return info;
+    } else {
+      logging.error(`Request failed with error code: ${error_code}`);
+      throw "Fail";
+    }
+  });
 }
 
+}
 // ====== NEW PARADIAGM FUNCTIONS ====== //
 
 if (typeof window !== "undefined") {
