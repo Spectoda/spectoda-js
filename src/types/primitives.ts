@@ -153,7 +153,7 @@ export namespace SpectodaTypes {
 
     /** 
      * @group ConnectionCriteria
-     * @description Unique signature identifying the network configuration.
+     * @description Unique signature identifying the network configuration. Provided as a hexstring.
      */
     networkSignature: string;
 
@@ -189,17 +189,17 @@ export namespace SpectodaTypes {
     fwCompilationUnixTimestamp: number;
 
     /** 
-     * Fingerprint identifying the TNG-L component version.
+     * SHA256 hash of uploaded tnglBytes stored inside the Controller. Provided as a hexstring.
      */
     tnglFingerprint: string;
 
     /** 
-     * Fingerprint identifying the event store state or version.
+     * Fingerprint identifying the event store state or version. Provided as a hexstring.
      */
     eventStoreFingerprint: string;
 
     /** 
-     * Fingerprint identifying the configuration state or version.
+     * Fingerprint identifying the configuration state or version. Provided as a hexstring.
      */
     configFingerprint: string;
   };
