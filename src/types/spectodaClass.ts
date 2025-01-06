@@ -73,4 +73,6 @@ export interface SpectodaClass {
   setDebugLevel(level: number): void;
   requestWakeLock(prioritized?: boolean): Promise<void>;
   releaseWakeLock(prioritized?: boolean): Promise<void>;
+
+  readControllerInfo: () => Promise<SpectodaTypes.ControllerInfo>
 }
