@@ -1,5 +1,5 @@
-import { validateTimestamp } from "./functions";
-import { SpectodaWasm, MainModule } from "./src/SpectodaWasm";
+import { validateTimestamp } from './functions';
+import { SpectodaWasm, MainModule } from './src/SpectodaWasm';
 
 declare global {
   interface Window {

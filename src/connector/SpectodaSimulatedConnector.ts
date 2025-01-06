@@ -1,17 +1,18 @@
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 
-import { sleep } from "../../functions";
-import { logging } from "../../logging";
-import { TimeTrack } from "../../TimeTrack";
-import { PreviewController } from "../PreviewController";
-import { APP_MAC_ADDRESS, DEFAULT_TIMEOUT } from "../constants";
-import { SpectodaRuntime } from "../SpectodaRuntime";
-import { SpectodaWasm } from "../SpectodaWasm";
-import { SpectodaTypes } from "../types/primitives";
-import { Connection, Synchronization, Uint8Vector } from "../types/wasm";
-import { IConnector_JS } from "./IConnector_JS";
+import { sleep } from '../../functions';
+import { logging } from '../../logging';
+import { TimeTrack } from '../../TimeTrack';
+import { PreviewController } from '../PreviewController';
+import { APP_MAC_ADDRESS, DEFAULT_TIMEOUT } from '../constants';
+import { SpectodaRuntime } from '../SpectodaRuntime';
+import { SpectodaWasm } from '../SpectodaWasm';
+import { SpectodaTypes } from '../types/primitives';
+import { Connection, Synchronization, Uint8Vector } from '../types/wasm';
 
-export const SIMULATED_MAC_ADDRESS = "00:00:23:34:45:56";
+import { IConnector_JS } from './IConnector_JS';
+
+export const SIMULATED_MAC_ADDRESS = '00:00:23:34:45:56';
 
 /////////////////////////////////////////////////////////////////////////////////////
 
@@ -34,7 +35,7 @@ export class SpectodaSimulatedConnector {
   controllers: PreviewController[];
 
   constructor(runtimeReference: SpectodaRuntime) {
-    this.type = "simulated";
+    this.type = 'simulated';
 
     this.#runtimeReference = runtimeReference;
 
@@ -78,14 +79,14 @@ export class SpectodaSimulatedConnector {
       const SimulatedControllerMacAddress = SIMULATED_MAC_ADDRESS;
 
       const SimulatedControllerConfig = {
-        controller: { name: "SIMULATED" },
+        controller: { name: 'SIMULATED' },
         console: { debug: 3 },
 
         io: {
-          PIX1: { type: "NEOPIXEL", variant: "WS2812B" },
-          PIX2: { type: "NEOPIXEL", variant: "WS2811", order: "RGB" },
-          PWM: { type: "PWM", order: "W" },
-          DALI: { type: "DALI" },
+          PIX1: { type: 'NEOPIXEL', variant: 'WS2812B' },
+          PIX2: { type: 'NEOPIXEL', variant: 'WS2811', order: 'RGB' },
+          PWM: { type: 'PWM', order: 'W' },
+          DALI: { type: 'DALI' },
         },
       };
 
@@ -108,21 +109,21 @@ export class SpectodaSimulatedConnector {
           const command_bytecode_array = SpectodaWasm.convertUint8VectorUint8Array(command_bytecode);
 
           if (source_connection.connector_type == SpectodaWasm.connector_type_t.CONNECTOR_SIMULATED) {
-            logging.debug("SpectodaSimulatedConnector::_sendExecute() - source_connection is CONNECTOR_SIMULATED");
+            logging.debug('SpectodaSimulatedConnector::_sendExecute() - source_connection is CONNECTOR_SIMULATED');
             return true;
           }
 
           // TODO! SOURCE_CONNECTION_THIS_CONTROLLER should have the actual mac address of the controller. Not 00:00:00:00:00:00
 
           try {
-            if (source_connection.address_string == "00:00:00:00:00:00") {
+            if (source_connection.address_string == '00:00:00:00:00:00') {
               source_connection.address_string = SimulatedControllerMacAddress;
 
               this.#runtimeReference.spectoda_js.execute(command_bytecode_array, source_connection);
             }
 
             source_connection.connector_type = SpectodaWasm.connector_type_t.CONNECTOR_SIMULATED;
-            this.#runtimeReference.sendExecute(command_bytecode_array, source_connection).catch(e => {
+            this.#runtimeReference.sendExecute(command_bytecode_array, source_connection).catch((e) => {
               logging.error(e);
               return false;
             });
@@ -145,19 +146,19 @@ export class SpectodaSimulatedConnector {
           logging.verbose(`SpectodaSimulatedConnector::_sendSynchronize(synchronization:${synchronization}, source_connection=${source_connection.address_string})`);
 
           if (source_connection.connector_type == SpectodaWasm.connector_type_t.CONNECTOR_SIMULATED) {
-            logging.debug("SpectodaSimulatedConnector::_sendSynchronize() - source_connection is CONNECTOR_SIMULATED");
+            logging.debug('SpectodaSimulatedConnector::_sendSynchronize() - source_connection is CONNECTOR_SIMULATED');
             return true;
           }
 
           try {
             // TODO! SOURCE_CONNECTION_THIS_CONTROLLER should have the actual mac address of the controller. Not 00:00:00:00:00:00
-            if (source_connection.address_string == "00:00:00:00:00:00") {
+            if (source_connection.address_string == '00:00:00:00:00:00') {
               source_connection.address_string = SimulatedControllerMacAddress;
               this.#runtimeReference.spectoda_js.synchronize(synchronization, source_connection);
             }
 
             source_connection.connector_type = SpectodaWasm.connector_type_t.CONNECTOR_SIMULATED;
-            this.#runtimeReference.sendSynchronize(synchronization, source_connection).catch(e => {
+            this.#runtimeReference.sendSynchronize(synchronization, source_connection).catch((e) => {
               logging.error(e);
               return false;
             });
@@ -170,8 +171,10 @@ export class SpectodaSimulatedConnector {
       };
 
       const connector = new IConnector_JS();
+
       connector.construct(SimulatedConnectorImplementation, SpectodaWasm.connector_type_t.CONNECTOR_SIMULATED);
       const controller = new PreviewController(SimulatedControllerMacAddress);
+
       controller.construct(SimulatedControllerConfig, connector);
 
       this.controllers.push(controller);
@@ -214,7 +217,7 @@ export class SpectodaSimulatedConnector {
       this.#fps = 2;
 
       const __process = async () => {
-        for (let controller of this.controllers) {
+        for (const controller of this.controllers) {
           try {
             controller.process();
           } catch (e) {
@@ -224,7 +227,7 @@ export class SpectodaSimulatedConnector {
       };
 
       const __render = async () => {
-        for (let controller of this.controllers) {
+        for (const controller of this.controllers) {
           try {
             controller.render();
           } catch (e) {
@@ -246,7 +249,8 @@ export class SpectodaSimulatedConnector {
     }
 
     const criteria_json = JSON.stringify(criterium_array);
-    logging.verbose("userSelect(criteria=" + criteria_json + ")");
+
+    logging.verbose('userSelect(criteria=' + criteria_json + ')');
 
     return new Promise(async (resolve, reject) => {
       if (this.#connected) {
@@ -255,7 +259,7 @@ export class SpectodaSimulatedConnector {
 
       // TODO implement userSelect logic of choosing specific controller
       if (this.controllers.length === 0) {
-        reject("SelectionFailed");
+        reject('SelectionFailed');
         return;
       }
 
@@ -288,7 +292,7 @@ export class SpectodaSimulatedConnector {
 
       // TODO implement userSelect logic of choosing specific controller
       if (this.controllers.length === 0) {
-        reject("SelectionFailed");
+        reject('SelectionFailed');
         return;
       }
 
@@ -300,7 +304,7 @@ export class SpectodaSimulatedConnector {
   }
 
   selected(): Promise<SpectodaTypes.Criterium | null> {
-    logging.verbose(`selected()`);
+    logging.verbose('selected()');
 
     return new Promise(async (resolve, reject) => {
       if (this.#selected) {
@@ -312,7 +316,7 @@ export class SpectodaSimulatedConnector {
   }
 
   unselect(): Promise<null> {
-    logging.verbose(`unselect()`);
+    logging.verbose('unselect()');
 
     return new Promise(async (resolve, reject) => {
       if (this.#connected) {
@@ -329,7 +333,7 @@ export class SpectodaSimulatedConnector {
       scan_duration_number = 7000;
     }
 
-    logging.verbose("scan(criterium_array=" + JSON.stringify(criterium_array) + ", scan_duration_number=" + scan_duration_number + ")");
+    logging.verbose('scan(criterium_array=' + JSON.stringify(criterium_array) + ', scan_duration_number=' + scan_duration_number + ')');
 
     // TODO scan logic based on the controllers contructed and criteria
 
@@ -344,35 +348,35 @@ export class SpectodaSimulatedConnector {
 
     return new Promise(async (resolve, reject) => {
       if (!this.#selected) {
-        reject("DeviceNotSelected");
+        reject('DeviceNotSelected');
         return;
       }
 
       await sleep(Math.random() * 1000); // connecting logic process delay
 
       this.#connected = true;
-      this.#runtimeReference.emit("#connected");
+      this.#runtimeReference.emit('#connected');
       resolve({ connector: this.type });
     });
   }
 
   // disconnect Connector from the connected Spectoda Device. But keep it selected
   disconnect(): Promise<unknown> {
-    logging.verbose("disconnect()");
+    logging.verbose('disconnect()');
 
     return new Promise(async (resolve, reject) => {
       if (this.#connected) {
         await sleep(100); // disconnecting logic process delay
 
         this.#connected = false;
-        this.#runtimeReference.emit("#disconnected");
+        this.#runtimeReference.emit('#disconnected');
       }
       resolve(null); // always resolves even if there are internal errors
     });
   }
 
   connected(): Promise<SpectodaTypes.Criterium | null> {
-    logging.verbose(`connected()`);
+    logging.verbose('connected()');
 
     return new Promise(async (resolve, reject) => {
       if (this.#connected) {
@@ -393,7 +397,7 @@ export class SpectodaSimulatedConnector {
 
     return new Promise(async (resolve, reject) => {
       if (!this.#connected) {
-        reject("DeviceDisconnected");
+        reject('DeviceDisconnected');
         return;
       }
 
@@ -417,7 +421,7 @@ export class SpectodaSimulatedConnector {
 
     return new Promise(async (resolve, reject) => {
       if (!this.#connected) {
-        reject("DeviceDisconnected");
+        reject('DeviceDisconnected');
         return;
       }
 
@@ -436,11 +440,11 @@ export class SpectodaSimulatedConnector {
     if (timeout_number === DEFAULT_TIMEOUT) {
       timeout_number = 5000;
     }
-    logging.verbose(`request(payload=${payload_bytes}, read_response=${read_response ? "true" : "false"}, timeout=${timeout_number})`);
+    logging.verbose(`request(payload=${payload_bytes}, read_response=${read_response ? 'true' : 'false'}, timeout=${timeout_number})`);
 
     return new Promise(async (resolve, reject) => {
       if (!this.#connected) {
-        reject("DeviceDisconnected");
+        reject('DeviceDisconnected');
         return;
       }
 
@@ -466,7 +470,7 @@ export class SpectodaSimulatedConnector {
 
     return new Promise(async (resolve, reject) => {
       if (!this.#connected) {
-        reject("DeviceDisconnected");
+        reject('DeviceDisconnected');
         return;
       }
 
@@ -487,17 +491,18 @@ export class SpectodaSimulatedConnector {
   // returns a TimeTrack clock object that is synchronized with the internal clock
   // of the device as precisely as possible
   getClock(): Promise<TimeTrack> {
-    logging.verbose(`getClock()`);
+    logging.verbose('getClock()');
 
     return new Promise(async (resolve, reject) => {
       if (!this.#connected) {
-        reject("DeviceDisconnected");
+        reject('DeviceDisconnected');
         return;
       }
 
       // TODO choose the controller I am connected to choosen in userSelect() or autoSelect()
 
       const clock_timestamp = this.controllers.length > 0 ? this.controllers[0].getClockTimestamp() : 0;
+
       this.#clock.setMillis(clock_timestamp);
 
       await sleep(50); // reading clock logic.
@@ -510,24 +515,24 @@ export class SpectodaSimulatedConnector {
   // handles the firmware updating. Sends "ota" events
   // to all handlers
   updateFW(firmware_bytes: Uint8Array): Promise<unknown> {
-    logging.debug("updateFW()", firmware_bytes);
+    logging.debug('updateFW()', firmware_bytes);
 
     return new Promise(async (resolve, reject) => {
       if (!this.#connected) {
-        reject("DeviceDisconnected");
+        reject('DeviceDisconnected');
         return;
       }
-      this.#runtimeReference.emit("ota_status", "begin");
+      this.#runtimeReference.emit('ota_status', 'begin');
       await sleep(4000); // preparing FW logic.
 
       for (let i = 1; i <= 100; i++) {
-        this.#runtimeReference.emit("ota_progress", i);
+        this.#runtimeReference.emit('ota_progress', i);
         await sleep(25); // writing FW logic.
       }
 
       await sleep(1000); // finishing FW logic.
 
-      this.#runtimeReference.emit("ota_status", "success");
+      this.#runtimeReference.emit('ota_status', 'success');
       resolve(null);
     });
   }
@@ -537,7 +542,7 @@ export class SpectodaSimulatedConnector {
   }
 
   destroy(): Promise<unknown> {
-    logging.verbose(`destroy()`);
+    logging.verbose('destroy()');
 
     return this.disconnect()
       .catch(() => {})
@@ -569,7 +574,7 @@ export class SpectodaSimulatedConnector {
     logging.verbose(`SpectodaSimulatedConnector::sendExecute(command_bytes=${command_bytes}, source_connection=${source_connection.address_string})`);
 
     if (source_connection.connector_type == SpectodaWasm.connector_type_t.CONNECTOR_SIMULATED) {
-      logging.debug("SpectodaSimulatedConnector::sendExecute() - source_connection is CONNECTOR_SIMULATED");
+      logging.debug('SpectodaSimulatedConnector::sendExecute() - source_connection is CONNECTOR_SIMULATED');
       return Promise.resolve();
     }
 
@@ -579,7 +584,7 @@ export class SpectodaSimulatedConnector {
     return new Promise(async (resolve, reject) => {
       //
       // TODO! SOURCE_CONNECTION_THIS_CONTROLLER should have the actual mac address of the controller. Not 00:00:00:00:00:00
-      if (source_connection.address_string == "00:00:00:00:00:00") {
+      if (source_connection.address_string == '00:00:00:00:00:00') {
         source_connection.address_string = APP_MAC_ADDRESS;
       }
 
@@ -604,7 +609,7 @@ export class SpectodaSimulatedConnector {
 
     // TODO simulated connector needs the other side to receive the request
 
-    return Promise.reject("NotImplemented");
+    return Promise.reject('NotImplemented');
   }
   // bool _sendResponse(const int32_t request_ticket_number, const int32_t request_result, std::vector<uint8_t>& response_bytecode, const Connection& destination_connection) = 0;
 
@@ -613,7 +618,7 @@ export class SpectodaSimulatedConnector {
 
     // TODO simulated connector needs the other side to receive the response
 
-    return Promise.reject("NotImplemented");
+    return Promise.reject('NotImplemented');
   }
 
   // void _sendSynchronize(const Synchronization& synchronization, const Connection& source_connection) = 0;
@@ -622,7 +627,7 @@ export class SpectodaSimulatedConnector {
     logging.verbose(`SpectodaSimulatedConnector::sendSynchronize(synchronization=${synchronization.origin_address}, source_connection=${source_connection.address_string})`);
 
     if (source_connection.connector_type == SpectodaWasm.connector_type_t.CONNECTOR_SIMULATED) {
-      logging.debug("SpectodaSimulatedConnector::sendSynchronize() - source_connection is CONNECTOR_SIMULATED");
+      logging.debug('SpectodaSimulatedConnector::sendSynchronize() - source_connection is CONNECTOR_SIMULATED');
       return Promise.resolve();
     }
 
@@ -634,7 +639,7 @@ export class SpectodaSimulatedConnector {
       source_connection.connector_type = SpectodaWasm.connector_type_t.CONNECTOR_SIMULATED;
 
       // TODO! SOURCE_CONNECTION_THIS_CONTROLLER should have the actual mac address of the controller. Not 00:00:00:00:00:00
-      if (source_connection.address_string == "00:00:00:00:00:00") {
+      if (source_connection.address_string == '00:00:00:00:00:00') {
         source_connection.address_string = APP_MAC_ADDRESS;
       }
 

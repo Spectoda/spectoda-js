@@ -1,16 +1,17 @@
-const axios = require("axios");
-const { execSync } = require("child_process");
+const { execSync } = require('child_process');
+
+const axios = require('axios');
 
 const ACCESS_TOKEN = process.env.SCREAM_COMMITS_CLICKUP_ID;
 
 const clickupApi = axios.create({
-  baseURL: "https://api.clickup.com/api/v2",
+  baseURL: 'https://api.clickup.com/api/v2',
   headers: {
     Authorization: ACCESS_TOKEN,
   },
 });
 
-const TEAM_ID = "4663973";
+const TEAM_ID = '4663973';
 
 // Generate access token
 // const response = await axios.post(
@@ -25,55 +26,55 @@ const TEAM_ID = "4663973";
 
 async function postCommitToClickup() {
   try {
-    const branchName = execSync("git rev-parse --abbrev-ref HEAD").toString().trim();
+    const branchName = execSync('git rev-parse --abbrev-ref HEAD').toString().trim();
     const match = branchName.match(/DEV-(\d+)/);
     const taskIdNumeric = match ? match[1] : null;
 
     if (!taskIdNumeric) {
-      console.log("Not a feature branch, skipping");
+      console.log('Not a feature branch, skipping');
       return;
     }
 
     console.log(taskIdNumeric);
 
-    const commitMessage = execSync("git log -1 --pretty=%B").toString().trim();
+    const commitMessage = execSync('git log -1 --pretty=%B').toString().trim();
 
     // if (commitMessage.includes("Merge")) {
     //   console.log("Merge commit, skipping");
     //   return;
     // }
 
-    if (commitMessage.includes("refactor")) {
-      console.log("Refactor commit, skipping");
+    if (commitMessage.includes('refactor')) {
+      console.log('Refactor commit, skipping');
       return;
     }
 
-    if (commitMessage.includes("chore")) {
-      console.log("Chore commit, skipping");
+    if (commitMessage.includes('chore')) {
+      console.log('Chore commit, skipping');
       return;
     }
 
-    if (commitMessage.includes("style")) {
-      console.log("Style commit, skipping");
+    if (commitMessage.includes('style')) {
+      console.log('Style commit, skipping');
       return;
     }
 
-    if (commitMessage.includes("test")) {
-      console.log("Test commit, skipping");
+    if (commitMessage.includes('test')) {
+      console.log('Test commit, skipping');
       return;
     }
 
-    if (commitMessage.includes("docs")) {
-      console.log("Docs commit, skipping");
+    if (commitMessage.includes('docs')) {
+      console.log('Docs commit, skipping');
       return;
     }
 
-    if (commitMessage.includes("build")) {
-      console.log("Build commit, skipping");
+    if (commitMessage.includes('build')) {
+      console.log('Build commit, skipping');
       return;
     }
 
-    const commitAuthor = execSync("git log -1 --pretty=format:%an").toString().trim();
+    const commitAuthor = execSync('git log -1 --pretty=format:%an').toString().trim();
 
     const response = await clickupApi.post(
       `/task/DEV-${taskIdNumeric}/comment`,
@@ -90,12 +91,12 @@ ${commitMessage}`,
         },
         headers: {
           Authorization: ACCESS_TOKEN,
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
         },
       },
     );
 
-    console.log("> Commented on task");
+    console.log('> Commented on task');
 
     const getTask = await clickupApi.get(`/task/DEV-${taskIdNumeric}`, {
       params: {
@@ -104,18 +105,18 @@ ${commitMessage}`,
       },
       headers: {
         Authorization: ACCESS_TOKEN,
-        "Content-Type": "application/json",
+        'Content-Type': 'application/json',
       },
     });
 
-    console.log("> STATUS:", getTask.data.status);
+    console.log('> STATUS:', getTask.data.status);
 
-    if (["to-do", "basket"].includes(getTask.data.status.status)) {
-      console.log("> Changing status to in progress");
+    if (['to-do', 'basket'].includes(getTask.data.status.status)) {
+      console.log('> Changing status to in progress');
       await clickupApi.put(
         `/task/DEV-${taskIdNumeric}`,
         {
-          status: "in progress",
+          status: 'in progress',
         },
         {
           params: {
@@ -124,11 +125,11 @@ ${commitMessage}`,
           },
           headers: {
             Authorization: ACCESS_TOKEN,
-            "Content-Type": "application/json",
+            'Content-Type': 'application/json',
           },
         },
       );
-      console.log("> Task status changed to 'in progress'");
+      console.log('> Task status changed to \'in progress\'');
     }
   } catch (error) {
     console.error(`Error: ${error}`);

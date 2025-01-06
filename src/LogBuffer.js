@@ -33,9 +33,10 @@ export class RingLogBuffer {
   }
 
   pop() {
-    if (this.isEmpty()) return null;
+    if (this.isEmpty()) {return null;}
 
     let item = this.buffer[this.start];
+
     this.start = (this.start + 1) % this.size;
     return item;
   }
@@ -45,6 +46,7 @@ export class RingLogBuffer {
     let logs = [];
     let start = this.start;
     let end = this.end;
+
     while (start !== end) {
       logs.push(this.buffer[start]);
       start = (start + 1) % this.size;
@@ -54,6 +56,7 @@ export class RingLogBuffer {
 
   getAllLogsWithPop() {
     let logs = [];
+
     while (!this.isEmpty()) {
       logs.push(this.pop());
     }

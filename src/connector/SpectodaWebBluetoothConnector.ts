@@ -3,15 +3,15 @@
 // npm install --save-dev @types/web-bluetooth
 /// <reference types="web-bluetooth" />
 
-import { detectAndroid, hexStringToUint8Array, numberToBytes, sleep, toBytes, uint8ArrayToHexString } from "../../functions";
-import { logging } from "../../logging";
-import { TimeTrack } from "../../TimeTrack.js";
-import { TnglReader } from "../../TnglReader";
-import { COMMAND_FLAGS, DEFAULT_TIMEOUT } from "../constants";
-import { SpectodaRuntime } from "../SpectodaRuntime";
-import { SpectodaWasm } from "../SpectodaWasm";
-import { SpectodaTypes } from "../types/primitives";
-import { Connection, Synchronization } from "../types/wasm";
+import { detectAndroid, hexStringToUint8Array, numberToBytes, sleep, toBytes, uint8ArrayToHexString } from '../../functions';
+import { logging } from '../../logging';
+import { TimeTrack } from '../../TimeTrack.js';
+import { TnglReader } from '../../TnglReader';
+import { COMMAND_FLAGS, DEFAULT_TIMEOUT } from '../constants';
+import { SpectodaRuntime } from '../SpectodaRuntime';
+import { SpectodaWasm } from '../SpectodaWasm';
+import { SpectodaTypes } from '../types/primitives';
+import { Connection, Synchronization } from '../types/wasm';
 
 // od 0.8.0 maji vsechny spectoda enabled BLE zarizeni jednotne SPECTODA_DEVICE_UUID.
 // kazdy typ (produkt) Spectoda Zarizeni ma svuj kod v manufacturer data
@@ -42,7 +42,7 @@ export class WebBLEConnection {
   constructor(runtimeReference: SpectodaRuntime) {
     this.#runtimeReference = runtimeReference;
 
-    this.#connectedDeviceMacAddress = "00:00:00:00:00:00";
+    this.#connectedDeviceMacAddress = '00:00:00:00:00:00';
 
     /*
       BLE Spectoda Service
@@ -113,7 +113,7 @@ export class WebBLEConnection {
           try {
             await characteristic.writeValueWithResponse(new Uint8Array(payload));
           } catch (e) {
-            logging.warn("characteristic.writeValueWithResponse() exception:", e);
+            logging.warn('characteristic.writeValueWithResponse() exception:', e);
             reject(e);
             return;
           }
@@ -126,10 +126,11 @@ export class WebBLEConnection {
       });
     } else {
       if (bytes.length > bytes_size) {
-        logging.error("The maximum bytes that can be written without response is " + bytes_size);
-        return Promise.reject("WriteError");
+        logging.error('The maximum bytes that can be written without response is ' + bytes_size);
+        return Promise.reject('WriteError');
       }
       const payload = [...numberToBytes(write_uuid, 4), ...numberToBytes(0, 4), ...numberToBytes(bytes.length, 4), ...bytes.slice(0, bytes.length)];
+
       return characteristic.writeValueWithoutResponse(new Uint8Array(payload));
     }
   }
@@ -156,7 +157,7 @@ export class WebBLEConnection {
         resolve(new Uint8Array(total_bytes));
       } catch (e) {
         logging.error(e);
-        reject("ReadError");
+        reject('ReadError');
       }
     });
   }
@@ -164,12 +165,14 @@ export class WebBLEConnection {
   // WIP, event handling from spectoda network to application
   // timeline changes from spectoda network to application ...
   #onNetworkNotification(event: Event) {
-    logging.info(`WebBLEConnection::#onNetworkNotification()`, event);
+    logging.info('WebBLEConnection::#onNetworkNotification()', event);
 
     const bluetoothCharacteristic = event.target as BluetoothRemoteGATTCharacteristic | null;
-    if (!bluetoothCharacteristic?.value?.buffer) return;
+
+    if (!bluetoothCharacteristic?.value?.buffer) {return;}
 
     const payload = new Uint8Array(bluetoothCharacteristic.value.buffer);
+
     logging.debug(`payload.length=${payload.length}`, payload);
 
     if (this.#networkNotificationBuffer == null) {
@@ -177,6 +180,7 @@ export class WebBLEConnection {
     } else {
       // Create new array with combined length
       const newBuffer = new Uint8Array(this.#networkNotificationBuffer.length + payload.length);
+
       // Copy existing buffer
       newBuffer.set(this.#networkNotificationBuffer);
       // Append new payload at the end
@@ -185,6 +189,7 @@ export class WebBLEConnection {
     }
 
     const PACKET_SIZE_INDICATING_MULTIPACKET_MESSAGE = 208;
+
     if (payload.length == PACKET_SIZE_INDICATING_MULTIPACKET_MESSAGE) {
       // if the payload is equal to PACKET_SIZE_INDICATING_MULTIPACKET_MESSAGE, then another payload will be send that continues the overall message.
       return;
@@ -193,23 +198,26 @@ export class WebBLEConnection {
     else {
       // this was the last payload of the message and the message is complete
       const commandBytes = this.#networkNotificationBuffer;
+
       this.#networkNotificationBuffer = null;
 
-      if (commandBytes.length == 0) {
+      if (commandBytes.length === 0) {
         return;
       }
 
-      const DUMMY_WEBBLE_CONNECTION = SpectodaWasm.Connection.make("11:11:11:11:11:11", SpectodaWasm.connector_type_t.CONNECTOR_BLE, SpectodaWasm.connection_rssi_t.RSSI_MAX);
+      const DUMMY_WEBBLE_CONNECTION = SpectodaWasm.Connection.make('11:11:11:11:11:11', SpectodaWasm.connector_type_t.CONNECTOR_BLE, SpectodaWasm.connection_rssi_t.RSSI_MAX);
+
       this.#runtimeReference.spectoda_js.execute(commandBytes, DUMMY_WEBBLE_CONNECTION);
     }
   }
 
 
   #onClockNotification(event: Event) {
-    logging.debug("WebBLEConnection::#onClockNotification", event);
+    logging.debug('WebBLEConnection::#onClockNotification', event);
 
     const bluetoothCharacteristic = event.target as BluetoothRemoteGATTCharacteristic | null;
-    if (!bluetoothCharacteristic?.value?.buffer) return;
+
+    if (!bluetoothCharacteristic?.value?.buffer) {return;}
 
     const synchronizationBytes = new Uint8Array(bluetoothCharacteristic.value.buffer);
 
@@ -221,82 +229,84 @@ export class WebBLEConnection {
     // uint64_t tngl_clock_timestamp;
 
     const SYNCHRONIZATION_BYTE_SIZE = 48;
+
     if (synchronizationBytes.length < SYNCHRONIZATION_BYTE_SIZE) {
-      logging.error("synchronizationBytes.length < SYNCHRONIZATION_BYTE_SIZE");
+      logging.error('synchronizationBytes.length < SYNCHRONIZATION_BYTE_SIZE');
       return;
     }
 
     const synchronization = SpectodaWasm.Synchronization.makeFromUint8Array(synchronizationBytes);
 
-    const DUMMY_WEBBLE_CONNECTION = SpectodaWasm.Connection.make("11:11:11:11:11:11", SpectodaWasm.connector_type_t.CONNECTOR_BLE, SpectodaWasm.connection_rssi_t.RSSI_MAX);
+    const DUMMY_WEBBLE_CONNECTION = SpectodaWasm.Connection.make('11:11:11:11:11:11', SpectodaWasm.connector_type_t.CONNECTOR_BLE, SpectodaWasm.connection_rssi_t.RSSI_MAX);
+
     this.#runtimeReference.spectoda_js.synchronize(synchronization, DUMMY_WEBBLE_CONNECTION);
   }
 
   attach(service: BluetoothRemoteGATTService, networkUUID: BluetoothCharacteristicUUID, clockUUID: BluetoothCharacteristicUUID, deviceUUID: BluetoothCharacteristicUUID) {
     this.#service = service;
 
-    logging.info("> Getting Network Characteristics...");
+    logging.info('> Getting Network Characteristics...');
     return this.#service
       .getCharacteristic(networkUUID)
-      .then(characteristic => {
+      .then((characteristic) => {
         this.#networkChar = characteristic;
 
         return this.#networkChar
           .startNotifications()
           .then(() => {
-            logging.info("> Network notifications started");
-            if (!this.#networkChar) throw "NetworkCharactristicsNull";
-            this.#networkChar.oncharacteristicvaluechanged = event => {
+            logging.info('> Network notifications started');
+            if (!this.#networkChar) {throw 'NetworkCharactristicsNull';}
+            this.#networkChar.oncharacteristicvaluechanged = (event) => {
               this.#onNetworkNotification(event);
             };
           })
-          .catch(e => {
-            logging.warn("this.#networkChar.startNotifications() exception:", e);
+          .catch((e) => {
+            logging.warn('this.#networkChar.startNotifications() exception:', e);
           });
       })
-      .catch(e => {
+      .catch((e) => {
         logging.warn(e);
-        throw "ConnectionFailed";
+        throw 'ConnectionFailed';
       })
       .then(() => {
-        logging.info("> Getting Clock Characteristics...");
-        if (!this.#service) throw "ServiceNull";
+        logging.info('> Getting Clock Characteristics...');
+        if (!this.#service) {throw 'ServiceNull';}
         return this.#service.getCharacteristic(clockUUID);
       })
-      .then(characteristic => {
+      .then((characteristic) => {
         this.#clockChar = characteristic;
 
         return this.#clockChar
           .startNotifications()
           .then(() => {
-            logging.info("> Clock notifications started");
-            if (!this.#clockChar) throw "ClockCharactristicsNull";
-            this.#clockChar.oncharacteristicvaluechanged = event => {
+            logging.info('> Clock notifications started');
+            if (!this.#clockChar) {throw 'ClockCharactristicsNull';}
+            this.#clockChar.oncharacteristicvaluechanged = (event) => {
               this.#onClockNotification(event);
             };
           })
-          .catch(e => {
-            logging.warn("this.#clockChar.startNotifications() exception:", e);
+          .catch((e) => {
+            logging.warn('this.#clockChar.startNotifications() exception:', e);
           });
       })
-      .catch(e => {
+      .catch((e) => {
         logging.warn(e);
-        throw "ConnectionFailed";
+        throw 'ConnectionFailed';
       })
       .then(() => {
-        logging.info("> Getting Device Characteristics...");
-        if (!this.#service) throw "ServiceNull";
+        logging.info('> Getting Device Characteristics...');
+        if (!this.#service) {throw 'ServiceNull';}
         return this.#service.getCharacteristic(deviceUUID);
       })
-      .then(characteristic => {
+      .then((characteristic) => {
         this.#deviceChar = characteristic;
 
         // ! Device characteristics does not implement notifications as it collides with write/read functionality
 
       })
-      .catch(e => {
+      .catch((e) => {
         logging.warn(e);
-        throw "ConnectionFailed";
+        throw 'ConnectionFailed';
       });
   }
 
@@ -307,21 +317,21 @@ export class WebBLEConnection {
   // transmering queue will handle it
   deliver(payload_bytes: Uint8Array, timeout_number: number): Promise<unknown> {
     if (!this.#networkChar) {
-      logging.warn("Network characteristics is null");
-      return Promise.reject("DeliverFailed");
+      logging.warn('Network characteristics is null');
+      return Promise.reject('DeliverFailed');
     }
 
     if (this.#writing) {
-      logging.warn("Communication in proccess");
-      return Promise.reject("DeliverFailed");
+      logging.warn('Communication in proccess');
+      return Promise.reject('DeliverFailed');
     }
 
     this.#writing = true;
 
     return this.#writeBytes(this.#networkChar, payload_bytes, true)
-      .catch(e => {
+      .catch((e) => {
         logging.error(e);
-        throw "DeliverFailed";
+        throw 'DeliverFailed';
       })
       .finally(() => {
         this.#writing = false;
@@ -333,21 +343,21 @@ export class WebBLEConnection {
   // returns promise that will be resolved when message is physically send (only transmittion, not receive)
   transmit(payload_bytes: Uint8Array, timeout_number: number): Promise<unknown> {
     if (!this.#networkChar) {
-      logging.warn("Network characteristics is null");
-      return Promise.reject("TransmitFailed");
+      logging.warn('Network characteristics is null');
+      return Promise.reject('TransmitFailed');
     }
 
     if (this.#writing) {
-      logging.warn("Communication in proccess");
-      return Promise.reject("TransmitFailed");
+      logging.warn('Communication in proccess');
+      return Promise.reject('TransmitFailed');
     }
 
     this.#writing = true;
 
     return this.#writeBytes(this.#networkChar, payload_bytes, false)
-      .catch(e => {
+      .catch((e) => {
         logging.error(e);
-        throw "TransmitFailed";
+        throw 'TransmitFailed';
       })
       .finally(() => {
         this.#writing = false;
@@ -358,13 +368,13 @@ export class WebBLEConnection {
   // and then reads the response also from the Device Characteristics
   request(payload_bytes: Uint8Array, read_response: boolean, timeout_number: number): Promise<Uint8Array | null> {
     if (!this.#deviceChar) {
-      logging.warn("Device characteristics is null");
-      return Promise.reject("RequestFailed");
+      logging.warn('Device characteristics is null');
+      return Promise.reject('RequestFailed');
     }
 
     if (this.#writing) {
-      logging.warn("Communication in proccess");
-      return Promise.reject("RequestFailed");
+      logging.warn('Communication in proccess');
+      return Promise.reject('RequestFailed');
     }
 
     this.#writing = true;
@@ -372,15 +382,15 @@ export class WebBLEConnection {
     return this.#writeBytes(this.#deviceChar, payload_bytes, true)
       .then(() => {
         if (read_response) {
-          if (!this.#deviceChar) throw "DeviceCharactristicsNull";
+          if (!this.#deviceChar) {throw 'DeviceCharactristicsNull';}
           return this.#readBytes(this.#deviceChar);
         } else {
           return null;
         }
       })
-      .catch(e => {
+      .catch((e) => {
         logging.error(e);
-        throw "RequestFailed";
+        throw 'RequestFailed';
       })
       .finally(() => {
         this.#writing = false;
@@ -390,26 +400,27 @@ export class WebBLEConnection {
   // write timestamp to clock characteristics as fast as possible
   writeClock(timestamp: number) {
     if (!this.#clockChar) {
-      logging.warn("Sync characteristics is null");
-      return Promise.reject("ClockWriteFailed");
+      logging.warn('Sync characteristics is null');
+      return Promise.reject('ClockWriteFailed');
     }
 
     if (this.#writing) {
-      logging.warn("Communication in proccess");
-      return Promise.reject("ClockWriteFailed");
+      logging.warn('Communication in proccess');
+      return Promise.reject('ClockWriteFailed');
     }
 
     this.#writing = true;
 
     const bytes = toBytes(timestamp, 8);
+
     return this.#clockChar
       .writeValueWithoutResponse(new Uint8Array(bytes))
       .then(() => {
-        logging.debug("Clock characteristics written");
+        logging.debug('Clock characteristics written');
       })
-      .catch(e => {
+      .catch((e) => {
         logging.error(e);
-        throw "ClockWriteFailed";
+        throw 'ClockWriteFailed';
       })
       .finally(() => {
         this.#writing = false;
@@ -422,26 +433,27 @@ export class WebBLEConnection {
     // return Promise.reject("SimulatedFail");
 
     if (!this.#clockChar) {
-      logging.warn("Sync characteristics is null");
-      return Promise.reject("ClockReadFailed");
+      logging.warn('Sync characteristics is null');
+      return Promise.reject('ClockReadFailed');
     }
 
     if (this.#writing) {
-      logging.warn("Communication in proccess");
-      return Promise.reject("ClockReadFailed");
+      logging.warn('Communication in proccess');
+      return Promise.reject('ClockReadFailed');
     }
 
     this.#writing = true;
 
     return this.#clockChar
       .readValue()
-      .then(dataView => {
+      .then((dataView) => {
         const reader = new TnglReader(new Uint8Array(dataView.buffer));
+
         return reader.readUint64();
       })
-      .catch(e => {
+      .catch((e) => {
         logging.error(e);
-        throw "ClockReadFailed";
+        throw 'ClockReadFailed';
       })
       .finally(() => {
         this.#writing = false;
@@ -450,13 +462,13 @@ export class WebBLEConnection {
 
   updateFirmware(firmware_bytes: Uint8Array): Promise<unknown> {
     if (!this.#deviceChar) {
-      logging.warn("Device characteristics is null");
-      return Promise.reject("UpdateFailed");
+      logging.warn('Device characteristics is null');
+      return Promise.reject('UpdateFailed');
     }
 
     if (this.#writing) {
-      logging.warn("Communication in proccess");
-      return Promise.reject("UpdateFailed");
+      logging.warn('Communication in proccess');
+      return Promise.reject('UpdateFailed');
     }
 
     this.#writing = true;
@@ -469,21 +481,22 @@ export class WebBLEConnection {
 
       let written = 0;
 
-      logging.debug("OTA UPDATE");
+      logging.debug('OTA UPDATE');
       logging.debug(firmware_bytes);
 
       const start_timestamp = Date.now();
 
-      if (!this.#deviceChar) throw "DeviceCharactristicsNull";
+      if (!this.#deviceChar) {throw 'DeviceCharactristicsNull';}
 
       try {
-        this.#runtimeReference.emit("ota_status", "begin");
+        this.#runtimeReference.emit('ota_status', 'begin');
 
         {
           //===========// RESET //===========//
-          logging.debug("OTA RESET");
+          logging.debug('OTA RESET');
 
           const bytes = [COMMAND_FLAGS.FLAG_OTA_RESET, 0x00, ...numberToBytes(0x00000000, 4)];
+
           await this.#writeBytes(this.#deviceChar, new Uint8Array(bytes), true);
         }
 
@@ -491,9 +504,10 @@ export class WebBLEConnection {
 
         {
           //===========// BEGIN //===========//
-          logging.debug("OTA BEGIN");
+          logging.debug('OTA BEGIN');
 
           const bytes = [COMMAND_FLAGS.FLAG_OTA_BEGIN, 0x00, ...numberToBytes(firmware_bytes.length, 4)];
+
           await this.#writeBytes(this.#deviceChar, new Uint8Array(bytes), true);
         }
 
@@ -501,7 +515,7 @@ export class WebBLEConnection {
 
         {
           //===========// WRITE //===========//
-          logging.debug("OTA WRITE");
+          logging.debug('OTA WRITE');
 
           while (written < firmware_bytes.length) {
             if (index_to > firmware_bytes.length) {
@@ -514,9 +528,10 @@ export class WebBLEConnection {
             written += index_to - index_from;
 
             const percentage = Math.floor((written * 10000) / firmware_bytes.length) / 100;
-            logging.debug(percentage + "%");
 
-            this.#runtimeReference.emit("ota_progress", percentage);
+            logging.debug(percentage + '%');
+
+            this.#runtimeReference.emit('ota_progress', percentage);
 
             index_from += chunk_size;
             index_to = index_from + chunk_size;
@@ -527,22 +542,23 @@ export class WebBLEConnection {
 
         {
           //===========// END //===========//
-          logging.debug("OTA END");
+          logging.debug('OTA END');
 
           const bytes = [COMMAND_FLAGS.FLAG_OTA_END, 0x00, ...numberToBytes(written, 4)];
+
           await this.#writeBytes(this.#deviceChar, new Uint8Array(bytes), true);
         }
 
         await sleep(2000);
 
-        logging.info("Firmware written in " + (Date.now() - start_timestamp) / 1000 + " seconds");
+        logging.info('Firmware written in ' + (Date.now() - start_timestamp) / 1000 + ' seconds');
 
-        this.#runtimeReference.emit("ota_status", "success");
+        this.#runtimeReference.emit('ota_status', 'success');
         resolve(null);
       } catch (e) {
         logging.error(e);
-        this.#runtimeReference.emit("ota_status", "fail");
-        reject("UpdateFailed");
+        this.#runtimeReference.emit('ota_status', 'fail');
+        reject('UpdateFailed');
       }
     }).finally(() => {
       this.#writing = false;
@@ -566,13 +582,13 @@ export class WebBLEConnection {
   // write timestamp to clock characteristics as fast as possible
   sendSynchronize(synchronization: Synchronization) {
     if (!this.#clockChar) {
-      logging.warn("Sync characteristics is null");
-      return Promise.reject("sendSynchronizeFailed");
+      logging.warn('Sync characteristics is null');
+      return Promise.reject('sendSynchronizeFailed');
     }
 
     if (this.#writing) {
-      logging.warn("Communication in proccess");
-      return Promise.reject("sendSynchronizeFailed");
+      logging.warn('Communication in proccess');
+      return Promise.reject('sendSynchronizeFailed');
     }
 
     this.#writing = true;
@@ -582,11 +598,11 @@ export class WebBLEConnection {
     return this.#clockChar
       .writeValueWithoutResponse(bytes_uint8array)
       .then(() => {
-        logging.debug("Clock characteristics written");
+        logging.debug('Clock characteristics written');
       })
-      .catch(e => {
+      .catch((e) => {
         logging.error(e);
-        throw "sendSynchronizeFailed";
+        throw 'sendSynchronizeFailed';
       })
       .finally(() => {
         this.#writing = false;
@@ -615,16 +631,16 @@ export class SpectodaWebBluetoothConnector {
   DEVICE_CHAR_UUID: string;
 
   constructor(runtimeReference: SpectodaRuntime) {
-    this.type = "webbluetooth";
+    this.type = 'webbluetooth';
 
     this.#runtimeReference = runtimeReference;
 
-    this.SPECTODA_SERVICE_UUID = "cc540e31-80be-44af-b64a-5d2def886bf5";
-    this.SPECTODA_ADOPTING_SERVICE_UUID = "723247e6-3e2d-4279-ad8e-85a13b74d4a5";
+    this.SPECTODA_SERVICE_UUID = 'cc540e31-80be-44af-b64a-5d2def886bf5';
+    this.SPECTODA_ADOPTING_SERVICE_UUID = '723247e6-3e2d-4279-ad8e-85a13b74d4a5';
 
-    this.NETWORK_CHAR_UUID = "33a0937e-0c61-41ea-b770-007ade2c79fa";
-    this.CLOCK_CHAR_UUID = "7a1e0e3a-6b9b-49ef-b9b7-65c81b714a19";
-    this.DEVICE_CHAR_UUID = "9ebe2e4b-10c7-4a81-ac83-49540d1135a5";
+    this.NETWORK_CHAR_UUID = '33a0937e-0c61-41ea-b770-007ade2c79fa';
+    this.CLOCK_CHAR_UUID = '7a1e0e3a-6b9b-49ef-b9b7-65c81b714a19';
+    this.DEVICE_CHAR_UUID = '9ebe2e4b-10c7-4a81-ac83-49540d1135a5';
 
     this.#webBTDevice = null;
     this.#connection = new WebBLEConnection(runtimeReference);
@@ -633,11 +649,11 @@ export class SpectodaWebBluetoothConnector {
 
     this.#connectedGuard = false;
 
-    this.#runtimeReference.on("#connected", () => {
+    this.#runtimeReference.on('#connected', () => {
       this.#connectedGuard = true;
     });
 
-    this.#runtimeReference.on("#disconnected", () => {
+    this.#runtimeReference.on('#disconnected', () => {
       this.#connectedGuard = false;
     });
   }
@@ -679,7 +695,7 @@ export class SpectodaWebBluetoothConnector {
       for (let i = 0; i < this.#criteria.length; i++) {
         const criterium = this.#criteria[i];
 
-        let filter: any = { services: [this.SPECTODA_SERVICE_UUID] };
+        const filter: any = { services: [this.SPECTODA_SERVICE_UUID] };
 
         if (criterium.name) {
           filter.name = criterium.name;
@@ -689,7 +705,7 @@ export class SpectodaWebBluetoothConnector {
 
         // if any of these criteria are required, then we need to build a manufacturer data filter.
         if (criterium.fw || criterium.network || criterium.product || criterium.commisionable) {
-          const company_identifier = 0x02e5; // Bluetooth SIG company identifier of Espressif
+          const company_identifier = 0x02E5; // Bluetooth SIG company identifier of Espressif
 
           delete filter.services;
 
@@ -697,22 +713,22 @@ export class SpectodaWebBluetoothConnector {
           const mask = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
 
           if (criterium.product) {
-            if (criterium.product < 0 || criterium.product > 0xffff) {
-              throw "InvalidProductCode";
+            if (criterium.product < 0 || criterium.product > 0xFFFF) {
+              throw 'InvalidProductCode';
             }
 
             const product_code_byte_offset = 2;
-            const product_code_bytes = [criterium.product & 0xff, (criterium.product >> 8) & 0xff];
+            const product_code_bytes = [criterium.product & 0xFF, (criterium.product >> 8) & 0xFF];
 
             for (let i = 0; i < 2; i++) {
               prefix[product_code_byte_offset + i] = product_code_bytes[i];
-              mask[product_code_byte_offset + i] = 0xff;
+              mask[product_code_byte_offset + i] = 0xFF;
             }
           }
 
           if (criterium.network) {
             if (criterium.network.length != 32) {
-              throw "InvalidOwnerSignature";
+              throw 'InvalidOwnerSignature';
             }
 
             const owner_signature_byte_offset = 4;
@@ -720,7 +736,7 @@ export class SpectodaWebBluetoothConnector {
 
             for (let i = 0; i < 16; i++) {
               prefix[owner_signature_byte_offset + i] = owner_signature_code_bytes[i];
-              mask[owner_signature_byte_offset + i] = 0xff;
+              mask[owner_signature_byte_offset + i] = 0xFF;
             }
           }
 
@@ -745,13 +761,13 @@ export class SpectodaWebBluetoothConnector {
             const reg = criterium.fw.match(/(!?)(\d+).(\d+).(\d+)/);
 
             if (!reg) {
-              throw "InvalidFirmwareVersion";
+              throw 'InvalidFirmwareVersion';
             }
 
             const version_code = Number(reg[2]) * 10000 + Number(reg[3]) * 100 + Number(reg[4]) * 1;
-            const version_bytes = [version_code & 0xff, (version_code >> 8) & 0xff];
+            const version_bytes = [version_code & 0xFF, (version_code >> 8) & 0xFF];
 
-            if (reg[1] === "!") {
+            if (reg[1] === '!') {
               // workaround for web bluetooth not having a filter for "if the manufacturer data are not this, then show me the device"
               // we will generate 16 filters, each filtering one of the 16 bits that is different from my version.
               // if the one bit is different, then the version of the found device is different than mine.
@@ -773,6 +789,7 @@ export class SpectodaWebBluetoothConnector {
                   mask[fw_version_byte_offset + i] = 1 << j;
 
                   const filter_clone = JSON.parse(JSON.stringify(filter));
+
                   filter_clone.manufacturerData = [{ companyIdentifier: company_identifier, dataPrefix: new Uint8Array(prefix), mask: new Uint8Array(mask) }];
                   web_ble_options.filters.push(filter_clone);
                 }
@@ -780,7 +797,7 @@ export class SpectodaWebBluetoothConnector {
             } else {
               for (let i = 0; i < 2; i++) {
                 prefix[fw_version_byte_offset + i] = version_bytes[i];
-                mask[fw_version_byte_offset + i] = 0xff;
+                mask[fw_version_byte_offset + i] = 0xFF;
               }
               filter.manufacturerData = [{ companyIdentifier: company_identifier, dataPrefix: new Uint8Array(prefix), mask: new Uint8Array(mask) }];
               web_ble_options.filters.push(filter);
@@ -803,11 +820,11 @@ export class SpectodaWebBluetoothConnector {
 
     return navigator.bluetooth
       .requestDevice(web_ble_options)
-      .catch(e => {
+      .catch((e) => {
         logging.error(e);
-        throw "UserCanceledSelection";
+        throw 'UserCanceledSelection';
       })
-      .then(device => {
+      .then((device) => {
         // logging.debug(device);
 
         this.#webBTDevice = device;
@@ -895,7 +912,7 @@ export class SpectodaWebBluetoothConnector {
       scan_duration_number = 7000;
     }
 
-    logging.verbose("scan(criterium_array=" + JSON.stringify(criterium_array) + ", scan_duration_number=" + scan_duration_number + ")");
+    logging.verbose('scan(criterium_array=' + JSON.stringify(criterium_array) + ', scan_duration_number=' + scan_duration_number + ')');
 
     // returns devices like autoSelect scan() function
     return Promise.resolve([]);
@@ -910,15 +927,16 @@ export class SpectodaWebBluetoothConnector {
     logging.verbose(`connect(timeout=${timeout})`);
 
     if (timeout <= 0) {
-      logging.debug("> Connect timeout has expired");
-      return Promise.reject("ConnectionTimeout");
+      logging.debug('> Connect timeout has expired');
+      return Promise.reject('ConnectionTimeout');
     }
 
     const start = Date.now();
+
     this.#reconection = true;
 
     if (!this.#selected()) {
-      return Promise.reject("DeviceNotSelected");
+      return Promise.reject('DeviceNotSelected');
     }
 
     const MINIMUM_CONNECT_TIMEOUT = 5000;
@@ -927,48 +945,50 @@ export class SpectodaWebBluetoothConnector {
     // Create a promise that rejects after the timeout
     const timeoutPromise = new Promise<never>((_, reject) => {
       setTimeout(() => {
-        reject("ConnectionTimeout");
+        reject('ConnectionTimeout');
       }, effectiveTimeout);
     });
 
     // Create the connection promise
     const connectionPromise = (async () => {
       try {
-        logging.debug("> Connecting to Bluetooth device...");
+        logging.debug('> Connecting to Bluetooth device...');
         const server = await this.#webBTDevice?.gatt?.connect();
-        if (!server) throw new Error("Failed to connect");
+
+        if (!server) {throw new Error('Failed to connect');}
 
         this.#connection.reset();
-        logging.debug("> Getting the Bluetooth Service...");
+        logging.debug('> Getting the Bluetooth Service...');
         const service = await server.getPrimaryService(this.SPECTODA_SERVICE_UUID);
 
-        logging.debug("> Getting the Service Characteristic...");
+        logging.debug('> Getting the Service Characteristic...');
         await this.#connection.attach(service, this.NETWORK_CHAR_UUID, this.CLOCK_CHAR_UUID, this.DEVICE_CHAR_UUID);
 
-        logging.debug("> Bluetooth Device Connected");
+        logging.debug('> Bluetooth Device Connected');
         if (!this.#connectedGuard) {
-          this.#runtimeReference.emit("#connected");
+          this.#runtimeReference.emit('#connected');
         }
-        return { connector: "webbluetooth" };
+        return { connector: 'webbluetooth' };
       } catch (error: any) {
         logging.error(error);
 
         logging.debug(this.#webBTDevice);
         this.#webBTDevice?.gatt?.disconnect();
 
-        if (error.toString().includes("Bluetooth Device is no longer in range")) {
-          throw "ConnectionFailed";
+        if (error.toString().includes('Bluetooth Device is no longer in range')) {
+          throw 'ConnectionFailed';
         }
 
         // If the device is far away, sometimes this "NetworkError" happens
-        if (error.name === "NetworkError") {
+        if (error.name === 'NetworkError') {
           await sleep(1000);
           if (this.#reconection) {
             const passed = Date.now() - start;
             const remainingTimeout = timeout - passed;
+
             return this.connect(remainingTimeout);
           }
-          throw "ConnectionFailed";
+          throw 'ConnectionFailed';
         }
         throw error;
       }
@@ -984,7 +1004,7 @@ export class SpectodaWebBluetoothConnector {
   }
 
   connected(): Promise<SpectodaTypes.Criterium | null> {
-    logging.verbose(`connected()`);
+    logging.verbose('connected()');
     return Promise.resolve(this.#connected() ? { connector: this.type } : null);
   }
 
@@ -994,18 +1014,18 @@ export class SpectodaWebBluetoothConnector {
 
   // disconnect Connector from the connected Spectoda Device. But keep it selected
   disconnect(): Promise<unknown> {
-    logging.verbose("disconnect()");
+    logging.verbose('disconnect()');
 
     this.#reconection = false;
 
-    logging.info("> Disconnecting from Bluetooth Device...");
+    logging.info('> Disconnecting from Bluetooth Device...');
 
     this.#connection.reset();
 
     if (this.#connected()) {
       this.#disconnect();
     } else {
-      logging.debug("Bluetooth Device is already disconnected");
+      logging.debug('Bluetooth Device is already disconnected');
     }
 
     return Promise.resolve();
@@ -1017,11 +1037,11 @@ export class SpectodaWebBluetoothConnector {
   // synchronously. So that only after all event handlers (one after the other) are done,
   // only then start this.connect() to reconnect to the bluetooth device
   #onDisconnected = (event: any) => {
-    logging.info("> Bluetooth Device disconnected");
+    logging.info('> Bluetooth Device disconnected');
     this.#connection.reset();
     if (this.#connectedGuard) {
-      logging.verbose("emitting #disconnected");
-      this.#runtimeReference.emit("#disconnected");
+      logging.verbose('emitting #disconnected');
+      this.#runtimeReference.emit('#disconnected');
     }
   };
 
@@ -1034,7 +1054,7 @@ export class SpectodaWebBluetoothConnector {
     logging.verbose(`deliver(payload=${payload_bytes}, timeout=${timeout_number})`);
 
     if (!this.#connected()) {
-      return Promise.reject("DeviceDisconnected");
+      return Promise.reject('DeviceDisconnected');
     }
 
     return this.#connection.deliver(payload_bytes, timeout_number);
@@ -1049,7 +1069,7 @@ export class SpectodaWebBluetoothConnector {
     logging.verbose(`transmit(payload=${payload_bytes}, timeout=${timeout_number})`);
 
     if (!this.#connected()) {
-      return Promise.reject("DeviceDisconnected");
+      return Promise.reject('DeviceDisconnected');
     }
 
     return this.#connection.transmit(payload_bytes, timeout_number);
@@ -1064,7 +1084,7 @@ export class SpectodaWebBluetoothConnector {
     logging.verbose(`request(payload=${payload_bytes}, read_response=${read_response}, timeout=${timeout_number})`);
 
     if (!this.#connected()) {
-      return Promise.reject("DeviceDisconnected");
+      return Promise.reject('DeviceDisconnected');
     }
 
     return this.#connection.request(payload_bytes, read_response, timeout_number);
@@ -1073,26 +1093,26 @@ export class SpectodaWebBluetoothConnector {
   // synchronizes the device internal clock with the provided TimeTrack clock
   // of the application as precisely as possible
   setClock(clock: TimeTrack): Promise<unknown> {
-    logging.verbose("setClock()");
+    logging.verbose('setClock()');
 
     if (!this.#connected()) {
-      return Promise.reject("DeviceDisconnected");
+      return Promise.reject('DeviceDisconnected');
     }
 
     return new Promise(async (resolve, reject) => {
       for (let index = 0; index < 3; index++) {
         try {
           await this.#connection.writeClock(clock.millis());
-          logging.debug("Clock write success");
+          logging.debug('Clock write success');
           resolve(null);
           return;
         } catch {
-          logging.warn("Clock write failed");
+          logging.warn('Clock write failed');
           await sleep(100);
         }
       }
 
-      reject("ClockWriteFailed");
+      reject('ClockWriteFailed');
       return;
     });
   }
@@ -1100,10 +1120,10 @@ export class SpectodaWebBluetoothConnector {
   // returns a TimeTrack clock object that is synchronized with the internal clock
   // of the device as precisely as possible
   getClock(): Promise<TimeTrack> {
-    logging.verbose("getClock()");
+    logging.verbose('getClock()');
 
     if (!this.#connected()) {
-      return Promise.reject("DeviceDisconnected");
+      return Promise.reject('DeviceDisconnected');
     }
 
     return new Promise(async (resolve, reject) => {
@@ -1111,15 +1131,16 @@ export class SpectodaWebBluetoothConnector {
         await sleep(100);
         try {
           const timestamp = await this.#connection.readClock();
-          logging.debug("Clock read success:", timestamp);
+
+          logging.debug('Clock read success:', timestamp);
           resolve(new TimeTrack(timestamp));
           return;
         } catch (e) {
-          logging.warn("Clock read failed:", e);
+          logging.warn('Clock read failed:', e);
         }
       }
 
-      reject("ClockReadFailed");
+      reject('ClockReadFailed');
       return;
     });
   }
@@ -1127,10 +1148,10 @@ export class SpectodaWebBluetoothConnector {
   // handles the firmware updating. Sends "ota" events
   // to all handlers
   updateFW(firmware_bytes: Uint8Array): Promise<unknown> {
-    logging.debug("updateFW()", firmware_bytes);
+    logging.debug('updateFW()', firmware_bytes);
 
     if (!this.#connected()) {
-      return Promise.reject("DeviceDisconnected");
+      return Promise.reject('DeviceDisconnected');
     }
 
     return this.#connection.updateFirmware(firmware_bytes);
@@ -1160,7 +1181,7 @@ export class SpectodaWebBluetoothConnector {
     }
 
     if (!this.#connected()) {
-      return Promise.reject("DeviceDisconnected");
+      return Promise.reject('DeviceDisconnected');
     }
 
     return this.#connection.deliver(command_bytes, 1000);
@@ -1178,7 +1199,7 @@ export class SpectodaWebBluetoothConnector {
   sendResponse(request_ticket_number: number, request_result: number, response_bytecode: Uint8Array, destination_connection: Connection) {
     logging.verbose(`SpectodaWebBluetoothConnector::sendResponse(request_ticket_number=${request_ticket_number}, request_result=${request_result}, response_bytecode=${response_bytecode}, destination_connection=${destination_connection})`);
 
-    return Promise.reject("NotImplemented");
+    return Promise.reject('NotImplemented');
   }
 
   // void _sendSynchronize(const Synchronization& synchronization, const Connection& source_connection) = 0;
@@ -1191,7 +1212,7 @@ export class SpectodaWebBluetoothConnector {
     }
 
     if (!this.#connected()) {
-      return Promise.reject("DeviceDisconnected");
+      return Promise.reject('DeviceDisconnected');
     }
 
     return this.#connection.sendSynchronize(synchronization);

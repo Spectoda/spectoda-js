@@ -1,20 +1,21 @@
-import { io } from "socket.io-client";
+import { io } from 'socket.io-client';
 // import { TimeTrack } from "./TimeTrack.js";
 // import { logging } from "./logging";
 
-import customParser from "socket.io-msgpack-parser";
-import { TimeTrack } from "./TimeTrack";
-import { createNanoEvents } from "./functions";
-import { logging } from "./logging";
+import customParser from 'socket.io-msgpack-parser';
+
+import { TimeTrack } from './TimeTrack';
+import { createNanoEvents } from './functions';
+import { logging } from './logging';
 
 // TODO rewrite this to initiate connect only when needed
 
 // const WEBSOCKET_URL = "https://tangle-remote-control.glitch.me/"
-export const WEBSOCKET_URL = "https://cloud.host.spectoda.com/";
+export const WEBSOCKET_URL = 'https://cloud.host.spectoda.com/';
 
 const eventStream = createNanoEvents();
 
-eventStream.on("log", (a, b, c, d) => {
+eventStream.on('log', (a, b, c, d) => {
   // TODO: if (typeof d !== "undefined") of if (d === undefined) something like that rather than checking for truthiness
   if (d) {
     console.log(a, b, c, d);
@@ -28,7 +29,7 @@ eventStream.on("log", (a, b, c, d) => {
 });
 
 // TODO: .on("warn", (a, b, c, d) => {
-eventStream.on("log-warn", (a, b, c, d) => {
+eventStream.on('log-warn', (a, b, c, d) => {
   // TODO: if (typeof d !== "undefined") of if (d === undefined) something like that rather than checking for truthiness
   if (d) {
     console.log(a, b, c, d);
@@ -42,7 +43,7 @@ eventStream.on("log-warn", (a, b, c, d) => {
 });
 
 // TODO: .on("error", (a, b, c, d) => {
-eventStream.on("log-error", (a, b, c, d) => {
+eventStream.on('log-error', (a, b, c, d) => {
   // TODO: if (typeof d !== "undefined") of if (d === undefined) something like that rather than checking for truthiness
   if (d) {
     console.log(a, b, c, d);
@@ -55,13 +56,13 @@ eventStream.on("log-error", (a, b, c, d) => {
   }
 });
 
-if (typeof window !== "undefined") {
+if (typeof window !== 'undefined') {
   window.sockets = [];
 }
 /////////////////////////////////////////////////////////////////////////////////////
 
 export const isCurrentSpectodaInstanceLocal = () => {
-  return typeof spectoda.init === "undefined";
+  return typeof spectoda.init === 'undefined';
 };
 
 export function createSpectodaWebsocket() {
@@ -73,15 +74,15 @@ export function createSpectodaWebsocket() {
     parser: customParser,
   });
 
-  if (typeof window !== "undefined") {
+  if (typeof window !== 'undefined') {
     window.sockets.push(socket);
   }
 
-  socket.on("event", data => {
-    logging.verbose("event", data);
+  socket.on('event', (data) => {
+    logging.verbose('event', data);
 
-    if (data.name === "wasm_execute") {
-      eventStream.emit("wasm_execute", data.args[0][1]);
+    if (data.name === 'wasm_execute') {
+      eventStream.emit('wasm_execute', data.args[0][1]);
       return;
     }
 
@@ -90,34 +91,34 @@ export function createSpectodaWebsocket() {
 
   let networkJoinParams = [];
 
-  socket.on("connect", () => {
+  socket.on('connect', () => {
     if (networkJoinParams) {
-      eventStream.emit("connecting-websockets");
+      eventStream.emit('connecting-websockets');
 
       socket
-        .emitWithAck("join", networkJoinParams)
+        .emitWithAck('join', networkJoinParams)
         .then(() => {
-          logging.info("re/connected to websocket server", networkJoinParams);
-          eventStream.emit("connected-websockets");
+          logging.info('re/connected to websocket server', networkJoinParams);
+          eventStream.emit('connected-websockets');
         })
-        .catch(err => {
-          logging.error("error connecting to websocket server", err);
+        .catch((err) => {
+          logging.error('error connecting to websocket server', err);
         });
     }
   });
 
-  socket.on("disconnect", () => {
-    eventStream.emit("disconnected-websockets");
+  socket.on('disconnect', () => {
+    eventStream.emit('disconnected-websockets');
   });
 
   class SpectodaVirtualProxy {
     constructor() {
       return new Proxy(this, {
         get: (_, prop) => {
-          if (prop === "on") {
+          if (prop === 'on') {
             // Special handling for "on" method
             return (eventName, callback) => {
-              logging.verbose("Subscribing to event", eventName);
+              logging.verbose('Subscribing to event', eventName);
 
               const unsub = eventStream.on(eventName, callback);
 
@@ -126,35 +127,35 @@ export function createSpectodaWebsocket() {
               // unsubscribe from previous event
               return unsub;
             };
-          } else if (prop === "timeline") {
+          } else if (prop === 'timeline') {
             return timeline;
-          } else if (prop === "init") {
+          } else if (prop === 'init') {
             // TODO rename init()
             // Expects [{key,sig}, ...] or {key,sig}
-            return params => {
+            return (params) => {
               if (!Array.isArray(params) && !params?.sessionOnly) {
                 params = [params];
                 for (let param of params) {
-                  param.type = "sender";
+                  param.type = 'sender';
                 }
               } else {
-                params.type = "sender";
+                params.type = 'sender';
               }
 
               networkJoinParams = params;
 
               if (params?.sessionOnly) {
-                return socket.emitWithAck("join-session", params?.roomNumber).then(response => {
-                  if (response.status === "success") {
-                    logging.info("Remote joined session", response.roomNumber);
+                return socket.emitWithAck('join-session', params?.roomNumber).then((response) => {
+                  if (response.status === 'success') {
+                    logging.info('Remote joined session', response.roomNumber);
                   } else {
                     throw new Error(response.error);
                   }
                 });
               } else {
-                return socket.emitWithAck("join", params).then(response => {
-                  if (response.status === "success") {
-                    logging.info("Remote joined network", response.roomNumber);
+                return socket.emitWithAck('join', params).then((response) => {
+                  if (response.status === 'success') {
+                    logging.info('Remote joined network', response.roomNumber);
 
                     // ! disabled by @immakermatty because it caused trouble in App Remote Connection
                     // this.sendThroughWebsocket({
@@ -175,11 +176,11 @@ export function createSpectodaWebsocket() {
                 });
               }
             };
-          } else if (prop === "fetchClients") {
+          } else if (prop === 'fetchClients') {
             return () => {
-              return socket.emitWithAck("list-clients");
+              return socket.emitWithAck('list-clients');
             };
-          } else if (prop === "connectionState") {
+          } else if (prop === 'connectionState') {
             return websocketConnectionState;
           }
 
@@ -190,7 +191,7 @@ export function createSpectodaWebsocket() {
               arguments: args,
             };
 
-            if (prop === "updateDeviceFirmware" || prop === "updateNetworkFirmware") {
+            if (prop === 'updateDeviceFirmware' || prop === 'updateNetworkFirmware') {
               if (Array.isArray(args?.[0])) {
                 args[0] = Uint8Array.from(args[0]).buffer;
               }
@@ -198,9 +199,9 @@ export function createSpectodaWebsocket() {
 
             const result = await this.sendThroughWebsocket(payload);
 
-            if (result.status === "success") {
+            if (result.status === 'success') {
               for (let res of result?.data) {
-                if (res.status === "error") {
+                if (res.status === 'error') {
                   logging.error(result);
                   // logging.error("[WEBSOCKET]", result);
                   throw new Error(res.error);
@@ -211,7 +212,7 @@ export function createSpectodaWebsocket() {
 
               return result?.data?.[0].result;
             } else {
-              logging.error("[WEBSOCKET]", result);
+              logging.error('[WEBSOCKET]', result);
 
               if (Array.isArray(result)) {
                 throw new Error(result[0]);
@@ -225,7 +226,7 @@ export function createSpectodaWebsocket() {
     }
 
     async sendThroughWebsocket(data) {
-      const result = await socket.emitWithAck("func", data);
+      const result = await socket.emitWithAck('func', data);
 
       return result;
     }

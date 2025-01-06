@@ -1,15 +1,14 @@
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 
-import { detectAndroid, numberToBytes, sleep, toBytes } from "../../functions";
-import { logging } from "../../logging";
-import { TimeTrack } from "../../TimeTrack";
-import { TnglReader } from "../../TnglReader";
-
-import { COMMAND_FLAGS, DEFAULT_TIMEOUT } from "../constants";
-import { SpectodaRuntime } from "../SpectodaRuntime";
-import { SpectodaWasm } from "../SpectodaWasm";
-import { SpectodaTypes } from "../types/primitives";
-import { Connection, Synchronization } from "../types/wasm";
+import { detectAndroid, numberToBytes, sleep, toBytes } from '../../functions';
+import { logging } from '../../logging';
+import { TimeTrack } from '../../TimeTrack';
+import { TnglReader } from '../../TnglReader';
+import { COMMAND_FLAGS, DEFAULT_TIMEOUT } from '../constants';
+import { SpectodaRuntime } from '../SpectodaRuntime';
+import { SpectodaWasm } from '../SpectodaWasm';
+import { SpectodaTypes } from '../types/primitives';
+import { Connection, Synchronization } from '../types/wasm';
 
 /////////////////////////////////////////////////////////////////////////////////////
 
@@ -19,13 +18,13 @@ class FlutterConnection {
   #networkNotificationBuffer: Uint8Array | null;
 
   constructor() {
-    logging.debug("Initing FlutterConnection");
+    logging.debug('Initing FlutterConnection');
 
     this.#networkNotificationBuffer = null;
 
     // @ts-ignore
     if (window.flutterConnection) {
-      logging.debug("FlutterConnection already inited");
+      logging.debug('FlutterConnection already inited');
       return;
     }
 
@@ -60,20 +59,22 @@ class FlutterConnection {
     //   });
 
     if (this.available()) {
-      logging.debug("Flutter Connector available");
+      logging.debug('Flutter Connector available');
 
-      window.addEventListener("#resolve", e => {
+      window.addEventListener('#resolve', (e) => {
         // @ts-ignore
         const value = e.detail.value;
+
         logging.debug(`Triggered #resolve: [${value}]`);
 
         // @ts-ignore
         window.flutterConnection.resolve(value);
       });
 
-      window.addEventListener("#reject", e => {
+      window.addEventListener('#reject', (e) => {
         // @ts-ignore
         const value = e.detail.value;
+
         logging.debug(`Triggered #reject: [${value}]`);
 
         // @ts-ignore
@@ -95,34 +96,37 @@ class FlutterConnection {
       // //   window.flutterConnection.emit(event);
       // // });
 
-      window.addEventListener("#connected", e => {
+      window.addEventListener('#connected', (e) => {
         // @ts-ignore
         const value = e.detail.value;
+
         logging.info(`Triggered #connected: ${value}`, value);
 
         // ? reset #networkNotificationBuffer on connect
         this.#networkNotificationBuffer = null;
 
         // @ts-ignore
-        window.flutterConnection.emit("#connected", value);
+        window.flutterConnection.emit('#connected', value);
       });
 
-      window.addEventListener("#disconnected", e => {
+      window.addEventListener('#disconnected', (e) => {
         // @ts-ignore
         const value = e.detail.value;
+
         logging.info(`Triggered #disconnected: ${value}`, value);
 
         // ? reset #networkNotificationBuffer on disconnect
         this.#networkNotificationBuffer = null;
 
         // @ts-ignore
-        window.flutterConnection.emit("#disconnected", value);
+        window.flutterConnection.emit('#disconnected', value);
       });
 
       // network characteristics notification
-      window.addEventListener("#network", e => {
+      window.addEventListener('#network', (e) => {
         // @ts-ignore
         const payload = new Uint8Array(e.detail.value);
+
         logging.info(`Triggered #network: [${payload}]`, payload);
 
         if (this.#networkNotificationBuffer == null) {
@@ -130,6 +134,7 @@ class FlutterConnection {
         } else {
           // Create new array with combined length
           const newBuffer = new Uint8Array(this.#networkNotificationBuffer.length + payload.length);
+
           // Copy existing buffer
           newBuffer.set(this.#networkNotificationBuffer);
           // Append new payload at the end
@@ -138,6 +143,7 @@ class FlutterConnection {
         }
 
         const PACKET_SIZE_INDICATING_MULTIPACKET_MESSAGE = 208;
+
         if (payload.length == PACKET_SIZE_INDICATING_MULTIPACKET_MESSAGE) {
           // if the payload is equal to PACKET_SIZE_INDICATING_MULTIPACKET_MESSAGE, then another payload will be send that continues the overall message.
           return;
@@ -146,9 +152,10 @@ class FlutterConnection {
         else {
           // this was the last payload of the message and the message is complete
           const commandBytes = this.#networkNotificationBuffer;
+
           this.#networkNotificationBuffer = null;
 
-          if (commandBytes.length == 0) {
+          if (commandBytes.length === 0) {
             return;
           }
 
@@ -158,18 +165,20 @@ class FlutterConnection {
       });
 
       // device characteristics notification
-      window.addEventListener("#device", e => {
+      window.addEventListener('#device', (e) => {
         // @ts-ignore
         const bytes = new Uint8Array(e.detail.value);
+
         logging.info(`Triggered #device: [${bytes}]`, bytes);
 
         // ? NOP - device characteristics should not notify
       });
 
       // clock characteristics notification
-      window.addEventListener("#clock", e => {
+      window.addEventListener('#clock', (e) => {
         // @ts-ignore
         const synchronizationBytes = new Uint8Array(e.detail.value);
+
         logging.info(`Triggered #clock: [${synchronizationBytes}]`, synchronizationBytes);
 
         // uint64_t clock_timestamp;
@@ -180,8 +189,9 @@ class FlutterConnection {
         // uint64_t tngl_clock_timestamp;
 
         const SYNCHRONIZATION_BYTE_SIZE = 48;
+
         if (synchronizationBytes.length < SYNCHRONIZATION_BYTE_SIZE) {
-          logging.error("synchronizationBytes.length < SYNCHRONIZATION_BYTE_SIZE");
+          logging.error('synchronizationBytes.length < SYNCHRONIZATION_BYTE_SIZE');
           return;
         }
 
@@ -191,19 +201,20 @@ class FlutterConnection {
         window.flutterConnection.synchronize(synchronization);
       });
 
-      window.addEventListener("#scan", e => {
+      window.addEventListener('#scan', (e) => {
         // @ts-ignore
         const json = e.detail.value;
+
         logging.debug(`> Triggered #scan: [${json}]`);
 
         // @ts-ignore
-        window.flutterConnection.emit("scan", json);
+        window.flutterConnection.emit('scan', json);
       });
 
-      logging.verbose("> FlutterConnection inited");
+      logging.verbose('> FlutterConnection inited');
     } else {
-      logging.debug("flutter_inappwebview in window NOT detected");
-      logging.info("Simulating Flutter Functions");
+      logging.debug('flutter_inappwebview in window NOT detected');
+      logging.info('Simulating Flutter Functions');
 
       let _connected = false;
       let _selected = false;
@@ -224,23 +235,23 @@ class FlutterConnection {
         //
         switch (handler) {
           //
-          case "userSelect": {
+          case 'userSelect': {
             // params: (criteria_json, timeout_number)
             {
               // disconnect if already connected
               if (_connected) {
                 // @ts-ignore
-                await window.flutter_inappwebview.callHandler("disconnect");
+                await window.flutter_inappwebview.callHandler('disconnect');
               }
               await sleep(Math.random() * 5000); // do the userSelect task filtering devices by the criteria_json parameter
               if (_fail(0.5)) {
                 // @ts-ignore
-                window.flutterConnection.reject("UserCanceledSelection"); // reject with "UserCanceledSelection" message if user cancels selection
+                window.flutterConnection.reject('UserCanceledSelection'); // reject with "UserCanceledSelection" message if user cancels selection
                 return;
               }
               if (_fail(0.1)) {
                 // @ts-ignore
-                window.flutterConnection.reject("SelectionFailed");
+                window.flutterConnection.reject('SelectionFailed');
                 return;
               }
               _selected = true;
@@ -250,17 +261,17 @@ class FlutterConnection {
             break;
           }
 
-          case "autoSelect": {
+          case 'autoSelect': {
             // params: (criteria_json, scan_period_number, timeout_number)
             {
               if (_connected) {
                 // @ts-ignore
-                await window.flutter_inappwebview.callHandler("disconnect"); // handle disconnection inside the flutter app
+                await window.flutter_inappwebview.callHandler('disconnect'); // handle disconnection inside the flutter app
               }
               await sleep(Math.random() * 5000); // do the autoSelect task filtering devices by the criteria_json parameter and scanning minimum time scan_period_number, maximum timeout_number
               if (_fail(0.1)) {
                 // @ts-ignore
-                window.flutterConnection.reject("SelectionFailed"); // if the selection fails, return "SelectionFailed"
+                window.flutterConnection.reject('SelectionFailed'); // if the selection fails, return "SelectionFailed"
                 return;
               }
               _selected = true;
@@ -270,7 +281,7 @@ class FlutterConnection {
             break;
           }
 
-          case "selected": {
+          case 'selected': {
             {
               // params: ()
               if (_selected) {
@@ -284,7 +295,7 @@ class FlutterConnection {
             break;
           }
 
-          case "unselect": {
+          case 'unselect': {
             {
               // params: ()
               if (_connected) {
@@ -299,17 +310,17 @@ class FlutterConnection {
             break;
           }
 
-          case "scan": {
+          case 'scan': {
             // params: (criteria_json, scan_period_number)
             {
               if (_connected) {
                 // @ts-ignore
-                await window.flutter_inappwebview.callHandler("disconnect"); // handle disconnection inside the flutter app
+                await window.flutter_inappwebview.callHandler('disconnect'); // handle disconnection inside the flutter app
               }
               await sleep(Math.random() * 5000); // do the autoSelect task filtering devices by the criteria_json parameter and scanning minimum time scan_period_number, maximum timeout_number
               if (_fail(0.1)) {
                 // @ts-ignore
-                window.flutterConnection.reject("SelectionFailed"); // if the selection fails, return "SelectionFailed"
+                window.flutterConnection.reject('SelectionFailed'); // if the selection fails, return "SelectionFailed"
                 return;
               }
               _selected = true;
@@ -319,18 +330,18 @@ class FlutterConnection {
             break;
           }
 
-          case "connect": {
+          case 'connect': {
             {
               // params: (timeout_number)
               if (!_selected) {
                 // @ts-ignore
-                window.flutterConnection.reject("DeviceNotSelected");
+                window.flutterConnection.reject('DeviceNotSelected');
                 return;
               }
               await sleep(Math.random() * 5000); // connecting logic
               if (_fail(0.1)) {
                 // @ts-ignore
-                window.flutterConnection.reject("ConnectionFailed");
+                window.flutterConnection.reject('ConnectionFailed');
                 return;
               }
               _connected = true;
@@ -342,11 +353,11 @@ class FlutterConnection {
               await sleep(1000); // unselect logic
 
               // @ts-ignore
-              window.flutterConnection.emit("#connected");
+              window.flutterConnection.emit('#connected');
 
               setTimeout(() => {
                 // @ts-ignore
-                window.flutterConnection.emit("#disconnected");
+                window.flutterConnection.emit('#disconnected');
                 //}, Math.random() * 60000);
                 _connected = false;
               }, 60000);
@@ -354,14 +365,14 @@ class FlutterConnection {
             break;
           }
 
-          case "disconnect": {
+          case 'disconnect': {
             {
               // params: ()
               if (_connected) {
                 await sleep(100); // disconnecting logic
                 _connected = false;
                 // @ts-ignore
-                window.flutterConnection.emit("#disconnected");
+                window.flutterConnection.emit('#disconnected');
               }
               // @ts-ignore
               window.flutterConnection.resolve(); // always resolves even if there are internal errors
@@ -369,7 +380,7 @@ class FlutterConnection {
             break;
           }
 
-          case "connected": {
+          case 'connected': {
             {
               // params: ()
               if (_connected) {
@@ -383,18 +394,18 @@ class FlutterConnection {
             break;
           }
 
-          case "deliver": {
+          case 'deliver': {
             {
               // params: (payload_bytes)
               if (!_connected) {
                 // @ts-ignore
-                window.flutterConnection.reject("DeviceDisconnected");
+                window.flutterConnection.reject('DeviceDisconnected');
                 return;
               }
               await sleep(25); // delivering logic
               if (_fail(0.1)) {
                 // @ts-ignore
-                window.flutterConnection.reject("DeliverFailed");
+                window.flutterConnection.reject('DeliverFailed');
                 return;
               }
               // @ts-ignore
@@ -403,18 +414,18 @@ class FlutterConnection {
             break;
           }
 
-          case "transmit": {
+          case 'transmit': {
             {
               // params: (payload_bytes)
               if (!_connected) {
                 // @ts-ignore
-                window.flutterConnection.reject("DeviceDisconnected");
+                window.flutterConnection.reject('DeviceDisconnected');
                 return;
               }
               await sleep(10); // transmiting logic
               if (_fail(0.1)) {
                 // @ts-ignore
-                window.flutterConnection.reject("TransmitFailed");
+                window.flutterConnection.reject('TransmitFailed');
                 return;
               }
               // @ts-ignore
@@ -423,18 +434,18 @@ class FlutterConnection {
             break;
           }
 
-          case "request": {
+          case 'request': {
             {
               // params: (payload_bytes, read_response)
               if (!_connected) {
                 // @ts-ignore
-                window.flutterConnection.reject("DeviceDisconnected");
+                window.flutterConnection.reject('DeviceDisconnected');
                 return;
               }
               await sleep(50); // requesting logic
               if (_fail(0.1)) {
                 // @ts-ignore
-                window.flutterConnection.reject("RequestFailed");
+                window.flutterConnection.reject('RequestFailed');
                 return;
               }
 
@@ -444,18 +455,18 @@ class FlutterConnection {
             break;
           }
 
-          case "writeClock": {
+          case 'writeClock': {
             {
               // params: (clock_bytes)
               if (!_connected) {
                 // @ts-ignore
-                window.flutterConnection.reject("DeviceDisconnected");
+                window.flutterConnection.reject('DeviceDisconnected');
                 return;
               }
               await sleep(10); // writing clock logic.
               if (_fail(0.1)) {
                 // @ts-ignore
-                window.flutterConnection.reject("ClockWriteFailed");
+                window.flutterConnection.reject('ClockWriteFailed');
                 return;
               }
               // @ts-ignore
@@ -464,18 +475,18 @@ class FlutterConnection {
             break;
           }
 
-          case "readClock": {
+          case 'readClock': {
             {
               // params: ()
               if (!_connected) {
                 // @ts-ignore
-                window.flutterConnection.reject("DeviceDisconnected");
+                window.flutterConnection.reject('DeviceDisconnected');
                 return;
               }
               await sleep(50); // reading clock logic.
               if (_fail(0.1)) {
                 // @ts-ignore
-                window.flutterConnection.reject("ClockReadFailed");
+                window.flutterConnection.reject('ClockReadFailed');
                 return;
               }
               // @ts-ignore
@@ -484,46 +495,46 @@ class FlutterConnection {
             break;
           }
 
-          case "updateFW": {
+          case 'updateFW': {
             {
               // params: (bytes)
               if (!_connected) {
                 // @ts-ignore
-                window.flutterConnection.reject("DeviceDisconnected");
+                window.flutterConnection.reject('DeviceDisconnected');
                 return;
               }
               // @ts-ignore
-              window.flutterConnection.emit("ota_status", "begin");
+              window.flutterConnection.emit('ota_status', 'begin');
               await sleep(10000); // preparing FW logic.
               if (_fail(0.1)) {
                 // @ts-ignore
-                window.flutterConnection.emit("ota_status", "fail");
+                window.flutterConnection.emit('ota_status', 'fail');
                 // @ts-ignore
-                window.flutterConnection.reject("UpdateFailed");
+                window.flutterConnection.reject('UpdateFailed');
                 return;
               }
               for (let i = 1; i <= 100; i++) {
                 // @ts-ignore
-                window.flutterConnection.emit("ota_progress", i);
+                window.flutterConnection.emit('ota_progress', i);
                 await sleep(25); // writing FW logic.
                 if (_fail(0.01)) {
                   // @ts-ignore
-                  window.flutterConnection.emit("ota_status", "fail");
+                  window.flutterConnection.emit('ota_status', 'fail');
                   // @ts-ignore
-                  window.flutterConnection.reject("UpdateFailed");
+                  window.flutterConnection.reject('UpdateFailed');
                   return;
                 }
               }
               await sleep(1000); // finishing FW logic.
               if (_fail(0.1)) {
                 // @ts-ignore
-                window.flutterConnection.emit("ota_status", "fail");
+                window.flutterConnection.emit('ota_status', 'fail');
                 // @ts-ignore
-                window.flutterConnection.reject("UpdateFailed");
+                window.flutterConnection.reject('UpdateFailed');
                 return;
               }
               // @ts-ignore
-              window.flutterConnection.emit("ota_status", "success");
+              window.flutterConnection.emit('ota_status', 'success');
               // @ts-ignore
               window.flutterConnection.resolve();
             }
@@ -531,7 +542,7 @@ class FlutterConnection {
           }
 
           default: {
-            logging.error("Unknown handler");
+            logging.error('Unknown handler');
             break;
           }
         }
@@ -540,7 +551,7 @@ class FlutterConnection {
   }
 
   available() {
-    return "flutter_inappwebview" in window;
+    return 'flutter_inappwebview' in window;
   }
 }
 
@@ -555,7 +566,7 @@ export class SpectodaConnectConnector extends FlutterConnection {
   constructor(runtimeReference: SpectodaRuntime) {
     super();
 
-    this.type = "flutterbluetooth";
+    this.type = 'flutterbluetooth';
 
     this.#runtimeReference = runtimeReference;
     this.#promise = null;
@@ -569,7 +580,8 @@ export class SpectodaConnectConnector extends FlutterConnection {
     window.flutterConnection.execute = (commandBytes: Uint8Array) => {
       logging.debug(`flutterConnection.execute(commandBytes=${commandBytes})`);
 
-      const DUMMY_BLE_CONNECTION = SpectodaWasm.Connection.make("11:11:11:11:11:11", SpectodaWasm.connector_type_t.CONNECTOR_BLE, SpectodaWasm.connection_rssi_t.RSSI_MAX);
+      const DUMMY_BLE_CONNECTION = SpectodaWasm.Connection.make('11:11:11:11:11:11', SpectodaWasm.connector_type_t.CONNECTOR_BLE, SpectodaWasm.connection_rssi_t.RSSI_MAX);
+
       this.#runtimeReference.spectoda_js.execute(commandBytes, DUMMY_BLE_CONNECTION);
     };
 
@@ -577,7 +589,8 @@ export class SpectodaConnectConnector extends FlutterConnection {
     window.flutterConnection.synchronize = (synchronization: Synchronization) => {
       logging.debug(`flutterConnection.synchronize(synchronization=${synchronization})`);
 
-      const DUMMY_BLE_CONNECTION = SpectodaWasm.Connection.make("11:11:11:11:11:11", SpectodaWasm.connector_type_t.CONNECTOR_BLE, SpectodaWasm.connection_rssi_t.RSSI_MAX);
+      const DUMMY_BLE_CONNECTION = SpectodaWasm.Connection.make('11:11:11:11:11:11', SpectodaWasm.connector_type_t.CONNECTOR_BLE, SpectodaWasm.connection_rssi_t.RSSI_MAX);
+
       this.#runtimeReference.spectoda_js.synchronize(synchronization, DUMMY_BLE_CONNECTION);
     };
   }
@@ -585,20 +598,21 @@ export class SpectodaConnectConnector extends FlutterConnection {
   #applyTimeout(promise: Promise<any> | null, timeout_number: number, message: string) {
     if (!promise) {
       // ? No promise provided to #applyTimeout()
-      return Promise.reject("NoPromiseProvided");
+      return Promise.reject('NoPromiseProvided');
     }
 
     const handle = setTimeout(() => {
       // @ts-ignore
-      window.flutterConnection.reject("FlutterSafeguardTimeout: " + message);
+      window.flutterConnection.reject('FlutterSafeguardTimeout: ' + message);
     }, timeout_number);
+
     return promise.finally(() => {
       clearTimeout(handle);
     });
   }
 
   async ping() {
-    console.time("ping_measure");
+    console.time('ping_measure');
     for (let i = 0; i < 1000; i++) {
       this.#promise = new Promise((resolve, reject) => {
         // @ts-ignore
@@ -614,10 +628,11 @@ export class SpectodaConnectConnector extends FlutterConnection {
       // logging.debug("pong")
     }
     //
-    console.timeEnd("ping_measure");
+    console.timeEnd('ping_measure');
 
     const FLUTTER_RESPONSE_TIMEOUT = 5000;
-    return this.#applyTimeout(this.#promise, FLUTTER_RESPONSE_TIMEOUT, "ping");
+
+    return this.#applyTimeout(this.#promise, FLUTTER_RESPONSE_TIMEOUT, 'ping');
   }
 
   // choose one Spectoda device (user chooses which device to connect to via a popup)
@@ -630,6 +645,7 @@ export class SpectodaConnectConnector extends FlutterConnection {
     }
 
     const criteria_json = JSON.stringify(criterium_array);
+
     logging.debug(`userSelect(criteria=${criteria_json}, timeout=${timeout_number})`);
 
     /**
@@ -643,23 +659,24 @@ export class SpectodaConnectConnector extends FlutterConnection {
      * call overlay.remove() to disable
      */
     const makeGestureBlockingOverlay = () => {
-      const overlay = document.createElement("div");
-      overlay.style.position = "fixed";
-      overlay.style.top = "0";
-      overlay.style.left = "0"; 
-      overlay.style.width = "100%";
-      overlay.style.height = "100%";
-      overlay.style.backgroundColor = "rgba(0,0,0,0)";
-      overlay.style.zIndex = "999999";
+      const overlay = document.createElement('div');
+
+      overlay.style.position = 'fixed';
+      overlay.style.top = '0';
+      overlay.style.left = '0'; 
+      overlay.style.width = '100%';
+      overlay.style.height = '100%';
+      overlay.style.backgroundColor = 'rgba(0,0,0,0)';
+      overlay.style.zIndex = '999999';
       // Block all interactions
-      overlay.addEventListener("touchstart", e => e.preventDefault(), { passive: false });
-      overlay.addEventListener("touchmove", e => e.preventDefault(), { passive: false });
-      overlay.addEventListener("touchend", e => e.preventDefault(), { passive: false });
-      overlay.addEventListener("wheel", e => e.preventDefault(), { passive: false });
-      overlay.addEventListener("click", e => e.preventDefault());
-      overlay.addEventListener("contextmenu", e => e.preventDefault());
+      overlay.addEventListener('touchstart', (e) => e.preventDefault(), { passive: false });
+      overlay.addEventListener('touchmove', (e) => e.preventDefault(), { passive: false });
+      overlay.addEventListener('touchend', (e) => e.preventDefault(), { passive: false });
+      overlay.addEventListener('wheel', (e) => e.preventDefault(), { passive: false });
+      overlay.addEventListener('click', (e) => e.preventDefault());
+      overlay.addEventListener('contextmenu', (e) => e.preventDefault());
       // apply to document.body
-      document.body.appendChild(overlay);
+      document.body.append(overlay);
       return overlay;
     };
 
@@ -673,7 +690,7 @@ export class SpectodaConnectConnector extends FlutterConnection {
 
         // the resolve returns JSON string or null
         if (json) {
-          json = json.replace(/\0/g, ""); //! [BUG] Flutter app on Android tends to return nulls as strings with a null character at the end. This is a workaround for that.
+          json = json.replace(/\0/g, ''); //! [BUG] Flutter app on Android tends to return nulls as strings with a null character at the end. This is a workaround for that.
           json = JSON.parse(json);
         }
 
@@ -689,10 +706,11 @@ export class SpectodaConnectConnector extends FlutterConnection {
     });
 
     // @ts-ignore
-    window.flutter_inappwebview.callHandler("userSelect", criteria_json, timeout_number);
+    window.flutter_inappwebview.callHandler('userSelect', criteria_json, timeout_number);
 
     const FLUTTER_RESPONSE_TIMEOUT = timeout_number + 60000;
-    return this.#applyTimeout(this.#promise, FLUTTER_RESPONSE_TIMEOUT, "userSelect");
+
+    return this.#applyTimeout(this.#promise, FLUTTER_RESPONSE_TIMEOUT, 'userSelect');
   }
 
   // takes the criteria, scans for scan_duration and automatically selects the device,
@@ -729,7 +747,7 @@ export class SpectodaConnectConnector extends FlutterConnection {
       window.flutterConnection.resolve = function (json) {
         // the resolve returns JSON string or null
         if (json) {
-          json = json.replace(/\0/g, ""); //! [BUG] Flutter app on Android tends to return nulls as strings with a null character at the end. This is a workaround for that.
+          json = json.replace(/\0/g, ''); //! [BUG] Flutter app on Android tends to return nulls as strings with a null character at the end. This is a workaround for that.
           json = JSON.parse(json);
         }
         resolve(json);
@@ -744,28 +762,29 @@ export class SpectodaConnectConnector extends FlutterConnection {
         // @ts-ignore
         window.flutterConnection.reject = reject;
 
-        console.warn("autoSelect() with minimal timeout timeouted, trying it again with the full timeout...");
+        console.warn('autoSelect() with minimal timeout timeouted, trying it again with the full timeout...');
         // @ts-ignore
-        window.flutter_inappwebview.callHandler("autoSelect", criteria_json, Math.max(MINIMAL_AUTOSELECT_SCAN_DURATION, scan_duration_number), Math.max(MINIMAL_AUTOSELECT_TIMEOUT, timeout_number));
+        window.flutter_inappwebview.callHandler('autoSelect', criteria_json, Math.max(MINIMAL_AUTOSELECT_SCAN_DURATION, scan_duration_number), Math.max(MINIMAL_AUTOSELECT_TIMEOUT, timeout_number));
       };
     });
 
     // @ts-ignore
-    window.flutter_inappwebview.callHandler("autoSelect", criteria_json, Math.max(MINIMAL_AUTOSELECT_SCAN_DURATION, scan_duration_number), Math.max(MINIMAL_AUTOSELECT_TIMEOUT, scan_duration_number));
+    window.flutter_inappwebview.callHandler('autoSelect', criteria_json, Math.max(MINIMAL_AUTOSELECT_SCAN_DURATION, scan_duration_number), Math.max(MINIMAL_AUTOSELECT_TIMEOUT, scan_duration_number));
 
     const FLUTTER_RESPONSE_TIMEOUT = Math.max(MINIMAL_AUTOSELECT_TIMEOUT, scan_duration_number) + Math.max(MINIMAL_AUTOSELECT_TIMEOUT, timeout_number) + 5000;
-    return this.#applyTimeout(this.#promise, FLUTTER_RESPONSE_TIMEOUT, "autoSelect");
+
+    return this.#applyTimeout(this.#promise, FLUTTER_RESPONSE_TIMEOUT, 'autoSelect');
   }
 
   selected(): Promise<SpectodaTypes.Criterium | null> {
-    logging.debug(`selected()`);
+    logging.debug('selected()');
 
     this.#promise = new Promise((resolve, reject) => {
       // @ts-ignore
       window.flutterConnection.resolve = function (json) {
         // the resolve returns JSON string or null
         if (json) {
-          json = json.replace(/\0/g, ""); //! [BUG] Flutter app on Android tends to return nulls as strings with a null character at the end. This is a workaround for that.
+          json = json.replace(/\0/g, ''); //! [BUG] Flutter app on Android tends to return nulls as strings with a null character at the end. This is a workaround for that.
           json = JSON.parse(json);
         }
         resolve(json);
@@ -775,14 +794,15 @@ export class SpectodaConnectConnector extends FlutterConnection {
     });
 
     // @ts-ignore
-    window.flutter_inappwebview.callHandler("selected");
+    window.flutter_inappwebview.callHandler('selected');
 
     const FLUTTER_RESPONSE_TIMEOUT = 1000;
-    return this.#applyTimeout(this.#promise, FLUTTER_RESPONSE_TIMEOUT, "selected");
+
+    return this.#applyTimeout(this.#promise, FLUTTER_RESPONSE_TIMEOUT, 'selected');
   }
 
   unselect(): Promise<null> {
-    logging.debug(`unselect()`);
+    logging.debug('unselect()');
 
     this.#promise = new Promise((resolve, reject) => {
       // @ts-ignore
@@ -792,10 +812,11 @@ export class SpectodaConnectConnector extends FlutterConnection {
     });
 
     // @ts-ignore
-    window.flutter_inappwebview.callHandler("unselect");
+    window.flutter_inappwebview.callHandler('unselect');
 
     const FLUTTER_RESPONSE_TIMEOUT = 1000;
-    return this.#applyTimeout(this.#promise, FLUTTER_RESPONSE_TIMEOUT, "unselect");
+
+    return this.#applyTimeout(this.#promise, FLUTTER_RESPONSE_TIMEOUT, 'unselect');
   }
 
   // takes the criteria, scans for scan_duration and returns the scanning results
@@ -817,7 +838,7 @@ export class SpectodaConnectConnector extends FlutterConnection {
       window.flutterConnection.resolve = function (json) {
         // the resolve returns JSON string or null
         if (json) {
-          json = json.replace(/\0/g, ""); //! [BUG] Flutter app on Android tends to return nulls as strings with a null character at the end. This is a workaround for that.
+          json = json.replace(/\0/g, ''); //! [BUG] Flutter app on Android tends to return nulls as strings with a null character at the end. This is a workaround for that.
           json = JSON.parse(json);
         }
         resolve(json);
@@ -827,10 +848,11 @@ export class SpectodaConnectConnector extends FlutterConnection {
     });
 
     // @ts-ignore
-    window.flutter_inappwebview.callHandler("scan", criteria_json, scan_duration_number);
+    window.flutter_inappwebview.callHandler('scan', criteria_json, scan_duration_number);
 
     const FLUTTER_RESPONSE_TIMEOUT = scan_duration_number + 5000;
-    return this.#applyTimeout(this.#promise, FLUTTER_RESPONSE_TIMEOUT, "scan");
+
+    return this.#applyTimeout(this.#promise, FLUTTER_RESPONSE_TIMEOUT, 'scan');
   }
 
   /*
@@ -846,8 +868,9 @@ export class SpectodaConnectConnector extends FlutterConnection {
     logging.debug(`connect(timeout=${timeout_number})`);
 
     const MINIMAL_CONNECT_TIMEOUT = 5000;
+
     if (timeout_number <= MINIMAL_CONNECT_TIMEOUT) {
-      return Promise.reject("InvalidTimeout");
+      return Promise.reject('InvalidTimeout');
     }
 
     //? I came across an olf Andoid device that needed a two calls of a connect for a successful connection.
@@ -859,7 +882,7 @@ export class SpectodaConnectConnector extends FlutterConnection {
       window.flutterConnection.resolve = function (json) {
         // the resolve returns JSON string or null
         if (json) {
-          json = json.replace(/\0/g, ""); //! [BUG] Flutter app on Android tends to return nulls as strings with a null character at the end. This is a workaround for that.
+          json = json.replace(/\0/g, ''); //! [BUG] Flutter app on Android tends to return nulls as strings with a null character at the end. This is a workaround for that.
           json = JSON.parse(json);
         }
         resolve(json);
@@ -872,14 +895,14 @@ export class SpectodaConnectConnector extends FlutterConnection {
         // @ts-ignore
         window.flutterConnection.reject = reject;
 
-        console.warn("Connect with minimal timeout timeouted, trying it again with the full timeout...");
+        console.warn('Connect with minimal timeout timeouted, trying it again with the full timeout...');
         // @ts-ignore
-        window.flutter_inappwebview.callHandler("connect", Math.max(MINIMAL_CONNECT_TIMEOUT, timeout_number)); // on old Androids the minimal timeout is not enough
+        window.flutter_inappwebview.callHandler('connect', Math.max(MINIMAL_CONNECT_TIMEOUT, timeout_number)); // on old Androids the minimal timeout is not enough
       };
     });
 
     // @ts-ignore
-    window.flutter_inappwebview.callHandler("connect", MINIMAL_CONNECT_TIMEOUT); // first try to connect with the minimal timeout
+    window.flutter_inappwebview.callHandler('connect', MINIMAL_CONNECT_TIMEOUT); // first try to connect with the minimal timeout
 
     //? Leaving this code here for possible benchmarking. Comment out .callHandler("connect" and uncomment this code to use it
     // setTimeout(() => {
@@ -888,17 +911,18 @@ export class SpectodaConnectConnector extends FlutterConnection {
 
     // the timeout must be long enough to handle the slowest devices
     const FLUTTER_RESPONSE_TIMEOUT = MINIMAL_CONNECT_TIMEOUT + Math.max(MINIMAL_CONNECT_TIMEOUT, timeout_number) + 5000;
-    return this.#applyTimeout(this.#promise, FLUTTER_RESPONSE_TIMEOUT, "connect").then(() => {
-      logging.debug("Sleeping for 100ms after connect...");
+
+    return this.#applyTimeout(this.#promise, FLUTTER_RESPONSE_TIMEOUT, 'connect').then(() => {
+      logging.debug('Sleeping for 100ms after connect...');
       return sleep(100).then(() => {
-        return { connector: "spectodaconnect" };
+        return { connector: 'spectodaconnect' };
       });
     });
   }
 
   // disconnect Connector from the connected Spectoda Device. But keep it selected
   disconnect(): Promise<unknown> {
-    logging.verbose(`disconnect()`);
+    logging.verbose('disconnect()');
 
     this.#promise = new Promise((resolve, reject) => {
       // @ts-ignore
@@ -908,22 +932,24 @@ export class SpectodaConnectConnector extends FlutterConnection {
     });
 
     // @ts-ignore
-    window.flutter_inappwebview.callHandler("disconnect");
+    window.flutter_inappwebview.callHandler('disconnect');
 
     const FLUTTER_RESPONSE_TIMEOUT = 5000;
-    return this.#applyTimeout(this.#promise, FLUTTER_RESPONSE_TIMEOUT, "disconnect");
+
+    return this.#applyTimeout(this.#promise, FLUTTER_RESPONSE_TIMEOUT, 'disconnect');
   }
 
   connected(): Promise<SpectodaTypes.Criterium | null> {
-    logging.verbose(`connected()`);
+    logging.verbose('connected()');
 
     this.#promise = new Promise((resolve, reject) => {
       // @ts-ignore
       window.flutterConnection.resolve = function (json) {
         // the resolve returns JSON string or null
         if (json) {
-          json = json.replace(/\0/g, ""); //! [BUG] Flutter app on Android tends to return nulls as strings with a null character at the end. This is a workaround for that.
+          json = json.replace(/\0/g, ''); //! [BUG] Flutter app on Android tends to return nulls as strings with a null character at the end. This is a workaround for that.
           const criteria = JSON.parse(json);
+
           resolve(criteria);
         } else {
           resolve(null);
@@ -934,10 +960,11 @@ export class SpectodaConnectConnector extends FlutterConnection {
     });
 
     // @ts-ignore
-    window.flutter_inappwebview.callHandler("connected");
+    window.flutter_inappwebview.callHandler('connected');
 
     const FLUTTER_RESPONSE_TIMEOUT = 1000;
-    return this.#applyTimeout(this.#promise, FLUTTER_RESPONSE_TIMEOUT, "connected");
+
+    return this.#applyTimeout(this.#promise, FLUTTER_RESPONSE_TIMEOUT, 'connected');
   }
 
   // deliver handles the communication with the Spectoda Controller in a way
@@ -956,12 +983,13 @@ export class SpectodaConnectConnector extends FlutterConnection {
     });
 
     // @ts-ignore
-    window.flutter_inappwebview.callHandler("deliver", payload_bytes, timeout_number);
+    window.flutter_inappwebview.callHandler('deliver', payload_bytes, timeout_number);
     // fix bug in spectoda-connect and then enable this line
     // TODO window.flutter_inappwebview.callHandler("deliver", Array.from(payload_bytes), timeout_number);
 
     const FLUTTER_RESPONSE_TIMEOUT = timeout_number + 5000;
-    return this.#applyTimeout(this.#promise, FLUTTER_RESPONSE_TIMEOUT, "deliver");
+
+    return this.#applyTimeout(this.#promise, FLUTTER_RESPONSE_TIMEOUT, 'deliver');
   }
 
   // transmit handles the communication with the Spectoda Controller in a way
@@ -980,10 +1008,11 @@ export class SpectodaConnectConnector extends FlutterConnection {
     });
 
     // @ts-ignore
-    window.flutter_inappwebview.callHandler("transmit", Array.from(payload_bytes), timeout_number);
+    window.flutter_inappwebview.callHandler('transmit', [...payload_bytes], timeout_number);
 
     const FLUTTER_RESPONSE_TIMEOUT = timeout_number + 5000;
-    return this.#applyTimeout(this.#promise, FLUTTER_RESPONSE_TIMEOUT, "transmit");
+
+    return this.#applyTimeout(this.#promise, FLUTTER_RESPONSE_TIMEOUT, 'transmit');
   }
 
   // request handles the requests on the Spectoda Controller. The payload request
@@ -992,11 +1021,11 @@ export class SpectodaConnectConnector extends FlutterConnection {
     if (timeout_number === DEFAULT_TIMEOUT) {
       timeout_number = 5000;
     }
-    logging.debug(`request(payload=[${payload_bytes}], read_response=${read_response ? "true" : "false"}, timeout=${timeout_number})`);
+    logging.debug(`request(payload=[${payload_bytes}], read_response=${read_response ? 'true' : 'false'}, timeout=${timeout_number})`);
 
     this.#promise = new Promise((resolve, reject) => {
       // @ts-ignore
-      window.flutterConnection.resolve = response => {
+      window.flutterConnection.resolve = (response) => {
         resolve(new DataView(new Uint8Array(response).buffer));
       };
       // @ts-ignore
@@ -1004,10 +1033,11 @@ export class SpectodaConnectConnector extends FlutterConnection {
     });
 
     // @ts-ignore
-    window.flutter_inappwebview.callHandler("request", Array.from(payload_bytes), read_response, timeout_number);
+    window.flutter_inappwebview.callHandler('request', [...payload_bytes], read_response, timeout_number);
 
     const FLUTTER_RESPONSE_TIMEOUT = timeout_number + 5000;
-    return this.#applyTimeout(this.#promise, FLUTTER_RESPONSE_TIMEOUT, "request");
+
+    return this.#applyTimeout(this.#promise, FLUTTER_RESPONSE_TIMEOUT, 'request');
   }
 
   // synchronizes the device internal clock with the provided TimeTrack clock
@@ -1031,22 +1061,24 @@ export class SpectodaConnectConnector extends FlutterConnection {
 
           const timestamp = clock.millis();
           const clock_bytes = toBytes(timestamp, 8);
+
           // @ts-ignore
-          window.flutter_inappwebview.callHandler("writeClock", clock_bytes);
+          window.flutter_inappwebview.callHandler('writeClock', clock_bytes);
 
           const FLUTTER_RESPONSE_TIMEOUT = 5000;
-          await this.#applyTimeout(this.#promise, FLUTTER_RESPONSE_TIMEOUT, "writeClock");
-          logging.debug("Clock write success:", timestamp);
+
+          await this.#applyTimeout(this.#promise, FLUTTER_RESPONSE_TIMEOUT, 'writeClock');
+          logging.debug('Clock write success:', timestamp);
 
           // @ts-ignore
           resolve();
           return;
         } catch (e) {
-          logging.warn("Clock write failed: " + e);
+          logging.warn('Clock write failed: ' + e);
         }
       }
 
-      reject("Clock write failed");
+      reject('Clock write failed');
       return;
     });
   }
@@ -1054,7 +1086,7 @@ export class SpectodaConnectConnector extends FlutterConnection {
   // returns a TimeTrack clock object that is synchronized with the internal clock
   // of the device as precisely as possible
   getClock(): Promise<TimeTrack> {
-    logging.debug("getClock()");
+    logging.debug('getClock()');
 
     return new Promise(async (resolve, reject) => {
       for (let tries = 0; tries < 3; tries++) {
@@ -1071,25 +1103,25 @@ export class SpectodaConnectConnector extends FlutterConnection {
           });
 
           // @ts-ignore
-          window.flutter_inappwebview.callHandler("readClock");
+          window.flutter_inappwebview.callHandler('readClock');
 
           const FLUTTER_RESPONSE_TIMEOUT = 5000;
-          const bytes = await this.#applyTimeout(this.#promise, FLUTTER_RESPONSE_TIMEOUT, "readClock");
+          const bytes = await this.#applyTimeout(this.#promise, FLUTTER_RESPONSE_TIMEOUT, 'readClock');
 
           const reader = new TnglReader(new Uint8Array(bytes));
           const timestamp = reader.readUint64();
 
           // const timestamp = await this.#promise;
-          logging.debug("Clock read success:", timestamp);
+          logging.debug('Clock read success:', timestamp);
 
           resolve(new TimeTrack(timestamp));
           return;
         } catch (e) {
-          logging.warn("Clock read failed:", e);
+          logging.warn('Clock read failed:', e);
         }
       }
 
-      reject("Clock read failed");
+      reject('Clock read failed');
       return;
     });
   }
@@ -1128,7 +1160,7 @@ export class SpectodaConnectConnector extends FlutterConnection {
 
       let written = 0;
 
-      logging.info("OTA UPDATE");
+      logging.info('OTA UPDATE');
       logging.verbose(firmware_bytes);
 
       const start_timestamp = Date.now();
@@ -1136,13 +1168,14 @@ export class SpectodaConnectConnector extends FlutterConnection {
       await sleep(100);
 
       try {
-        this.#runtimeReference.emit("ota_status", "begin");
+        this.#runtimeReference.emit('ota_status', 'begin');
 
         {
           //===========// RESET //===========//
-          logging.info("OTA RESET");
+          logging.info('OTA RESET');
 
           const device_bytes = [COMMAND_FLAGS.FLAG_OTA_RESET, 0x00, ...numberToBytes(0x00000000, 4)];
+
           await this.request(new Uint8Array(device_bytes), false, 10000);
         }
 
@@ -1150,9 +1183,10 @@ export class SpectodaConnectConnector extends FlutterConnection {
 
         {
           //===========// BEGIN //===========//
-          logging.info("OTA BEGIN");
+          logging.info('OTA BEGIN');
 
           const device_bytes = [COMMAND_FLAGS.FLAG_OTA_BEGIN, 0x00, ...numberToBytes(firmware_bytes.length, 4)];
+
           await this.request(new Uint8Array(device_bytes), false, 20000);
         }
 
@@ -1160,7 +1194,7 @@ export class SpectodaConnectConnector extends FlutterConnection {
 
         {
           //===========// WRITE //===========//
-          logging.info("OTA WRITE");
+          logging.info('OTA WRITE');
 
           while (written < firmware_bytes.length) {
             if (index_to > firmware_bytes.length) {
@@ -1168,13 +1202,15 @@ export class SpectodaConnectConnector extends FlutterConnection {
             }
 
             const device_bytes = [COMMAND_FLAGS.FLAG_OTA_WRITE, 0x00, ...numberToBytes(written, 4), ...firmware_bytes.slice(index_from, index_to)];
+
             await this.request(new Uint8Array(device_bytes), false, 10000);
 
             written += index_to - index_from;
 
             const percentage = Math.floor((written * 10000) / firmware_bytes.length) / 100;
-            logging.debug(percentage + "%");
-            this.#runtimeReference.emit("ota_progress", percentage);
+
+            logging.debug(percentage + '%');
+            this.#runtimeReference.emit('ota_progress', percentage);
 
             index_from += chunk_size;
             index_to = index_from + chunk_size;
@@ -1185,26 +1221,28 @@ export class SpectodaConnectConnector extends FlutterConnection {
 
         {
           //===========// END //===========//
-          logging.info("OTA END");
+          logging.info('OTA END');
 
           const device_bytes = [COMMAND_FLAGS.FLAG_OTA_END, 0x00, ...numberToBytes(written, 4)];
+
           await this.request(new Uint8Array(device_bytes), false, 10000);
         }
 
         await sleep(100);
 
-        logging.info("Rebooting device...");
+        logging.info('Rebooting device...');
 
         const device_bytes = [COMMAND_FLAGS.FLAG_DEVICE_REBOOT_REQUEST];
+
         await this.request(new Uint8Array(device_bytes), false);
 
-        logging.debug("Firmware written in " + (Date.now() - start_timestamp) / 1000 + " seconds");
+        logging.debug('Firmware written in ' + (Date.now() - start_timestamp) / 1000 + ' seconds');
 
-        this.#runtimeReference.emit("ota_status", "success");
+        this.#runtimeReference.emit('ota_status', 'success');
 
         resolve(null);
       } catch (e) {
-        this.#runtimeReference.emit("ota_status", "fail");
+        this.#runtimeReference.emit('ota_status', 'fail');
 
         reject(e);
       }
@@ -1218,9 +1256,9 @@ export class SpectodaConnectConnector extends FlutterConnection {
   }
 
   cancel(): void {
-    logging.debug("cancel()");
+    logging.debug('cancel()');
 
-    window.flutter_inappwebview.callHandler("cancel");
+    window.flutter_inappwebview.callHandler('cancel');
   }
 
   destroy(): Promise<unknown> {
@@ -1250,14 +1288,14 @@ export class SpectodaConnectConnector extends FlutterConnection {
   sendRequest(request_ticket_number: number, request_bytecode: Uint8Array, destination_connection: Connection) {
     logging.verbose(`SpectodaConnectConnector::sendRequest(request_ticket_number=${request_ticket_number}, request_bytecode=${request_bytecode}, destination_connection=${destination_connection})`);
 
-    return Promise.reject("NotImplemented");
+    return Promise.reject('NotImplemented');
   }
   // bool _sendResponse(const int32_t request_ticket_number, const int32_t request_result, std::vector<uint8_t>& response_bytecode, const Connection& destination_connection) = 0;
 
   sendResponse(request_ticket_number: number, request_result: number, response_bytecode: Uint8Array, destination_connection: Connection) {
     logging.verbose(`SpectodaConnectConnector::sendResponse(request_ticket_number=${request_ticket_number}, request_result=${request_result}, response_bytecode=${response_bytecode}, destination_connection=${destination_connection})`);
 
-    return Promise.reject("NotImplemented");
+    return Promise.reject('NotImplemented');
   }
 
   // void _sendSynchronize(const Synchronization& synchronization, const Connection& source_connection) = 0;
@@ -1283,20 +1321,21 @@ export class SpectodaConnectConnector extends FlutterConnection {
           });
 
           const synchronization_bytes = [...synchronization.toUint8Array()];
-          // @ts-ignore
-          window.flutter_inappwebview.callHandler("writeClock", synchronization_bytes);
 
-          await this.#applyTimeout(this.#promise, 5000, "synchronization");
+          // @ts-ignore
+          window.flutter_inappwebview.callHandler('writeClock', synchronization_bytes);
+
+          await this.#applyTimeout(this.#promise, 5000, 'synchronization');
 
           // @ts-ignore
           resolve();
           return;
         } catch (e) {
-          logging.warn("Clock write failed: " + e);
+          logging.warn('Clock write failed: ' + e);
         }
       }
 
-      reject("Clock write failed");
+      reject('Clock write failed');
       return;
     });
   }

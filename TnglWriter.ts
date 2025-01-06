@@ -1,11 +1,11 @@
-import { logging } from "./logging";
+import { logging } from './logging';
 
 export class TnglWriter {
   #buffer: Uint8Array;
   #dataView: DataView;
   #index: number;
 
-  constructor(buffer_size: number = 65535) {
+  constructor(buffer_size = 65535) {
     this.#buffer = new Uint8Array(buffer_size);
     this.#dataView = new DataView(this.#buffer.buffer);
     this.#index = 0;
@@ -14,12 +14,12 @@ export class TnglWriter {
   writeValue(value: number, byteCount: number) {
     if (this.#index + byteCount <= this.#dataView.byteLength) {
       for (let i = 0; i < byteCount; i++) {
-        this.#dataView.setUint8(this.#index++, value & 0xff);
+        this.#dataView.setUint8(this.#index++, value & 0xFF);
         value = Math.floor(value / Math.pow(2, 8));
       }
     } else {
-      console.trace("WriteOutOfRange");
-      throw "WriteOutOfRange";
+      console.trace('WriteOutOfRange');
+      throw 'WriteOutOfRange';
     }
   }
 
@@ -28,20 +28,20 @@ export class TnglWriter {
       size = bytes.length;
     }
 
-    logging.debug("writeBytes", bytes, size);
+    logging.debug('writeBytes', bytes, size);
 
     if (this.#index + size <= this.#dataView.byteLength) {
       for (let i = 0; i < size; i++) {
         if (i < bytes.length) {
           this.#dataView.setUint8(this.#index++, bytes[i]);
         } else {
-          logging.warn("writeBytes: padding with 0");
+          logging.warn('writeBytes: padding with 0');
           this.#dataView.setUint8(this.#index++, 0);
         }
       }
     } else {
-      console.trace("WriteOutOfRange");
-      throw "WriteOutOfRange";
+      console.trace('WriteOutOfRange');
+      throw 'WriteOutOfRange';
     }
   }
 
@@ -55,8 +55,8 @@ export class TnglWriter {
         this.#dataView.setUint8(this.#index++, string.charCodeAt(i));
       }
     } else {
-      console.trace("WriteOutOfRange");
-      throw "WriteOutOfRange";
+      console.trace('WriteOutOfRange');
+      throw 'WriteOutOfRange';
     }
   }
 

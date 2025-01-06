@@ -1,6 +1,6 @@
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 
-import { SpectodaDummyConnector } from "../SpectodaDummyConnector";
+import { SpectodaDummyConnector } from '../SpectodaDummyConnector';
 import {
   createNanoEvents,
   createNanoEventsWithWrappedEmit,
@@ -15,29 +15,29 @@ import {
   numberToBytes,
   sleep,
   uint8ArrayToHexString,
-} from "../functions";
-import { logging } from "../logging";
-import { SpectodaWebBluetoothConnector } from "./connector/SpectodaWebBluetoothConnector";
-import { SpectodaWebSerialConnector } from "./connector/SpectodaWebSerialConnector";
-// import { SpectodaConnectConnector } from "./SpectodaConnectConnector";
-import { TimeTrack } from "../TimeTrack";
-import { PreviewController } from "./PreviewController";
-import { SpectodaWasm } from "./SpectodaWasm";
-import { Spectoda_JS } from "./Spectoda_JS";
-import { SpectodaConnectConnector } from "./connector/SpectodaConnectConnector";
-import { APP_MAC_ADDRESS, COMMAND_FLAGS, DEFAULT_TIMEOUT } from "./constants";
+} from '../functions';
+import { logging } from '../logging';
+import { TimeTrack } from '../TimeTrack';
+import { Spectoda } from '../Spectoda';
+import { TnglReader } from '../TnglReader';
+import { TnglWriter } from '../TnglWriter';
 
-import { Spectoda } from "../Spectoda";
-import { TnglReader } from "../TnglReader";
-import { TnglWriter } from "../TnglWriter";
-import { SpectodaNodeBluetoothConnector } from "./connector/SpectodaNodeBleConnector";
-import { SpectodaNodeSerialConnector } from "./connector/SpectodaNodeSerialConnector";
-import { SpectodaSimulatedConnector } from "./connector/SpectodaSimulatedConnector";
-import { SpectodaAppEventMap } from "./types/app-events";
-import { ConnectorType } from "./types/connect";
-import { SpectodaEventStateValue } from "./types/event";
-import { SpectodaTypes } from "./types/primitives";
-import { Connection, Synchronization } from "./types/wasm";
+import { SpectodaWebBluetoothConnector } from './connector/SpectodaWebBluetoothConnector';
+import { SpectodaWebSerialConnector } from './connector/SpectodaWebSerialConnector';
+// import { SpectodaConnectConnector } from "./SpectodaConnectConnector";
+import { PreviewController } from './PreviewController';
+import { SpectodaWasm } from './SpectodaWasm';
+import { Spectoda_JS } from './Spectoda_JS';
+import { SpectodaConnectConnector } from './connector/SpectodaConnectConnector';
+import { APP_MAC_ADDRESS, COMMAND_FLAGS, DEFAULT_TIMEOUT } from './constants';
+import { SpectodaNodeBluetoothConnector } from './connector/SpectodaNodeBleConnector';
+import { SpectodaNodeSerialConnector } from './connector/SpectodaNodeSerialConnector';
+import { SpectodaSimulatedConnector } from './connector/SpectodaSimulatedConnector';
+import { SpectodaAppEventMap } from './types/app-events';
+import { ConnectorType } from './types/connect';
+import { SpectodaEventStateValue } from './types/event';
+import { SpectodaTypes } from './types/primitives';
+import { Connection, Synchronization } from './types/wasm';
 
 // Spectoda.js -> SpectodaRuntime.js -> | SpectodaXXXConnector.js ->
 
@@ -71,7 +71,7 @@ import { Connection, Synchronization } from "./types/wasm";
 export const allEventsEmitter = createNanoEvents();
 
 export function emitHandler({ event, args }: { event: string; args: any }) {
-  allEventsEmitter.emit("on", { name: event, args });
+  allEventsEmitter.emit('on', { name: event, args });
 }
 
 class BitSet {
@@ -86,32 +86,36 @@ class BitSet {
   setBit(position: number) {
     const index = Math.floor(position / 32);
     const bit = position % 32;
+
     this.bitArray[index] |= 1 << bit;
   }
 
   clearBit(position: number) {
     const index = Math.floor(position / 32);
     const bit = position % 32;
+
     this.bitArray[index] &= ~(1 << bit);
   }
 
   toggleBit(position: number) {
     const index = Math.floor(position / 32);
     const bit = position % 32;
+
     this.bitArray[index] ^= 1 << bit;
   }
 
   isSet(position: number) {
     const index = Math.floor(position / 32);
     const bit = position % 32;
+
     return (this.bitArray[index] & (1 << bit)) !== 0;
   }
 
   toString() {
     return [...this.bitArray]
-      .map(num => num.toString(2).padStart(32, "0"))
+      .map((num) => num.toString(2).padStart(32, '0'))
       .reverse()
-      .join("");
+      .join('');
   }
 }
 
@@ -284,42 +288,46 @@ export class SpectodaRuntime {
 
     this.#inicilized = false;
 
-    this.#assignedConnector = "none";
+    this.#assignedConnector = 'none';
     this.#assignedConnectorParameter = null;
 
-    this.onConnected = e => {};
-    this.onDisconnected = e => {};
+    this.onConnected = (e) => {};
+    this.onDisconnected = (e) => {};
 
     this.lastUpdateTime = 0;
     this.lastUpdatePercentage = 0;
 
-    this.WIP_name = "APP";
+    this.WIP_name = 'APP';
 
-    this.#eventEmitter.on("ota_progress", (value: number) => {
+    this.#eventEmitter.on('ota_progress', (value: number) => {
       const now = Date.now();
 
       const time_delta = now - this.lastUpdateTime;
-      logging.verbose("time_delta:", time_delta);
+
+      logging.verbose('time_delta:', time_delta);
       this.lastUpdateTime = now;
 
       const percentage_delta = value - this.lastUpdatePercentage;
-      logging.verbose("percentage_delta:", percentage_delta);
+
+      logging.verbose('percentage_delta:', percentage_delta);
       this.lastUpdatePercentage = value;
 
       const percentage_left = 100 - value;
-      logging.verbose("percentage_left:", percentage_left);
+
+      logging.verbose('percentage_left:', percentage_left);
 
       const time_left = (percentage_left / percentage_delta) * time_delta;
-      logging.verbose("time_left:", time_left);
 
-      this.emit("ota_timeleft", time_left);
+      logging.verbose('time_left:', time_left);
+
+      this.emit('ota_timeleft', time_left);
     });
 
-    this.#eventEmitter.on("#connected", (e: any) => {
+    this.#eventEmitter.on('#connected', (e: any) => {
       this.#onConnected(e);
     });
 
-    this.#eventEmitter.on("#disconnected", (e: any) => {
+    this.#eventEmitter.on('#disconnected', (e: any) => {
       this.#onDisconnected(e);
     });
 
@@ -327,7 +335,7 @@ export class SpectodaRuntime {
     if (detectSpectodaConnect()) {
       // target="_blank" global handler
       // @ts-ignore
-      /** @type {HTMLBodyElement} */ document.querySelector("body").addEventListener("click", function (e) {
+      /** @type {HTMLBodyElement} */ document.querySelector('body').addEventListener('click', function (e) {
         e.preventDefault();
 
         // ! @sirluky Please add types or explanation what this does
@@ -362,21 +370,22 @@ export class SpectodaRuntime {
 
         // @ts-ignore
         for (const el of path) {
-          if (el.tagName === "A" && el.getAttribute("target") === "_blank") {
+          if (el.tagName === 'A' && el.getAttribute('target') === '_blank') {
             e.preventDefault();
-            const url = el.getAttribute("href");
+            const url = el.getAttribute('href');
+
             logging.verbose(url);
             // @ts-ignore
-            logging.debug("Openning external url", url);
-            window.flutter_inappwebview.callHandler("openExternalUrl", url);
+            logging.debug('Openning external url', url);
+            window.flutter_inappwebview.callHandler('openExternalUrl', url);
             break;
           }
         }
       });
     }
 
-    if (typeof window !== "undefined") {
-      window.addEventListener("beforeunload", e => {
+    if (typeof window !== 'undefined') {
+      window.addEventListener('beforeunload', (e) => {
         // If I cant disconnect right now for some readon
         // return this.disconnect(false).catch(reason => {
         //   if (reason == "CurrentlyWriting") {
@@ -396,18 +405,18 @@ export class SpectodaRuntime {
 
     this.previewControllers = {};
 
-    this.#eventEmitter.on("wasm_execute", (command: any) => {
-      logging.debug("wasm_execute", command);
+    this.#eventEmitter.on('wasm_execute', (command: any) => {
+      logging.debug('wasm_execute', command);
       for (const previewController of Object.values(this.previewControllers)) {
         try {
-          previewController.execute(command, SpectodaWasm.Connection.make("11:11:11:11:11:11", SpectodaWasm.connector_type_t.CONNECTOR_UNDEFINED, SpectodaWasm.connection_rssi_t.RSSI_MAX));
+          previewController.execute(command, SpectodaWasm.Connection.make('11:11:11:11:11:11', SpectodaWasm.connector_type_t.CONNECTOR_UNDEFINED, SpectodaWasm.connection_rssi_t.RSSI_MAX));
         } catch (error) {
           logging.error(error);
         }
       }
     });
 
-    this.#eventEmitter.on("wasm_clock", (timestamp: number) => {
+    this.#eventEmitter.on('wasm_clock', (timestamp: number) => {
       for (const previewController of Object.values(this.previewControllers)) {
         try {
           previewController.setClockTimestamp(timestamp);
@@ -435,7 +444,7 @@ export class SpectodaRuntime {
         },
         io: {
           DUMMY: {
-            type: "GPIO",
+            type: 'GPIO',
             pin: -1,
           },
         },
@@ -519,59 +528,59 @@ export class SpectodaRuntime {
    * @param desired_connector
    * @param connector_parameter WIP - still figuring out what is can be used for. Right now it is used for simulated connector to pass the parameters for the simulated network.
    */
-  assignConnector(desired_connector: ConnectorType = "default", connector_parameter: any = null) {
+  assignConnector(desired_connector: ConnectorType = 'default', connector_parameter: any = null) {
     logging.verbose(`assignConnector(desired_connector=${desired_connector})`);
 
     let choosen_connector = undefined;
 
-    if (typeof desired_connector !== "string") {
-      throw "InvalidConnectorType";
+    if (typeof desired_connector !== 'string') {
+      throw 'InvalidConnectorType';
     }
 
-    if (desired_connector == "default") {
+    if (desired_connector == 'default') {
       if (detectGW()) {
-        desired_connector = "serial";
+        desired_connector = 'serial';
       } else {
-        desired_connector = "bluetooth";
+        desired_connector = 'bluetooth';
       }
     }
 
-    if (desired_connector.includes("bluetooth")) {
+    if (desired_connector.includes('bluetooth')) {
       if (detectSpectodaConnect()) {
-        choosen_connector = "flutterbluetooth";
+        choosen_connector = 'flutterbluetooth';
       } else if ((detectAndroid() && detectChrome()) || (detectMacintosh() && detectChrome()) || (detectWindows() && detectChrome()) || (detectLinux() && detectChrome())) {
-        choosen_connector = "webbluetooth";
+        choosen_connector = 'webbluetooth';
       } else if (detectNode()) {
-        choosen_connector = "nodebluetooth";
+        choosen_connector = 'nodebluetooth';
       } else {
-        throw "UnsupportedConnectorPlatform";
+        throw 'UnsupportedConnectorPlatform';
       }
     }
     //
-    else if (desired_connector.includes("serial")) {
+    else if (desired_connector.includes('serial')) {
       if (detectNode()) {
-        choosen_connector = "nodeserial";
+        choosen_connector = 'nodeserial';
       } else if ((detectMacintosh() && detectChrome()) || (detectWindows() && detectChrome()) || (detectLinux() && detectChrome())) {
-        choosen_connector = "webserial";
+        choosen_connector = 'webserial';
       } else {
-        throw "UnsupportedConnectorPlatform";
+        throw 'UnsupportedConnectorPlatform';
       }
     }
     //
-    else if (desired_connector.includes("dummy")) {
-      choosen_connector = "dummy";
+    else if (desired_connector.includes('dummy')) {
+      choosen_connector = 'dummy';
     }
     //
-    else if (desired_connector.includes("simulated")) {
-      choosen_connector = "simulated";
+    else if (desired_connector.includes('simulated')) {
+      choosen_connector = 'simulated';
     }
     //
-    else if (desired_connector.includes("none") || desired_connector.length == 0) {
-      choosen_connector = "none";
+    else if (desired_connector.includes('none') || desired_connector.length === 0) {
+      choosen_connector = 'none';
     }
 
     if (choosen_connector === undefined) {
-      throw "UnsupportedConnector";
+      throw 'UnsupportedConnector';
     }
 
     // leave this at info, for faster debug
@@ -581,7 +590,7 @@ export class SpectodaRuntime {
   }
 
   async #updateConnector() {
-    if ((this.connector !== null && this.#assignedConnector === this.connector.type) || (this.connector === null && this.#assignedConnector === "none")) {
+    if ((this.connector !== null && this.#assignedConnector === this.connector.type) || (this.connector === null && this.#assignedConnector === 'none')) {
       return;
     }
 
@@ -591,43 +600,43 @@ export class SpectodaRuntime {
     }
 
     switch (this.#assignedConnector) {
-      case "none": {
+      case 'none': {
         this.connector = null;
         break;
       }
 
-      case "simulated": {
+      case 'simulated': {
         this.connector = new SpectodaSimulatedConnector(this);
         this.connector.initilize(this.#assignedConnectorParameter);
         break;
       }
 
-      case "dummy": {
+      case 'dummy': {
         this.connector = new SpectodaDummyConnector(this);
         break;
       }
 
-      case "webbluetooth": {
+      case 'webbluetooth': {
         this.connector = new SpectodaWebBluetoothConnector(this);
         break;
       }
 
-      case "webserial": {
+      case 'webserial': {
         this.connector = new SpectodaWebSerialConnector(this);
         break;
       }
 
-      case "flutterbluetooth": {
+      case 'flutterbluetooth': {
         this.connector = new SpectodaConnectConnector(this);
         break;
       }
 
-      case "nodebluetooth": {
+      case 'nodebluetooth': {
         this.connector = new SpectodaNodeBluetoothConnector(this);
         break;
       }
 
-      case "nodeserial": {
+      case 'nodeserial': {
         this.connector = new SpectodaNodeSerialConnector(this);
         break;
       }
@@ -640,7 +649,7 @@ export class SpectodaRuntime {
       default: {
         logging.warn(`Unsupported connector: ${this.#assignedConnector}`);
 
-        this.#assignedConnector = "none";
+        this.#assignedConnector = 'none';
         this.connector = null;
       }
     }
@@ -650,23 +659,25 @@ export class SpectodaRuntime {
     logging.verbose(`userSelect(criteria=${JSON.stringify(criteria)}, timeout=${timeout}`);
 
     if (this.#selecting) {
-      return Promise.reject("SelectingInProgress");
+      return Promise.reject('SelectingInProgress');
     }
 
     this.#selecting = true;
 
     // ? makes sure that criteria is always an array of SpectodaTypes.Criterium
     let criteria_array: SpectodaTypes.Criterium[];
+
     if (criteria === null || criteria === undefined) {
       criteria_array = [];
-    } else if (!Array.isArray(criteria)) {
-      criteria_array = [criteria as SpectodaTypes.Criterium];
-    } else {
+    } else if (Array.isArray(criteria)) {
       criteria_array = criteria as SpectodaTypes.Criterium[];
+    } else {
+      criteria_array = [criteria as SpectodaTypes.Criterium];
     }
 
     const user_select_query: UserSelectQuery = { criteria_array, timeout };
     const item = new Query(Query.TYPE_USERSELECT, user_select_query);
+
     this.#process(item);
 
     return item.promise.finally(() => {
@@ -678,23 +689,25 @@ export class SpectodaRuntime {
     logging.verbose(`autoSelect(criteria=${JSON.stringify(criteria)}, scan_period=${scan_period}, timeout=${timeout}`);
 
     if (this.#selecting) {
-      return Promise.reject("SelectingInProgress");
+      return Promise.reject('SelectingInProgress');
     }
 
     this.#selecting = true;
 
     // ? makes sure that criteria is always an array of SpectodaTypes.Criterium
     let criteria_array: SpectodaTypes.Criterium[];
+
     if (criteria === null || criteria === undefined) {
       criteria_array = [];
-    } else if (!Array.isArray(criteria)) {
-      criteria_array = [criteria as SpectodaTypes.Criterium];
-    } else {
+    } else if (Array.isArray(criteria)) {
       criteria_array = criteria as SpectodaTypes.Criterium[];
+    } else {
+      criteria_array = [criteria as SpectodaTypes.Criterium];
     }
 
     const auto_select_query: AutoSelectQuery = { criteria_array, scan_period, timeout };
     const item = new Query(Query.TYPE_AUTOSELECT, auto_select_query);
+
     this.#process(item);
 
     return item.promise.finally(() => {
@@ -703,17 +716,19 @@ export class SpectodaRuntime {
   }
 
   unselect(): Promise<null> {
-    logging.verbose("unselect()");
+    logging.verbose('unselect()');
 
     const item = new Query(Query.TYPE_UNSELECT);
+
     this.#process(item);
     return item.promise;
   }
 
   selected(): Promise<SpectodaTypes.Criterium | null> {
-    logging.verbose("selected()");
+    logging.verbose('selected()');
 
     const item = new Query(Query.TYPE_SELECTED);
+
     this.#process(item);
     return item.promise;
   }
@@ -722,23 +737,25 @@ export class SpectodaRuntime {
     logging.verbose(`scan(criteria=${JSON.stringify(criteria)}, scan_period=${scan_period}`);
 
     if (this.#selecting) {
-      return Promise.reject("SelectingInProgress");
+      return Promise.reject('SelectingInProgress');
     }
 
     this.#selecting = true;
 
     // ? makes sure that criteria is always an array of SpectodaTypes.Criterium
     let criteria_array: SpectodaTypes.Criterium[];
+
     if (criteria === null || criteria === undefined) {
       criteria_array = [];
-    } else if (!Array.isArray(criteria)) {
-      criteria_array = [criteria as SpectodaTypes.Criterium];
-    } else {
+    } else if (Array.isArray(criteria)) {
       criteria_array = criteria as SpectodaTypes.Criterium[];
+    } else {
+      criteria_array = [criteria as SpectodaTypes.Criterium];
     }
 
     const scan_query: ScanQuery = { criteria_array, scan_period };
     const item = new Query(Query.TYPE_SCAN, scan_query);
+
     this.#process(item);
     return item.promise.finally(() => {
       this.#selecting = false;
@@ -750,14 +767,15 @@ export class SpectodaRuntime {
 
     const connect_query: ConnectQuery = { timeout };
     const item = new Query(Query.TYPE_CONNECT, connect_query);
+
     this.#process(item);
     return item.promise;
   }
 
   #onConnected = (event: any) => {
     if (this.#connectGuard) {
-      logging.error("Connecting logic error. #connected called when already connected?");
-      logging.warn("Ignoring the #connected event");
+      logging.error('Connecting logic error. #connected called when already connected?');
+      logging.warn('Ignoring the #connected event');
       return;
     }
 
@@ -766,17 +784,18 @@ export class SpectodaRuntime {
   };
 
   disconnect(): Promise<null> {
-    logging.verbose("disconnect()");
+    logging.verbose('disconnect()');
 
     const item = new Query(Query.TYPE_DISCONNECT);
+
     this.#process(item);
     return item.promise;
   }
 
   #onDisconnected = (event: any) => {
     if (!this.#connectGuard) {
-      logging.error("Connecting logic error. #disconnected called when already disconnected?");
-      logging.warn("Ignoring the #disconnected event");
+      logging.error('Connecting logic error. #disconnected called when already disconnected?');
+      logging.warn('Ignoring the #disconnected event');
       return;
     }
 
@@ -789,9 +808,10 @@ export class SpectodaRuntime {
   };
 
   connected(): Promise<SpectodaTypes.Criterium | null> {
-    logging.verbose("connected()");
+    logging.verbose('connected()');
 
     const item = new Query(Query.TYPE_CONNECTED);
+
     this.#process(item);
     return item.promise;
   }
@@ -806,7 +826,7 @@ export class SpectodaRuntime {
 
   // ! bytes_type is deprecated and will be removed in the future
   execute(bytecode: number[] | Uint8Array, bytes_type: string | undefined): Promise<unknown> {
-    logging.verbose("execute", { bytecode, bytes_type });
+    logging.verbose('execute', { bytecode, bytes_type });
 
     const execute_query: ExecuteQuery = { bytecode: new Uint8Array(bytecode) };
 
@@ -833,23 +853,24 @@ export class SpectodaRuntime {
   }
 
   request(bytecode: number[] | Uint8Array, read_response = true, timeout: number | typeof DEFAULT_TIMEOUT = DEFAULT_TIMEOUT): Promise<Uint8Array | null> {
-    logging.verbose("request", { bytecode, read_response, timeout });
+    logging.verbose('request', { bytecode, read_response, timeout });
 
     const request_query: RequestQuery = { bytecode: new Uint8Array(bytecode), read_response, timeout };
 
     const item = new Query(Query.TYPE_REQUEST, request_query);
+
     this.#process(item);
     return item.promise;
   }
 
   updateFW(firmware_bytes: Uint8Array) {
-    logging.verbose("updateFW()");
+    logging.verbose('updateFW()');
 
     const item = new Query(Query.TYPE_FIRMWARE_UPDATE, firmware_bytes);
 
     for (let i = 0; i < this.#queue.length; i++) {
       if (this.#queue[i].type === Query.TYPE_FIRMWARE_UPDATE) {
-        this.#queue[i].reject("Multiple FW Updates");
+        this.#queue[i].reject('Multiple FW Updates');
         this.#queue.splice(i, 1);
         break;
       }
@@ -860,13 +881,13 @@ export class SpectodaRuntime {
   }
 
   destroyConnector() {
-    logging.verbose("destroyConnector()");
+    logging.verbose('destroyConnector()');
 
     const item = new Query(Query.TYPE_DESTROY);
 
     for (let i = 0; i < this.#queue.length; i++) {
       if (this.#queue[i].type === Query.TYPE_DESTROY) {
-        this.#queue[i].reject("Multiple Connector destroy()");
+        this.#queue[i].reject('Multiple Connector destroy()');
         this.#queue.splice(i, 1);
         break;
       }
@@ -898,12 +919,13 @@ export class SpectodaRuntime {
 
           while (this.#queue.length > 0) {
             const item = this.#queue.shift();
+
             if (!item) {
               continue;
             }
 
             if (!this.connector) {
-              item.reject("ConnectorNotAssigned");
+              item.reject('ConnectorNotAssigned');
               this.#queue = [];
               return;
             }
@@ -988,15 +1010,15 @@ export class SpectodaRuntime {
                   try {
                     await this.connector.connect(connect_query.timeout).then(async (result: any) => {
                       if (!this.#connectGuard) {
-                        logging.error("Connection logic error. #connected not called during successful connect()?");
-                        logging.warn("Emitting #connected");
-                        this.#eventEmitter.emit("#connected");
+                        logging.error('Connection logic error. #connected not called during successful connect()?');
+                        logging.warn('Emitting #connected');
+                        this.#eventEmitter.emit('#connected');
                       }
 
                       try {
                         this.clock = await this.connector?.getClock();
                         this.spectoda_js.setClockTimestamp(this.clock.millis());
-                        this.emit("wasm_clock", this.clock.millis());
+                        this.emit('wasm_clock', this.clock.millis());
                         item.resolve(result);
                       } catch (error) {
                         logging.error(error);
@@ -1048,7 +1070,7 @@ export class SpectodaRuntime {
                 {
                   const execute_query: ExecuteQuery = item.a;
 
-                  const payload = new Uint8Array(0xffff);
+                  const payload = new Uint8Array(0xFFFF);
                   let index = 0;
 
                   payload.set(execute_query.bytecode, index);
@@ -1082,9 +1104,9 @@ export class SpectodaRuntime {
 
                   try {
                     this.spectoda_js.execute(merged_payload, SpectodaWasm.Connection.make(APP_MAC_ADDRESS, SpectodaWasm.connector_type_t.CONNECTOR_UNDEFINED, SpectodaWasm.connection_rssi_t.RSSI_MAX));
-                    for (const element of executesInPayload) element.resolve();
+                    for (const element of executesInPayload) {element.resolve();}
                   } catch (error) {
-                    for (const element of executesInPayload) element.reject(error);
+                    for (const element of executesInPayload) {element.reject(error);}
                   }
                 }
                 break;
@@ -1173,7 +1195,7 @@ export class SpectodaRuntime {
                     //   item.reject(error);
                     // });
                   } catch (error) {
-                    logging.warn("Error while destroying connector:", error);
+                    logging.warn('Error while destroying connector:', error);
                   } finally {
                     this.connector = null;
                     item.resolve();
@@ -1191,7 +1213,7 @@ export class SpectodaRuntime {
                   const send_execute_query: SendExecuteQuery = item.a;
 
                   try {
-                    this.emit("wasm_execute", Array.from(send_execute_query.command_bytes));
+                    this.emit('wasm_execute', [...send_execute_query.command_bytes]);
 
                     await this.connector
                       .sendExecute(send_execute_query.command_bytes, send_execute_query.source_connection)
@@ -1278,15 +1300,15 @@ export class SpectodaRuntime {
 
               default: {
                 {
-                  logging.error("ERROR item.type=", item.type);
-                  item.reject("InvalidQueryType");
+                  logging.error('ERROR item.type=', item.type);
+                  item.reject('InvalidQueryType');
                 }
                 break;
               }
             }
           }
         } catch (e) {
-          logging.error("Runtime::#process() ERROR:", e);
+          logging.error('Runtime::#process() ERROR:', e);
         } finally {
           this.#processing = false;
         }
@@ -1295,7 +1317,7 @@ export class SpectodaRuntime {
   }
 
   readVariableAddress(variable_address: number, device_id: number) {
-    logging.verbose("readVariableAddress()", { variable_address, device_id });
+    logging.verbose('readVariableAddress()', { variable_address, device_id });
 
     return this.spectoda_js.readVariableAddress(variable_address, device_id);
   }
@@ -1303,13 +1325,14 @@ export class SpectodaRuntime {
   WIP_makePreviewController(controller_mac_address: string, controller_config: object) {
     logging.debug(`> Making PreviewController ${controller_mac_address}...`);
 
-    if (typeof controller_config === "string") {
+    if (typeof controller_config === 'string') {
       controller_config = JSON.parse(controller_config);
     }
 
-    logging.verbose(`controller_config=`, controller_config);
+    logging.verbose('controller_config=', controller_config);
 
     const controller = new PreviewController(controller_mac_address);
+
     controller.construct(controller_config);
     this.previewControllers[controller_mac_address] = controller;
 
@@ -1323,7 +1346,7 @@ export class SpectodaRuntime {
   }
 
   WIP_getPreviewControllers() {
-    logging.verbose(`> Getting PreviewControllers...`);
+    logging.verbose('> Getting PreviewControllers...');
 
     return this.previewControllers;
   }
@@ -1350,12 +1373,12 @@ export class SpectodaRuntime {
 
   // returns a promise that resolves a bytecode of the captured port pixels
   async WIP_capturePixels() {
-    const A_ASCII_CODE = "A".charCodeAt(0);
-    const D_ASCII_CODE = "D".charCodeAt(0);
+    const A_ASCII_CODE = 'A'.charCodeAt(0);
+    const D_ASCII_CODE = 'D'.charCodeAt(0);
 
     const PIXEL_ENCODING_CODE = 1;
 
-    let uuidCounter = Math.floor(Math.random() * 0xffffffff);
+    let uuidCounter = Math.floor(Math.random() * 0xFFFFFFFF);
 
     const writer = new TnglWriter(65535);
 
@@ -1366,39 +1389,45 @@ export class SpectodaRuntime {
         const request_uuid = uuidCounter++;
         const request_bytes = [COMMAND_FLAGS.FLAG_READ_PORT_PIXELS_REQUEST, ...numberToBytes(request_uuid, 4), portTag, PIXEL_ENCODING_CODE];
 
-        logging.debug("Sending request", uint8ArrayToHexString(request_bytes));
-        const response = await previewController.request(new Uint8Array(request_bytes), SpectodaWasm.Connection.make("11:11:11:11:11:11", SpectodaWasm.connector_type_t.CONNECTOR_UNDEFINED, SpectodaWasm.connection_rssi_t.RSSI_MAX));
+        logging.debug('Sending request', uint8ArrayToHexString(request_bytes));
+        const response = await previewController.request(new Uint8Array(request_bytes), SpectodaWasm.Connection.make('11:11:11:11:11:11', SpectodaWasm.connector_type_t.CONNECTOR_UNDEFINED, SpectodaWasm.connection_rssi_t.RSSI_MAX));
 
-        logging.debug("Received response", uint8ArrayToHexString(response));
+        logging.debug('Received response', uint8ArrayToHexString(response));
         const tempReader = new TnglReader(response);
 
         const response_flag = tempReader.readFlag();
+
         if (response_flag !== COMMAND_FLAGS.FLAG_READ_PORT_PIXELS_RESPONSE) {
-          logging.error("InvalidResponse1");
+          logging.error('InvalidResponse1');
           continue;
         }
 
         const response_uuid = tempReader.readUint32();
+
         if (response_uuid !== request_uuid) {
-          logging.error("InvalidResponse2");
+          logging.error('InvalidResponse2');
           continue;
         }
 
         const error_code = tempReader.readUint8();
+
         if (error_code === 0) {
           // error_code 0 is success
           const pixelDataSize = tempReader.readUint16();
-          logging.debug("pixelDataSize=", pixelDataSize);
+
+          logging.debug('pixelDataSize=', pixelDataSize);
 
           const pixelData = tempReader.readBytes(pixelDataSize);
-          logging.debug("pixelData=", pixelData);
+
+          logging.debug('pixelData=', pixelData);
 
           tempWriter.writeBytes(new Uint8Array([COMMAND_FLAGS.FLAG_WRITE_PORT_PIXELS_REQUEST, ...numberToBytes(uuidCounter++, 4), portTag, PIXEL_ENCODING_CODE, ...numberToBytes(pixelDataSize, 2), ...pixelData]));
         }
       }
 
       const controllerIdentifier = previewController.identifier;
-      logging.debug("controllerIdentifier=", controllerIdentifier);
+
+      logging.debug('controllerIdentifier=', controllerIdentifier);
 
       const tempWriterDataView = tempWriter.bytes;
       const tempWriterDataArray = new Uint8Array(tempWriterDataView.buffer);
@@ -1407,7 +1436,8 @@ export class SpectodaRuntime {
     }
 
     const command_bytes = new Uint8Array(writer.bytes.buffer);
-    logging.verbose("command_bytes=", command_bytes);
+
+    logging.verbose('command_bytes=', command_bytes);
 
     this.execute(command_bytes, undefined);
 
@@ -1423,12 +1453,12 @@ export class SpectodaRuntime {
 
     const segment = JSON.parse(segmnet_template);
 
-    const A_ASCII_CODE = "A".charCodeAt(0);
-    const D_ASCII_CODE = "D".charCodeAt(0);
+    const A_ASCII_CODE = 'A'.charCodeAt(0);
+    const D_ASCII_CODE = 'D'.charCodeAt(0);
 
     const PIXEL_ENCODING_CODE = 1;
 
-    let uuidCounter = Math.floor(Math.random() * 0xffffffff);
+    let uuidCounter = Math.floor(Math.random() * 0xFFFFFFFF);
 
     const writer = new TnglWriter(65535);
 
@@ -1437,34 +1467,40 @@ export class SpectodaRuntime {
         const request_uuid = uuidCounter++;
         const request_bytes = [COMMAND_FLAGS.FLAG_READ_PORT_PIXELS_REQUEST, ...numberToBytes(request_uuid, 4), portTag, PIXEL_ENCODING_CODE];
 
-        logging.debug("Sending request", uint8ArrayToHexString(request_bytes));
-        const response = previewController.request(new Uint8Array(request_bytes), SpectodaWasm.Connection.make("11:11:11:11:11:11", SpectodaWasm.connector_type_t.CONNECTOR_UNDEFINED, SpectodaWasm.connection_rssi_t.RSSI_MAX));
+        logging.debug('Sending request', uint8ArrayToHexString(request_bytes));
+        const response = previewController.request(new Uint8Array(request_bytes), SpectodaWasm.Connection.make('11:11:11:11:11:11', SpectodaWasm.connector_type_t.CONNECTOR_UNDEFINED, SpectodaWasm.connection_rssi_t.RSSI_MAX));
 
-        logging.debug("Received response", uint8ArrayToHexString(response));
+        logging.debug('Received response', uint8ArrayToHexString(response));
         const tempReader = new TnglReader(response);
 
         const response_flag = tempReader.readFlag();
+
         if (response_flag !== COMMAND_FLAGS.FLAG_READ_PORT_PIXELS_RESPONSE) {
-          logging.error("InvalidResponse1");
+          logging.error('InvalidResponse1');
           continue;
         }
 
         const response_uuid = tempReader.readUint32();
+
         if (response_uuid !== request_uuid) {
-          logging.error("InvalidResponse2");
+          logging.error('InvalidResponse2');
           continue;
         }
 
         const error_code = tempReader.readUint8();
+
         if (error_code === 0) {
           // error_code 0 is success
           const pixelDataSize = tempReader.readUint16();
-          logging.debug("pixelDataSize=", pixelDataSize);
+
+          logging.debug('pixelDataSize=', pixelDataSize);
 
           const pixelData = tempReader.readBytes(pixelDataSize);
-          logging.debug("pixelData=", pixelData);
+
+          logging.debug('pixelData=', pixelData);
 
           const bitset = new BitSet(pixelDataSize * 8);
+
           for (let i = 0; i < pixelDataSize; i++) {
             for (let j = 0; j < 8; j++) {
               if (pixelData[i] & (1 << j)) {
@@ -1484,6 +1520,7 @@ export class SpectodaRuntime {
           }`;
 
           let section = JSON.parse(section_template);
+
           section.controller = previewController.label;
           section.port = String.fromCharCode(portTag);
           section.from = undefined;
@@ -1570,7 +1607,7 @@ export class SpectodaRuntime {
 
   getEventStates(event_state_name: string, event_state_ids: SpectodaTypes.IDs): (SpectodaEventStateValue | undefined)[] {
     if (Array.isArray(event_state_ids)) {
-      return event_state_ids.map(id => this.spectoda_js.getEventState(event_state_name, id));
+      return event_state_ids.map((id) => this.spectoda_js.getEventState(event_state_name, id));
     } else {
       return [this.spectoda_js.getEventState(event_state_name, event_state_ids)];
     }
@@ -1586,7 +1623,7 @@ export class SpectodaRuntime {
 
   registerDeviceContexts(ids: SpectodaTypes.IDs): boolean[] {
     if (Array.isArray(ids)) {
-      return ids.map(id => this.spectoda_js.registerDeviceContext(id));
+      return ids.map((id) => this.spectoda_js.registerDeviceContext(id));
     } else {
       return [this.spectoda_js.registerDeviceContext(ids)];
     }
@@ -1614,6 +1651,7 @@ export class SpectodaRuntime {
     const send_execute_query: SendExecuteQuery = { command_bytes, source_connection };
 
     const item = new Query(Query.TYPE_SEND_EXECUTE, send_execute_query);
+
     this.#process(item);
     return item.promise;
   }
@@ -1626,6 +1664,7 @@ export class SpectodaRuntime {
     const send_request_query: SendRequestQuery = { request_ticket_number, request_bytecode, destination_connection };
 
     const item = new Query(Query.TYPE_SEND_REQUEST, send_request_query);
+
     this.#process(item);
     return item.promise;
   }
@@ -1637,6 +1676,7 @@ export class SpectodaRuntime {
     const send_response_query: SendResponseQuery = { request_ticket_number, request_result, response_bytecode, destination_connection };
 
     const item = new Query(Query.TYPE_SEND_RESPONSE, send_response_query);
+
     this.#process(item);
     return item.promise;
   }
@@ -1649,6 +1689,7 @@ export class SpectodaRuntime {
     const send_synchronize_query: SendSynchronizeQuery = { synchronization, source_connection };
 
     const item = new Query(Query.TYPE_SEND_SYNCHRONIZE, send_synchronize_query);
+
     this.#process(item);
     return item.promise;
   }

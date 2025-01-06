@@ -82,6 +82,6 @@ export const logging = {
 
 logging.setLoggingLevel(3);
 
-if (typeof window !== "undefined") {
+if (typeof window !== 'undefined') {
   window.logging = logging;
 }

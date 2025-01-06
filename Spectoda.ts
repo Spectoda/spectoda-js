@@ -92,7 +92,7 @@ export class Spectoda implements SpectodaClass {
   ) {
     this.#parser = new TnglCodeParser()
 
-    this.#uuidCounter = Math.floor(Math.random() * 0xffffffff)
+    this.#uuidCounter = Math.floor(Math.random() * 0xFFFFFFFF)
 
     this.#ownerSignature = NO_NETWORK_SIGNATURE
     this.#ownerKey = NO_NETWORK_KEY
@@ -2321,7 +2321,7 @@ export class Spectoda implements SpectodaClass {
             removed_device_mac = Array.from(
               removed_device_mac_bytes,
               function (byte) {
-                return ('0' + (byte & 0xff).toString(16)).slice(-2)
+                return ('0' + (byte & 0xFF).toString(16)).slice(-2)
               },
             ).join(':')
           }
@@ -2452,7 +2452,7 @@ export class Spectoda implements SpectodaClass {
       logging.verbose(`fingerprint=${fingerprint}`)
       logging.verbose(
         `fingerprint=${[...fingerprint]
-          .map((byte) => ('0' + (byte & 0xff).toString(16)).slice(-2))
+          .map((byte) => ('0' + (byte & 0xFF).toString(16)).slice(-2))
           .join(',')}`,
       )
 
@@ -2872,7 +2872,7 @@ export class Spectoda implements SpectodaClass {
           const device_mac_bytes = reader.readBytes(6)
 
           device_mac = Array.from(device_mac_bytes, function (byte) {
-            return ('0' + (byte & 0xff).toString(16)).slice(-2)
+            return ('0' + (byte & 0xFF).toString(16)).slice(-2)
           }).join(':')
         }
 
@@ -3619,7 +3619,7 @@ export class Spectoda implements SpectodaClass {
         throw 'NoResponseReceived'
       }
 
-      let reader = new TnglReader(response)
+      const reader = new TnglReader(response)
 
       logging.verbose(`response.byteLength=${response.byteLength}`)
 
@@ -3640,6 +3640,7 @@ export class Spectoda implements SpectodaClass {
       }
 
       const error_code = reader.readUint8()
+
       logging.verbose(`error_code=${error_code}`)
 
       if (error_code === 0) {
@@ -3648,12 +3649,15 @@ export class Spectoda implements SpectodaClass {
         const label = reader.readString(6).trim() // 5 chars + null terminator
         const mac_bytes = reader.readBytes(6) // MAC_SIZE
         const controller_flags = reader.readUint8()
+
         reader.readUint8() // reserved for flags increase
         const pcb_code = reader.readUint16()
         const product_code = reader.readUint16()
         const fw_version_code = reader.readUint16()
+
         reader.readUint16() // reserved for another code
         const fw_compilation_unix_timestamp = reader.readUint64()
+
         reader.readUint64() // reserved
         const fw_version_full = reader.readString(32).trim() // FW_VERSION_STRING_MAX_SIZE
         const tngl_fingerprint = reader.readBytes(32) // TNGL_FINGERPRINT_SIZE
@@ -3673,8 +3677,7 @@ export class Spectoda implements SpectodaClass {
 
         // Format MAC address
         const mac_address = Array.from(mac_bytes, (byte) =>
-          byte.toString(16).padStart(2, '0'),
-        ).join(':')
+          byte.toString(16).padStart(2, '0')).join(':')
 
         // Format fingerprints and signature as hex strings
         const network_signature_hex = uint8ArrayToHexString(network_signature)
@@ -3730,7 +3733,7 @@ export class Spectoda implements SpectodaClass {
           configFingerprint: config_fingerprint_hex,
         } as SpectodaTypes.ControllerInfo
 
-        logging.info(`> Controller Info:`, info)
+        logging.info('> Controller Info:', info)
         return info
       } else {
         logging.error(`Request failed with error code: ${error_code}`)

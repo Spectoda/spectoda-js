@@ -1,11 +1,11 @@
 /** @deprecated TODO REMOVE THIS FILE */
 
-import { z } from "zod";
-import { devtools, subscribeWithSelector } from "zustand/middleware";
-import { createStore } from "zustand/vanilla";
+import { z } from 'zod';
+import { devtools, subscribeWithSelector } from 'zustand/middleware';
+import { createStore } from 'zustand/vanilla';
+import { safeJSONParse, spectoda } from '@spectoda/spectoda-utils';
 
-import { safeJSONParse, spectoda } from "@spectoda/spectoda-utils";
-import { MacObjectSchema, TMacObject, TStringSchema } from "./types";
+import { MacObjectSchema, TMacObject, TStringSchema } from './types';
 
 // type SpectodaStore = SpectodaStoreState & SpectodaConnectionMethods;
 // type MethodsFunction = (...params: Parameters<StateCreator<SpectodaStore>>) => SpectodaConnectionMethods;
@@ -94,17 +94,17 @@ type Queries = {
   >;
 };
 
-type SpectodaStore = Queries & CustomMethods & Record<"data", SpectodaDataObject>;
+type SpectodaStore = Queries & CustomMethods & Record<'data', SpectodaDataObject>;
 
 export type SpectodaDataObject = {
-  [key in keyof Queries]: Queries[key]["data"] | null;
+  [key in keyof Queries]: Queries[key]['data'] | null;
 };
 
 const spectodaStore = createStore<SpectodaStore>()(
   devtools(
     subscribeWithSelector((set, get) => {
       const invalidateItem = (key: keyof Queries) => () => {
-        set(state => ({
+        set((state) => ({
           ...state,
           [key]: {
             ...state[key],
@@ -114,7 +114,7 @@ const spectodaStore = createStore<SpectodaStore>()(
       };
 
       const setQueryItem = (key: keyof Queries, value: any) => {
-        set(state => ({
+        set((state) => ({
           ...state,
           [key]: {
             ...state[key],
@@ -128,7 +128,7 @@ const spectodaStore = createStore<SpectodaStore>()(
         }));
       };
 
-      const createQuery = <Key extends keyof Queries, FetchedType, DataType extends Queries[Key]["data"]>({
+      const createQuery = <Key extends keyof Queries, FetchedType, DataType extends Queries[Key]['data']>({
         key,
         fetchFunction,
         FetchedDataSchema,
@@ -168,7 +168,7 @@ const spectodaStore = createStore<SpectodaStore>()(
 
             let output: DataType;
 
-            if (typeof dataTransform === "function" && DataSchema) {
+            if (typeof dataTransform === 'function' && DataSchema) {
               const transformed = dataTransform(fetchedDataValidation.data);
               const transformedDataValidation = DataSchema.safeParse(transformed);
 
@@ -190,7 +190,7 @@ const spectodaStore = createStore<SpectodaStore>()(
           },
           invalidate: invalidateItem(key),
           set: async (newData: DataType) => {
-            if (typeof setFunction === "function") {
+            if (typeof setFunction === 'function') {
               await setFunction(newData);
               log(`📝 Writing new ${key} to controller...`);
             }
@@ -218,28 +218,29 @@ const spectodaStore = createStore<SpectodaStore>()(
           };
 
           let resource;
+
           try {
-            resource = "fwVersion";
+            resource = 'fwVersion';
             results.fwVersion = await get().fwVersion.get();
 
-            resource = "macs";
+            resource = 'macs';
             results.macs = await get().macs.get();
 
-            resource = "name";
+            resource = 'name';
             results.name = await get().name.get();
 
-            resource = "config";
+            resource = 'config';
             results.config = await get().config.get();
 
-            resource = "signature";
+            resource = 'signature';
             results.signature = await get().signature.get();
 
-            resource = "codes";
+            resource = 'codes';
             results.codes = await get().codes.get();
           } catch (error) {
             if (error instanceof Error) {
               console.error(`Load data failed while getting ${resource} due. Reason:`, error.message);
-            } else if (typeof error === "string") {
+            } else if (typeof error === 'string') {
               console.error(`Load data failed while getting ${resource}. Reason: ${error}`);
             } else {
               console.error(`Load data failed while getting ${resource} for unknown reason.`, error);
@@ -253,20 +254,20 @@ const spectodaStore = createStore<SpectodaStore>()(
 
       const queries = {
         ...createQuery({
-          key: "name",
+          key: 'name',
           FetchedDataSchema: TStringSchema,
           fetchFunction: () => spectoda.readControllerName(),
           setFunction: (...args) => spectoda.writeControllerName(...args),
         }),
 
         ...createQuery({
-          key: "fwVersion",
+          key: 'fwVersion',
           FetchedDataSchema: TStringSchema,
           fetchFunction: () => spectoda.getFwVersion(),
         }),
 
         ...createQuery({
-          key: "codes",
+          key: 'codes',
           defaultReturn: {
             pcbCode: null,
             productCode: null,
@@ -289,14 +290,14 @@ const spectodaStore = createStore<SpectodaStore>()(
         }),
 
         ...createQuery({
-          key: "signature",
+          key: 'signature',
           FetchedDataSchema: TStringSchema,
           fetchFunction: () => spectoda.readNetworkSignature(),
           setFunction: () => Promise.resolve(),
         }),
 
         ...createQuery({
-          key: "config",
+          key: 'config',
           FetchedDataSchema: TStringSchema,
           DataSchema: z.object({
             string: z.string(),
@@ -314,10 +315,10 @@ const spectodaStore = createStore<SpectodaStore>()(
         }),
 
         ...createQuery({
-          key: "macs",
+          key: 'macs',
           FetchedDataSchema: z.array(MacObjectSchema),
           defaultReturn: {
-            this: "",
+            this: '',
             connected: [],
           },
           fetchFunction: () => spectoda.getConnectedPeersInfo(),
@@ -346,7 +347,7 @@ const spectodaStore = createStore<SpectodaStore>()(
               [key]: queries[key as keyof typeof queries].data,
             };
           },
-          {} as SpectodaStore["data"],
+          {} as SpectodaStore['data'],
         ),
       };
 
@@ -360,9 +361,9 @@ const spectodaStore = createStore<SpectodaStore>()(
       // }
 
       const invalidateAll = () => {
-        Object.keys(queries).forEach(key => {
+        for (const key of Object.keys(queries)) {
           queries[key as keyof typeof queries].invalidate();
-        });
+        }
       };
 
       return {
@@ -377,7 +378,7 @@ const spectodaStore = createStore<SpectodaStore>()(
       } satisfies SpectodaStore;
     }),
     {
-      name: "Spectoda object store v1",
+      name: 'Spectoda object store v1',
     },
   ),
 );

@@ -1,10 +1,10 @@
-import { createNanoEvents } from "./functions";
+import { createNanoEvents } from './functions';
 
 export class TimeTrack {
   constructor(timestamp, paused) {
     this.memory_ = 0;
     this.paused_ = false;
-    this.date_ = "01-01-1970";
+    this.date_ = '01-01-1970';
 
     this.eventEmitter_ = createNanoEvents();
 
@@ -46,7 +46,7 @@ export class TimeTrack {
     }
 
     this.memory_ = this.paused_ ? current_timestamp : Date.now() - current_timestamp;
-    this.eventEmitter_.emit("change", { target: this });
+    this.eventEmitter_.emit('change', { target: this });
     // TODO implement event handlers
   }
 
@@ -61,9 +61,9 @@ export class TimeTrack {
 
   setMillis(current_timestamp) {
     this.memory_ = this.paused_ ? current_timestamp : Date.now() - current_timestamp;
-    this.eventEmitter_.emit("change", { target: this });
+    this.eventEmitter_.emit('change', { target: this });
 
-    this.eventEmitter_.emit("millis", current_timestamp);
+    this.eventEmitter_.emit('millis', current_timestamp);
   }
 
   getMillis() {
@@ -86,9 +86,9 @@ export class TimeTrack {
     if (!this.paused_) {
       this.paused_ = true;
       this.memory_ = Date.now() - this.memory_;
-      this.eventEmitter_.emit("change", { target: this });
+      this.eventEmitter_.emit('change', { target: this });
     }
-    this.eventEmitter_.emit("pause");
+    this.eventEmitter_.emit('pause');
   }
 
   pauseWithoutEvent() {
@@ -102,9 +102,9 @@ export class TimeTrack {
     if (this.paused_) {
       this.paused_ = false;
       this.memory_ = Date.now() - this.memory_;
-      this.eventEmitter_.emit("change", { target: this });
+      this.eventEmitter_.emit('change', { target: this });
     }
-    this.eventEmitter_.emit("play");
+    this.eventEmitter_.emit('play');
   }
 
   unpauseWithoutEvent() {

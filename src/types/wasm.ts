@@ -1,4 +1,4 @@
-import { SpectodaEvent } from "./event";
+import { SpectodaEvent } from './event';
 
 /// === auto-generated from Emscripten build process === ///
 /// ========== DEBUG_DEV_0.12.3_20241218.d.ts ========== ///
