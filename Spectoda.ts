@@ -3712,29 +3712,23 @@ export class Spectoda implements SpectodaClass {
          */
 
         const info = {
-          connectionCriteria: {
-            name: label, // ! criteria expects controller 5 letter label not the fullName. Should it be renamed?
-            product: product_code,
-            mac: mac_address,
-            fw: fw_version_short,
-            network: network_signature_hex,
-            commissionable: commissionable,
-          },
-          fullName: full_name,
+          // connection criteria
           controllerLabel: label,
-          commissionable: commissionable,
-          pcbCode: pcb_code,
           productCode: product_code,
           macAddress: mac_address,
-          fwVersionFull: fw_version_full,
           fwVersion: fw_version_short,
-          fwVersionCode: fw_version_code,
-          fwCompilationUnixTimestamp: fw_compilation_unix_timestamp,
           networkSignature: network_signature_hex,
+          commissionable: commissionable,
+
+          fullName: full_name,
+          pcbCode: pcb_code,
+          fwVersionFull: fw_version_full,          
+          fwVersionCode: fw_version_code,
+          fwCompilationUnixTimestamp: fw_compilation_unix_timestamp,          
           tnglFingerprint: tngl_fingerprint_hex,
           eventStoreFingerprint: event_store_fingerprint_hex,
           configFingerprint: config_fingerprint_hex,
-        }
+        } as SpectodaTypes.ControllerInfo
 
         logging.info(`> Controller Info:`, info)
         return info

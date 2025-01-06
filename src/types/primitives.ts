@@ -121,4 +121,86 @@ export namespace SpectodaTypes {
    */
   export type ID = number
   export type IDs = ID | ID[]
+
+  /**
+   * Represents detailed information about a controller, including both 
+   * connection criteria and additional metadata.
+   */
+  export type ControllerInfo = {
+    /** 
+     * @group ConnectionCriteria
+     * @description A human-readable label identifying the controller.
+     */
+    controllerLabel: string;
+
+    /** 
+     * @group ConnectionCriteria
+     * @description Numeric code representing the product type or model.
+     */
+    productCode: number;
+
+    /** 
+     * @group ConnectionCriteria
+     * @description The MAC address associated with the controller.
+     */
+    macAddress: string;
+
+    /** 
+     * @group ConnectionCriteria
+     * @description Firmware version currently installed on the controller.
+     */
+    fwVersion: string;
+
+    /** 
+     * @group ConnectionCriteria
+     * @description Unique signature identifying the network configuration. Provided as a hexstring.
+     */
+    networkSignature: string;
+
+    /** 
+     * @group ConnectionCriteria
+     * @description Indicates if the controller is commissionable.
+     */
+    commissionable: boolean;
+
+    /** 
+     * The full name or identifier of the controller.
+     */
+    fullName: string;
+
+    /** 
+     * Code representing the PCB (Printed Circuit Board) version.
+     */
+    pcbCode: number;
+
+    /** 
+     * Full version information of the firmware.
+     */
+    fwVersionFull: string;
+
+    /** 
+     * Numeric representation of the firmware version.
+     */
+    fwVersionCode: number;
+
+    /** 
+     * Unix timestamp indicating the firmware compilation date and time.
+     */
+    fwCompilationUnixTimestamp: number;
+
+    /** 
+     * SHA256 hash of uploaded tnglBytes stored inside the Controller. Provided as a hexstring.
+     */
+    tnglFingerprint: string;
+
+    /** 
+     * Fingerprint identifying the event store state or version. Provided as a hexstring.
+     */
+    eventStoreFingerprint: string;
+
+    /** 
+     * Fingerprint identifying the configuration state or version. Provided as a hexstring.
+     */
+    configFingerprint: string;
+  };
 }
