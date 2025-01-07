@@ -1,11 +1,12 @@
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 
-import { sleep } from "../functions";
-import { logging } from "../logging";
-import { SpectodaRuntime } from "./SpectodaRuntime";
-import { SpectodaWasm } from "./SpectodaWasm";
-import { SpectodaEventStateValue } from "./types/event";
-import { Connection, IConnector_WASM, IConnector_WASMImplementation, Spectoda_WASM, Spectoda_WASMImplementation, Synchronization, Uint8Vector, Value, interface_error_t } from "./types/wasm";
+import { sleep } from '../functions';
+import { logging } from '../logging';
+
+import { SpectodaRuntime } from './SpectodaRuntime';
+import { SpectodaWasm } from './SpectodaWasm';
+import { SpectodaEventStateValue } from './types/event';
+import { Connection, IConnector_WASM, IConnector_WASMImplementation, Spectoda_WASM, Spectoda_WASMImplementation, Synchronization, Uint8Vector, Value, interface_error_t } from './types/wasm';
 
 // Implements Spectoda_JS in javascript
 // We can make many objects of Spectoda_JS if we desire (for simulation purposes for example)
@@ -42,7 +43,7 @@ export class Spectoda_JS {
     logging.debug(`Spectoda_JS::construct(controller_config=${JSON.stringify(controller_config)}, constroller_mac_address=${constroller_mac_address})`);
 
     if (this.#spectoda_wasm) {
-      throw "AlreadyContructed";
+      throw 'AlreadyContructed';
     }
 
     return SpectodaWasm.waitForInitilize().then(() => {
@@ -58,7 +59,7 @@ export class Spectoda_JS {
         // },
 
         _onTnglUpdate: (tngl_bytes_vector, used_ids_vector) => {
-          logging.verbose("Spectoda_JS::_onTnglUpdate", tngl_bytes_vector, used_ids_vector);
+          logging.verbose('Spectoda_JS::_onTnglUpdate', tngl_bytes_vector, used_ids_vector);
 
           {
             // Save FS after TNGL upload
@@ -69,7 +70,8 @@ export class Spectoda_JS {
             // dont know how to make Uint8Array in C++ yet. So I am forced to give data out in C++ std::vector
             const tngl_bytes = SpectodaWasm.convertUint8VectorUint8Array(tngl_bytes_vector);
             const used_ids = SpectodaWasm.convertUint8VectorUint8Array(used_ids_vector);
-            this.#runtimeReference.emit("tngl_update", { tngl_bytes: tngl_bytes, used_ids: used_ids });
+
+            this.#runtimeReference.emit('tngl_update', { tngl_bytes: tngl_bytes, used_ids: used_ids });
           } catch {
             //
           }
@@ -77,12 +79,13 @@ export class Spectoda_JS {
           return true;
         },
 
-        _onEvents: event_array => {
-          logging.verbose("Spectoda_JS::_onEvents", event_array);
+        _onEvents: (event_array) => {
+          logging.verbose('Spectoda_JS::_onEvents', event_array);
 
           {
             // Save FW after 11 seconds of Event Inactivity
             const SAVE_FS_AFTER_MS = 11000
+
             // if event is called in the 11s window, then reset the timeout
             if (this.#eventSaveFsTimeoutHandle) {
               clearTimeout(this.#eventSaveFsTimeoutHandle);
@@ -95,41 +98,45 @@ export class Spectoda_JS {
           }
 
           if (logging.level >= 1 && event_array.length > 0) {
-            let debug_log = "";
+            let debug_log = '';
 
             {
               const e = event_array[0];
+
               debug_log += `🕹️ $${e.label} -> ${e.id}: ${e.debug} [🕒 ${e.timestamp}]`;
             }
 
             for (let i = 1; i < event_array.length; i++) {
               const e = event_array[i];
+
               debug_log += `\n🕹️ $${e.label} -> ${e.id}: ${e.debug} [🕒 ${e.timestamp}]`;
             }
 
             logging.log(debug_log);
           }
 
-          this.#runtimeReference.emit("emittedevents", event_array);
+          this.#runtimeReference.emit('emittedevents', event_array);
 
           return true;
         },
 
-        _onEventStateUpdates: event_state_updates_array => {
-          logging.verbose("Spectoda_JS::_onEventStateUpdates", event_state_updates_array);
+        _onEventStateUpdates: (event_state_updates_array) => {
+          logging.verbose('Spectoda_JS::_onEventStateUpdates', event_state_updates_array);
 
           if (logging.level >= 3 && event_state_updates_array.length > 0) {
-            let debug_log = "";
+            let debug_log = '';
 
             const name = this.#spectoda_wasm?.getLabel();
 
             {
               const e = event_state_updates_array[0];
+
               debug_log += `🖥️ $${name}: \t📍 $${e.label} <- ${e.id}: ${e.debug} [🕒 ${e.timestamp}]`;
             }
 
             for (let i = 1; i < event_state_updates_array.length; i++) {
               const e = event_state_updates_array[i];
+
               debug_log += `\n🖥️ $${name}: \t📍 $${e.label} <- ${e.id}: ${e.debug} [🕒 ${e.timestamp}]`;
             }
 
@@ -142,17 +149,17 @@ export class Spectoda_JS {
             // @ts-ignore
             element.timestamp_utc = Date.now();
           }
-          this.#runtimeReference.emit("eventstateupdates", event_state_updates_array);
+          this.#runtimeReference.emit('eventstateupdates', event_state_updates_array);
 
           // ! emitted_events is deprecated
           // @ts-ignore
-          this.#runtimeReference.emit("emitted_events", event_state_updates_array);
+          this.#runtimeReference.emit('emitted_events', event_state_updates_array);
 
           return true;
         },
 
         _onExecute: (commands_bytecode_vector: Uint8Vector) => {
-          logging.verbose("Spectoda_JS::_onExecute", commands_bytecode_vector);
+          logging.verbose('Spectoda_JS::_onExecute', commands_bytecode_vector);
 
           // dont know how to make Uint8Array in C++ yet. So I am forced to give data out in C++ std::vector
           // const commands_bytecode = SpectodaWasm.convertUint8VectorUint8Array(commands_bytecode_vector);
@@ -192,10 +199,10 @@ export class Spectoda_JS {
         },
 
         _onSynchronize: (synchronization: Synchronization) => {
-          logging.debug("Spectoda_JS::_onSynchronize", synchronization);
+          logging.debug('Spectoda_JS::_onSynchronize', synchronization);
 
           try {
-            this.#runtimeReference.emit("wasm_clock", synchronization.clock_timestamp);
+            this.#runtimeReference.emit('wasm_clock', synchronization.clock_timestamp);
             logging.debug(`🕒 $${this.#spectoda_wasm?.getLabel()}: ${synchronization.clock_timestamp}`);
 
             if (Math.abs(this.#runtimeReference.clock.millis() - synchronization.clock_timestamp) > 10) {
@@ -209,8 +216,8 @@ export class Spectoda_JS {
           return true;
         },
 
-        _onProcess: options => {
-          logging.verbose("Spectoda_JS::_onProcess", options);
+        _onProcess: (options) => {
+          logging.verbose('Spectoda_JS::_onProcess', options);
 
           return true;
         },
@@ -252,18 +259,18 @@ export class Spectoda_JS {
           // this.#runtimeReference.emit("controller-log", `🖥️ $${name}: \t[?][${filename}]: ${message}`);
         },
 
-        _handlePeerConnected: peer_mac => {
-          logging.debug("Spectoda_JS::_handlePeerConnected", peer_mac);
+        _handlePeerConnected: (peer_mac) => {
+          logging.debug('Spectoda_JS::_handlePeerConnected', peer_mac);
 
-          this.#runtimeReference.emit("peer_connected", peer_mac);
+          this.#runtimeReference.emit('peer_connected', peer_mac);
 
           return SpectodaWasm.interface_error_t.SUCCESS;
         },
 
-        _handlePeerDisconnected: peer_mac => {
-          logging.debug("Spectoda_JS::_handlePeerDisconnected", peer_mac);
+        _handlePeerDisconnected: (peer_mac) => {
+          logging.debug('Spectoda_JS::_handlePeerDisconnected', peer_mac);
 
-          this.#runtimeReference.emit("peer_disconnected", peer_mac);
+          this.#runtimeReference.emit('peer_disconnected', peer_mac);
 
           return SpectodaWasm.interface_error_t.SUCCESS;
         },
@@ -285,10 +292,10 @@ export class Spectoda_JS {
         },
 
         _handleReboot: () => {
-          logging.debug("Spectoda_JS::_handleReboot");
+          logging.debug('Spectoda_JS::_handleReboot');
 
           setTimeout(async () => {
-            this.#runtimeReference.emit("#disconnected");
+            this.#runtimeReference.emit('#disconnected');
             await sleep(1);
 
             try {
@@ -331,7 +338,8 @@ export class Spectoda_JS {
 
           try {
             const command_bytecode_array = SpectodaWasm.convertUint8VectorUint8Array(command_bytecode);
-            this.#runtimeReference.sendExecute(command_bytecode_array, source_connection).catch(e => {
+
+            this.#runtimeReference.sendExecute(command_bytecode_array, source_connection).catch((e) => {
               logging.error(e);
               return false;
             });
@@ -347,7 +355,8 @@ export class Spectoda_JS {
 
           try {
             const request_bytecode_array = SpectodaWasm.convertUint8VectorUint8Array(request_bytecode);
-            this.#runtimeReference.sendRequest(request_ticket_number, request_bytecode_array, destination_connection).catch(e => {
+
+            this.#runtimeReference.sendRequest(request_ticket_number, request_bytecode_array, destination_connection).catch((e) => {
               logging.error(e);
               return false;
             });
@@ -380,7 +389,7 @@ export class Spectoda_JS {
           //   , timeline_clock_timestamp=${synchronization.tngl_fingerprint}, tngl_clock_timestamp=${synchronization.tngl_clock_timestamp}, fw_compilation_timestamp=${synchronization.fw_compilation_timestamp}, origin_address${synchronization.origin_address}`);
           // logging.info(`address_string=${source_connection.address_string.toString()}, connector_type=${source_connection.connector_type.value.toString()}, connection_rssi=${source_connection.connection_rssi.value.toString()}`);
 
-          this.#runtimeReference.sendSynchronize(synchronization, source_connection).catch(e => {
+          this.#runtimeReference.sendSynchronize(synchronization, source_connection).catch((e) => {
             // ! DISABLED 11. 9. 2024 By @mchlkucera
             // Because of console.error spamming on frontend
             logging.warn(e);
@@ -396,6 +405,7 @@ export class Spectoda_JS {
       this.#spectoda_wasm = SpectodaWasm.Spectoda_WASM.implement(WasmInterfaceImplementation);
 
       const cosntroller_config_json = JSON.stringify(controller_config);
+
       logging.verbose(`cosntroller_config_json=${cosntroller_config_json}`);
 
       this.#spectoda_wasm.init(constroller_mac_address, cosntroller_config_json);
@@ -403,18 +413,19 @@ export class Spectoda_JS {
       this.#connectors = [];
 
       const connector = SpectodaWasm.IConnector_WASM.implement(WasmConnectorImplementation);
+
       connector.init(SpectodaWasm.connector_type_t.CONNECTOR_BLE);
       this.registerConnector(connector);
 
       this.#connectors.push(connector);
 
-      this.#spectoda_wasm.begin("00000000000000000000000000000000", "00000000000000000000000000000000");
+      this.#spectoda_wasm.begin('00000000000000000000000000000000', '00000000000000000000000000000000');
     });
   }
 
   destruct() {
     if (!this.#spectoda_wasm) {
-      throw "AlreadyDestructed";
+      throw 'AlreadyDestructed';
     }
 
     this.#spectoda_wasm.end(); // end the spectoda stuff
@@ -430,7 +441,7 @@ export class Spectoda_JS {
     logging.info(`Spectoda_JS::makePort(port_label=${port_label}, port_config=${port_config})`);
 
     if (!this.#spectoda_wasm) {
-      throw "NotConstructed";
+      throw 'NotConstructed';
     }
 
     return this.#spectoda_wasm.makePort(port_label, port_config);
@@ -438,7 +449,7 @@ export class Spectoda_JS {
 
   registerConnector(connector: IConnector_WASM) {
     if (!this.#spectoda_wasm) {
-      throw "NotConstructed";
+      throw 'NotConstructed';
     }
 
     this.#spectoda_wasm.registerConnector(connector);
@@ -446,7 +457,7 @@ export class Spectoda_JS {
 
   setClockTimestamp(clock_timestamp: number) {
     if (!this.#spectoda_wasm) {
-      throw "NotConstructed";
+      throw 'NotConstructed';
     }
 
     this.#spectoda_wasm.setClockTimestamp(clock_timestamp);
@@ -454,7 +465,7 @@ export class Spectoda_JS {
 
   getClockTimestamp() {
     if (!this.#spectoda_wasm) {
-      throw "NotConstructed";
+      throw 'NotConstructed';
     }
 
     return this.#spectoda_wasm.getClockTimestamp();
@@ -464,13 +475,13 @@ export class Spectoda_JS {
     logging.debug(`Spectoda_JS::execute(execute_bytecode=${execute_bytecode}, source_connection=${source_connection})`);
 
     if (!this.#spectoda_wasm) {
-      throw "NotConstructed";
+      throw 'NotConstructed';
     }
 
     const execute_sucess = this.#spectoda_wasm.execute(SpectodaWasm.toHandle(execute_bytecode), source_connection);
 
     if (!execute_sucess) {
-      throw "EvaluateError";
+      throw 'EvaluateError';
     }
   }
 
@@ -478,7 +489,7 @@ export class Spectoda_JS {
     logging.debug(`Spectoda_JS::request(request_bytecode=${request_bytecode}, source_connection=${source_connection})`);
 
     if (!this.#spectoda_wasm) {
-      throw "NotConstructed";
+      throw 'NotConstructed';
     }
 
     const response_bytecode_vector = new SpectodaWasm.Uint8Vector();
@@ -488,7 +499,7 @@ export class Spectoda_JS {
       const request_sucess = this.#spectoda_wasm.request(SpectodaWasm.toHandle(request_bytecode), response_bytecode_vector, source_connection);
 
       if (!request_sucess) {
-        throw "EvaluateError";
+        throw 'EvaluateError';
       }
 
       response_bytecode = SpectodaWasm.convertUint8VectorUint8Array(response_bytecode_vector);
@@ -500,10 +511,10 @@ export class Spectoda_JS {
   }
 
   synchronize(synchronization: Synchronization, source_connection: Connection) {
-    logging.debug(`Spectoda_JS::synchronize(synchronization=`, synchronization, `source_connection=`, source_connection, `)`);
+    logging.debug('Spectoda_JS::synchronize(synchronization=', synchronization, 'source_connection=', source_connection, ')');
 
     if (!this.#spectoda_wasm) {
-      throw "NotConstructed";
+      throw 'NotConstructed';
     }
 
     this.#spectoda_wasm.synchronize(synchronization, source_connection);
@@ -518,10 +529,10 @@ export class Spectoda_JS {
       skip_event_emittion: false,
     },
   ) {
-    logging.verbose("Spectoda_JS::process()");
+    logging.verbose('Spectoda_JS::process()');
 
     if (!this.#spectoda_wasm) {
-      throw "NotConstructed";
+      throw 'NotConstructed';
     }
 
     this.#spectoda_wasm.process(options.skip_berry_plugin_update, options.skip_eventstate_updates, options.force_event_emittion, options.skip_event_emittion);
@@ -529,10 +540,10 @@ export class Spectoda_JS {
 
   // ? render() is forcing a render cycle
   render(options: { power: number } = { power: 255 }) {
-    logging.verbose("Spectoda_JS::render()");
+    logging.verbose('Spectoda_JS::render()');
 
     if (!this.#spectoda_wasm) {
-      throw "NotConstructed";
+      throw 'NotConstructed';
     }
 
     this.#spectoda_wasm.render(options.power);
@@ -542,7 +553,7 @@ export class Spectoda_JS {
     logging.verbose(`Spectoda_JS::readVariableAddress(variable_address=${variable_address}, device_id=${device_id})`);
 
     if (!this.#spectoda_wasm) {
-      throw "NotConstructed";
+      throw 'NotConstructed';
     }
 
     return this.#spectoda_wasm.readVariableAddress(variable_address, device_id);
@@ -552,7 +563,7 @@ export class Spectoda_JS {
     logging.verbose(`Spectoda_JS::emitValue(event_label=${event_label}, event_value=${event_value}, event_id=${event_id})`);
 
     if (!this.#spectoda_wasm) {
-      throw "NotConstructed";
+      throw 'NotConstructed';
     }
 
     return this.#spectoda_wasm.emitValue(event_label, event_value, event_id, true);
@@ -613,30 +624,30 @@ export class Spectoda_JS {
   }
 
   eraseHistory() {
-    logging.verbose("Spectoda_JS::eraseHistory()");
+    logging.verbose('Spectoda_JS::eraseHistory()');
 
     if (!this.#spectoda_wasm) {
-      throw "NotConstructed";
+      throw 'NotConstructed';
     }
 
     this.#spectoda_wasm.eraseHistory();
   }
 
   eraseTimeline() {
-    logging.verbose("Spectoda_JS::eraseTimeline()");
+    logging.verbose('Spectoda_JS::eraseTimeline()');
 
     if (!this.#spectoda_wasm) {
-      throw "NotConstructed";
+      throw 'NotConstructed';
     }
 
     this.#spectoda_wasm.eraseTimeline();
   }
 
   eraseTngl() {
-    logging.verbose("Spectoda_JS::eraseTngl()");
+    logging.verbose('Spectoda_JS::eraseTngl()');
 
     if (!this.#spectoda_wasm) {
-      throw "NotConstructed";
+      throw 'NotConstructed';
     }
 
     this.#spectoda_wasm.eraseTngl();
@@ -646,7 +657,7 @@ export class Spectoda_JS {
     logging.verbose(`Spectoda_JS::getEventState(event_state_name=${event_state_name}, event_state_id=${event_state_id})`);
 
     if (!this.#spectoda_wasm) {
-      throw "NotConstructed";
+      throw 'NotConstructed';
     }
 
     return this.#spectoda_wasm.getEventState(event_state_name, event_state_id);
@@ -654,7 +665,7 @@ export class Spectoda_JS {
 
   getDateTime(): { time: number; date: string } {
     if (!this.#spectoda_wasm) {
-      throw "NotConstructed";
+      throw 'NotConstructed';
     }
 
     return this.#spectoda_wasm.getDateTime();
@@ -669,7 +680,7 @@ export class Spectoda_JS {
    */
   getTnglFingerprint(): string {
     if (!this.#spectoda_wasm) {
-      throw "NotConstructed";
+      throw 'NotConstructed';
     }
 
     return this.#spectoda_wasm.getTnglFingerprint();
@@ -684,7 +695,7 @@ export class Spectoda_JS {
    */
   getEventStoreFingerprint(): string {
     if (!this.#spectoda_wasm) {
-      throw "NotConstructed";
+      throw 'NotConstructed';
     }
 
     return this.#spectoda_wasm.getEventStoreFingerprint();
@@ -694,7 +705,7 @@ export class Spectoda_JS {
     logging.verbose(`Spectoda_JS::registerDeviceContext(device_id=${device_id})`);
 
     if (!this.#spectoda_wasm) {
-      throw "NotConstructed";
+      throw 'NotConstructed';
     }
 
     return this.#spectoda_wasm.registerDeviceContext(device_id);

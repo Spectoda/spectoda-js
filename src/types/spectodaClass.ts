@@ -1,8 +1,9 @@
-import { TimeTrack } from "../../TimeTrack";
-import { SpectodaRuntime } from "../SpectodaRuntime";
-import { SpectodaAppEventMap } from "./app-events";
-import { ConnectorType } from "./connect";
-import { SpectodaTypes } from "./primitives";
+import { TimeTrack } from '../../TimeTrack';
+import { SpectodaRuntime } from '../SpectodaRuntime';
+
+import { SpectodaAppEventMap } from './app-events';
+import { ConnectorType } from './connect';
+import { SpectodaTypes } from './primitives';
 
 export interface SpectodaClass {
   timeline: TimeTrack;
@@ -22,8 +23,8 @@ export interface SpectodaClass {
     autonomousReconnection?: boolean,
     overrideConnection?: boolean,
   ): Promise<any>;
-  disconnect(): Promise<void> | ReturnType<SpectodaRuntime["disconnect"]>;
-  connected(): Promise<null> | ReturnType<SpectodaRuntime["connected"]>;
+  disconnect(): Promise<void> | ReturnType<SpectodaRuntime['disconnect']>;
+  connected(): Promise<null> | ReturnType<SpectodaRuntime['connected']>;
 
   // Network methods
   assignOwnerSignature(ownerSignature: SpectodaTypes.NetworkSignature): boolean;

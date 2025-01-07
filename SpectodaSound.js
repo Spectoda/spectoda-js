@@ -1,6 +1,6 @@
-import { FFT } from "./dsp.js";
-import { createNanoEvents, mapValue, sleep } from "./functions";
-import { logging } from "./logging";
+import { FFT } from './dsp.js';
+import { createNanoEvents, mapValue, sleep } from './functions';
+import { logging } from './logging';
 
 function calculateSensitivityValue(value, sensitivity) {
   return (value * sensitivity) / 100;
@@ -50,7 +50,7 @@ export class SpectodaSound {
     /**
      * @type {"static"|"dynamic"}
      */
-    this.evRateType = "dynamic";
+    this.evRateType = 'dynamic';
 
     this.#events = createNanoEvents();
 
@@ -70,7 +70,7 @@ export class SpectodaSound {
     if (!this.#audioContext) {
       this.#audioContext = new AudioContext();
     }
-    if (!mediaStream || mediaStream === "microphone") {
+    if (!mediaStream || mediaStream === 'microphone') {
       // Dotaz na povolení přístupu k mikrofonu
       if (navigator.mediaDevices) {
         const constraints = (window.constraints = {
@@ -82,27 +82,28 @@ export class SpectodaSound {
           },
           video: false,
         });
+
         await new Promise((resolve, reject) => {
           navigator.mediaDevices
             .getUserMedia(constraints)
-            .then(stream => {
+            .then((stream) => {
               this.#stream = stream;
               this.#source = this.#audioContext.createMediaStreamSource(this.#stream);
               resolve();
-              logging.debug("SpectodaSound.connect", "Connected microphone");
+              logging.debug('SpectodaSound.connect', 'Connected microphone');
             })
-            .catch(e => {
+            .catch((e) => {
               reject(e);
-              throw "MicAccessDenied";
+              throw 'MicAccessDenied';
             });
         });
-        logging.info("Connected Mic");
+        logging.info('Connected Mic');
         // await new Promise((resolve, reject) => { navigator.mediaDevices.getUserMedia(constraints).then(resolve).catch(reject)) };
       } else {
         // TODO - check, tato chyba možná vzniká jinak. Navíc ta chyba nemusí být bluefy only
-        throw "MicAccessDenied";
+        throw 'MicAccessDenied';
       }
-    } else if (!mediaStream || mediaStream === "system") {
+    } else if (!mediaStream || mediaStream === 'system') {
       const gdmOptions = {
         video: true,
         audio: {
@@ -112,33 +113,34 @@ export class SpectodaSound {
         },
       };
       let videoEl;
-      if (document.querySelector("#spectoda_video_system")) {
-        videoEl = document.querySelector("#spectoda_video_system");
+
+      if (document.querySelector('#spectoda_video_system')) {
+        videoEl = document.querySelector('#spectoda_video_system');
       } else {
-        videoEl = document.createElement("video");
-        videoEl.id = "spectoda_video_system";
+        videoEl = document.createElement('video');
+        videoEl.id = 'spectoda_video_system';
         document.body.appendChild(videoEl);
       }
 
       await new Promise(async (resolve, reject) => {
         const srcObject = await navigator.mediaDevices
           .getDisplayMedia(gdmOptions)
-          .then(stream => {
+          .then((stream) => {
             this.#stream = stream;
             this.#source = this.#audioContext.createMediaStreamSource(this.#stream);
             resolve();
-            logging.debug("SpectodaSound.connect", "Connected SystemSound");
+            logging.debug('SpectodaSound.connect', 'Connected SystemSound');
           })
-          .catch(e => {
+          .catch((e) => {
             reject(e);
-            throw "DeviceUnsupported";
+            throw 'DeviceUnsupported';
           });
       });
     } else {
       this.#stream = mediaStream;
       this.#source = this.#audioContext.createMediaStreamSource(mediaStream);
-      logging.debug("SpectodaSound.connect", "Connected mediaStream");
-      logging.info("Connected mediaStream");
+      logging.debug('SpectodaSound.connect', 'Connected mediaStream');
+      logging.info('Connected mediaStream');
     }
   }
 
@@ -155,7 +157,7 @@ export class SpectodaSound {
       this.#script_processor_get_audio_samples = this.#audioContext.createScriptProcessor(this.BUFF_SIZE, 1, 1);
       this.#script_processor_get_audio_samples.connect(this.#gain_node);
 
-      logging.info("Sample rate of soundcard: " + this.#audioContext.sampleRate);
+      logging.info('Sample rate of soundcard: ' + this.#audioContext.sampleRate);
       this.#fft = new FFT(this.BUFF_SIZE, this.#audioContext.sampleRate);
 
       this.#source.connect(this.#script_processor_get_audio_samples);
@@ -164,12 +166,12 @@ export class SpectodaSound {
       this.running = true;
       // var bufferCount = 0;
 
-      logging.debug("running samples", this.BUFF_SIZE);
+      logging.debug('running samples', this.BUFF_SIZE);
 
       // Tato funkce se provede pokaždé když dojde k naplnění bufferu o velikosti 2048 vzorků.
       // Při vzorkovacím kmitočku 48 kHz se tedy zavolá jednou za cca 42 ms.
 
-      this.#script_processor_get_audio_samples.addEventListener("audioprocess", this.processHandler.bind(this));
+      this.#script_processor_get_audio_samples.addEventListener('audioprocess', this.processHandler.bind(this));
     }
   }
 
@@ -184,6 +186,7 @@ export class SpectodaSound {
   getBufferedDataAverage() {
     if (this.#bufferedValues.length > 0) {
       let value = this.#bufferedValues.reduce((p, v) => p + v) / this.#bufferedValues.length;
+
       this.#bufferedValues = [];
 
       // value = lerpUp(this.lastValue, value, 0.2);
@@ -196,8 +199,9 @@ export class SpectodaSound {
   calcEventGap() {
     let gapValues = [...this.#movingAverageGapValues];
     let evRate;
+
     if (gapValues.length > 0) {
-      gapValues = gapValues.map(v => v - gapValues[0]);
+      gapValues = gapValues.map((v) => v - gapValues[0]);
       for (let i = 0; i < gapValues.length; i++) {
         gapValues[i + 1] -= gapValues[i];
       }
@@ -214,6 +218,7 @@ export class SpectodaSound {
    */
   async autoEmitFunctionValue(func) {
     let data = this.getBufferedDataAverage();
+
     if (data) {
       func(calculateSensitivityValue(data.value, this.#sensitivity)).finally(() => this.autoEmitFunctionValue(func));
     } else {
@@ -254,6 +259,7 @@ export class SpectodaSound {
   processHandler(e) {
     var samples = e.inputBuffer.getChannelData(0);
     var rms_loudness_spectrum = 0;
+
     this.#fft.forward(samples); //Vyypočtení fft ze vzorků.
     var spectrum = this.#fft.spectrum; // Získání spektra o délce bufeer/2 v našem případě 1024 harmonických.
 
@@ -265,7 +271,7 @@ export class SpectodaSound {
     //------------------------//
 
     // Zde se postupně sečte druhá mocnina všech 1024 vzorků.
-    spectrum.forEach(element => {
+    spectrum.forEach((element) => {
       rms_loudness_spectrum += Math.pow(element, 2);
     });
 
@@ -319,7 +325,7 @@ export class SpectodaSound {
     // logging.debug("spectrum avarge loudnes: "+ out);
     // this.#handleControlSend(out);
     //this.#events.emit("loudness", (out * this.#sensitivity) / 100);
-    this.#events.emit("loudness", out);
+    this.#events.emit('loudness', out);
     if (out > 1.0) {
       this.resetSilentCountdown();
     }

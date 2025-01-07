@@ -1,9 +1,10 @@
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 
-import { logging } from "../logging";
-import { MainModule, Uint8Vector } from "./types/wasm";
+import { logging } from '../logging';
 
-const WASM_VERSION = "DEBUG_DEV_0.12.4_20250105";
+import { MainModule, Uint8Vector } from './types/wasm';
+
+const WASM_VERSION = 'DEBUG_DEV_0.12.4_20250105';
 
 let moduleInitilizing = false;
 let moduleInitilized = false;
@@ -32,7 +33,7 @@ export class SpectodaWasm {
   //
   // TODO! disallow creating instances of this class
   constructor() {
-    console.error("SpectodaWasm is a singleton class, please do not create instances of it");
+    console.error('SpectodaWasm is a singleton class, please do not create instances of it');
   }
 
   // ? from MainModule:
@@ -54,19 +55,20 @@ export class SpectodaWasm {
   // IConnector_WASM: { implement(_0: any): ImplementedIConnector_WASM; extend(_0: ArrayBuffer | Uint8Array | Uint8ClampedArray | Int8Array | string, _1: any): any };
   // // ImplementedIConnector_WASM: {};
 
-  static interface_error_t: MainModule["interface_error_t"];
-  static connector_type_t: MainModule["connector_type_t"];
-  static connection_rssi_t: MainModule["connection_rssi_t"];
-  static Value: MainModule["Value"];
-  static Connection: MainModule["Connection"];
-  static Synchronization: MainModule["Synchronization"];
-  static Uint8Vector: MainModule["Uint8Vector"];
-  static Spectoda_WASM: MainModule["Spectoda_WASM"];
-  static IConnector_WASM: MainModule["IConnector_WASM"];
+  static interface_error_t: MainModule['interface_error_t'];
+  static connector_type_t: MainModule['connector_type_t'];
+  static connection_rssi_t: MainModule['connection_rssi_t'];
+  static Value: MainModule['Value'];
+  static Connection: MainModule['Connection'];
+  static Synchronization: MainModule['Synchronization'];
+  static Uint8Vector: MainModule['Uint8Vector'];
+  static Spectoda_WASM: MainModule['Spectoda_WASM'];
+  static IConnector_WASM: MainModule['IConnector_WASM'];
 
   // oposite of convertJSArrayToNumberVector() in https://emscripten.org/docs/api_reference/val.h.html
   static convertUint8VectorUint8Array(vector: Uint8Vector) {
     const array = new Uint8Array(vector.size());
+
     for (let i = 0; i < array.length; i++) {
       array[i] = vector.get(i);
     }
@@ -92,6 +94,7 @@ export class SpectodaWasm {
     }
 
     const wait = new Wait();
+
     waitingQueue.push(wait);
     return wait.promise;
   }
@@ -111,11 +114,11 @@ export class SpectodaWasm {
       // @ts-ignore - FS is a global object of Emscripten
       Module.FS.syncfs(true, (err: any) => {
         if (err) {
-          logging.error("FS.syncfs error:", err);
-          console.log("Failed to load WASM Filesystem");
+          logging.error('FS.syncfs error:', err);
+          console.log('Failed to load WASM Filesystem');
           reject(err);
         } else {
-          console.log("WASM Filesystem was loaded");
+          console.log('WASM Filesystem was loaded');
           resolve(null);
         }
       });
@@ -127,11 +130,11 @@ export class SpectodaWasm {
       // @ts-ignore - FS is a global object of Emscripten
       Module.FS.syncfs(false, (err: any) => {
         if (err) {
-          logging.error("FS.syncfs error:", err);
-          console.log("Failed to save WASM Filesystem");
+          logging.error('FS.syncfs error:', err);
+          console.log('Failed to save WASM Filesystem');
           reject(err);
         } else {
-          console.log("WASM Filesystem was saved");
+          console.log('WASM Filesystem was saved');
           resolve(null);
         }
       });
@@ -141,18 +144,19 @@ export class SpectodaWasm {
 
 function injectScript(src: string) {
   return new Promise((resolve, reject) => {
-    if (typeof window !== "undefined" && document) {
-      const script = document.createElement("script");
+    if (typeof window !== 'undefined' && document) {
+      const script = document.createElement('script');
+
       script.src = src;
-      script.addEventListener("load", resolve);
-      script.addEventListener("error", reject);
+      script.addEventListener('load', resolve);
+      script.addEventListener('error', reject);
       document.head.append(script);
     }
   });
 }
 
 function onWasmLoad() {
-  logging.info("WASM loaded");
+  logging.info('WASM loaded');
 
   const resolveWaitingQueue = () => {
     for (const wait of waitingQueue) {
@@ -165,7 +169,7 @@ function onWasmLoad() {
   Module.onRuntimeInitialized = () => {
     moduleInitilized = true;
 
-    logging.info("WASM runtime initilized");
+    logging.info('WASM runtime initilized');
 
     // static interface_error_t: MainModule["interface_error_t"];
     // static connector_type_t: MainModule["connector_type_t"];
@@ -198,11 +202,11 @@ function onWasmLoad() {
     SpectodaWasm.IConnector_WASM = Module.IConnector_WASM;
 
     // ? BROWSER: mounting FS
-    if (typeof window !== "undefined") {
+    if (typeof window !== 'undefined') {
       // @ts-ignore - FS is a global object of Emscripten
-      Module.FS.mkdir("/littlefs");
+      Module.FS.mkdir('/littlefs');
       // @ts-ignore - FS and IDBFS are global objects of Emscripten
-      Module.FS.mount(IDBFS, {}, "/littlefs");
+      Module.FS.mount(IDBFS, {}, '/littlefs');
     }
     // ? NODE.JS: mounting FS
     else if (!process.env.NEXT_PUBLIC_VERSION) {
@@ -214,9 +218,9 @@ function onWasmLoad() {
       // }
 
       // @ts-ignore - FS is a global object of Emscripten
-      Module.FS.mkdir("/littlefs");
+      Module.FS.mkdir('/littlefs');
       // @ts-ignore - FS is a global object of Emscripten
-      Module.FS.mount(Module.FS.filesystems.NODEFS, { root: "./filesystem" }, "/littlefs");
+      Module.FS.mount(Module.FS.filesystems.NODEFS, { root: './filesystem' }, '/littlefs');
     }
 
     // ? Load WASM filesystem from mounted system filesystem
@@ -226,8 +230,8 @@ function onWasmLoad() {
     });
 
     // ? BROWSER: Save WASM filesystem before window unload
-    if (typeof window !== "undefined") {
-      window.addEventListener("beforeunload", () => {
+    if (typeof window !== 'undefined') {
+      window.addEventListener('beforeunload', () => {
         SpectodaWasm.saveFS();
       });
     }
@@ -244,20 +248,20 @@ function onWasmLoad() {
 }
 
 function loadWasm(wasmVersion: string) {
-  logging.info("Loading spectoda-js WASM version " + wasmVersion);
+  logging.info('Loading spectoda-js WASM version ' + wasmVersion);
 
   // BROWSER enviroment
-  if (typeof window !== "undefined") {
+  if (typeof window !== 'undefined') {
     // First try to load local version
     injectScript(`http://localhost:5555/builds/${wasmVersion}.js`)
       .then(onWasmLoad)
-      .catch(error => {
+      .catch((error) => {
         // logging.error(error);
         // if local version fails, load public file
         injectScript(`https://updates.spectoda.com/subdom/updates/webassembly/daily/${wasmVersion}.js`)
           .then(onWasmLoad)
-          .catch(error => {
-            logging.error("Failed to fetch WASM", error);
+          .catch((error) => {
+            logging.error('Failed to fetch WASM', error);
           });
       });
   }
@@ -269,6 +273,6 @@ function loadWasm(wasmVersion: string) {
   }
 }
 
-if (typeof window !== "undefined") {
+if (typeof window !== 'undefined') {
   window.SpectodaWasm = SpectodaWasm;
 }

@@ -108,7 +108,7 @@ DSP.invert = function (buffer) {
  */
 DSP.interleave = function (left, right) {
   if (left.length !== right.length) {
-    throw "Can not interleave. Channel lengths differ.";
+    throw 'Can not interleave. Channel lengths differ.';
   }
 
   var stereoInterleaved = new Float64Array(left.length * 2);
@@ -400,10 +400,10 @@ FFT.prototype.forward = function (buffer) {
   var k = Math.floor(Math.log(bufferSize) / Math.LN2);
 
   if (Math.pow(2, k) !== bufferSize) {
-    throw "Invalid buffer size, must be a power of 2.";
+    throw 'Invalid buffer size, must be a power of 2.';
   }
   if (bufferSize !== buffer.length) {
-    throw "Supplied buffer is not the same size as defined FFT. FFT Size: " + bufferSize + " Buffer Size: " + buffer.length;
+    throw 'Supplied buffer is not the same size as defined FFT. FFT Size: ' + bufferSize + ' Buffer Size: ' + buffer.length;
   }
 
   var halfSize = 1,
@@ -526,6 +526,7 @@ FFT.prototype.inverse = function (real, imag) {
   }
 
   var buffer = new Float64Array(bufferSize); // this should be reused instead
+
   for (i = 0; i < bufferSize; i++) {
     buffer[i] = real[i] / bufferSize;
   }
@@ -582,7 +583,7 @@ function RFFT(bufferSize, sampleRate) {
       i++;
 
       h = halfSize << 1;
-      while (((h = h >> 1), !((r ^= h) & h)));
+      while (((h = h >> 1), !((r ^= h) & h))){}
 
       if (r >= i) {
         dest[i] = source[r];
@@ -615,7 +616,7 @@ function RFFT(bufferSize, sampleRate) {
       i++;
 
       h = halfSize << 1;
-      while (((h = h >> 1), !((r ^= h) & h)));
+      while (((h = h >> 1), !((r ^= h) & h))){}
 
       if (r >= i) {
         this.reverseTable[i] = r;
@@ -876,11 +877,12 @@ function Sampler(file, bufferSize, sampleRate, playStart, playEnd, loopStart, lo
   this.samplesProcessed = 0;
   this.playhead = 0;
 
-  var audio = /* new Audio();*/ document.createElement("AUDIO");
+  var audio = /* new Audio();*/ document.createElement('AUDIO');
   var self = this;
 
   this.loadSamples = function (event) {
     var buffer = DSP.getChannel(DSP.MIX, event.frameBuffer);
+
     for (var i = 0; i < buffer.length; i++) {
       self.samples.push(buffer[i]);
     }
@@ -896,9 +898,9 @@ function Sampler(file, bufferSize, sampleRate, playStart, playEnd, loopStart, lo
     self.duration = audio.duration;
   };
 
-  audio.addEventListener("MozAudioAvailable", this.loadSamples, false);
-  audio.addEventListener("loadedmetadata", this.loadMetaData, false);
-  audio.addEventListener("ended", this.loadComplete, false);
+  audio.addEventListener('MozAudioAvailable', this.loadSamples, false);
+  audio.addEventListener('loadedmetadata', this.loadMetaData, false);
+  audio.addEventListener('ended', this.loadComplete, false);
   audio.muted = true;
   audio.src = file;
   audio.play();
@@ -963,6 +965,7 @@ Sampler.prototype.generate = function () {
 
 Sampler.prototype.setFreq = function (frequency) {
   var totalProcessed = this.samplesProcessed * this.step;
+
   this.frequency = frequency;
   this.step = this.frequency / this.rootFrequency;
   this.samplesProcessed = Math.round(totalProcessed / this.step);
@@ -1028,11 +1031,11 @@ function Oscillator(type, frequency, amplitude, bufferSize, sampleRate) {
     }
   };
 
-  if (typeof Oscillator.waveTable === "undefined") {
+  if (typeof Oscillator.waveTable === 'undefined') {
     Oscillator.waveTable = {};
   }
 
-  if (typeof Oscillator.waveTable[this.func] === "undefined") {
+  if (typeof Oscillator.waveTable[this.func] === 'undefined') {
     this.generateWaveTable();
   }
 
@@ -1048,7 +1051,7 @@ Oscillator.prototype.setAmp = function (amplitude) {
   if (amplitude >= 0 && amplitude <= 1) {
     this.amplitude = amplitude;
   } else {
-    throw "Amplitude out of range (0..1).";
+    throw 'Amplitude out of range (0..1).';
   }
 };
 
@@ -1249,11 +1252,11 @@ function IIRFilter(type, cutoff, resonance, sampleRate) {
   }
 }
 
-IIRFilter.prototype.__defineGetter__("cutoff", function () {
+IIRFilter.prototype.__defineGetter__('cutoff', function () {
   return this.func.cutoff;
 });
 
-IIRFilter.prototype.__defineGetter__("resonance", function () {
+IIRFilter.prototype.__defineGetter__('resonance', function () {
   return this.func.resonance;
 });
 
@@ -1270,7 +1273,7 @@ IIRFilter.prototype.addEnvelope = function (envelope) {
   if (envelope instanceof ADSR) {
     this.func.addEnvelope(envelope);
   } else {
-    throw "Not an envelope.";
+    throw 'Not an envelope.';
   }
 };
 
@@ -1380,7 +1383,7 @@ IIRFilter2.prototype.addEnvelope = function (envelope) {
   if (envelope instanceof ADSR) {
     this.envelope = envelope;
   } else {
-    throw "This is not an envelope.";
+    throw 'This is not an envelope.';
   }
 };
 
@@ -1438,6 +1441,7 @@ function WindowFunction(type, alpha) {
 
 WindowFunction.prototype.process = function (buffer) {
   var length = buffer.length;
+
   for (var i = 0; i < length; i++) {
     buffer[i] *= this.func(length, i, this.alpha);
   }
@@ -1478,6 +1482,7 @@ WindowFunction.Hann = function (length, index) {
 
 WindowFunction.Lanczos = function (length, index) {
   var x = (2 * index) / (length - 1) - 1;
+
   return Math.sin(Math.PI * x) / (Math.PI * x);
 };
 
@@ -1562,6 +1567,7 @@ function Biquad(type, sampleRate) {
   this.coefficients = function () {
     var b = [this.b0, this.b1, this.b2];
     var a = [this.a0, this.a1, this.a2];
+
     return { b: b, a: a };
   };
 
@@ -1605,6 +1611,7 @@ function Biquad(type, sampleRate) {
 
   this.recalculateCoefficients = function () {
     var A;
+
     if (type === DSP.PEAKING_EQ || type === DSP.LOW_SHELF || type === DSP.HIGH_SHELF) {
       A = Math.pow(10, this.dBgain / 40); // for peaking and shelving EQ filters only
     } else {
@@ -1797,6 +1804,7 @@ DSP.mag2db = function (buffer) {
   var max = Math.max;
 
   var result = Float64Array(buffer.length);
+
   for (var i = 0; i < buffer.length; i++) {
     result[i] = 20.0 * log(max(buffer[i], minMag));
   }
@@ -1837,12 +1845,14 @@ DSP.freqz = function (b, a, w) {
 
   for (i = 0; i < w.length; i++) {
     var numerator = { real: 0.0, imag: 0.0 };
+
     for (j = 0; j < b.length; j++) {
       numerator.real += b[j] * cos(-j * w[i]);
       numerator.imag += b[j] * sin(-j * w[i]);
     }
 
     var denominator = { real: 0.0, imag: 0.0 };
+
     for (j = 0; j < a.length; j++) {
       denominator.real += a[j] * cos(-j * w[i]);
       denominator.imag += a[j] * sin(-j * w[i]);
@@ -1883,6 +1893,7 @@ function GraphicalEq(sampleRate) {
     for (var i = 0; i < bandCount; i++) {
       var freq = this.minFreq * Math.pow(2, i / this.bandsPerOctave);
       var newFilter = new Biquad(DSP.PEAKING_EQ, this.FS);
+
       newFilter.setDbGain(0);
       newFilter.setBW(1 / this.bandsPerOctave);
       newFilter.setF0(freq);
@@ -1908,11 +1919,11 @@ function GraphicalEq(sampleRate) {
 
   this.setBandGain = function (bandIndex, gain) {
     if (bandIndex < 0 || bandIndex > this.filters.length - 1) {
-      throw "The band index of the graphical equalizer is out of bounds.";
+      throw 'The band index of the graphical equalizer is out of bounds.';
     }
 
     if (!gain) {
-      throw "A gain must be passed.";
+      throw 'A gain must be passed.';
     }
 
     this.filters[bandIndex].setDbGain(gain);
@@ -1925,7 +1936,7 @@ function GraphicalEq(sampleRate) {
     }
 
     if (bandIndex < 0 || bandIndex > this.filters.length - 1) {
-      throw "The band index of the graphical equalizer is out of bounds. " + bandIndex + " is out of [" + 0 + ", " + this.filters.length - 1 + "]";
+      throw 'The band index of the graphical equalizer is out of bounds. ' + bandIndex + ' is out of [' + 0 + ', ' + this.filters.length - 1 + ']';
     }
 
     if (!this.w) {
@@ -2284,6 +2295,7 @@ Reverb.prototype.process = function (interleavedSamples) {
 
   // Perform low pass on the input samples to mimick damp
   var leftRightMix = DSP.deinterleave(interleavedSamples);
+
   this.LOWPASSL.process(leftRightMix[DSP.LEFT]);
   this.LOWPASSR.process(leftRightMix[DSP.RIGHT]);
   var filteredSamples = DSP.interleave(leftRightMix[DSP.LEFT], leftRightMix[DSP.RIGHT]);
@@ -2298,6 +2310,7 @@ Reverb.prototype.process = function (interleavedSamples) {
 
   // Process SingleDelays in series
   var singleDelaySamples = new Float64Array(outputSamples.length);
+
   for (i = 0; i < this.NR_OF_SINGLEDELAYS; i++) {
     // Invert the signal of every even singleDelay
     singleDelaySamples = DSP.mixSampleBuffers(singleDelaySamples, this.singleDelays[i].process(outputSamples), 2 % i === 0, 1);

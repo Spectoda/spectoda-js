@@ -1,9 +1,9 @@
-import { logging } from "./logging";
-import { sleep } from "./functions";
-import { TimeTrack } from "./TimeTrack.js";
-import { COMMAND_FLAGS } from "./src/constants";
-import { TnglReader } from "./TnglReader";
-import { TnglWriter } from "./TnglWriter";
+import { logging } from './logging';
+import { sleep } from './functions';
+import { TimeTrack } from './TimeTrack.js';
+import { COMMAND_FLAGS } from './src/constants';
+import { TnglReader } from './TnglReader';
+import { TnglWriter } from './TnglWriter';
 
 /////////////////////////////////////////////////////////////////////////////////////
 
@@ -18,8 +18,8 @@ export class SpectodaDummyConnector {
 
   #clock;
 
-  constructor(interfaceReference, enableErrors = false, dummyFWVersion = "DUMMY_0.0.0_00000000") {
-    this.type = enableErrors ? "edummy" : "dummy";
+  constructor(interfaceReference, enableErrors = false, dummyFWVersion = 'DUMMY_0.0.0_00000000') {
+    this.type = enableErrors ? 'edummy' : 'dummy';
 
     this.#interfaceReference = interfaceReference;
     this.#enableErrors = enableErrors;
@@ -44,7 +44,7 @@ export class SpectodaDummyConnector {
   // first bonds the BLE device with the PC/Phone/Tablet if it is needed.
   // Then selects the device
   userSelect(criteria) {
-    logging.verbose("userSelect(criteria=", criteria, ")");
+    logging.verbose('userSelect(criteria=', criteria, ')');
 
     return new Promise(async (resolve, reject) => {
       if (this.#connected) {
@@ -52,11 +52,11 @@ export class SpectodaDummyConnector {
       }
       await sleep(Math.random() * 1000); // userSelect logic
       if (this.#fail(0.25)) {
-        reject("UserCanceledSelection");
+        reject('UserCanceledSelection');
         return;
       }
       if (this.#fail(0.1)) {
-        reject("SelectionFailed");
+        reject('SelectionFailed');
         return;
       }
       this.#selected = true;
@@ -74,7 +74,7 @@ export class SpectodaDummyConnector {
   // are eligible.
 
   autoSelect(criteria, scan_period, timeout) {
-    logging.verbose("autoSelect(criteria=", criteria, ", scan_period=", scan_period, "timeout=", timeout, ")");
+    logging.verbose('autoSelect(criteria=', criteria, ', scan_period=', scan_period, 'timeout=', timeout, ')');
     // step 1. for the scan_period scan the surroundings for BLE devices.
     // step 2. if some devices matching the criteria are found, then select the one with
     //         the greatest signal strength. If no device is found until the timeout,
@@ -86,7 +86,7 @@ export class SpectodaDummyConnector {
       }
       await sleep(Math.random() * 1000); // autoSelect logic
       if (this.#fail(0.1)) {
-        reject("SelectionFailed");
+        reject('SelectionFailed');
         return;
       }
       this.#selected = true;
@@ -95,7 +95,7 @@ export class SpectodaDummyConnector {
   }
 
   selected() {
-    logging.verbose(`selected()`);
+    logging.verbose('selected()');
 
     return new Promise(async (resolve, reject) => {
       if (this.#selected) {
@@ -107,7 +107,7 @@ export class SpectodaDummyConnector {
   }
 
   unselect() {
-    logging.verbose(`unselect()`);
+    logging.verbose('unselect()');
 
     return new Promise(async (resolve, reject) => {
       if (this.#connected) {
@@ -121,7 +121,7 @@ export class SpectodaDummyConnector {
 
   scan(criteria, scan_period) {
     // returns devices like autoSelect scan() function
-    return Promise.resolve("{}");
+    return Promise.resolve('{}');
   }
 
   connect(timeout) {
@@ -129,16 +129,16 @@ export class SpectodaDummyConnector {
 
     return new Promise(async (resolve, reject) => {
       if (!this.#selected) {
-        reject("DeviceNotSelected");
+        reject('DeviceNotSelected');
         return;
       }
       await sleep(Math.random() * 1000); // connecting logic
       if (this.#fail(0.1)) {
-        reject("ConnectionFailed");
+        reject('ConnectionFailed');
         return;
       }
       this.#connected = true;
-      this.#interfaceReference.emit("#connected");
+      this.#interfaceReference.emit('#connected');
       resolve({ connector: this.type });
 
       /**  
@@ -153,20 +153,20 @@ export class SpectodaDummyConnector {
 
   // disconnect Connector from the connected Spectoda Device. But keep it selected
   disconnect() {
-    logging.verbose(`disconnect()`);
+    logging.verbose('disconnect()');
 
     return new Promise(async (resolve, reject) => {
       if (this.#connected) {
         await sleep(100); // disconnecting logic
         this.#connected = false;
-        this.#interfaceReference.emit("#disconnected");
+        this.#interfaceReference.emit('#disconnected');
       }
       resolve(); // always resolves even if there are internal errors
     });
   }
 
   connected() {
-    logging.verbose(`connected()`);
+    logging.verbose('connected()');
 
     return new Promise(async (resolve, reject) => {
       if (this.#connected) {
@@ -184,13 +184,13 @@ export class SpectodaDummyConnector {
 
     return new Promise(async (resolve, reject) => {
       if (!this.#connected) {
-        reject("DeviceDisconnected");
+        reject('DeviceDisconnected');
         return;
       }
       await sleep(25); // delivering logic
 
       if (this.#fail(0.1)) {
-        reject("DeliverFailed");
+        reject('DeliverFailed');
         return;
       }
 
@@ -205,13 +205,13 @@ export class SpectodaDummyConnector {
 
     return new Promise(async (resolve, reject) => {
       if (!this.#connected) {
-        reject("DeviceDisconnected");
+        reject('DeviceDisconnected');
         return;
       }
       await sleep(10); // transmiting logic
 
       if (this.#fail(0.1)) {
-        reject("TransmitFailed");
+        reject('TransmitFailed');
         return;
       }
 
@@ -222,7 +222,7 @@ export class SpectodaDummyConnector {
   // request handles the requests on the Spectoda network. The command request
   // is guaranteed to get a response
   request(payload, read_response = true, timeout) {
-    logging.verbose(`request(payload=${payload}, read_response=${read_response ? "true" : "false"}, timeout=${timeout})`);
+    logging.verbose(`request(payload=${payload}, read_response=${read_response ? 'true' : 'false'}, timeout=${timeout})`);
 
     const ERROR_CODE_SUCCESS = 0;
     const ERROR_CODE_ERROR = 255;
@@ -230,13 +230,13 @@ export class SpectodaDummyConnector {
 
     return new Promise(async (resolve, reject) => {
       if (!this.#connected) {
-        reject("DeviceDisconnected");
+        reject('DeviceDisconnected');
         return;
       }
       await sleep(50); // requesting logic
 
       if (this.#fail(0.1)) {
-        reject("RequestFailed");
+        reject('RequestFailed');
         return;
       }
 
@@ -255,6 +255,7 @@ export class SpectodaDummyConnector {
             // log_d("error_code=%u", error_code);
 
             let writer = new TnglWriter(64);
+
             writer.writeFlag(COMMAND_FLAGS.FLAG_FW_VERSION_RESPONSE);
             writer.writeUint32(request_uuid);
             writer.writeUint8(error_code);
@@ -270,6 +271,7 @@ export class SpectodaDummyConnector {
           const request_uuid = reader.readUint32();
 
           let writer = new TnglWriter(64);
+
           writer.writeFlag(COMMAND_FLAGS.FLAG_UNSUPPORTED_COMMND_RESPONSE);
           writer.writeUint32(request_uuid);
           writer.writeUint8(ERROR_CODE_ERROR);
@@ -287,12 +289,12 @@ export class SpectodaDummyConnector {
 
     return new Promise(async (resolve, reject) => {
       if (!this.#connected) {
-        reject("DeviceDisconnected");
+        reject('DeviceDisconnected');
         return;
       }
       await sleep(10); // writing clock logic.
       if (this.#fail(0.1)) {
-        reject("ClockWriteFailed");
+        reject('ClockWriteFailed');
         return;
       }
       this.#clock.setMillis(clock.millis());
@@ -305,11 +307,11 @@ export class SpectodaDummyConnector {
   // returns a TimeTrack clock object that is synchronized with the internal clock
   // of the device as precisely as possible
   getClock() {
-    logging.verbose(`getClock()`);
+    logging.verbose('getClock()');
 
     return new Promise(async (resolve, reject) => {
       if (!this.#connected) {
-        reject("DeviceDisconnected");
+        reject('DeviceDisconnected');
         return;
       }
 
@@ -318,7 +320,7 @@ export class SpectodaDummyConnector {
 
       await sleep(50); // reading clock logic.
       if (this.#fail(0.1)) {
-        reject("ClockReadFailed");
+        reject('ClockReadFailed');
         return;
       }
 
@@ -334,44 +336,44 @@ export class SpectodaDummyConnector {
 
     return new Promise(async (resolve, reject) => {
       if (!this.#connected) {
-        reject("DeviceDisconnected");
+        reject('DeviceDisconnected');
         return;
       }
-      this.#interfaceReference.emit("ota_status", "begin");
+      this.#interfaceReference.emit('ota_status', 'begin');
       await sleep(10000); // preparing FW logic.
       if (this.#fail(0.1)) {
-        this.#interfaceReference.emit("ota_status", "fail");
-        reject("UpdateFailed");
+        this.#interfaceReference.emit('ota_status', 'fail');
+        reject('UpdateFailed');
         return;
       }
       for (let i = 1; i <= 100; i++) {
-        this.#interfaceReference.emit("ota_progress", i);
+        this.#interfaceReference.emit('ota_progress', i);
         await sleep(25); // writing FW logic.
         if (this.#fail(0.01)) {
-          this.#interfaceReference.emit("ota_status", "fail");
-          reject("UpdateFailed");
+          this.#interfaceReference.emit('ota_status', 'fail');
+          reject('UpdateFailed');
           return;
         }
       }
       await sleep(1000); // finishing FW logic.
       if (this.#fail(0.1)) {
-        this.#interfaceReference.emit("ota_status", "fail");
-        reject("UpdateFailed");
+        this.#interfaceReference.emit('ota_status', 'fail');
+        reject('UpdateFailed');
         return;
       }
-      this.#interfaceReference.emit("ota_status", "success");
+      this.#interfaceReference.emit('ota_status', 'success');
       resolve();
     });
   }
 
   cancel() {
-    logging.verbose(`cancel()`);
+    logging.verbose('cancel()');
 
     // NOP
   }
 
   destroy() {
-    logging.verbose(`destroy()`);
+    logging.verbose('destroy()');
 
     return this.disconnect()
       .catch(() => {})

@@ -1,4 +1,4 @@
-import { logging } from "./logging";
+import { logging } from './logging';
 
 export class TnglReader {
   #dataView: DataView;
@@ -12,16 +12,17 @@ export class TnglReader {
   // TODO optimize and test this function
   peekValue(byteCount: number, unsigned = true) {
     if (byteCount > 8) {
-      logging.error("peekValue(): ByteCountOutOfRange byteCount=", byteCount);
-      throw new RangeError("ByteCountOutOfRange");
+      logging.error('peekValue(): ByteCountOutOfRange byteCount=', byteCount);
+      throw new RangeError('ByteCountOutOfRange');
     }
 
     if (this.#index + byteCount > this.#dataView.byteLength) {
-      console.error("peekValue(): ReadOutOfRange index=", this.#index, "byteCount=", byteCount, "byteLength=", this.#dataView.byteLength);
-      throw new RangeError("ReadOutOfRange");
+      console.error('peekValue(): ReadOutOfRange index=', this.#index, 'byteCount=', byteCount, 'byteLength=', this.#dataView.byteLength);
+      throw new RangeError('ReadOutOfRange');
     }
 
     let value = 0n;
+
     for (let i = byteCount; i > 0; i--) {
       value <<= 8n;
       value |= BigInt(this.#dataView.getUint8(this.#index + i - 1));
@@ -36,9 +37,9 @@ export class TnglReader {
     }
 
     if (result > BigInt(Number.MAX_SAFE_INTEGER) || result < BigInt(Number.MIN_SAFE_INTEGER)) {
-      logging.error("peekValue(): Value is outside of safe integer range");
+      logging.error('peekValue(): Value is outside of safe integer range');
       // TODO handle this error better than loosing precision in conversion to Number
-      throw new RangeError("ValueOutOfRange");
+      throw new RangeError('ValueOutOfRange');
     }
 
     return Number(result);
@@ -47,17 +48,18 @@ export class TnglReader {
   readValue(byteCount: number, unsigned: boolean) {
     try {
       const val = this.peekValue(byteCount, unsigned);
+
       this.forward(byteCount);
       return val;
     } catch {
-      console.error("readValue(): ReadOutOfRange index=", this.#index, "byteCount=", byteCount, "byteLength=", this.#dataView.byteLength);
-      throw "ReadOutOfRange";
+      console.error('readValue(): ReadOutOfRange index=', this.#index, 'byteCount=', byteCount, 'byteLength=', this.#dataView.byteLength);
+      throw 'ReadOutOfRange';
     }
   }
 
   readBytes(byteCount: number) {
     if (this.#index + byteCount <= this.#dataView.byteLength) {
-      let bytes = [];
+      const bytes = [];
 
       for (let i = 0; i < byteCount; i++) {
         bytes.push(this.#dataView.getUint8(this.#index + i));
@@ -67,18 +69,19 @@ export class TnglReader {
 
       return bytes;
     } else {
-      console.error("readBytes(): ReadOutOfRange index=", this.#index, "byteCount=", byteCount, "byteLength=", this.#dataView.byteLength);
-      throw "ReadOutOfRange";
+      console.error('readBytes(): ReadOutOfRange index=', this.#index, 'byteCount=', byteCount, 'byteLength=', this.#dataView.byteLength);
+      throw 'ReadOutOfRange';
     }
   }
 
   readString(byteCount: number) {
     if (this.#index + byteCount <= this.#dataView.byteLength) {
-      let string = "";
+      let string = '';
       let endOfTheString = false;
 
       for (let i = 0; i < byteCount; i++) {
-        let charCode = this.#dataView.getUint8(this.#index + i);
+        const charCode = this.#dataView.getUint8(this.#index + i);
+
         if (charCode === 0) {
           endOfTheString = true;
         }
@@ -91,8 +94,8 @@ export class TnglReader {
 
       return string;
     } else {
-      console.error("readString(): ReadOutOfRange index=", this.#index, "byteCount=", byteCount, "byteLength=", this.#dataView.byteLength);
-      throw "ReadOutOfRange";
+      console.error('readString(): ReadOutOfRange index=', this.#index, 'byteCount=', byteCount, 'byteLength=', this.#dataView.byteLength);
+      throw 'ReadOutOfRange';
     }
   }
 
