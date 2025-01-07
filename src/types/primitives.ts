@@ -2,32 +2,31 @@
 import { VALUE_TYPE } from '../constants'
 
 export namespace SpectodaTypes {
-  type criteria_generic = {
-    connector?: string
-    mac?: string
-    name?: string
-    nameprefix?: string
-    network?: string
-    fw?: string
-    product?: number
-    commisionable?: boolean
-  }
+  type criteria_generic = Partial<{
+    connector: string
+    mac: string
+    name: string
+    nameprefix: string
+    network: string
+    fw: string
+    product: number
+    commisionable: boolean
+  }>
 
   type criteria_ble = criteria_generic
 
-  type criteria_serial =
-    | criteria_generic
-    | {
-        path?: string
-        manufacturer?: string
-        serialNumber?: string
-        pnpId?: string
-        locationId?: string
-        productId?: string
-        vendorId?: string
-        baudrate?: number
-        baudRate?: number
-      }
+  type criteria_serial = criteria_generic &
+    Partial<{
+      path: string
+      manufacturer: string
+      serialNumber: string
+      pnpId: string
+      locationId: string
+      productId: string
+      vendorId: string
+      baudrate: number
+      baudRate: number
+    }>
 
   type criteria_dummy = criteria_generic
 
@@ -123,84 +122,84 @@ export namespace SpectodaTypes {
   export type IDs = ID | ID[]
 
   /**
-   * Represents detailed information about a controller, including both 
+   * Represents detailed information about a controller, including both
    * connection criteria and additional metadata.
    */
   export type ControllerInfo = {
-    /** 
+    /**
      * @group ConnectionCriteria
      * @description A human-readable label identifying the controller.
      */
-    controllerLabel: string;
+    controllerLabel: string
 
-    /** 
+    /**
      * @group ConnectionCriteria
      * @description Numeric code representing the product type or model.
      */
-    productCode: number;
+    productCode: number
 
-    /** 
+    /**
      * @group ConnectionCriteria
      * @description The MAC address associated with the controller.
      */
-    macAddress: string;
+    macAddress: string
 
-    /** 
+    /**
      * @group ConnectionCriteria
      * @description Firmware version currently installed on the controller.
      */
-    fwVersion: string;
+    fwVersion: string
 
-    /** 
+    /**
      * @group ConnectionCriteria
      * @description Unique signature identifying the network configuration. Provided as a hexstring.
      */
-    networkSignature: string;
+    networkSignature: string
 
-    /** 
+    /**
      * @group ConnectionCriteria
      * @description Indicates if the controller is commissionable.
      */
-    commissionable: boolean;
+    commissionable: boolean
 
-    /** 
+    /**
      * The full name or identifier of the controller.
      */
-    fullName: string;
+    fullName: string
 
-    /** 
+    /**
      * Code representing the PCB (Printed Circuit Board) version.
      */
-    pcbCode: number;
+    pcbCode: number
 
-    /** 
+    /**
      * Full version information of the firmware.
      */
-    fwVersionFull: string;
+    fwVersionFull: string
 
-    /** 
+    /**
      * Numeric representation of the firmware version.
      */
-    fwVersionCode: number;
+    fwVersionCode: number
 
-    /** 
+    /**
      * Unix timestamp indicating the firmware compilation date and time.
      */
-    fwCompilationUnixTimestamp: number;
+    fwCompilationUnixTimestamp: number
 
-    /** 
+    /**
      * SHA256 hash of uploaded tnglBytes stored inside the Controller. Provided as a hexstring.
      */
-    tnglFingerprint: string;
+    tnglFingerprint: string
 
-    /** 
+    /**
      * Fingerprint identifying the event store state or version. Provided as a hexstring.
      */
-    eventStoreFingerprint: string;
+    eventStoreFingerprint: string
 
-    /** 
+    /**
      * Fingerprint identifying the configuration state or version. Provided as a hexstring.
      */
-    configFingerprint: string;
-  };
+    configFingerprint: string
+  }
 }
