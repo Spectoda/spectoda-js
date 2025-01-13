@@ -918,15 +918,17 @@ export class TnglCompiler {
         break
 
       // === events ===
-      case 'catchEvent':
-        this.#tnglWriter.writeFlag(TNGL_FLAGS.EVENT_CATCHER)
-        break
+      case 'catchEvent': // ! deprecate in 0.13
+      case 'onEventStateSet':
+        this.#tnglWriter.writeFlag(TNGL_FLAGS.EVENT_CATCHER);
+        break;
       case 'setValue':
-        this.#tnglWriter.writeFlag(TNGL_FLAGS.EVENT_SET_VALUE)
-        break
-      case 'emitAs':
-        this.#tnglWriter.writeFlag(TNGL_FLAGS.EVENT_EMIT_LOCAL)
-        break
+        this.#tnglWriter.writeFlag(TNGL_FLAGS.EVENT_SET_VALUE);
+        break;
+      case 'emitAs': // ! deprecate in 0.13
+      case 'setEventState':
+        this.#tnglWriter.writeFlag(TNGL_FLAGS.EVENT_EMIT_LOCAL);
+        break;
       case 'randomChoice':
         this.#tnglWriter.writeFlag(TNGL_FLAGS.EVENT_RANDOM_CHOICE)
         break
