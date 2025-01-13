@@ -1,6 +1,20 @@
 import { SpectodaTypes } from '../types/primitives'
 
-/** @deprecated use `VALUE_TYPE` from `spectoda-js/constants/values` instead. */
+/**
+ * Value type constants for reference
+ *
+ *  0 => UNDEFINED         -> undefined
+ *  1 => NULL              -> null
+ *  2 => BOOLEAN           -> true / false
+ * 19 => PIXELS            -> unit: px, integer only (e.g. 42.2 => 42px)
+ * 26 => COLOR             -> "rrggbb" / "#rrggbb" (lowercased, "#" optional)
+ * 28 => DATE              -> "YYYY-MM-DD"  (left as-is)
+ * 29 => NUMBER            -> generic number, integer only (e.g. 123.45 => 123)
+ * 30 => PERCENTAGE        -> unit: %, allows floating points (e.g. -20.34 => -20.34%)
+ * 31 => LABEL             -> "label" / TODO "$label" (string only, TODO "$" optional)
+ * 32 => TIME              -> unit ms, integer only (e.g. 1234.5 => 1234ms)
+ */
+
 export const VALUE_TYPE = Object.freeze({
   NUMBER: 29,
   LABEL: 31,

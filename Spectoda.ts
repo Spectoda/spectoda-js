@@ -940,17 +940,18 @@ export class Spectoda implements SpectodaClass {
    * Preprocesses TNGL code by handling API injections, removing comments, minifying BERRY code, replacing specific patterns within BERRY code, and handling #define statements.
    * Happens
    *
-   * @param {string} tngl_code - The TNGL code as a string.
-   * @returns {string} - The preprocessed TNGL code.
+   * @param tngl_code The TNGL code as a string.
+   * @returns The preprocessed TNGL code.
    */
   async preprocessTngl(tngl_code: string) {
     logging.verbose(`preprocessTngl(tngl_code=${tngl_code})`)
 
     /**
      * Helper function to parse timestamp strings and convert them to total milliseconds/tics.
+     * TODO move this function to some kind of utils?
      *
-     * @param {string} value - The timestamp string (e.g., "1.2d+9h2m7.2s-123t").
-     * @returns {number} - The total time in milliseconds/tics.
+     * @param value The timestamp string (e.g., "1.2d+9h2m7.2s-123t").
+     * @returns The total time in milliseconds/tics.
      */
     function computeTimestamp(value: string): number {
       if (!value) {
@@ -1009,9 +1010,10 @@ export class Spectoda implements SpectodaClass {
 
     /**
      * Helper function to minify BERRY code by removing # comments, specific patterns, and unnecessary whitespace.
+     * TODO move this function to some kind of utils?
      *
-     * @param {string} berryCode - The BERRY code to minify.
-     * @returns {string} - The minified BERRY code.
+     * @param berryCode The BERRY code to minify.
+     * @returns The minified BERRY code.
      */
     function preprocessBerry(berryCode: string): string {
       let minified = berryCode
@@ -1382,9 +1384,10 @@ export class Spectoda implements SpectodaClass {
     /**
      * Helper function to remove single-line (// ...) and multi-line () comments
      * from non-BERRY code segments.
+     * TODO move this function to some kind of utils?
      *
-     * @param {string} code - The code segment to clean.
-     * @returns {string} - The code without // and  comments.
+     * @param code The code segment to clean.
+     * @returns The code without // and  comments.
      */
     function removeNonBerryComments(code: string): string {
       const commentRegex = /\/\/.*|\/\*[\S\s]*?\*\//g
