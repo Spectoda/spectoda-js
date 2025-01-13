@@ -947,6 +947,56 @@ export class Spectoda implements SpectodaClass {
     logging.verbose(`preprocessTngl(tngl_code=${tngl_code})`)
 
     /**
+     * Formats a value according to its type for TNGL usage.
+     * TODO move this function to some kind of utils?
+     *
+     * @param type The numeric type code
+     * @param rawValue The raw value as given in the event
+     * @returns The correctly formatted TNGL-compatible string
+     */
+    function formatValue(type: SpectodaTypes.ValueType, rawValue: any) {
+      switch (type) {
+        case VALUE_TYPE.COLOR: {
+          // Ensure a leading "#" and normalize to lowercase
+          // e.g. "bf1d1d" -> "#bf1d1d"
+          //      "#00FF0a" -> "#00ff0a"
+          const colorStr = String(rawValue).replace(/^#/, '').toLowerCase()
+          return `#${colorStr}`
+        }
+        case VALUE_TYPE.LABEL:
+          // e.g. "evt" -> "$evt"
+          return `$${rawValue}`
+        case VALUE_TYPE.PERCENTAGE:
+          // Keep floating points, e.g. -20.34 => "-20.34%"
+          // parseFloat to ensure a valid numeric string (but keep decimals if present)
+          return `${parseFloat(rawValue)}%`
+        case VALUE_TYPE.TIME:
+          // No floating points; parse as integer, then add "ms"
+          // e.g. 1000.123 => "1000ms"
+          return `${parseInt(rawValue, 10)}ms`
+        case VALUE_TYPE.NULL:
+          return `null`
+        case VALUE_TYPE.UNDEFINED:
+          return `undefined`
+        case VALUE_TYPE.BOOLEAN:
+          // e.g. true => "true", false => "false"
+          return String(rawValue)
+        case VALUE_TYPE.PIXELS:
+          // No floating points; parse as integer, then add "px"
+          return `${parseInt(rawValue, 10)}px`
+        case VALUE_TYPE.NUMBER:
+          // No floating points; parse as integer
+          return String(parseInt(rawValue, 10))
+        case VALUE_TYPE.DATE:
+          // Leave the date string as-is, e.g. "2023-09-21"
+          return String(rawValue)
+        default:
+          // Fallback for any unrecognized type
+          return String(rawValue)
+      }
+    }
+
+    /**
      * Helper function to parse timestamp strings and convert them to total milliseconds/tics.
      * TODO move this function to some kind of utils?
      *
@@ -1382,6 +1432,71 @@ export class Spectoda implements SpectodaClass {
     }
 
     /**
+     * Converts an array of event objects to TNGL chains, grouped by `id`.
+     * TODO move this function to some kind of utils?
+     *
+     * Output:
+     *   - One chain per ID, each beginning with `onEventStateSet<IDxxx>($sceneName)`.
+     *   - For each event:
+     *       * If type/value differs from the previous event, emit `.setValue(formattedValue)`.
+     *       * Then emit `.setEventState($label)`.
+     *   - The events for each ID appear in the exact order encountered in the array.
+     *   - Final output orders IDs from largest to smallest.
+     *
+     * @param sceneName The name of the scene (for onEventStateSet<IDxxx>($sceneName))
+     * @param events The JSON array of events
+     *   Each event is an object: { type, value, id, label, timestamp }
+     * @returns The joined TNGL output (one chain per line)
+     */
+    function convertEventsToTnglChains(
+      sceneName: string,
+      events: SpectodaEvent[],
+    ) {
+      // Group events by ID while preserving their relative order
+      const eventsById: Record<number, SpectodaEvent[]> = {}
+      for (const evt of events) {
+        if (!eventsById[evt.id]) {
+          eventsById[evt.id] = []
+        }
+        eventsById[evt.id].push(evt)
+      }
+
+      // Sort IDs descending
+      const sortedIds = Object.keys(eventsById)
+        .map((id) => parseInt(id, 10))
+        .sort((a, b) => b - a)
+
+      // Build one chain per ID (descending ID order)
+      const chains = sortedIds.map((id) => {
+        const eventList = eventsById[id]
+        let chain = `onEventStateSet<ID${id}>($${sceneName})`
+
+        let lastType = null
+        let lastValue = null
+
+        for (const e of eventList) {
+          const currentFormattedValue = formatValue(e.type, e.value)
+
+          // If (type, value) changed from last time, setValue
+          if (e.type !== lastType || e.value !== lastValue) {
+            chain += `.setValue(${currentFormattedValue})`
+            lastType = e.type
+            lastValue = e.value
+          }
+
+          // Always setEventState($label) after setValue
+          chain += `.setEventState($${e.label})`
+        }
+
+        chain += `;`
+        return chain
+      })
+
+      // Return all chains, separated by newlines
+      return chains.join('\n')
+    }
+
+    /**
      * Helper function to remove single-line (// ...) and multi-line () comments
      * from non-BERRY code segments.
      * TODO move this function to some kind of utils?
@@ -1555,6 +1670,38 @@ export class Spectoda implements SpectodaClass {
     }
 
     logging.debug(tngl_code)
+
+    // Handle SCENE declarations
+    {
+      // Regular expression to find all SCENE("name"|$name, [IDxxx,] `[...]`) segments
+      const regexSCENE =
+        /SCENE\s*\(\s*(?:"([^"]*)"|(\$\w+))\s*(?:,\s*ID(\d+))?\s*,\s*`\[([^]*?)\]`\s*\)\s*;?/g
+      let match
+
+      while ((match = regexSCENE.exec(tngl_code)) !== null) {
+        const sceneName = match[1] || match[2] // match[1] for quoted string, match[2] for $variable
+        const sceneId = match[3] // Will be undefined if no ID was provided
+        // Clean up the JSON string by removing trailing commas before the closing bracket
+        const eventsJson = `[${match[4].replace(/,(\s*\])/g, '$1')}]`
+
+        try {
+          // Parse the JSON array of events
+          const events = JSON.parse(eventsJson)
+
+          // Convert events to TNGL chains using existing function
+          const tnglChains = convertEventsToTnglChains(
+            sceneName.replace(/^\$/, ''),
+            events,
+          )
+
+          // Replace the SCENE declaration with the generated TNGL chains
+          tngl_code = tngl_code.replace(match[0], tnglChains)
+        } catch (e) {
+          logging.error(`Failed to parse SCENE "${sceneName}"`, e)
+          throw 'InvalidSceneFormat'
+        }
+      }
+    }
 
     return tngl_code
   }
