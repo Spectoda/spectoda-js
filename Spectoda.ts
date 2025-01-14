@@ -3869,6 +3869,13 @@ export class Spectoda implements SpectodaClass {
     return this.runtime.registerDeviceContext(id)
   }
 
+  /**
+   * Gets the current state of events for the specified IDs. The resulting JSON event array
+   * represents a scene that can be later applied by calling emitEvents().
+   *
+   * @param ids - Single ID or array of device IDs to get events for
+   * @returns Array of events representing the current scene state
+   */
   getEmittedEvents(ids: SpectodaTypes.IDs) {
     logging.verbose('getEmittedEvents(ids=', ids, ')')
 
@@ -3928,7 +3935,7 @@ export class Spectoda implements SpectodaClass {
           }
         }
 
-        logging.warn('#__events', this.#__events)
+        logging.verbose('#__events', this.#__events)
       },
     )
 
@@ -3951,7 +3958,15 @@ export class Spectoda implements SpectodaClass {
         // Step 2: Sort the events by timestamp
         events.sort((a, b) => a.timestamp - b.timestamp)
 
-        return JSON.stringify(events) // need to stringify because of deleting references to objects
+        const eventsJson =
+          `[\n` +
+          events.map((event) => JSON.stringify(event)).join(`,\n`) +
+          `\n]`
+
+        logging.info('> Events:', eventsJson)
+
+        // Stringify with formatting to put objects on separate lines
+        return eventsJson
       })
       .finally(() => {
         unregisterListenerEmittedevents()
@@ -3959,6 +3974,32 @@ export class Spectoda implements SpectodaClass {
       })
   }
 
+  /**
+   * Emits events to the Spectoda network. This function is used to apply Scenes.
+   * As Scenes are just a list of events, this function is used to apply them.
+   *
+   * @remarks
+   * The following event value types are not yet implemented:
+   * - number (VALUE_TYPE.NUMBER)
+   * - date (VALUE_TYPE.DATE)
+   * - pixels (VALUE_TYPE.PIXELS)
+   * - boolean/bool (VALUE_TYPE.BOOLEAN)
+   *
+   * Currently implemented types:
+   * - label (VALUE_TYPE.LABEL)
+   * - timestamp/time (VALUE_TYPE.TIME)
+   * - percentage (VALUE_TYPE.PERCENTAGE)
+   * - color (VALUE_TYPE.COLOR)
+   * - none/null (VALUE_TYPE.NULL)
+   *
+   * @param events - Array of events or single event to emit
+   * @param events[].label - Event label/name
+   * @param events[].type - Event value type (string or ValueType enum)
+   * @param events[].value - Event value (null, string, number or boolean)
+   * @param events[].id - Event ID
+   * @param events[].timestamp - Event timestamp
+   * @returns Promise that resolves when events are emitted
+   */
   emitEvents(
     events:
       | SpectodaEvent[]
@@ -3991,15 +4032,29 @@ export class Spectoda implements SpectodaClass {
       events = [events]
     }
 
+    // NUMBER: 29,
+    // LABEL: 31,
+    // TIME: 32,
+    // PERCENTAGE: 30,
+    // DATE: 28,
+    // COLOR: 26,
+    // PIXELS: 19,
+    // BOOLEAN: 2,
+    // NULL: 1,
+    // UNDEFINED: 0,
+
+    // TODO! add all the event types
+
     for (const event of events) {
       switch (event.type) {
+        // TODO
         // case "number":
-        // case VALUE_TYPE.NUMBER:
-        //   this.emitNumber(event.label, event.value, event.id);
+        // case VALUE_TYPE.NUMBER: {
+        //   this.emitNumber(event.label, event.value as number, event.id);
         //   break;
+        // }
         case 'label':
         case VALUE_TYPE.LABEL: {
-          // todo @immakermatty replace depreacted events
           this.emitLabel(event.label, event.value as string, event.id)
           break
         }
@@ -4014,21 +4069,32 @@ export class Spectoda implements SpectodaClass {
           this.emitPercentage(event.label, event.value as number, event.id)
           break
         }
-        // case VALUE_TYPE.DATE:
-        //   this.emitDateEvent(event.label, event.value, event.id);
+        // TODO
+        // case 'date':
+        // case VALUE_TYPE.DATE: {
+        //   this.emitDate(event.label, event.value as string, event.id);
         //   break;
+        // }
         case 'color':
         case VALUE_TYPE.COLOR: {
           this.emitColor(event.label, event.value as string, event.id)
           break
         }
-        // case VALUE_TYPE.PIXELS:
-        //   this.emitPixelsEvent(event.label, event.value, event.id);
+        // TODO
+        // case "pixels":
+        // case VALUE_TYPE.PIXELS: {
+        //   this.emitPixels(event.label, event.value as number, event.id);
         //   break;
-        // case VALUE_TYPE.BOOLEAN:
-        //   this.emitBoolEvent(event.label, event.value, event.id);
+        // }
+        // TODO
+        // case "boolean":
+        // case "bool":
+        // case VALUE_TYPE.BOOLEAN: {
+        //   this.emitBoolean(event.label, event.value as boolean, event.id);
         //   break;
+        // }
         case 'none':
+        case 'null':
         case VALUE_TYPE.NULL: {
           this.emitEvent(event.label, event.id)
           break
