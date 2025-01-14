@@ -169,7 +169,7 @@ const TNGL_FLAGS = Object.freeze({
   CONST_BOOLEAN_TRUE: 224,
   CONST_BOOLEAN_FALSE: 225,
   CONST_NULL: 226,
-
+  CONST_UNDEFINED: 227,
   // ======================
 
   PARAMETERS_MAP: 250,
@@ -248,9 +248,9 @@ export class TnglCompiler {
         this.compileColor(element.token)
         break
 
-      case TnglCompiler.PARSES.INFINITY_F:
-        this.compileInfinity(element.token)
-        break
+      case TnglCompiler.PARSES.LINERALS_F:
+        this.compileLinerals(element.token);
+        break;
 
       // case TnglCompiler.PARSES.STRING_G:
       //   this.compileString(element.token);
@@ -397,25 +397,40 @@ export class TnglCompiler {
     this.#tnglWriter.writeFlag(TNGL_FLAGS.NONE)
   }
 
-  // // takes template literal string as '`this is a template literal`'
-  // compileTemplateLiteral(template_literal) {
-  //   throw "Not implemented";
-  // }
-
-  compileInfinity(infinity) {
-    let reg = infinity.match(/([+-]?Infinity)/)
-
-    if (!reg) {
-      logging.error('Failed to compile a infinity')
-      return
+  /**
+   * Compiles linerals (literals) like Infinity, booleans, null and undefined into TNGL flags
+   * @param {string} linerals - The literal value to compile
+   * @returns {void}
+   */
+  compileLinerals(linerals) {
+    // Handle Infinity values
+    let infinityMatch = linerals.match(/([+-]?Infinity)/);
+    if (infinityMatch) {
+      if (infinityMatch[1] === 'Infinity' || infinityMatch[1] === '+Infinity') {
+        this.#tnglWriter.writeFlag(TNGL_FLAGS.CONST_TIMESTAMP_INFINITY);
+        return;
+      } else if (infinityMatch[1] === '-Infinity') {
+        this.#tnglWriter.writeFlag(TNGL_FLAGS.CONST_TIMESTAMP_MINUS_INFINITY);
+        return;
+      }
     }
 
-    if (reg[1] === 'Infinity' || reg[1] === '+Infinity') {
-      this.#tnglWriter.writeFlag(TNGL_FLAGS.CONST_TIMESTAMP_INFINITY)
-    } else if (reg[1] === '-Infinity') {
-      this.#tnglWriter.writeFlag(TNGL_FLAGS.CONST_TIMESTAMP_MINUS_INFINITY)
-    } else {
-      logging.error('Error while compiling infinity')
+    // Handle boolean and null values
+    switch (linerals) {
+      case 'true':
+        this.#tnglWriter.writeFlag(TNGL_FLAGS.CONST_BOOLEAN_TRUE);
+        break;
+      case 'false': 
+        this.#tnglWriter.writeFlag(TNGL_FLAGS.CONST_BOOLEAN_FALSE);
+        break;
+      case 'null':
+        this.#tnglWriter.writeFlag(TNGL_FLAGS.CONST_NULL);
+        break;
+      case 'undefined':
+        this.#tnglWriter.writeFlag(TNGL_FLAGS.CONST_UNDEFINED);
+        break;
+      default:
+        logging.error('Failed to compile literal:', linerals);
     }
   }
 
@@ -1184,7 +1199,7 @@ export class TnglCompiler {
     CONST_C: 'C',
     COMMENT_D: 'D',
     COLOR_E: 'E',
-    INFINITY_F: 'F',
+    LINERALS_F: 'F',
     // STRING_G: "G",
     ADDRESS_H: 'H',
     TIME_I: 'I',
@@ -1211,7 +1226,7 @@ export class TnglCompiler {
     V: /\{(?:\s*ID\d+\s*:\s*[^,{}]+(?:,\s*ID\d+\s*:\s*[^,{}]+)*\s*)\}/, // parameter in format "{ IDxxx: yyyy, IDxxx: yyyy }",
     U: /^(?:[0-9A-F]{2}:){5}[0-9A-F]{2}$/i, // mac address
     E: /#[0-9a-f]{6}/i, // color: /#[0-9a-f]{6}/i,
-    F: /[+-]?Infinity/, // +-Infinity
+    F: /(?:[+-]?Infinity|true|false|null|undefined)/, // +-Infinity, true, false, null, undefined
     // G: /"[\w ]*"/,
     H: /&[a-z_][\w]*/i, // value address: /&[a-z_][\w]*/i,
     I: /_?[+-]?(?:\d+\.\d+|\d+)(?:d|h|m(?!s)|s|t|ms)/, //timestamp: /(_?[+-]?[0-9]*[.]?[0-9]+(d|h|m(?!s)|s|t|ms))+/,
