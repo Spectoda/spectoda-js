@@ -1134,9 +1134,16 @@ export class TnglCompiler {
     // TODO: Get bytes in WASM and then only send Berry bytecode
 
     // BERRY(`...`)
-    let code = berry.slice(7, -2)
+    const berryMatch = berry.match(/^BERRY\s*\(\s*`([\s\S]*)`\s*\)$/);
+    if (!berryMatch) {
+      logging.error('Invalid Berry script format! Expected BERRY(`...`). Received:', berry);
+      return;
+    }
+    const code = berryMatch[1];
+    logging.info('Berry script:', code);
 
-    const bytes = new TextEncoder().encode(code)
+    const bytes = new TextEncoder().encode(code);
+    logging.info('Berry script bytes:', bytes);
 
     this.#tnglWriter.writeFlag(TNGL_FLAGS.BERRY_SCRIPT)
     this.#tnglWriter.writeUint16(bytes.length)
