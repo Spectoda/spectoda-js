@@ -548,7 +548,7 @@ export class SpectodaRuntime {
     if (desired_connector.includes('bluetooth')) {
       if (detectSpectodaConnect()) {
         choosen_connector = 'flutterbluetooth';
-      } else if ((detectAndroid() && detectChrome()) || (detectMacintosh() && detectChrome()) || (detectWindows() && detectChrome()) || (detectLinux() && detectChrome())) {
+      } else if (detectChrome()) {
         choosen_connector = 'webbluetooth';
       } else if (detectNode()) {
         choosen_connector = 'nodebluetooth';
@@ -560,7 +560,7 @@ export class SpectodaRuntime {
     else if (desired_connector.includes('serial')) {
       if (detectNode()) {
         choosen_connector = 'nodeserial';
-      } else if ((detectMacintosh() && detectChrome()) || (detectWindows() && detectChrome()) || (detectLinux() && detectChrome())) {
+      } else if (detectChrome()) {
         choosen_connector = 'webserial';
       } else {
         throw 'UnsupportedConnectorPlatform';
