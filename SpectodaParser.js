@@ -816,8 +816,11 @@ export class TnglCompiler {
         this.#tnglWriter.writeFlag(TNGL_FLAGS.ANIMATION_COLOR_GRADIENT4)
         break
       case 'animColorGradient5':
-        this.#tnglWriter.writeFlag(TNGL_FLAGS.ANIMATION_COLOR_GRADIENT5)
-        break
+        this.#tnglWriter.writeFlag(TNGL_FLAGS.ANIMATION_COLOR_GRADIENT5);
+        break;
+      case 'animStream':
+        this.#tnglWriter.writeFlag(TNGL_FLAGS.ANIMATION_STREAM);
+        break;
 
       case 'applyReorder':
         this.#tnglWriter.writeFlag(TNGL_FLAGS.MUTATOR_REORDER)
