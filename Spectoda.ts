@@ -92,7 +92,7 @@ export class Spectoda implements SpectodaClass {
   ) {
     this.#parser = new TnglCodeParser()
 
-    this.#uuidCounter = Math.floor(Math.random() * 0xFFFFFFFF)
+    this.#uuidCounter = Math.floor(Math.random() * 0xffffffff)
 
     this.#ownerSignature = NO_NETWORK_SIGNATURE
     this.#ownerKey = NO_NETWORK_KEY
@@ -2321,7 +2321,7 @@ export class Spectoda implements SpectodaClass {
             removed_device_mac = Array.from(
               removed_device_mac_bytes,
               function (byte) {
-                return ('0' + (byte & 0xFF).toString(16)).slice(-2)
+                return ('0' + (byte & 0xff).toString(16)).slice(-2)
               },
             ).join(':')
           }
@@ -2452,7 +2452,7 @@ export class Spectoda implements SpectodaClass {
       logging.verbose(`fingerprint=${fingerprint}`)
       logging.verbose(
         `fingerprint=${[...fingerprint]
-          .map((byte) => ('0' + (byte & 0xFF).toString(16)).slice(-2))
+          .map((byte) => ('0' + (byte & 0xff).toString(16)).slice(-2))
           .join(',')}`,
       )
 
@@ -2872,7 +2872,7 @@ export class Spectoda implements SpectodaClass {
           const device_mac_bytes = reader.readBytes(6)
 
           device_mac = Array.from(device_mac_bytes, function (byte) {
-            return ('0' + (byte & 0xFF).toString(16)).slice(-2)
+            return ('0' + (byte & 0xff).toString(16)).slice(-2)
           }).join(':')
         }
 
@@ -3070,13 +3070,43 @@ export class Spectoda implements SpectodaClass {
    * TODO: This is not really a "FW communication feature", should be moved to another file ("FlutterBridge?""). Spectoda.JS should take care only of the communication with the device.
    */
   hideHomeButton() {
+    return this.setHomeVisible(false)
+  }
+
+  /**
+   * Shows the home button on the Flutter Spectoda Connect:
+   * TODO: This is not really a "FW communication feature", should be moved to another file ("FlutterBridge?""). Spectoda.JS should take care only of the communication with the device.
+   */
+  showHomeButton() {
+    return this.setHomeVisible(true)
+  }
+
+  /**
+   * Shows or hides the home button on the Flutter Spectoda Connect:
+   * TODO: This is not really a "FW communication feature", should be moved to another file ("FlutterBridge?""). Spectoda.JS should take care only of the communication with the device.
+   */
+  setHomeVisible(visible: boolean) {
     logging.debug('> Hiding home button...')
 
     if (!detectSpectodaConnect()) {
       return Promise.reject('PlatformNotSupported')
     }
 
-    return window.flutter_inappwebview.callHandler('hideHomeButton')
+    return window.flutter_inappwebview?.callHandler('setHomeVisible', visible)
+  }
+
+  /**
+   * Goes to the home screen on the Flutter Spectoda Connect:
+   * TODO: This is not really a "FW communication feature", should be moved to another file ("FlutterBridge?""). Spectoda.JS should take care only of the communication with the device.
+   */
+  goHome() {
+    logging.debug('> Going home...')
+
+    if (!detectSpectodaConnect()) {
+      return Promise.reject('PlatformNotSupported')
+    }
+
+    return window.flutter_inappwebview?.callHandler('goHome')
   }
 
   /**
@@ -3677,7 +3707,8 @@ export class Spectoda implements SpectodaClass {
 
         // Format MAC address
         const mac_address = Array.from(mac_bytes, (byte) =>
-          byte.toString(16).padStart(2, '0')).join(':')
+          byte.toString(16).padStart(2, '0'),
+        ).join(':')
 
         // Format fingerprints and signature as hex strings
         const network_signature_hex = uint8ArrayToHexString(network_signature)
@@ -3725,9 +3756,9 @@ export class Spectoda implements SpectodaClass {
 
           fullName: full_name,
           pcbCode: pcb_code,
-          fwVersionFull: fw_version_full,          
+          fwVersionFull: fw_version_full,
           fwVersionCode: fw_version_code,
-          fwCompilationUnixTimestamp: fw_compilation_unix_timestamp,          
+          fwCompilationUnixTimestamp: fw_compilation_unix_timestamp,
           tnglFingerprint: tngl_fingerprint_hex,
           eventStoreFingerprint: event_store_fingerprint_hex,
           configFingerprint: config_fingerprint_hex,
