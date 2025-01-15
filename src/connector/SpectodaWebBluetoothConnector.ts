@@ -939,7 +939,7 @@ export class SpectodaWebBluetoothConnector {
       return Promise.reject('DeviceNotSelected');
     }
 
-    const MINIMUM_CONNECT_TIMEOUT = 5000;
+    const MINIMUM_CONNECT_TIMEOUT = 10000;
     const effectiveTimeout = Math.max(timeout, MINIMUM_CONNECT_TIMEOUT);
 
     // Create a promise that rejects after the timeout

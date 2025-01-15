@@ -759,7 +759,7 @@ export class SpectodaWebSerialConnector {
                 reject('ResponseTimeout');
               });
           }
-        }, timeout + 1000);
+        }, timeout + 10000);
 
         try {
           await this.#writer?.write(new Uint8Array(header_writer.bytes.buffer));
