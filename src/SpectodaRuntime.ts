@@ -538,7 +538,7 @@ export class SpectodaRuntime {
     }
 
     if (desired_connector == 'default') {
-      if (detectGW()) {
+      if (detectGW() || (detectLinux() && detectChrome())) {
         desired_connector = 'serial';
       } else {
         desired_connector = 'bluetooth';

@@ -288,6 +288,7 @@ export function detectSpectodaConnect() {
 }
 
 const navigatorUserAgent = typeof navigator === 'undefined' ? '' : navigator.userAgent.toLowerCase();
+const navigatorUserAgentData = typeof navigator === 'undefined' ? {} : navigator.userAgentData;
 
 const androidDetected = navigatorUserAgent.includes('android');
 
@@ -313,7 +314,7 @@ export function detectWindows() {
   return windowsDetected;
 }
 
-const linuxDetected = navigatorUserAgent.includes('linux');
+const linuxDetected = navigatorUserAgentData?.platform === 'Linux';
 
 export function detectLinux() {
   return linuxDetected;
