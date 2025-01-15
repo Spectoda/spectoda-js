@@ -4,6 +4,7 @@ import {
   WEBSOCKET_CONNECTION_STATE,
   WebsocketConnectionState,
 } from './connect'
+import { ControllerErrors } from './errors'
 import { SpectodaEvent } from './event'
 import { SpectodaTypes } from './primitives'
 
@@ -67,6 +68,10 @@ type PropsMap = WebsocketConnectionStateProps &
     // TODO deprecate @immakermatty
     // TODO for future payload key: `log`
     'controller-log': string
+
+    // Error events
+    nodeerror: ControllerErrors
+    nodewarning: ControllerErrors
   }
 
 export const SpectodaAppEvents = {
