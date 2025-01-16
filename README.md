@@ -20,8 +20,8 @@ When multiple controllers have the same signature + key, they belong to the same
 # Getting started
 
 ```ts
-const spectoda = new Spectoda();
-spectoda.connect();
+const spectoda = new Spectoda()
+spectoda.connect()
 ```
 
 ---
@@ -92,12 +92,12 @@ The Interface is a Controller data processor that:
 #### Core Methods
 
 ```typescript
-interface.execute(command, grouping, timeout, ttl);
+interface.execute(command, grouping, timeout, ttl)
 // Handles queued execute commands
 // Merges commands with same grouping (spam protection)
 // Forwards merged commands to connected interfaces via sendExecute()
 
-interface.request(command, timeout);
+interface.request(command, timeout)
 // Handles queued request commands
 // Processes commands one by one at the interface
 ```
@@ -106,11 +106,11 @@ interface.request(command, timeout);
 
 ```typescript
 // Network-wide commands with synchronization guarantee mechanism (SGM)
-sendExecute(payload, size, timeout, ttl);
+sendExecute(payload, size, timeout, ttl)
 // Broadcasts to all controllers (delivery not guaranteed)
 
 // Controller-specific commands using acknowledgment-based delivery
-sendRequest(payload, size, timeout);
+sendRequest(payload, size, timeout)
 // Targets specific interface, can chain via MAC addresses
 // Can recursively request across all detected interfaces
 ```
@@ -119,14 +119,14 @@ sendRequest(payload, size, timeout);
 
 ```typescript
 // Create Spectoda instance with virtual MAC address
-let spectoda = new Spectoda();
+let spectoda = new Spectoda()
 
 // Connection methods
-let connection1 = spectoda.connect(); // default
-let connection2 = spectoda.connect.webbluetooth(); // Bluetooth
-let connection3 = spectoda.connect.webserial(); // Serial
+let connection1 = spectoda.connect() // default
+let connection2 = spectoda.connect.webbluetooth() // Bluetooth
+let connection3 = spectoda.connect.webserial() // Serial
 
-connection1.disconnect();
+connection1.disconnect()
 ```
 
 Note: Connections are managed through Connectors (like SCBLE and WEBUSB) which provide access to other Interfaces.
