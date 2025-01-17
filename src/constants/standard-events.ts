@@ -4,4 +4,4 @@ export const STANDARD_EVENT_LABELS = Object.freeze({
   COLOR: 'color',
   TEMPERATURE: 'tempe',
   ANIMATION: 'anima',
-})
+});
