@@ -201,7 +201,7 @@ export class SpectodaWebSerialConnector {
     this.#interfaceConnected = false;
     this.#disconnecting = false;
 
-    this.#timeoutMultiplier = 1.2;
+    this.#timeoutMultiplier = 4;
 
     this.#beginCallback = undefined;
     this.#feedbackCallback = undefined;
@@ -211,17 +211,26 @@ export class SpectodaWebSerialConnector {
   }
 
   userSelect(criterium_array: SpectodaTypes.Criterium[], timeout_number: number | typeof DEFAULT_TIMEOUT = DEFAULT_TIMEOUT): Promise<SpectodaTypes.Criterium | null> {
+    logging.debug('userSelect(criteria=' + JSON.stringify(criterium_array) + ', timeout=' + timeout_number + ')');
+
     if (timeout_number === DEFAULT_TIMEOUT) {
       timeout_number = 60000;
     }
 
     const criteria_json = JSON.stringify(criterium_array);
 
-    logging.verbose('userSelect(criteria=' + criteria_json + ')');
+    logging.debug('userSelect(criteria=' + criteria_json + ')');
 
     return new Promise(async (resolve, reject) => {
       try {
-        const port = await navigator.serial.requestPort({ filters: [] });
+        const port = await navigator.serial.requestPort({
+          filters: [
+            { usbVendorId: 0x0403, usbProductId: 0x6001 }, // FTDI
+            { usbVendorId: 0x1a86, usbProductId: 0x7523 }, // CH340
+            { usbVendorId: 0x10c4, usbProductId: 0xea60 }, // CP210x
+            { usbVendorId: 0x067b, usbProductId: 0x2303 }  // Prolific
+          ]
+        });
 
         this.#serialPort = port;
         this.#criteria = criterium_array;
@@ -234,6 +243,8 @@ export class SpectodaWebSerialConnector {
   }
 
   autoSelect(criterium_array: SpectodaTypes.Criterium[], scan_duration_number: number | typeof DEFAULT_TIMEOUT = DEFAULT_TIMEOUT, timeout_number: number | typeof DEFAULT_TIMEOUT = DEFAULT_TIMEOUT): Promise<SpectodaTypes.Criterium | null> {
+    logging.debug('autoSelect(criteria=' + JSON.stringify(criterium_array) + ', scan_duration=' + scan_duration_number + ', timeout=' + timeout_number + ')');
+    
     if (scan_duration_number === DEFAULT_TIMEOUT) {
       scan_duration_number = 1500;
     }
@@ -241,13 +252,13 @@ export class SpectodaWebSerialConnector {
       timeout_number = 5000;
     }
 
-    logging.verbose('autoSelect(criteria=' + JSON.stringify(criterium_array) + ', scan_duration=' + scan_duration_number + ', timeout=' + timeout_number + ')');
+    logging.debug('autoSelect(criteria=' + JSON.stringify(criterium_array) + ', scan_duration=' + scan_duration_number + ', timeout=' + timeout_number + ')');
 
     return new Promise(async (resolve, reject) => {
       try {
         const ports = await navigator.serial.getPorts();
 
-        logging.verbose('Available ports:', ports);
+        logging.debug('Available ports:', ports);
 
         if (ports.length === 0) {
           logging.warn('No previously selected ports available');
@@ -266,20 +277,21 @@ export class SpectodaWebSerialConnector {
   }
 
   selected(): Promise<SpectodaTypes.Criterium | null> {
-    logging.verbose('selected()');
+    logging.debug('selected()');
+
     return Promise.resolve(this.#serialPort ? { connector: this.type } : null);
   }
 
   unselect(): Promise<null> {
-    logging.verbose('unselect()');
+    logging.debug('unselect()');
 
     if (!this.#serialPort) {
-      logging.verbose('already unselected');
+      logging.debug('already unselected');
       return Promise.resolve(null);
     }
 
     if (this.#serialPort && this.#interfaceConnected) {
-      logging.verbose('disconnecting from unselect()');
+      logging.debug('disconnecting from unselect()');
       return this.disconnect().then(() => {
         return this.unselect();
       });
@@ -291,18 +303,18 @@ export class SpectodaWebSerialConnector {
     return Promise.resolve(null);
   }
 
-  scan(criterium_array: SpectodaTypes.Criterium[], scan_duration_number: number | typeof DEFAULT_TIMEOUT = DEFAULT_TIMEOUT): Promise<SpectodaTypes.Criterium[]> {
+  scan(criterium_array: SpectodaTypes.Criterium[], scan_duration_number: number | typeof DEFAULT_TIMEOUT = DEFAULT_TIMEOUT): Promise<SpectodaTypes.Criterium[]> {    
     if (scan_duration_number === DEFAULT_TIMEOUT) {
       scan_duration_number = 7000;
     }
 
-    logging.verbose('scan(criterium_array=' + JSON.stringify(criterium_array) + ', scan_duration_number=' + scan_duration_number + ')');
+    logging.debug('scan(criterium_array=' + JSON.stringify(criterium_array) + ', scan_duration_number=' + scan_duration_number + ')');
 
     return new Promise(async (resolve, reject) => {
       try {
         const ports = await navigator.serial.getPorts();
 
-        logging.verbose('ports=', ports);
+        logging.debug('ports=', ports);
         resolve(ports.map((port) => ({ connector: this.type, port })));
       } catch (error) {
         logging.error(error);
@@ -313,9 +325,9 @@ export class SpectodaWebSerialConnector {
 
   connect(timeout_number: number | typeof DEFAULT_TIMEOUT = DEFAULT_TIMEOUT): Promise<SpectodaTypes.Criterium> {
     if (timeout_number === DEFAULT_TIMEOUT) {
-      timeout_number = 60000;
+      timeout_number = 2500;
     }
-    logging.verbose(`connect(timeout_number=${timeout_number})`);
+    logging.debug(`connect(timeout_number=${timeout_number})`);
 
     if (timeout_number <= 0) {
       logging.warn('Connect timeout has expired');
@@ -340,7 +352,9 @@ export class SpectodaWebSerialConnector {
           return;
         }
 
+        logging.info('> Opening Serial...');
         await port.open(PORT_OPTIONS);
+        logging.debug('serial port opened');
 
         if (!port.readable || !port.writable) {
           logging.error('port.readable or port.writable == null');
@@ -348,16 +362,34 @@ export class SpectodaWebSerialConnector {
           return;
         }
 
-        // Flush the serial buffer
+        // Flush the serial buffer with timeout
         try {
+          logging.info('> Flushing Serial...');
           const tempReader = port.readable.getReader();
-
-          await tempReader.read();
-          await tempReader.cancel();
-          tempReader.releaseLock();
-          logging.verbose('Serial buffer flushed.');
+          
+          try {
+            // Add timeout to the read operation
+            await Promise.race([
+              tempReader.read(),
+              new Promise((_, reject) => 
+                setTimeout(() => reject(new Error('FlushTimeout')), 1000)
+              )
+            ]);
+          } catch (error) {
+            logging.warn('Flush timeout or error:', error);
+          } finally {
+            // Always release the reader
+            try {
+              await tempReader.cancel();
+              tempReader.releaseLock();
+            } catch (releaseError) {
+              logging.warn('Error releasing temp reader:', releaseError);
+            }
+          }
+          logging.debug('Serial buffer flushed.');
         } catch (error) {
-          logging.error('Error flushing serial buffer:', error);
+          logging.error('Error during serial buffer flush:', error);
+          // Continue even if flush fails - not critical
         }
 
         this.#disconnecting = false;
@@ -398,6 +430,7 @@ export class SpectodaWebSerialConnector {
               const { value, done } = await this.#reader.read();
 
               if (done) {
+                logging.warn('Serial read stream closed');
                 break;
               }
               if (value) {
@@ -425,7 +458,7 @@ export class SpectodaWebSerialConnector {
                             command_bytes.length = 0;
                             this.#disconnect();
                           } else if (starts_with(command_bytes, 'SUCCESS', 3)) {
-                            logging.verbose('SERIAL >>>SUCCESS<<<');
+                            logging.debug('SERIAL >>>SUCCESS<<<');
                             this.#feedbackCallback && this.#feedbackCallback(true);
                             command_bytes.length = 0;
                           } else if (starts_with(command_bytes, 'FAIL', 3)) {
@@ -437,7 +470,7 @@ export class SpectodaWebSerialConnector {
                             this.#feedbackCallback && this.#feedbackCallback(false);
                             command_bytes.length = 0;
                           } else if (starts_with(command_bytes, 'DATA', 3)) {
-                            logging.verbose('SERIAL >>>DATA<<<');
+                            logging.debug('SERIAL >>>DATA<<<');
                             this.#dataCallback && this.#dataCallback(new Uint8Array(data_bytes));
 
                             switch (data_header.data_type) {
@@ -511,7 +544,7 @@ export class SpectodaWebSerialConnector {
                         data_header.data_crc32 = tnglReader.readUint32();
                         data_header.header_crc32 = tnglReader.readUint32();
 
-                        logging.verbose('data_header=', data_header);
+                        logging.debug('data_header=', data_header);
 
                         if (data_header.data_size == 0) {
                           mode = MODE_UTF8_RECEIVE;
@@ -530,6 +563,25 @@ export class SpectodaWebSerialConnector {
             }
           } catch (error) {
             logging.error('Read loop error:', error);
+            
+            // Handle device disconnection
+            if (error instanceof Error && 
+                (error.message.includes('device has been lost') || 
+                 error.message.includes('device was disconnected'))) {
+              logging.warn('Device disconnected unexpectedly');
+              
+              // Clean up the connection
+              await this.#disconnect().catch(err => {
+                logging.error('Error during disconnect cleanup:', err);
+              });
+            }
+          } finally {
+            // Ensure reader is released
+            try {
+              await this.#reader?.releaseLock();
+            } catch (error) {
+              logging.error('Error releasing reader lock:', error);
+            }
           }
         };
 
@@ -584,12 +636,12 @@ export class SpectodaWebSerialConnector {
   }
 
   connected(): Promise<SpectodaTypes.Criterium | null> {
-    logging.verbose('connected()');
+    logging.debug('connected()');
     return Promise.resolve(this.#serialPort && this.#interfaceConnected ? { connector: this.type } : null);
   }
 
   disconnect(): Promise<unknown> {
-    logging.verbose('disconnect()');
+    logging.info('disconnect()');
 
     if (!this.#serialPort) {
       logging.warn('No Serial Port selected to disconnect');
@@ -619,40 +671,38 @@ export class SpectodaWebSerialConnector {
       try {
         logging.info('> Finishing Serial...');
         await this.#writeString('>>>FINISH_SERIAL<<<\n');
+      } catch (error) {
+        logging.error('Error during finish:', error);
+      }
+
+      try {
+        logging.info('> Disconnecting Serial...');
+
         await this.#writer?.close();
         this.#writer = undefined;
         await this.#reader?.cancel();
         this.#reader = undefined;
         await this.#serialPort?.close();
-
+        resolve(null);
+      } catch (error) {
+        logging.error('Error during disconnect:', error);
+        reject(error);
+      } finally {
         clearTimeout(timeout_handle);
-
         this.#disconnecting = false;
         if (this.#interfaceConnected) {
           this.#interfaceConnected = false;
           this.#runtimeReference.emit('#disconnected');
         }
-        resolve(null);
-      } catch (error) {
-        clearTimeout(timeout_handle);
-        this.#disconnecting = false;
-        logging.error('Error during disconnect:', error);
-        reject(error);
       }
     });
   }
 
-  #disconnect(): Promise<unknown> {
-    logging.verbose('#disconnect()');
+  async #disconnect(): Promise<unknown> {
+    logging.debug('#disconnect()');
 
     if (!this.#serialPort) {
-      logging.verbose('No Serial Port selected');
-      return Promise.resolve(null);
-    }
-
-    // Check if the port is open
-    if (!this.#serialPort.readable && !this.#serialPort.writable) {
-      logging.verbose('> Serial Port already closed');
+      logging.debug('No Serial Port selected');
       return Promise.resolve(null);
     }
 
@@ -663,27 +713,49 @@ export class SpectodaWebSerialConnector {
 
     this.#disconnecting = true;
 
-    return new Promise(async (resolve, reject) => {
-      try {
-        logging.verbose('> Closing serial port...');
-        await this.#writer?.close();
-        this.#writer = undefined;
-        await this.#reader?.cancel();
-        this.#reader = undefined;
-        await this.#serialPort?.close();
-
-        this.#disconnecting = false;
-        if (this.#interfaceConnected) {
-          this.#interfaceConnected = false;
-          this.#runtimeReference.emit('#disconnected');
+    try {
+      logging.debug('> Closing serial port...');
+      
+      // Close writer if it exists
+      if (this.#writer) {
+        try {
+          await this.#writer.close();
+        } catch (error) {
+          logging.warn('Error closing writer:', error);
         }
-        resolve(null);
-      } catch (error) {
-        this.#disconnecting = false;
-        logging.error('Error during #disconnect:', error);
-        reject(error);
+        this.#writer = undefined;
       }
-    });
+
+      // Cancel reader if it exists
+      if (this.#reader) {
+        try {
+          await this.#reader.cancel();
+        } catch (error) {
+          logging.warn('Error canceling reader:', error);
+        }
+        this.#reader = undefined;
+      }
+
+      // Close port if it's still open
+      if (this.#serialPort.readable || this.#serialPort.writable) {
+        try {
+          await this.#serialPort.close();
+        } catch (error) {
+          logging.warn('Error closing serial port:', error);
+        }
+      }
+
+      return null;
+    } catch (error) {
+      logging.error('Error during #disconnect:', error);
+      throw error;
+    } finally {
+      this.#disconnecting = false;
+      if (this.#interfaceConnected) {
+        this.#interfaceConnected = false;
+        this.#runtimeReference.emit('#disconnected');
+      }
+    }
   }
 
   #writeString(data: string): Promise<void> {
@@ -694,7 +766,7 @@ export class SpectodaWebSerialConnector {
   }
 
   #initiate(initiate_code: number, payload: Uint8Array, tries: number, timeout: number): Promise<unknown> {
-    logging.verbose(`initiate(initiate_code=${initiate_code}, payload=${payload}, tries=${tries}, timeout=${timeout})`);
+    logging.debug(`initiate(initiate_code=${initiate_code}, payload=${payload}, tries=${tries}, timeout=${timeout})`);
 
     if (tries <= 0) {
       logging.error('ERROR nhkw45390');
@@ -729,9 +801,9 @@ export class SpectodaWebSerialConnector {
       timeout = packet_timeout;
     }
 
-    logging.verbose(`initiate_code=${initiate_code}`);
-    logging.verbose(`payload.length=${payload.length}`);
-    logging.verbose(`packet_timeout=${packet_timeout}`);
+    logging.debug(`initiate_code=${initiate_code}`);
+    logging.debug(`payload.length=${payload.length}`);
+    logging.debug(`packet_timeout=${packet_timeout}`);
 
     const header_writer = new TnglWriter(32);
 
@@ -759,7 +831,7 @@ export class SpectodaWebSerialConnector {
                 reject('ResponseTimeout');
               });
           }
-        }, timeout + 10000);
+        }, timeout + 1000);
 
         try {
           await this.#writer?.write(new Uint8Array(header_writer.bytes.buffer));
@@ -832,7 +904,7 @@ export class SpectodaWebSerialConnector {
     if (timeout_number === DEFAULT_TIMEOUT) {
       timeout_number = 5000;
     }
-    logging.verbose(`deliver(payload=${payload_bytes})`);
+    logging.debug(`deliver(payload=${payload_bytes})`);
 
     if (!this.#serialPort || !this.#interfaceConnected) {
       return Promise.reject('DeviceDisconnected');
@@ -849,7 +921,7 @@ export class SpectodaWebSerialConnector {
     if (timeout_number === DEFAULT_TIMEOUT) {
       timeout_number = 1000;
     }
-    logging.verbose(`transmit(payload=${payload_bytes})`);
+    logging.debug(`transmit(payload=${payload_bytes})`);
 
     if (!this.#serialPort || !this.#interfaceConnected) {
       return Promise.reject('DeviceDisconnected');
@@ -866,7 +938,7 @@ export class SpectodaWebSerialConnector {
     if (timeout_number === DEFAULT_TIMEOUT) {
       timeout_number = 5000;
     }
-    logging.verbose(`request(payload=${payload_bytes})`);
+    logging.debug(`request(payload=${payload_bytes})`);
 
     if (!this.#serialPort || !this.#interfaceConnected) {
       return Promise.reject('DeviceDisconnected');
@@ -880,7 +952,7 @@ export class SpectodaWebSerialConnector {
   }
 
   setClock(clock: TimeTrack): Promise<unknown> {
-    logging.verbose(`setClock(clock.millis()=${clock.millis()})`);
+    logging.debug(`setClock(clock.millis()=${clock.millis()})`);
 
     if (!this.#serialPort || !this.#interfaceConnected) {
       return Promise.reject('DeviceDisconnected');
@@ -889,13 +961,13 @@ export class SpectodaWebSerialConnector {
     return new Promise(async (resolve, reject) => {
       for (let index = 0; index < 3; index++) {
         try {
-          await this.#write(CHANNEL_CLOCK, new Uint8Array(toBytes(clock.millis(), 8)), 1000);
+          await this.#write(CHANNEL_CLOCK, new Uint8Array(toBytes(clock.millis(), 8)), 100);
           logging.debug('Clock write success');
           resolve(null);
           return;
         } catch {
           logging.warn('Clock write failed');
-          await sleep(1000);
+          await sleep(100);
         }
       }
 
@@ -905,7 +977,7 @@ export class SpectodaWebSerialConnector {
   }
 
   getClock(): Promise<TimeTrack> {
-    logging.verbose('getClock()');
+    logging.debug('getClock()');
 
     if (!this.#serialPort || !this.#interfaceConnected) {
       return Promise.reject('DeviceDisconnected');
@@ -914,7 +986,7 @@ export class SpectodaWebSerialConnector {
     return new Promise(async (resolve, reject) => {
       for (let index = 0; index < 3; index++) {
         try {
-          const bytes = await this.#read(CHANNEL_CLOCK, 1000);
+          const bytes = await this.#read(CHANNEL_CLOCK, 100);
 
           const reader = new TnglReader(bytes);
           const timestamp = reader.readUint64();
@@ -930,8 +1002,7 @@ export class SpectodaWebSerialConnector {
             return;
           }
         }
-
-        await sleep(1000);
+        await sleep(100);
       }
 
       reject('ClockReadFailed');
@@ -940,7 +1011,7 @@ export class SpectodaWebSerialConnector {
   }
 
   updateFW(firmware_bytes: Uint8Array): Promise<unknown> {
-    logging.verbose('updateFW()', firmware_bytes);
+    logging.debug('updateFW()', firmware_bytes);
 
     if (!this.#serialPort) {
       logging.warn('Serial Port is null');
@@ -950,7 +1021,7 @@ export class SpectodaWebSerialConnector {
     return new Promise(async (resolve, reject) => {
       const chunk_size = 3984;
 
-      this.#timeoutMultiplier = 2;
+      this.#timeoutMultiplier = 8;
 
       let index_from = 0;
       let index_to = chunk_size;
@@ -960,7 +1031,7 @@ export class SpectodaWebSerialConnector {
       logging.setLoggingLevel(logging.level - 1);
 
       logging.info('OTA UPDATE');
-      logging.verbose(firmware_bytes);
+      logging.debug(firmware_bytes);
 
       const start_timestamp = Date.now();
 
@@ -1037,7 +1108,7 @@ export class SpectodaWebSerialConnector {
         reject('UpdateFailed');
       }
     }).finally(() => {
-      this.#timeoutMultiplier = 1.2;
+      this.#timeoutMultiplier = 4;
       logging.setLoggingLevel(logging.level + 1);
     });
   }
@@ -1045,7 +1116,7 @@ export class SpectodaWebSerialConnector {
   cancel(): void {}
 
   destroy(): Promise<unknown> {
-    logging.verbose('destroy()');
+    logging.debug('destroy()');
 
     return this.disconnect()
       .catch(() => {})
@@ -1056,7 +1127,7 @@ export class SpectodaWebSerialConnector {
   }
 
   sendExecute(command_bytes: Uint8Array, source_connection: Connection) {
-    logging.verbose(`SpectodaWebSerialConnector::sendExecute(command_bytes=${command_bytes}, source_connection=${source_connection})`);
+    logging.debug(`SpectodaWebSerialConnector::sendExecute(command_bytes=${command_bytes}, source_connection=${source_connection})`);
 
     if (source_connection.connector_type == SpectodaWasm.connector_type_t.CONNECTOR_SERIAL) {
       return Promise.resolve();
@@ -1070,7 +1141,7 @@ export class SpectodaWebSerialConnector {
   }
 
   sendRequest(request_ticket_number: number, request_bytecode: Uint8Array, destination_connection: Connection) {
-    logging.verbose(`SpectodaWebSerialConnector::sendRequest(request_ticket_number=${request_ticket_number}, request_bytecode=${request_bytecode}, destination_connection=${destination_connection})`);
+    logging.debug(`SpectodaWebSerialConnector::sendRequest(request_ticket_number=${request_ticket_number}, request_bytecode=${request_bytecode}, destination_connection=${destination_connection})`);
 
     if (destination_connection.connector_type != SpectodaWasm.connector_type_t.CONNECTOR_SERIAL) {
       return Promise.resolve();
@@ -1084,13 +1155,13 @@ export class SpectodaWebSerialConnector {
   }
 
   sendResponse(request_ticket_number: number, request_result: number, response_bytecode: Uint8Array, destination_connection: Connection) {
-    logging.verbose(`SpectodaWebSerialConnector::sendResponse(request_ticket_number=${request_ticket_number}, request_result=${request_result}, response_bytecode=${response_bytecode}, destination_connection=${destination_connection})`);
+    logging.debug(`SpectodaWebSerialConnector::sendResponse(request_ticket_number=${request_ticket_number}, request_result=${request_result}, response_bytecode=${response_bytecode}, destination_connection=${destination_connection})`);
 
     return Promise.reject('NotImplemented');
   }
 
   sendSynchronize(synchronization: Synchronization, source_connection: Connection) {
-    logging.verbose(`SpectodaWebSerialConnector::sendSynchronize(synchronization=${synchronization}, source_connection=${source_connection})`);
+    logging.debug(`SpectodaWebSerialConnector::sendSynchronize(synchronization=${synchronization}, source_connection=${source_connection})`);
 
     if (source_connection.connector_type == SpectodaWasm.connector_type_t.CONNECTOR_SERIAL) {
       return Promise.resolve();
