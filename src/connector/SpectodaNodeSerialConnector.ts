@@ -126,7 +126,7 @@ export class SpectodaNodeSerialConnector {
     this.#disconnecting = false;
     this.#disconnectingResolve = undefined;
 
-    this.#timeoutMultiplier = 1.2;
+    this.#timeoutMultiplier = 4;
 
     this.#beginCallback = undefined;
     this.#feedbackCallback = undefined;
@@ -217,7 +217,7 @@ export class SpectodaNodeSerialConnector {
       const port_options = PORT_OPTIONS;
 
       if (criterium_array[0].baudrate) {
-        port_options.baudRate = criterium_array[0].baudrate || 115200;
+        port_options.baudRate = criterium_array[0].baudrate || 1500000;
       }
 
       if (criterium_array[0].path) {
@@ -915,13 +915,13 @@ export class SpectodaNodeSerialConnector {
     return new Promise(async (resolve, reject) => {
       for (let index = 0; index < 3; index++) {
         try {
-          await this.#write(CHANNEL_CLOCK, new Uint8Array(toBytes(clock.millis(), 8)), 1000);
+          await this.#write(CHANNEL_CLOCK, new Uint8Array(toBytes(clock.millis(), 8)), 100);
           logging.debug('Clock write success');
           resolve(null);
           return;
         } catch {
           logging.warn('Clock write failed');
-          await sleep(1000);
+          await sleep(100);
         }
       }
 
@@ -942,7 +942,7 @@ export class SpectodaNodeSerialConnector {
     return new Promise(async (resolve, reject) => {
       for (let index = 0; index < 3; index++) {
         try {
-          const bytes = await this.#read(CHANNEL_CLOCK, 1000);
+          const bytes = await this.#read(CHANNEL_CLOCK, 100);
 
           const reader = new TnglReader(bytes);
           const timestamp = reader.readUint64();
@@ -960,7 +960,7 @@ export class SpectodaNodeSerialConnector {
           }
         }
 
-        await sleep(1000);
+        await sleep(100);
       }
 
       reject('ClockReadFailed');
@@ -981,7 +981,7 @@ export class SpectodaNodeSerialConnector {
     return new Promise(async (resolve, reject) => {
       const chunk_size = 3984; // must be modulo 16
 
-      this.#timeoutMultiplier = 2;
+      this.#timeoutMultiplier = 8;
 
       let index_from = 0;
       let index_to = chunk_size;
@@ -1072,7 +1072,7 @@ export class SpectodaNodeSerialConnector {
         reject('UpdateFailed');
       }
     }).finally(() => {
-      this.#timeoutMultiplier = 1.2;
+      this.#timeoutMultiplier = 4;
       logging.setLoggingLevel(logging.level + 1);
     });
   }
