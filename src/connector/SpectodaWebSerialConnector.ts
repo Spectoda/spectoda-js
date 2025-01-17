@@ -174,6 +174,7 @@ export class SpectodaWebSerialConnector {
 
   #serialPort: SerialPort | undefined;
   #criteria: SpectodaTypes.Criterium[] | undefined;
+  #portOptions: SerialOptions;
 
   #interfaceConnected: boolean;
   #disconnecting: boolean;
@@ -198,6 +199,7 @@ export class SpectodaWebSerialConnector {
 
     this.#serialPort = undefined;
     this.#criteria = undefined;
+    this.#portOptions = DEFAULT_PORT_OPTIONS;
 
     this.#interfaceConnected = false;
     this.#disconnecting = false;
@@ -227,9 +229,26 @@ export class SpectodaWebSerialConnector {
         const port = await navigator.serial.requestPort({
           filters: [
             { usbVendorId: 0x0403, usbProductId: 0x6001 }, // FTDI
+            { usbVendorId: 0x0403, usbProductId: 0x6010 }, // FTDI 2232
+            { usbVendorId: 0x0403, usbProductId: 0x6011 }, // FTDI 4232
+            { usbVendorId: 0x0403, usbProductId: 0x6014 }, // FTDI 232H
+            { usbVendorId: 0x0403, usbProductId: 0x6015 }, // FTDI 230X
             { usbVendorId: 0x1a86, usbProductId: 0x7523 }, // CH340
+            { usbVendorId: 0x1a86, usbProductId: 0x5523 }, // CH341
+            { usbVendorId: 0x1a86, usbProductId: 0x55d4 }, // CH9102F
             { usbVendorId: 0x10c4, usbProductId: 0xea60 }, // CP210x
-            { usbVendorId: 0x067b, usbProductId: 0x2303 }  // Prolific
+            { usbVendorId: 0x10c4, usbProductId: 0xea61 }, // CP210x
+            { usbVendorId: 0x10c4, usbProductId: 0xea63 }, // CP210x
+            { usbVendorId: 0x067b, usbProductId: 0x2303 }, // Prolific
+            { usbVendorId: 0x067b, usbProductId: 0x2304 }, // Prolific
+            { usbVendorId: 0x067b, usbProductId: 0x0611 }, // Prolific
+            { usbVendorId: 0x04b4, usbProductId: 0x0002 }, // Cypress
+            { usbVendorId: 0x04b4, usbProductId: 0x0003 }, // Cypress
+            { usbVendorId: 0x04b4, usbProductId: 0xf139 }, // Cypress
+            { usbVendorId: 0x04b4, usbProductId: 0xea61 }, // Cypress
+            { usbVendorId: 0x1bc7, usbProductId: 0x0020 }, // Teensyduino
+            { usbVendorId: 0x1bc7, usbProductId: 0x0021 }, // Teensyduino
+            { usbVendorId: 0x1bc7, usbProductId: 0x0023 }  // Teensyduino
           ]
         });
 
@@ -255,7 +274,7 @@ export class SpectodaWebSerialConnector {
 
     logging.debug('autoSelect(criteria=' + JSON.stringify(criterium_array) + ', scan_duration=' + scan_duration_number + ', timeout=' + timeout_number + ')');
 
-    return new Promise(async (resolve, reject) => {
+    return new Promise<SpectodaTypes.Criterium | null>(async (resolve, reject) => {
       try {
         const ports = await navigator.serial.getPorts();
 
@@ -274,6 +293,11 @@ export class SpectodaWebSerialConnector {
         logging.error('autoSelect failed:', error);
         reject(error);
       }
+    }).catch((error) => {
+      // TODO remove this once we have a proper auto-select mechanism
+      // TODO it is not desirable to call userSelect() if you want to auto-select
+      logging.warn("SpectodaWebSerialConnector: autoSelect() failed. Calling userSelect() instead.");
+      return this.userSelect(criterium_array, timeout_number);
     });
   }
 
@@ -384,8 +408,20 @@ export class SpectodaWebSerialConnector {
           return;
         }
 
-        logging.info('> Opening Serial...');
-        await port.open(PORT_OPTIONS);
+        logging.info('this.#criteria=', this.#criteria);
+
+        // TODO properly handle the criteria
+        if (this.#criteria && this.#criteria.length > 0) {
+          if (this.#criteria[0].baudrate) {
+            this.#portOptions.baudRate = this.#criteria[0].baudrate;
+          }
+          if (this.#criteria[0].baudRate) {
+            this.#portOptions.baudRate = this.#criteria[0].baudRate;
+          }
+        }
+
+        logging.info('> Opening Serial at baudrate ' + this.#portOptions.baudRate + '...');
+        await port.open(this.#portOptions);
         logging.debug('serial port opened');
 
         if (!port.readable || !port.writable) {
@@ -975,7 +1011,7 @@ export class SpectodaWebSerialConnector {
 
   request(payload_bytes: Uint8Array, read_response: boolean, timeout_number: number | typeof DEFAULT_TIMEOUT = DEFAULT_TIMEOUT): Promise<Uint8Array | null> {
     if (timeout_number === DEFAULT_TIMEOUT) {
-      timeout_number = 5000;
+      timeout_number = 10000;
     }
     logging.debug(`request(payload=${payload_bytes})`);
 
