@@ -157,19 +157,26 @@ export function createSpectodaWebsocket() {
                   if (response.status === 'success') {
                     logging.info('Remote joined network', response.roomNumber);
 
-                    // ! disabled by @immakermatty because it caused trouble in App Remote Connection
-                    // this.sendThroughWebsocket({
-                    //   functionName: "connected",
-                    //   arguments: undefined,
-                    // }).then(connected => {
-                    //   if (connected) {
-                    //     logging.info("GW already connected, sending connected event");
-                    //     eventStream.emit("connected");
-                    //   } else {
-                    //     logging.info("GW not connected, sending disconnected event");
-                    //     eventStream.emit("disconnected");
-                    //   }
-                    // });
+                    //** Added by @immakermatty to automatically connect the sender app if the receiver is connected */
+                    //* if receiver is connected, emit the connected event on the sender
+                    if (typeof window !== 'undefined' && window.spectoda) {
+                      window.spectoda.connected().then((receiverConnectedCriteria) => {
+                        logging.info('Spectoda_JS on the other side connected to ', receiverConnectedCriteria);
+
+                        //* if the receiver is connected, emit the connected event on the sender
+                        if (receiverConnectedCriteria) {
+                          //* emit the connected event to the sender app
+                          window.spectoda.emit('connected');
+                        } else {
+                          //* emit the disconnected event to the sender app
+                          window.spectoda.emit('disconnected');
+                        }
+                      }).catch((err) => {
+                        logging.error('error connecting to websocket server', err);
+                      });
+                    }
+
+                  
                   } else {
                     throw new Error(response.error);
                   }
