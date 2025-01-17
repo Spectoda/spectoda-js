@@ -1143,10 +1143,10 @@ export class TnglCompiler {
       return;
     }
     const code = berryMatch[1];
-    logging.info('Berry script:', code);
+    logging.debug('matched script:', code);
 
     const bytes = new TextEncoder().encode(code);
-    logging.info('Berry script bytes:', bytes);
+    logging.verbose('matched script bytes:', bytes);
 
     this.#tnglWriter.writeFlag(TNGL_FLAGS.BERRY_SCRIPT)
     this.#tnglWriter.writeUint16(bytes.length)
