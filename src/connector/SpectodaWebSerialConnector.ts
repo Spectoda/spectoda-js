@@ -12,6 +12,7 @@ import { SpectodaRuntime } from '../SpectodaRuntime';
 import { SpectodaWasm } from '../SpectodaWasm';
 import { SpectodaTypes } from '../types/primitives';
 import { Connection, Synchronization } from '../types/wasm';
+import { randInt } from 'three/src/math/MathUtils';
 
 // ! ======= from "@types/w3c-web-serial" =======
 
@@ -323,7 +324,7 @@ export class SpectodaWebSerialConnector {
     });
   }
 
-  connect(timeout_number: number | typeof DEFAULT_TIMEOUT = DEFAULT_TIMEOUT): Promise<SpectodaTypes.Criterium> {
+  async connect(timeout_number: number | typeof DEFAULT_TIMEOUT = DEFAULT_TIMEOUT): Promise<SpectodaTypes.Criterium> {
     if (timeout_number === DEFAULT_TIMEOUT) {
       timeout_number = 2500;
     }
@@ -344,11 +345,42 @@ export class SpectodaWebSerialConnector {
     }
 
     return new Promise(async (resolve, reject) => {
+      let isResolved = false;
+      
+      const cleanup = async () => {
+        if (timeout_handle) {
+          clearTimeout(timeout_handle);
+        }
+        this.#beginCallback = undefined;
+        await this.#disconnect();
+      };
+
+      const resolveOnce = (value: SpectodaTypes.Criterium) => {
+        if (!isResolved) {
+          isResolved = true;
+          resolve(value);
+        }
+      };
+
+      const rejectOnce = (reason: any) => {
+        if (!isResolved) {
+          isResolved = true;
+          reject(reason);
+        }
+      };
+
+      let timeout_handle: NodeJS.Timeout | undefined = setTimeout(async () => {
+        logging.warn('Connection begin timeout');
+        await cleanup();
+        rejectOnce('ConnectTimeout');
+      }, timeout_number);
+
       try {
         const port = this.#serialPort;
 
         if (!port) {
-          reject('InternalError');
+          await cleanup();
+          rejectOnce('InternalError');
           return;
         }
 
@@ -358,7 +390,8 @@ export class SpectodaWebSerialConnector {
 
         if (!port.readable || !port.writable) {
           logging.error('port.readable or port.writable == null');
-          reject('InternalError');
+          await cleanup();
+          rejectOnce('InternalError');
           return;
         }
 
@@ -394,8 +427,15 @@ export class SpectodaWebSerialConnector {
 
         this.#disconnecting = false;
 
-        this.#writer = port.writable.getWriter();
-        this.#reader = port.readable.getReader();
+        try {
+          this.#writer = port.writable.getWriter();
+          this.#reader = port.readable.getReader();
+        } catch (error) {
+          logging.error('Error getting reader/writer:', error);
+          await cleanup();
+          rejectOnce('ConnectionFailed');
+          return;
+        }
 
         const decoder = new TextDecoder();
 
@@ -421,7 +461,8 @@ export class SpectodaWebSerialConnector {
         const readLoop = async () => {
           if (!this.#reader) {
             logging.error('this.#reader == null');
-            reject('InternalError');
+            await cleanup();
+            rejectOnce('InternalError');
             return;
           }
 
@@ -564,61 +605,40 @@ export class SpectodaWebSerialConnector {
           } catch (error) {
             logging.error('Read loop error:', error);
             
-            // Handle device disconnection
             if (error instanceof Error && 
                 (error.message.includes('device has been lost') || 
                  error.message.includes('device was disconnected'))) {
               logging.warn('Device disconnected unexpectedly');
-              
-              // Clean up the connection
-              await this.#disconnect().catch(err => {
-                logging.error('Error during disconnect cleanup:', err);
-              });
             }
-          } finally {
-            // Ensure reader is released
-            try {
-              await this.#reader?.releaseLock();
-            } catch (error) {
-              logging.error('Error releasing reader lock:', error);
-            }
+            
+            await cleanup();
+            rejectOnce('DeviceDisconnected');
           }
         };
 
-        readLoop();
-
-        const timeout_handle = setTimeout(async () => {
-          logging.warn('Connection begin timeouted');
-          this.#beginCallback = undefined;
-
-          await this.#disconnect().finally(() => {
-            reject('ConnectTimeout');
-          });
-        }, timeout_number);
+        readLoop().catch(async (error) => {
+          logging.error('Read loop failed:', error);
+          await cleanup();
+          rejectOnce('ReadLoopFailed');
+        });
 
         this.#beginCallback = (result) => {
           this.#beginCallback = undefined;
-
           clearTimeout(timeout_handle);
+          timeout_handle = undefined;
 
           if (result) {
             logging.info('Serial connection connected');
-
-            setTimeout(() => {
-              if (!this.#interfaceConnected) {
-                this.#interfaceConnected = true;
-                this.#runtimeReference.emit('#connected');
-              }
-              resolve({ connector: this.type });
-            }, 100);
+            
+            // Set connected state and resolve
+            this.#interfaceConnected = true;
+            this.#runtimeReference.emit('#connected');
+            resolveOnce({ connector: this.type });
           } else {
             logging.warn('Serial connection failed');
-
-            setTimeout(() => {
-              this.#disconnect().finally(() => {
-                reject('ConnectFailed');
-              });
-            }, 100);
+            cleanup().then(() => {
+              rejectOnce('ConnectFailed');
+            });
           }
         };
 
@@ -626,11 +646,14 @@ export class SpectodaWebSerialConnector {
           await this.#writeString('>>>ENABLE_SERIAL<<<\n');
         } catch (error) {
           logging.error('Error sending initial command:', error);
-          reject(error);
+          await cleanup();
+          rejectOnce(error);
         }
+
       } catch (error) {
         logging.error('Connect failed:', error);
-        reject(error);
+        await cleanup();
+        rejectOnce(error);
       }
     });
   }
@@ -817,15 +840,16 @@ export class SpectodaWebSerialConnector {
       let timeout_handle: NodeJS.Timeout | undefined = undefined;
 
       const do_write = async () => {
+
         timeout_handle = setTimeout(() => {
-          logging.error('ERROR asvcb8976a', 'Serial response timeout');
+          logging.error('Serial response timeout');
 
           if (this.#feedbackCallback) {
             this.#feedbackCallback(false);
           } else {
             this.#disconnect()
               .catch(() => {
-                logging.error('ERROR fdsa8796', 'Failed to disconnect');
+                logging.error('Failed to disconnect');
               })
               .finally(() => {
                 reject('ResponseTimeout');
@@ -833,12 +857,27 @@ export class SpectodaWebSerialConnector {
           }
         }, timeout + 1000);
 
+        if (!this.#writer) {
+          logging.error('ERROR 65432789');
+          reject('InternalError');
+          return;
+        }
+        
         try {
-          await this.#writer?.write(new Uint8Array(header_writer.bytes.buffer));
-          await this.#writer?.write(payload);
+          await this.#writer.write(new Uint8Array(header_writer.bytes.buffer)).catch((e) => {
+            logging.error('ERROR 65239083', e);
+            reject(e);
+            return;
+          });
+          await this.#writer.write(payload).catch((e) => {
+            logging.error('ERROR 23074934', e);
+            reject(e);
+            return;
+          });
         } catch (e) {
-          logging.error('ERROR 0ads8F67', e);
+          logging.error('ERROR 25340789', e);
           reject(e);
+          return;
         }
       };
 
