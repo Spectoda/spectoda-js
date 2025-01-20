@@ -4,7 +4,7 @@ import {
   WEBSOCKET_CONNECTION_STATE,
   WebsocketConnectionState,
 } from './connect'
-import { ControllerErrors } from './errors'
+import { ControllerError } from './messages'
 import { SpectodaEvent } from './event'
 import { SpectodaTypes } from './primitives'
 
@@ -18,11 +18,6 @@ type ConnectionStatusProps = {
 
 type PropsMap = WebsocketConnectionStateProps &
   ConnectionStatusProps & {
-    connected: undefined
-    disconnected: undefined
-    connecting: undefined
-    disconnecting: undefined
-
     // TODO for future payload key: `mac`
     peer_connected: string
     // TODO for future payload key: `mac`
@@ -40,8 +35,10 @@ type PropsMap = WebsocketConnectionStateProps &
       used_ids: SpectodaTypes.UsedIds
     }
 
-    // Private events
+    /** @private event */
     '#connected': undefined
+
+    /** @private event */
     '#disconnected': undefined
 
     // TODO deprecate @immakermatty
@@ -69,12 +66,11 @@ type PropsMap = WebsocketConnectionStateProps &
     // TODO for future payload key: `log`
     'controller-log': string
 
-    // Error events
-    nodeerror: ControllerErrors
-    nodewarning: ControllerErrors
+    networkerror: ControllerError
+    networkwarning: ControllerError
   }
 
-export const SpectodaAppEvents = {
+export const SpectodaAppEvents: SpectodaAppEventType = {
   ...CONNECTION_STATUS,
 
   'CONNECTING-WEBSOCKETS': WEBSOCKET_CONNECTION_STATE.CONNECTING,
@@ -102,7 +98,14 @@ export const SpectodaAppEvents = {
   '#CONNECTED': '#connected',
   '#DISCONNECTED': '#disconnected',
   'CONTROLLER-LOG': 'controller-log',
+
+  NETWORK_ERROR: 'networkerror',
+  NETWORK_WARNING: 'networkwarning',
 } as const
+
+type SpectodaAppEventType = {
+  [K in string]: keyof PropsMap
+}
 
 export type SpectodaAppEventName =
   (typeof SpectodaAppEvents)[keyof typeof SpectodaAppEvents]

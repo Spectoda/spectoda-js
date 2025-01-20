@@ -133,24 +133,34 @@ Note: Connections are managed through Connectors (like SCBLE and WEBUSB) which p
 
 ## Errors
 
+Handle real-time error updates from controllers with listeners for errors and warnings:
+
 ```typescript
-// Handle real-time error updates from controllers
-spectoda.on('nodeerror', ({ controller, errorUpdates }: ControllerErrors) => {
+spectoda.on('networkerror', ({ controller, errors }: ControllerError[]) => {
   console.log(`Errors from Controller ${controller.label} (${controller.mac}):`)
 
-  errorUpdates.forEach(({ description, code }) => {
+  errors.forEach(({ description, code }) => {
     console.error(`❌ [Error ${code}] - ${description}`)
   })
 })
 
-// Handle real-time warning updates from controllers
-spectoda.on('nodewarning', ({ controller, errorUpdates }: ControllerErrors) => {
-  console.log(
-    `Warnings from Controller ${controller.label} (${controller.mac}):`,
-  )
+spectoda.on(
+  'networkwarning',
+  ({ controller, warnings }: ControllerWarning[]) => {
+    console.log(
+      `Warnings from Controller ${controller.label} (${controller.mac}):`,
+    )
 
-  errorUpdates.forEach(({ description, code }) => {
-    console.warn(`⚠️ [Warning ${code}] - ${description}`)
-  })
-})
+    warnings.forEach(({ description, code }) => {
+      console.warn(`⚠️ [Warning ${code}] - ${description}`)
+    })
+  },
+)
+```
+
+Get errors and warnings from controllers:
+
+```typescript
+const errors: SpectodaError[] = await spectoda.readErrors()
+const warnings: SpectodaWarning[] = await spectoda.readWarnings()
 ```

@@ -1,26 +1,14 @@
 [
   {
     "controller": { "mac": "1b:3e:ce:ce:cc", "label": "SC_02" },
-    "errorUpdates": [
+    "updates": [
       {
         "description": "Overheating detected",
-        "code": 1001,
-        "type": "error"
+        "code": 1001
       },
       {
         "description": "Connection lost to device",
-        "code": 1002,
-        "type": "error"
-      }
-    ]
-  },
-  {
-    "controller": { "mac": "2a:4b:dd:ff:aa", "label": "SC_03" },
-    "errorUpdates": [
-      {
-        "description": "Low battery warning",
-        "code": 2001,
-        "type": "warning"
+        "code": 1002
       }
     ]
   }
