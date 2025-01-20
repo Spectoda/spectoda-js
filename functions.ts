@@ -192,10 +192,10 @@ export function mapValue(x, in_min, in_max, out_min, out_max) {
 
 // takes "label" and outputs ascii characters in a list of bytes
 export function labelToBytes(label_string: string): number[] {
-  return stringToBytes(label_string, 5);
+  return stringToBytes(label_string, 5, false);
 }
 
-export function stringToBytes(string: string, length: number): number[] {
+export function stringToBytes(string: string, length: number, nullTerminated: boolean): number[] {
   const byteArray: number[] = [];
 
   for (let index = 0; index < length; index++) {
@@ -205,6 +205,11 @@ export function stringToBytes(string: string, length: number): number[] {
       byteArray.push(0);
     }
   }
+
+  if (nullTerminated) {
+    byteArray[byteArray.length - 1] = 0;
+  }
+
   return byteArray;
 }
 

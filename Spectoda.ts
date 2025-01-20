@@ -9,6 +9,7 @@ import {
   detectSpectodaConnect,
   fetchFirmware,
   hexStringToUint8Array,
+  labelToBytes,
   numberToBytes,
   sleep,
   strMacToBytes,
@@ -2953,7 +2954,7 @@ export class Spectoda implements SpectodaClass {
     const payload = [
       COMMAND_FLAGS.FLAG_WRITE_CONTROLLER_NAME_REQUEST,
       ...numberToBytes(request_uuid, 4),
-      ...stringToBytes(label, 16),
+      ...stringToBytes(label, 16, false),
     ]
 
     return this.runtime.request(payload, false)
@@ -3008,6 +3009,100 @@ export class Spectoda implements SpectodaClass {
       logging.debug(`> Controller Name: ${name}`)
 
       return name
+    })
+  }
+
+  /**
+   * ! Useful
+   * Write IO variant for a specific IO label in the controller config
+   * @param ioLabel - 5 character IO label (e.g. "BTN_1")
+   * @param variant - variant name (max 16 characters)
+   */
+  writeControllerIoVariant(ioLabel: SpectodaTypes.Label, variant: string) {
+    logging.debug('> Writing Controller IO Variant...')
+
+    const request_uuid = this.#getUUID()
+    const payload = [
+      COMMAND_FLAGS.FLAG_WRITE_IO_VARIANT_REQUEST,
+      ...numberToBytes(request_uuid, 4),
+      ...labelToBytes(ioLabel),
+      ...stringToBytes(variant, 16, false),
+    ]
+
+    return this.runtime.request(payload, false)
+  }
+
+  /**
+   * ! Useful
+   * Write IO variant for a specific IO label in ALL CONNECTED CONTROLLERS in the network
+   * @param ioLabel - 5 character IO label (e.g. "BTN_1")
+   * @param variant - variant name (max 16 characters)
+   */
+  writeNetworkIoVariant(ioLabel: SpectodaTypes.Label, variant: string) {
+    logging.debug('> Writing Network IO Variant...')
+
+    const request_uuid = this.#getUUID()
+    const payload = [
+      COMMAND_FLAGS.FLAG_WRITE_IO_VARIANT_REQUEST,
+      ...numberToBytes(request_uuid, 4),
+      ...labelToBytes(ioLabel),
+      ...stringToBytes(variant, 16, false),
+    ]
+
+    return this.runtime.execute(payload, undefined)
+  }
+
+  /**
+   * ! Useful
+   * Read IO variant for a specific IO label from the controller config
+   * @param ioLabel - 5 character IO label (e.g. "BTN_1")
+   * @returns The variant name for the specified IO label
+   */
+  readControllerIoVariant(ioLabel: SpectodaTypes.Label) {
+    logging.debug('> Reading Controller IO Variant...')
+
+    const request_uuid = this.#getUUID()
+    const bytes = [
+      COMMAND_FLAGS.FLAG_READ_IO_VARIANT_REQUEST,
+      ...numberToBytes(request_uuid, 4),
+      ...labelToBytes(ioLabel),
+    ]
+
+    return this.runtime.request(bytes, true).then((response) => {
+      if (response === null) {
+        throw 'NoResponseReceived'
+      }
+
+      const reader = new TnglReader(response)
+
+      logging.verbose(`response.byteLength=${response.byteLength}`)
+
+      if (reader.readFlag() !== COMMAND_FLAGS.FLAG_READ_IO_VARIANT_RESPONSE) {
+        throw 'InvalidResponseFlag'
+      }
+
+      const response_uuid = reader.readUint32()
+
+      if (response_uuid != request_uuid) {
+        throw 'InvalidResponseUuid'
+      }
+
+      const error_code = reader.readUint8()
+
+      logging.verbose(`error_code=${error_code}`)
+
+      let variant = null
+
+      if (error_code === 0) {
+        variant = reader.readString(16)
+      } else {
+        throw 'Fail'
+      }
+
+      logging.verbose(`variant=${variant}`)
+      logging.debug(`> IO Variant for ${ioLabel}: ${variant}`)
+
+      return variant
     })
   }
 
