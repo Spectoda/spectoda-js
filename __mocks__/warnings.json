@@ -1,7 +1,7 @@
 [
   {
     "controller": { "mac": "2a:4b:dd:ff:aa", "label": "SC_03" },
-    "updates": [
+    "warnings": [
       {
         "description": "Low battery warning",
         "code": 2001

@@ -1,7 +1,7 @@
 [
   {
     "controller": { "mac": "1b:3e:ce:ce:cc", "label": "SC_02" },
-    "updates": [
+    "errors": [
       {
         "description": "Overheating detected",
         "code": 1001
