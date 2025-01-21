@@ -138,30 +138,26 @@ Handle real-time error updates from controllers with listeners for errors and wa
 ```typescript
 spectoda.on(
   SPECTODA_APP_EVENTS.NETWORK_ERROR,
-  (controllerErrors: ControllerError[]) => {
-    for (const { controller, errors } of controllerErrors) {
-      console.log(
-        `Errors from Controller ${controller.label} (${controller.mac}):`,
-      )
+  ({ controller, errors }: ControllerError) => {
+    console.log(
+      `Errors from Controller ${controller.label} (${controller.mac}):`,
+    )
 
-      for (const { description, code } of errors) {
-        console.log(`❌ [Error ${code}] - ${description}`)
-      }
+    for (const { description, code } of errors) {
+      console.log(`❌ [Error ${code}] - ${description}`)
     }
   },
 )
 
 spectoda.on(
   SPECTODA_APP_EVENTS.NETWORK_WARNING,
-  (controllerWarnings: ControllerWarning[]) => {
-    for (const { controller, warnings } of controllerWarnings) {
-      console.log(
-        `Warnings from Controller ${controller.label} (${controller.mac}):`,
-      )
+  ({ controller, warnings }: ControllerWarning) => {
+    console.log(
+      `Warnings from Controller ${controller.label} (${controller.mac}):`,
+    )
 
-      for (const { description, code } of warnings) {
-        console.warn(`⚠️ [Warning ${code}] - ${description}`)
-      }
+    for (const { description, code } of warnings) {
+      console.warn(`⚠️ [Warning ${code}] - ${description}`)
     }
   },
 )

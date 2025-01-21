@@ -107,8 +107,8 @@ type PropsMap = WebsocketConnectionStateProps &
     // TODO for future payload key: `log`
     'controller-log': string
 
-    [SpectodaAppEvents.NETWORK_ERROR]: ControllerError[]
-    [SpectodaAppEvents.NETWORK_WARNING]: ControllerWarning[]
+    [SpectodaAppEvents.NETWORK_ERROR]: ControllerError
+    [SpectodaAppEvents.NETWORK_WARNING]: ControllerWarning
   }
 
 export type SpectodaAppEventName =
