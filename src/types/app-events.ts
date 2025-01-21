@@ -16,61 +16,11 @@ type ConnectionStatusProps = {
   [K in ConnectionStatus]: undefined
 }
 
-type PropsMap = WebsocketConnectionStateProps &
-  ConnectionStatusProps & {
-    // TODO for future payload key: `mac`
-    peer_connected: string
-    // TODO for future payload key: `mac`
-    peer_disconnected: string
+type SpectodaAppEventType<T extends string = string> = {
+  [K in Uppercase<T>]: T
+}
 
-    // TODO for future payload key: `status`
-    ota_status: 'begin' | 'success' | 'fail'
-    // TODO for future payload key: `percentageProgress`
-    ota_progress: number
-    // TODO for future payload key: `timeleftSeconds`
-    ota_timeleft: number
-
-    tngl_update: {
-      tngl_bytes: SpectodaTypes.TnglBytes
-      used_ids: SpectodaTypes.UsedIds
-    }
-
-    /** @private event */
-    '#connected': undefined
-
-    /** @private event */
-    '#disconnected': undefined
-
-    // TODO deprecate @immakermatty
-    // TODO for future payload key: `events`
-    emitted_events: SpectodaEvent[]
-
-    // TODO deprecate @immakermatty
-    // TODO for future payload key: `events`
-    event_state_updates: SpectodaEvent[]
-
-    // TODO for future payload key: `events`
-    emittedevents: SpectodaEvent[]
-    // TODO for future payload key: `events`
-    eventstateupdates: SpectodaEvent[]
-
-    // TODO deprecate @immakermatty
-    // TODO for future payload key: `command`
-    wasm_execute: any
-
-    // TODO deprecate @immakermatty
-    // TODO for future payload key: `clock`
-    wasm_clock: number
-
-    // TODO deprecate @immakermatty
-    // TODO for future payload key: `log`
-    'controller-log': string
-
-    networkerror: ControllerError[]
-    networkwarning: ControllerWarning[]
-  }
-
-export const SpectodaAppEvents: SpectodaAppEventType = {
+export const SpectodaAppEvents = {
   ...CONNECTION_STATUS,
 
   'CONNECTING-WEBSOCKETS': WEBSOCKET_CONNECTION_STATE.CONNECTING,
@@ -101,11 +51,65 @@ export const SpectodaAppEvents: SpectodaAppEventType = {
 
   NETWORK_ERROR: 'networkerror',
   NETWORK_WARNING: 'networkwarning',
-} as const
+} as const satisfies SpectodaAppEventType
 
-type SpectodaAppEventType = {
-  [K in string]: keyof PropsMap
-}
+type PropsMap = WebsocketConnectionStateProps &
+  ConnectionStatusProps & {
+    // TODO for future payload key: `mac`
+    [SpectodaAppEvents.PEER_CONNECTED]: string
+
+    // TODO for future payload key: `mac`
+    [SpectodaAppEvents.PEER_DISCONNECTED]: string
+
+    // TODO for future payload key: `status`
+    [SpectodaAppEvents.OTA_STATUS]: 'begin' | 'success' | 'fail'
+
+    // TODO for future payload key: `percentageProgress`
+    [SpectodaAppEvents.OTA_PROGRESS]: number
+
+    // TODO for future payload key: `timeleftSeconds`
+    [SpectodaAppEvents.OTA_TIMELEFT]: number
+
+    [SpectodaAppEvents.TNGL_UPDATE]: {
+      tngl_bytes: SpectodaTypes.TnglBytes
+      used_ids: SpectodaTypes.UsedIds
+    }
+
+    /** @private event */
+    '#connected': undefined
+
+    /** @private event */
+    '#disconnected': undefined
+
+    // TODO deprecate @immakermatty
+    // TODO for future payload key: `events`
+    [SpectodaAppEvents.EMITTED_EVENTS]: SpectodaEvent[]
+
+    // TODO deprecate @immakermatty
+    // TODO for future payload key: `events`
+    [SpectodaAppEvents.EVENT_STATE_UPDATES]: SpectodaEvent[]
+
+    // TODO for future payload key: `events`
+    [SpectodaAppEvents.EMITTEDEVENTS]: SpectodaEvent[]
+
+    // TODO for future payload key: `events`
+    [SpectodaAppEvents.EVENTSTATEUPDATES]: SpectodaEvent[]
+
+    // TODO deprecate @immakermatty
+    // TODO for future payload key: `command`
+    [SpectodaAppEvents.WASM_EXECUTE]: any
+
+    // TODO deprecate @immakermatty
+    // TODO for future payload key: `clock`
+    [SpectodaAppEvents.WASM_CLOCK]: number
+
+    // TODO deprecate @immakermatty
+    // TODO for future payload key: `log`
+    'controller-log': string
+
+    [SpectodaAppEvents.NETWORK_ERROR]: ControllerError[]
+    [SpectodaAppEvents.NETWORK_WARNING]: ControllerWarning[]
+  }
 
 export type SpectodaAppEventName =
   (typeof SpectodaAppEvents)[keyof typeof SpectodaAppEvents]
