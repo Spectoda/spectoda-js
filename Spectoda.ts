@@ -93,7 +93,7 @@ export class Spectoda implements SpectodaClass {
   ) {
     this.#parser = new TnglCodeParser()
 
-    this.#uuidCounter = Math.floor(Math.random() * 0xffffffff)
+    this.#uuidCounter = Math.floor(Math.random() * 0xFFFFFFFF)
 
     this.#ownerSignature = NO_NETWORK_SIGNATURE
     this.#ownerKey = NO_NETWORK_KEY
@@ -2322,7 +2322,7 @@ export class Spectoda implements SpectodaClass {
             removed_device_mac = Array.from(
               removed_device_mac_bytes,
               function (byte) {
-                return ('0' + (byte & 0xff).toString(16)).slice(-2)
+                return ('0' + (byte & 0xFF).toString(16)).slice(-2)
               },
             ).join(':')
           }
@@ -2453,7 +2453,7 @@ export class Spectoda implements SpectodaClass {
       logging.verbose(`fingerprint=${fingerprint}`)
       logging.verbose(
         `fingerprint=${[...fingerprint]
-          .map((byte) => ('0' + (byte & 0xff).toString(16)).slice(-2))
+          .map((byte) => ('0' + (byte & 0xFF).toString(16)).slice(-2))
           .join(',')}`,
       )
 
@@ -2873,7 +2873,7 @@ export class Spectoda implements SpectodaClass {
           const device_mac_bytes = reader.readBytes(6)
 
           device_mac = Array.from(device_mac_bytes, function (byte) {
-            return ('0' + (byte & 0xff).toString(16)).slice(-2)
+            return ('0' + (byte & 0xFF).toString(16)).slice(-2)
           }).join(':')
         }
 
@@ -3802,8 +3802,7 @@ export class Spectoda implements SpectodaClass {
 
         // Format MAC address
         const mac_address = Array.from(mac_bytes, (byte) =>
-          byte.toString(16).padStart(2, '0'),
-        ).join(':')
+          byte.toString(16).padStart(2, '0')).join(':')
 
         // Format fingerprints and signature as hex strings
         const network_signature_hex = uint8ArrayToHexString(network_signature)

@@ -2,6 +2,8 @@
 
 // npm install --save @types/w3c-web-serial
 
+import { randInt } from 'three/src/math/MathUtils';
+
 import { TimeTrack } from '../../TimeTrack';
 import { TnglReader } from '../../TnglReader';
 import { TnglWriter } from '../../TnglWriter';
@@ -12,7 +14,6 @@ import { SpectodaRuntime } from '../SpectodaRuntime';
 import { SpectodaWasm } from '../SpectodaWasm';
 import { SpectodaTypes } from '../types/primitives';
 import { Connection, Synchronization } from '../types/wasm';
-import { randInt } from 'three/src/math/MathUtils';
 
 // ! ======= from "@types/w3c-web-serial" =======
 
@@ -233,23 +234,23 @@ export class SpectodaWebSerialConnector {
             { usbVendorId: 0x0403, usbProductId: 0x6011 }, // FTDI 4232
             { usbVendorId: 0x0403, usbProductId: 0x6014 }, // FTDI 232H
             { usbVendorId: 0x0403, usbProductId: 0x6015 }, // FTDI 230X
-            { usbVendorId: 0x1a86, usbProductId: 0x7523 }, // CH340
-            { usbVendorId: 0x1a86, usbProductId: 0x5523 }, // CH341
-            { usbVendorId: 0x1a86, usbProductId: 0x55d4 }, // CH9102F
-            { usbVendorId: 0x10c4, usbProductId: 0xea60 }, // CP210x
-            { usbVendorId: 0x10c4, usbProductId: 0xea61 }, // CP210x
-            { usbVendorId: 0x10c4, usbProductId: 0xea63 }, // CP210x
-            { usbVendorId: 0x067b, usbProductId: 0x2303 }, // Prolific
-            { usbVendorId: 0x067b, usbProductId: 0x2304 }, // Prolific
-            { usbVendorId: 0x067b, usbProductId: 0x0611 }, // Prolific
-            { usbVendorId: 0x04b4, usbProductId: 0x0002 }, // Cypress
-            { usbVendorId: 0x04b4, usbProductId: 0x0003 }, // Cypress
-            { usbVendorId: 0x04b4, usbProductId: 0xf139 }, // Cypress
-            { usbVendorId: 0x04b4, usbProductId: 0xea61 }, // Cypress
-            { usbVendorId: 0x1bc7, usbProductId: 0x0020 }, // Teensyduino
-            { usbVendorId: 0x1bc7, usbProductId: 0x0021 }, // Teensyduino
-            { usbVendorId: 0x1bc7, usbProductId: 0x0023 }  // Teensyduino
-          ]
+            { usbVendorId: 0x1A86, usbProductId: 0x7523 }, // CH340
+            { usbVendorId: 0x1A86, usbProductId: 0x5523 }, // CH341
+            { usbVendorId: 0x1A86, usbProductId: 0x55D4 }, // CH9102F
+            { usbVendorId: 0x10C4, usbProductId: 0xEA60 }, // CP210x
+            { usbVendorId: 0x10C4, usbProductId: 0xEA61 }, // CP210x
+            { usbVendorId: 0x10C4, usbProductId: 0xEA63 }, // CP210x
+            { usbVendorId: 0x067B, usbProductId: 0x2303 }, // Prolific
+            { usbVendorId: 0x067B, usbProductId: 0x2304 }, // Prolific
+            { usbVendorId: 0x067B, usbProductId: 0x0611 }, // Prolific
+            { usbVendorId: 0x04B4, usbProductId: 0x0002 }, // Cypress
+            { usbVendorId: 0x04B4, usbProductId: 0x0003 }, // Cypress
+            { usbVendorId: 0x04B4, usbProductId: 0xF139 }, // Cypress
+            { usbVendorId: 0x04B4, usbProductId: 0xEA61 }, // Cypress
+            { usbVendorId: 0x1BC7, usbProductId: 0x0020 }, // Teensyduino
+            { usbVendorId: 0x1BC7, usbProductId: 0x0021 }, // Teensyduino
+            { usbVendorId: 0x1BC7, usbProductId: 0x0023 }, // Teensyduino
+          ],
         });
 
         this.#serialPort = port;
@@ -296,7 +297,7 @@ export class SpectodaWebSerialConnector {
     }).catch((error) => {
       // TODO remove this once we have a proper auto-select mechanism
       // TODO it is not desirable to call userSelect() if you want to auto-select
-      logging.warn("SpectodaWebSerialConnector: autoSelect() failed. Calling userSelect() instead.");
+      logging.warn('SpectodaWebSerialConnector: autoSelect() failed. Calling userSelect() instead.');
       return this.userSelect(criterium_array, timeout_number);
     });
   }
@@ -356,16 +357,16 @@ export class SpectodaWebSerialConnector {
 
     if (timeout_number <= 0) {
       logging.warn('Connect timeout has expired');
-      return Promise.reject('ConnectionFailed');
+      throw 'ConnectionFailed';
     }
 
     if (!this.#serialPort) {
-      return Promise.reject('NotSelected');
+      throw 'NotSelected';
     }
 
     if (this.#interfaceConnected) {
       logging.warn('Serial device already connected');
-      return Promise.resolve({ connector: this.type });
+      return { connector: this.type };
     }
 
     return new Promise(async (resolve, reject) => {
@@ -441,8 +442,7 @@ export class SpectodaWebSerialConnector {
             await Promise.race([
               tempReader.read(),
               new Promise((_, reject) => 
-                setTimeout(() => reject(new Error('FlushTimeout')), 1000)
-              )
+                setTimeout(() => reject(new Error('FlushTimeout')), 1000)),
             ]);
           } catch (error) {
             logging.warn('Flush timeout or error:', error);
@@ -762,12 +762,12 @@ export class SpectodaWebSerialConnector {
 
     if (!this.#serialPort) {
       logging.debug('No Serial Port selected');
-      return Promise.resolve(null);
+      return null;
     }
 
     if (this.#disconnecting) {
       logging.warn('Serial port already disconnecting');
-      return Promise.resolve(null);
+      return null;
     }
 
     this.#disconnecting = true;
