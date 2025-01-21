@@ -136,23 +136,31 @@ Note: Connections are managed through Connectors (like SCBLE and WEBUSB) which p
 Handle real-time error updates from controllers with listeners for errors and warnings:
 
 ```typescript
-spectoda.on('networkerror', ({ controller, errors }: ControllerError) => {
-  console.log(`Errors from Controller ${controller.label} (${controller.mac}):`)
+spectoda.on(
+  SPECTODA_APP_EVENTS.NETWORK_ERROR,
+  ({ controller, errors }: ControllerError) => {
+    console.log(
+      `Errors from Controller ${controller.label} (${controller.mac}):`,
+    )
 
-  errors.forEach(({ description, code }) => {
-    console.error(`❌ [Error ${code}] - ${description}`)
-  })
-})
+    errors.forEach(({ description, code }) => {
+      console.error(`❌ [Error ${code}] - ${description}`)
+    })
+  },
+)
 
-spectoda.on('networkwarning', ({ controller, warnings }: ControllerWarning) => {
-  console.log(
-    `Warnings from Controller ${controller.label} (${controller.mac}):`,
-  )
+spectoda.on(
+  SPECTODA_APP_EVENTS.NETWORK_WARNING,
+  ({ controller, warnings }: ControllerWarning) => {
+    console.log(
+      `Warnings from Controller ${controller.label} (${controller.mac}):`,
+    )
 
-  warnings.forEach(({ description, code }) => {
-    console.warn(`⚠️ [Warning ${code}] - ${description}`)
-  })
-})
+    warnings.forEach(({ description, code }) => {
+      console.warn(`⚠️ [Warning ${code}] - ${description}`)
+    })
+  },
+)
 ```
 
 Get errors and warnings from controllers:
