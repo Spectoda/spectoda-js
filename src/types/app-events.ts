@@ -37,10 +37,10 @@ export const SpectodaAppEvents = {
 
   TNGL_UPDATE: 'tngl_update',
 
-  EMITTED_EVENTS: 'emitted_events',
-  EMITTEDEVENTS: 'emittedevents',
-  EVENT_STATE_UPDATES: 'event_state_updates',
-  EVENTSTATEUPDATES: 'eventstateupdates',
+  
+  EMITTED_EVENTS: 'emittedevents',
+  
+  EVENT_STATE_UPDATES: 'eventstateupdates',
 
   WASM_EXECUTE: 'wasm_execute',
   WASM_CLOCK: 'wasm_clock',
@@ -81,19 +81,11 @@ type PropsMap = WebsocketConnectionStateProps &
     /** @private event */
     '#disconnected': undefined
 
-    // TODO deprecate @immakermatty
-    // TODO for future payload key: `events`
-    [SpectodaAppEvents.EMITTED_EVENTS]: SpectodaEvent[]
-
-    // TODO deprecate @immakermatty
     // TODO for future payload key: `events`
     [SpectodaAppEvents.EVENT_STATE_UPDATES]: SpectodaEvent[]
 
     // TODO for future payload key: `events`
-    [SpectodaAppEvents.EMITTEDEVENTS]: SpectodaEvent[]
-
-    // TODO for future payload key: `events`
-    [SpectodaAppEvents.EVENTSTATEUPDATES]: SpectodaEvent[]
+    [SpectodaAppEvents.EMITTED_EVENTS]: SpectodaEvent[]
 
     // TODO deprecate @immakermatty
     // TODO for future payload key: `command`
