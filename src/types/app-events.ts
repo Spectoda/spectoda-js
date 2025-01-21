@@ -4,7 +4,7 @@ import {
   WEBSOCKET_CONNECTION_STATE,
   WebsocketConnectionState,
 } from './connect'
-import { ControllerError } from './messages'
+import { ControllerError, ControllerWarning } from './messages'
 import { SpectodaEvent } from './event'
 import { SpectodaTypes } from './primitives'
 
@@ -66,8 +66,8 @@ type PropsMap = WebsocketConnectionStateProps &
     // TODO for future payload key: `log`
     'controller-log': string
 
-    networkerror: ControllerError
-    networkwarning: ControllerError
+    networkerror: ControllerError[]
+    networkwarning: ControllerWarning[]
   }
 
 export const SpectodaAppEvents: SpectodaAppEventType = {
