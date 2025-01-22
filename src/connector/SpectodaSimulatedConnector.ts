@@ -113,20 +113,29 @@ export class SpectodaSimulatedConnector {
             return true;
           }
 
+
+          // TODO! figure out what to do when the simulated controller is not connected
+          if (!this.#connected) {
+            return Promise.resolve();
+          }
+
           // TODO! SOURCE_CONNECTION_THIS_CONTROLLER should have the actual mac address of the controller. Not 00:00:00:00:00:00
 
           try {
             if (source_connection.address_string == '00:00:00:00:00:00') {
+              source_connection.connector_type = SpectodaWasm.connector_type_t.CONNECTOR_SIMULATED;
               source_connection.address_string = SimulatedControllerMacAddress;
 
               this.#runtimeReference.spectoda_js.execute(command_bytecode_array, source_connection);
             }
-
-            source_connection.connector_type = SpectodaWasm.connector_type_t.CONNECTOR_SIMULATED;
-            this.#runtimeReference.sendExecute(command_bytecode_array, source_connection).catch((e) => {
-              logging.error(e);
-              return false;
-            });
+            else {
+              source_connection.connector_type = SpectodaWasm.connector_type_t.CONNECTOR_SIMULATED;
+              this.#runtimeReference.sendExecute(command_bytecode_array, source_connection).catch((e) => {
+                logging.error(e);
+                return false;
+              });
+            }
+          
           } catch (e) {
             logging.error(e);
             return false;
@@ -150,18 +159,27 @@ export class SpectodaSimulatedConnector {
             return true;
           }
 
+
+          // TODO! figure out what to do when the simulated controller is not connected
+          if (!this.#connected) {
+            return Promise.resolve();
+          }
+
           try {
             // TODO! SOURCE_CONNECTION_THIS_CONTROLLER should have the actual mac address of the controller. Not 00:00:00:00:00:00
             if (source_connection.address_string == '00:00:00:00:00:00') {
               source_connection.address_string = SimulatedControllerMacAddress;
+              source_connection.connector_type = SpectodaWasm.connector_type_t.CONNECTOR_SIMULATED;
+
               this.#runtimeReference.spectoda_js.synchronize(synchronization, source_connection);
             }
-
-            source_connection.connector_type = SpectodaWasm.connector_type_t.CONNECTOR_SIMULATED;
-            this.#runtimeReference.sendSynchronize(synchronization, source_connection).catch((e) => {
-              logging.error(e);
-              return false;
-            });
+            else {
+              source_connection.connector_type = SpectodaWasm.connector_type_t.CONNECTOR_SIMULATED;
+              this.#runtimeReference.sendSynchronize(synchronization, source_connection).catch((e) => {
+                logging.error(e);
+                return false;
+              });
+            }
           } catch (e) {
             logging.error(e);
             return false;
@@ -213,8 +231,8 @@ export class SpectodaSimulatedConnector {
 
     // ? This can be offloaded to different thread
     {
-      this.#ups = 1;
-      this.#fps = 2;
+      this.#ups = 10;
+      this.#fps = 5;
 
       const __process = async () => {
         for (const controller of this.controllers) {
@@ -578,6 +596,11 @@ export class SpectodaSimulatedConnector {
       return Promise.resolve();
     }
 
+    // TODO! figure out what to do when the simulated controller is not connected
+    if (!this.#connected) {
+      return Promise.resolve();
+    }
+
     // TODO simulated connector needs the other side to receive the executed
 
     // ! This is a hack to make the simulated connector work with the preview controllers
@@ -607,6 +630,11 @@ export class SpectodaSimulatedConnector {
   sendRequest(request_ticket_number: number, request_bytecode: Uint8Array, destination_connection: Connection) {
     logging.verbose(`SpectodaSimulatedConnector::sendRequest(request_ticket_number=${request_ticket_number}, request_bytecode=${request_bytecode}, destination_connection=${destination_connection})`);
 
+    // TODO! figure out what to do when the simulated controller is not connected
+    if (!this.#connected) {
+      return Promise.resolve();
+    }
+
     // TODO simulated connector needs the other side to receive the request
 
     return Promise.reject('NotImplemented');
@@ -615,6 +643,11 @@ export class SpectodaSimulatedConnector {
 
   sendResponse(request_ticket_number: number, request_result: number, response_bytecode: Uint8Array, destination_connection: Connection) {
     logging.verbose(`SpectodaSimulatedConnector::sendResponse(request_ticket_number=${request_ticket_number}, request_result=${request_result}, response_bytecode=${response_bytecode}, destination_connection=${destination_connection})`);
+
+    // TODO! figure out what to do when the simulated controller is not connected
+    if (!this.#connected) {
+      return Promise.resolve();
+    }
 
     // TODO simulated connector needs the other side to receive the response
 
@@ -628,6 +661,11 @@ export class SpectodaSimulatedConnector {
 
     if (source_connection.connector_type == SpectodaWasm.connector_type_t.CONNECTOR_SIMULATED) {
       logging.debug('SpectodaSimulatedConnector::sendSynchronize() - source_connection is CONNECTOR_SIMULATED');
+      return Promise.resolve();
+    }
+
+    // TODO! figure out what to do when the simulated controller is not connected
+    if (!this.#connected) {
       return Promise.resolve();
     }
 
