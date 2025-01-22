@@ -10,6 +10,7 @@ import { TnglReader } from '../../TnglReader';
 import { COMMAND_FLAGS, DEFAULT_TIMEOUT } from '../constants';
 import { SpectodaRuntime } from '../SpectodaRuntime';
 import { SpectodaWasm } from '../SpectodaWasm';
+import { SpectodaAppEvents } from '../types/app-events';
 import { SpectodaTypes } from '../types/primitives';
 import { Connection, Synchronization } from '../types/wasm';
 
@@ -491,7 +492,7 @@ export class WebBLEConnection {
       if (!this.#deviceChar) {throw 'DeviceCharactristicsNull';}
 
       try {
-        this.#runtimeReference.emit('ota_status', 'begin');
+        this.#runtimeReference.emit(SpectodaAppEvents.OTA_STATUS, 'begin');
 
         {
           //===========// RESET //===========//
@@ -533,7 +534,7 @@ export class WebBLEConnection {
 
             logging.debug(percentage + '%');
 
-            this.#runtimeReference.emit('ota_progress', percentage);
+            this.#runtimeReference.emit(SpectodaAppEvents.OTA_PROGRESS, percentage);
 
             index_from += chunk_size;
             index_to = index_from + chunk_size;
@@ -555,11 +556,11 @@ export class WebBLEConnection {
 
         logging.info('> Firmware written in ' + (Date.now() - start_timestamp) / 1000 + ' seconds');
 
-        this.#runtimeReference.emit('ota_status', 'success');
+        this.#runtimeReference.emit(SpectodaAppEvents.OTA_STATUS, 'success');
         resolve(null);
       } catch (e) {
         logging.error(e);
-        this.#runtimeReference.emit('ota_status', 'fail');
+        this.#runtimeReference.emit(SpectodaAppEvents.OTA_STATUS, 'fail');
         reject('UpdateFailed');
       }
     }).finally(() => {
@@ -651,11 +652,13 @@ export class SpectodaWebBluetoothConnector {
 
     this.#connectedGuard = false;
 
-    this.#runtimeReference.on('#connected', () => {
+    // TODO unregister event listener on connector destroy
+    this.#runtimeReference.on(SpectodaAppEvents.PRIVATE_CONNECTED, () => {
       this.#connectedGuard = true;
     });
 
-    this.#runtimeReference.on('#disconnected', () => {
+    // TODO unregister event listener on connector destroy
+    this.#runtimeReference.on(SpectodaAppEvents.PRIVATE_DISCONNECTED, () => {
       this.#connectedGuard = false;
     });
   }
@@ -968,7 +971,7 @@ export class SpectodaWebBluetoothConnector {
 
         logging.debug('> Bluetooth Device Connected');
         if (!this.#connectedGuard) {
-          this.#runtimeReference.emit('#connected');
+          this.#runtimeReference.emit(SpectodaAppEvents.PRIVATE_CONNECTED);
         }
         return { connector: 'webbluetooth' };
       } catch (error: any) {
@@ -1043,7 +1046,7 @@ export class SpectodaWebBluetoothConnector {
     this.#connection.reset();
     if (this.#connectedGuard) {
       logging.verbose('emitting #disconnected');
-      this.#runtimeReference.emit('#disconnected');
+      this.#runtimeReference.emit(SpectodaAppEvents.PRIVATE_DISCONNECTED);
     }
   };
 

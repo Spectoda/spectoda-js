@@ -387,6 +387,7 @@ export class PreviewController {
     return this.#ringLogBuffer.getAllLogs();
   }
 
+  // TODO! remove this
   clearLogs() {
     this.#ringLogBuffer.clear();
     this.#eventEmitter.emit('clear_logs');

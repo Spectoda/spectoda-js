@@ -4,6 +4,8 @@ import { io } from 'socket.io-client';
 
 import customParser from 'socket.io-msgpack-parser';
 
+import { SpectodaAppEvents } from './types/app-events';
+
 import { TimeTrack } from './TimeTrack';
 import { createNanoEvents } from './functions';
 import { logging } from './logging';
@@ -81,8 +83,9 @@ export function createSpectodaWebsocket() {
   socket.on('event', (data) => {
     logging.verbose('event', data);
 
-    if (data.name === 'wasm_execute') {
-      eventStream.emit('wasm_execute', data.args[0][1]);
+    // TODO delete this useless event
+    if (data.name === SpectodaAppEvents.PRIVATE_WASM_EXECUTE) {
+      eventStream.emit(SpectodaAppEvents.PRIVATE_WASM_EXECUTE, data.args[0][1]);
       return;
     }
 
@@ -93,13 +96,13 @@ export function createSpectodaWebsocket() {
 
   socket.on('connect', () => {
     if (networkJoinParams) {
-      eventStream.emit('connecting-websockets');
+      eventStream.emit(SpectodaAppEvents.REMOTE_CONTROL_CONNECTING);
 
       socket
         .emitWithAck('join', networkJoinParams)
         .then(() => {
           logging.info('re/connected to websocket server', networkJoinParams);
-          eventStream.emit('connected-websockets');
+          eventStream.emit(SpectodaAppEvents.REMOTE_CONTROL_CONNECTED);
         })
         .catch((err) => {
           logging.error('error connecting to websocket server', err);
@@ -108,7 +111,7 @@ export function createSpectodaWebsocket() {
   });
 
   socket.on('disconnect', () => {
-    eventStream.emit('disconnected-websockets');
+    eventStream.emit(SpectodaAppEvents.REMOTE_CONTROL_DISCONNECTED);
   });
 
   class SpectodaVirtualProxy {
@@ -166,10 +169,10 @@ export function createSpectodaWebsocket() {
                         //* if the receiver is connected, emit the connected event on the sender
                         if (receiverConnectedCriteria) {
                           //* emit the connected event to the sender app
-                          window.spectoda.emit('connected');
+                          window.spectoda.emit(SpectodaAppEvents.REMOTE_CONTROL_CONNECTED);
                         } else {
                           //* emit the disconnected event to the sender app
-                          window.spectoda.emit('disconnected');
+                          window.spectoda.emit(SpectodaAppEvents.REMOTE_CONTROL_DISCONNECTED);
                         }
                       }).catch((err) => {
                         logging.error('error connecting to websocket server', err);

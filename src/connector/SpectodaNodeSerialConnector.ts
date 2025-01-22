@@ -29,6 +29,7 @@ import { Connection, Synchronization } from '../types/wasm';
 
 // import { SerialPort as NodeSerialPort, ReadlineParser as NodeReadlineParser } from "serialport";
 import type { SerialPort as NodeSerialPortType, ReadlineParser as NodeReadlineParserType } from '../../../../node_modules/serialport/dist/index';
+import { SpectodaAppEvents } from '../types/app-events';
 
 let { NodeSerialPort, NodeReadlineParser }: { NodeSerialPort: NodeSerialPortType | undefined; NodeReadlineParser: NodeReadlineParserType | undefined } = { NodeSerialPort: undefined, NodeReadlineParser: undefined };
 
@@ -392,7 +393,7 @@ export class SpectodaNodeSerialConnector {
 
           if (this.#interfaceConnected) {
             this.#interfaceConnected = false;
-            this.#runtimeReference.emit('#disconnected');
+            this.#runtimeReference.emit(SpectodaAppEvents.PRIVATE_DISCONNECTED);
           }
         });
 
@@ -502,7 +503,6 @@ export class SpectodaNodeSerialConnector {
 
                     // TODO! process line
                     logging.info(line);
-                    this.#runtimeReference.emit('controller-log', line);
                     line_bytes.length = 0;
                   } /* if(character !== NEWLINE_ASCII_CODE) */ else {
                     line_bytes.push(character);
@@ -560,7 +560,7 @@ export class SpectodaNodeSerialConnector {
               setTimeout(() => {
                 if (!this.#interfaceConnected) {
                   this.#interfaceConnected = true;
-                  this.#runtimeReference.emit('#connected');
+                  this.#runtimeReference.emit(SpectodaAppEvents.PRIVATE_CONNECTED);
                 }
                 resolve({ connector: this.type });
               }, 100);
@@ -633,7 +633,7 @@ export class SpectodaNodeSerialConnector {
         }
         if (this.#interfaceConnected) {
           this.#interfaceConnected = false;
-          this.#runtimeReference.emit('#disconnected');
+          this.#runtimeReference.emit(SpectodaAppEvents.PRIVATE_DISCONNECTED);
         }
       });
     }
@@ -996,7 +996,7 @@ export class SpectodaNodeSerialConnector {
       const start_timestamp = Date.now();
 
       try {
-        this.#runtimeReference.emit('ota_status', 'begin');
+        this.#runtimeReference.emit(SpectodaAppEvents.OTA_STATUS, 'begin');
 
         {
           //===========// RESET //===========//
@@ -1038,7 +1038,7 @@ export class SpectodaNodeSerialConnector {
 
             logging.info(percentage + '%');
 
-            this.#runtimeReference.emit('ota_progress', percentage);
+            this.#runtimeReference.emit(SpectodaAppEvents.OTA_PROGRESS, percentage);
 
             index_from += chunk_size;
             index_to = index_from + chunk_size;
@@ -1064,11 +1064,11 @@ export class SpectodaNodeSerialConnector {
 
         await this.#write(CHANNEL_DEVICE, bytes, 10000);
 
-        this.#runtimeReference.emit('ota_status', 'success');
+        this.#runtimeReference.emit(SpectodaAppEvents.OTA_STATUS, 'success');
         resolve(null);
       } catch (e) {
         logging.error('Error during OTA:', e);
-        this.#runtimeReference.emit('ota_status', 'fail');
+        this.#runtimeReference.emit(SpectodaAppEvents.OTA_STATUS, 'fail');
         reject('UpdateFailed');
       }
     }).finally(() => {

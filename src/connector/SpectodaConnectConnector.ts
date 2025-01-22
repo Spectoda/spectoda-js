@@ -7,6 +7,7 @@ import { TnglReader } from '../../TnglReader';
 import { COMMAND_FLAGS, DEFAULT_TIMEOUT } from '../constants';
 import { SpectodaRuntime } from '../SpectodaRuntime';
 import { SpectodaWasm } from '../SpectodaWasm';
+import { SpectodaAppEvents } from '../types/app-events';
 import { SpectodaTypes } from '../types/primitives';
 import { Connection, Synchronization } from '../types/wasm';
 
@@ -106,7 +107,7 @@ class FlutterConnection {
         this.#networkNotificationBuffer = null;
 
         // @ts-ignore
-        window.flutterConnection.emit('#connected', value);
+        window.flutterConnection.emit(SpectodaAppEvents.PRIVATE_CONNECTED, value);
       });
 
       window.addEventListener('#disconnected', (e) => {
@@ -119,7 +120,7 @@ class FlutterConnection {
         this.#networkNotificationBuffer = null;
 
         // @ts-ignore
-        window.flutterConnection.emit('#disconnected', value);
+        window.flutterConnection.emit(SpectodaAppEvents.PRIVATE_DISCONNECTED, value);
       });
 
       // network characteristics notification
@@ -208,7 +209,7 @@ class FlutterConnection {
         logging.debug(`> Triggered #scan: [${json}]`);
 
         // @ts-ignore
-        window.flutterConnection.emit('scan', json);
+        window.flutterConnection.emit(SpectodaAppEvents.SCAN_RESULTS, json);
       });
 
       logging.verbose('> FlutterConnection inited');
@@ -353,11 +354,11 @@ class FlutterConnection {
               await sleep(1000); // unselect logic
 
               // @ts-ignore
-              window.flutterConnection.emit('#connected');
+              window.flutterConnection.emit(SpectodaAppEvents.PRIVATE_CONNECTED);
 
               setTimeout(() => {
                 // @ts-ignore
-                window.flutterConnection.emit('#disconnected');
+                window.flutterConnection.emit(SpectodaAppEvents.PRIVATE_DISCONNECTED);
                 //}, Math.random() * 60000);
                 _connected = false;
               }, 60000);
@@ -372,7 +373,7 @@ class FlutterConnection {
                 await sleep(100); // disconnecting logic
                 _connected = false;
                 // @ts-ignore
-                window.flutterConnection.emit('#disconnected');
+                window.flutterConnection.emit(SpectodaAppEvents.PRIVATE_DISCONNECTED);
               }
               // @ts-ignore
               window.flutterConnection.resolve(); // always resolves even if there are internal errors
@@ -504,22 +505,22 @@ class FlutterConnection {
                 return;
               }
               // @ts-ignore
-              window.flutterConnection.emit('ota_status', 'begin');
+              window.flutterConnection.emit(SpectodaAppEvents.OTA_STATUS, 'begin');
               await sleep(10000); // preparing FW logic.
               if (_fail(0.1)) {
                 // @ts-ignore
-                window.flutterConnection.emit('ota_status', 'fail');
+                window.flutterConnection.emit(SpectodaAppEvents.OTA_STATUS, 'fail');
                 // @ts-ignore
                 window.flutterConnection.reject('UpdateFailed');
                 return;
               }
               for (let i = 1; i <= 100; i++) {
                 // @ts-ignore
-                window.flutterConnection.emit('ota_progress', i);
+                window.flutterConnection.emit(SpectodaAppEvents.OTA_PROGRESS, i);
                 await sleep(25); // writing FW logic.
                 if (_fail(0.01)) {
                   // @ts-ignore
-                  window.flutterConnection.emit('ota_status', 'fail');
+                  window.flutterConnection.emit(SpectodaAppEvents.OTA_STATUS, 'fail');
                   // @ts-ignore
                   window.flutterConnection.reject('UpdateFailed');
                   return;
@@ -528,13 +529,13 @@ class FlutterConnection {
               await sleep(1000); // finishing FW logic.
               if (_fail(0.1)) {
                 // @ts-ignore
-                window.flutterConnection.emit('ota_status', 'fail');
+                window.flutterConnection.emit(SpectodaAppEvents.OTA_STATUS, 'fail');
                 // @ts-ignore
                 window.flutterConnection.reject('UpdateFailed');
                 return;
               }
               // @ts-ignore
-              window.flutterConnection.emit('ota_status', 'success');
+              window.flutterConnection.emit(SpectodaAppEvents.OTA_STATUS, 'success');
               // @ts-ignore
               window.flutterConnection.resolve();
             }
@@ -1168,7 +1169,7 @@ export class SpectodaConnectConnector extends FlutterConnection {
       await sleep(100);
 
       try {
-        this.#runtimeReference.emit('ota_status', 'begin');
+        this.#runtimeReference.emit(SpectodaAppEvents.OTA_STATUS, 'begin');
 
         {
           //===========// RESET //===========//
@@ -1210,7 +1211,7 @@ export class SpectodaConnectConnector extends FlutterConnection {
             const percentage = Math.floor((written * 10000) / firmware_bytes.length) / 100;
 
             logging.debug(percentage + '%');
-            this.#runtimeReference.emit('ota_progress', percentage);
+            this.#runtimeReference.emit(SpectodaAppEvents.OTA_PROGRESS, percentage);
 
             index_from += chunk_size;
             index_to = index_from + chunk_size;
@@ -1238,11 +1239,11 @@ export class SpectodaConnectConnector extends FlutterConnection {
 
         logging.debug('Firmware written in ' + (Date.now() - start_timestamp) / 1000 + ' seconds');
 
-        this.#runtimeReference.emit('ota_status', 'success');
+        this.#runtimeReference.emit(SpectodaAppEvents.OTA_STATUS, 'success');
 
         resolve(null);
       } catch (e) {
-        this.#runtimeReference.emit('ota_status', 'fail');
+        this.#runtimeReference.emit(SpectodaAppEvents.OTA_STATUS, 'fail');
 
         reject(e);
       }

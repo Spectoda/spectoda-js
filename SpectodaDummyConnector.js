@@ -4,6 +4,7 @@ import { TimeTrack } from './TimeTrack.js';
 import { COMMAND_FLAGS } from './src/constants';
 import { TnglReader } from './TnglReader';
 import { TnglWriter } from './TnglWriter';
+import { SpectodaAppEvents } from './src/types/app-events';
 
 /////////////////////////////////////////////////////////////////////////////////////
 
@@ -138,7 +139,7 @@ export class SpectodaDummyConnector {
         return;
       }
       this.#connected = true;
-      this.#interfaceReference.emit('#connected');
+      this.#interfaceReference.emit(SpectodaAppEvents.PRIVATE_CONNECTED);
       resolve({ connector: this.type });
 
       /**  
@@ -159,7 +160,7 @@ export class SpectodaDummyConnector {
       if (this.#connected) {
         await sleep(100); // disconnecting logic
         this.#connected = false;
-        this.#interfaceReference.emit('#disconnected');
+        this.#interfaceReference.emit(SpectodaAppEvents.PRIVATE_DISCONNECTED);
       }
       resolve(); // always resolves even if there are internal errors
     });
@@ -339,29 +340,29 @@ export class SpectodaDummyConnector {
         reject('DeviceDisconnected');
         return;
       }
-      this.#interfaceReference.emit('ota_status', 'begin');
+      this.#interfaceReference.emit(SpectodaAppEvents.OTA_STATUS, 'begin');
       await sleep(10000); // preparing FW logic.
       if (this.#fail(0.1)) {
-        this.#interfaceReference.emit('ota_status', 'fail');
+        this.#interfaceReference.emit(SpectodaAppEvents.OTA_STATUS, 'fail');
         reject('UpdateFailed');
         return;
       }
       for (let i = 1; i <= 100; i++) {
-        this.#interfaceReference.emit('ota_progress', i);
+        this.#interfaceReference.emit(SpectodaAppEvents.OTA_PROGRESS, i);
         await sleep(25); // writing FW logic.
         if (this.#fail(0.01)) {
-          this.#interfaceReference.emit('ota_status', 'fail');
+          this.#interfaceReference.emit(SpectodaAppEvents.OTA_STATUS, 'fail');
           reject('UpdateFailed');
           return;
         }
       }
       await sleep(1000); // finishing FW logic.
       if (this.#fail(0.1)) {
-        this.#interfaceReference.emit('ota_status', 'fail');
+        this.#interfaceReference.emit(SpectodaAppEvents.OTA_STATUS, 'fail');
         reject('UpdateFailed');
         return;
       }
-      this.#interfaceReference.emit('ota_status', 'success');
+      this.#interfaceReference.emit(SpectodaAppEvents.OTA_STATUS, 'success');
       resolve();
     });
   }

@@ -33,7 +33,7 @@ import { APP_MAC_ADDRESS, COMMAND_FLAGS, DEFAULT_TIMEOUT } from './constants';
 import { SpectodaNodeBluetoothConnector } from './connector/SpectodaNodeBleConnector';
 import { SpectodaNodeSerialConnector } from './connector/SpectodaNodeSerialConnector';
 import { SpectodaSimulatedConnector } from './connector/SpectodaSimulatedConnector';
-import { SpectodaAppEventMap } from './types/app-events';
+import { SPECTODA_APP_EVENTS, SpectodaAppEventMap, SpectodaAppEvents } from './types/app-events';
 import { ConnectorType } from './types/connect';
 import { SpectodaEventStateValue } from './types/event';
 import { SpectodaTypes } from './types/primitives';
@@ -299,7 +299,7 @@ export class SpectodaRuntime {
 
     this.WIP_name = 'APP';
 
-    this.#eventEmitter.on('ota_progress', (value: number) => {
+    this.#eventEmitter.on(SpectodaAppEvents.OTA_PROGRESS, (value: number) => {
       const now = Date.now();
 
       const time_delta = now - this.lastUpdateTime;
@@ -320,14 +320,14 @@ export class SpectodaRuntime {
 
       logging.verbose('time_left:', time_left);
 
-      this.emit('ota_timeleft', time_left);
+      this.emit(SpectodaAppEvents.OTA_TIMELEFT, time_left);
     });
 
-    this.#eventEmitter.on('#connected', (e: any) => {
+    this.#eventEmitter.on(SpectodaAppEvents.PRIVATE_CONNECTED, (e: any) => {
       this.#onConnected(e);
     });
 
-    this.#eventEmitter.on('#disconnected', (e: any) => {
+    this.#eventEmitter.on(SpectodaAppEvents.PRIVATE_DISCONNECTED, (e: any) => {
       this.#onDisconnected(e);
     });
 
@@ -405,8 +405,7 @@ export class SpectodaRuntime {
 
     this.previewControllers = {};
 
-    this.#eventEmitter.on('wasm_execute', (command: any) => {
-      logging.debug('wasm_execute', command);
+    this.#eventEmitter.on(SPECTODA_APP_EVENTS.PRIVATE_WASM_EXECUTE, (command: any) => {
       for (const previewController of Object.values(this.previewControllers)) {
         try {
           previewController.execute(command, SpectodaWasm.Connection.make('11:11:11:11:11:11', SpectodaWasm.connector_type_t.CONNECTOR_UNDEFINED, SpectodaWasm.connection_rssi_t.RSSI_MAX));
@@ -416,7 +415,7 @@ export class SpectodaRuntime {
       }
     });
 
-    this.#eventEmitter.on('wasm_clock', (timestamp: number) => {
+    this.#eventEmitter.on(SPECTODA_APP_EVENTS.PRIVATE_WASM_CLOCK, (timestamp: number) => {
       for (const previewController of Object.values(this.previewControllers)) {
         try {
           previewController.setClockTimestamp(timestamp);
@@ -1012,13 +1011,13 @@ export class SpectodaRuntime {
                       if (!this.#connectGuard) {
                         logging.error('Connection logic error. #connected not called during successful connect()?');
                         logging.warn('Emitting #connected');
-                        this.#eventEmitter.emit('#connected');
+                        this.#eventEmitter.emit(SpectodaAppEvents.PRIVATE_CONNECTED);
                       }
 
                       try {
                         this.clock = await this.connector?.getClock();
                         this.spectoda_js.setClockTimestamp(this.clock.millis());
-                        this.emit('wasm_clock', this.clock.millis());
+                        this.#eventEmitter.emit(SpectodaAppEvents.PRIVATE_WASM_CLOCK, this.clock.millis());
                         item.resolve(result);
                       } catch (error) {
                         logging.error(error);
@@ -1213,7 +1212,7 @@ export class SpectodaRuntime {
                   const send_execute_query: SendExecuteQuery = item.a;
 
                   try {
-                    this.emit('wasm_execute', [...send_execute_query.command_bytes]);
+                    this.emit(SpectodaAppEvents.PRIVATE_WASM_EXECUTE, [...send_execute_query.command_bytes]);
 
                     await this.connector
                       .sendExecute(send_execute_query.command_bytes, send_execute_query.source_connection)
