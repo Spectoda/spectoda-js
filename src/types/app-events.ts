@@ -23,10 +23,12 @@ type SpectodaAppEventType<T extends string = string> = {
 export const SpectodaAppEvents = {
   ...CONNECTION_STATUS,
 
-  'CONNECTING-WEBSOCKETS': WEBSOCKET_CONNECTION_STATE.CONNECTING,
-  'CONNECTED-WEBSOCKETS': WEBSOCKET_CONNECTION_STATE.CONNECTED,
-  'DISCONNECTING-WEBSOCKETS': WEBSOCKET_CONNECTION_STATE.DISCONNECTING,
-  'DISCONNECTED-WEBSOCKETS': WEBSOCKET_CONNECTION_STATE.DISCONNECTED,
+  SCAN_RESULTS: 'scan_results',
+
+  REMOTE_CONTROL_CONNECTING: WEBSOCKET_CONNECTION_STATE.CONNECTING,
+  REMOTE_CONTROL_CONNECTED: WEBSOCKET_CONNECTION_STATE.CONNECTED,
+  REMOTE_CONTROL_DISCONNECTING: WEBSOCKET_CONNECTION_STATE.DISCONNECTING,
+  REMOTE_CONTROL_DISCONNECTED: WEBSOCKET_CONNECTION_STATE.DISCONNECTED,
 
   PEER_CONNECTED: 'peer_connected',
   PEER_DISCONNECTED: 'peer_disconnected',
@@ -37,24 +39,31 @@ export const SpectodaAppEvents = {
 
   TNGL_UPDATE: 'tngl_update',
 
-  
   EMITTED_EVENTS: 'emittedevents',
-  
   EVENT_STATE_UPDATES: 'eventstateupdates',
-
-  WASM_EXECUTE: 'wasm_execute',
-  WASM_CLOCK: 'wasm_clock',
-
-  '#CONNECTED': '#connected',
-  '#DISCONNECTED': '#disconnected',
-  'CONTROLLER-LOG': 'controller-log',
 
   NETWORK_ERROR: 'networkerror',
   NETWORK_WARNING: 'networkwarning',
+
+  /** @private for spectoda-js internal use only */
+  PRIVATE_CONNECTED: '#connected',
+  /** @private for spectoda-js internal use only */
+  PRIVATE_DISCONNECTED: '#disconnected',
+  /** @private for spectoda-js internal use only */
+  PRIVATE_WASM_CLOCK: '#wasm_clock',
+  /** @private for spectoda-js internal use only */
+  PRIVATE_WASM_REQUEST: '#wasm_request',
+  /** @private for spectoda-js internal use only */
+  PRIVATE_WASM_EXECUTE: '#wasm_execute',
+  
 } as const satisfies SpectodaAppEventType
 
 type PropsMap = WebsocketConnectionStateProps &
   ConnectionStatusProps & {
+
+    // TODO for future payload key: `json`
+    [SpectodaAppEvents.SCAN_RESULTS]: string
+
     // TODO for future payload key: `mac`
     [SpectodaAppEvents.PEER_CONNECTED]: string
 
@@ -86,18 +95,6 @@ type PropsMap = WebsocketConnectionStateProps &
 
     // TODO for future payload key: `events`
     [SpectodaAppEvents.EMITTED_EVENTS]: SpectodaEvent[]
-
-    // TODO deprecate @immakermatty
-    // TODO for future payload key: `command`
-    [SpectodaAppEvents.WASM_EXECUTE]: any
-
-    // TODO deprecate @immakermatty
-    // TODO for future payload key: `clock`
-    [SpectodaAppEvents.WASM_CLOCK]: number
-
-    // TODO deprecate @immakermatty
-    // TODO for future payload key: `log`
-    'controller-log': string
 
     [SpectodaAppEvents.NETWORK_ERROR]: ControllerError
     [SpectodaAppEvents.NETWORK_WARNING]: ControllerWarning

@@ -14,6 +14,7 @@ import { SpectodaRuntime } from '../SpectodaRuntime';
 import { SpectodaWasm } from '../SpectodaWasm';
 import { SpectodaTypes } from '../types/primitives';
 import { Connection, Synchronization } from '../types/wasm';
+import { SpectodaAppEvents } from '../types/app-events';
 
 // ! ======= from "@types/w3c-web-serial" =======
 
@@ -601,7 +602,6 @@ export class SpectodaWebSerialConnector {
                           const line = decoder.decode(new Uint8Array(line_bytes));
 
                           logging.info(line);
-                          this.#runtimeReference.emit('controller-log', line);
                           line_bytes.length = 0;
                         } else {
                           line_bytes.push(character);
@@ -668,7 +668,7 @@ export class SpectodaWebSerialConnector {
             
             // Set connected state and resolve
             this.#interfaceConnected = true;
-            this.#runtimeReference.emit('#connected');
+            this.#runtimeReference.emit(SpectodaAppEvents.PRIVATE_CONNECTED);
             resolveOnce({ connector: this.type });
           } else {
             logging.warn('Serial connection failed');
@@ -751,7 +751,7 @@ export class SpectodaWebSerialConnector {
         this.#disconnecting = false;
         if (this.#interfaceConnected) {
           this.#interfaceConnected = false;
-          this.#runtimeReference.emit('#disconnected');
+          this.#runtimeReference.emit(SpectodaAppEvents.PRIVATE_DISCONNECTED);
         }
       }
     });
@@ -812,7 +812,7 @@ export class SpectodaWebSerialConnector {
       this.#disconnecting = false;
       if (this.#interfaceConnected) {
         this.#interfaceConnected = false;
-        this.#runtimeReference.emit('#disconnected');
+        this.#runtimeReference.emit(SpectodaAppEvents.PRIVATE_DISCONNECTED);
       }
     }
   }
@@ -1111,7 +1111,7 @@ export class SpectodaWebSerialConnector {
       const start_timestamp = Date.now();
 
       try {
-        this.#runtimeReference.emit('ota_status', 'begin');
+        this.#runtimeReference.emit(SpectodaAppEvents.OTA_STATUS, 'begin');
 
         {
           logging.info('OTA RESET');
@@ -1150,7 +1150,7 @@ export class SpectodaWebSerialConnector {
 
             logging.info(percentage + '%');
 
-            this.#runtimeReference.emit('ota_progress', percentage);
+            this.#runtimeReference.emit(SpectodaAppEvents.OTA_PROGRESS, percentage);
 
             index_from += chunk_size;
             index_to = index_from + chunk_size;
@@ -1175,11 +1175,11 @@ export class SpectodaWebSerialConnector {
 
         await this.#write(CHANNEL_DEVICE, bytes, 10000);
 
-        this.#runtimeReference.emit('ota_status', 'success');
+        this.#runtimeReference.emit(SpectodaAppEvents.OTA_STATUS, 'success');
         resolve(null);
       } catch (e) {
         logging.error('Error during OTA:', e);
-        this.#runtimeReference.emit('ota_status', 'fail');
+        this.#runtimeReference.emit(SpectodaAppEvents.OTA_STATUS, 'fail');
         reject('UpdateFailed');
       }
     }).finally(() => {

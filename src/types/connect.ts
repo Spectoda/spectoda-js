@@ -16,6 +16,7 @@ export const CONNECTION_STATUS = Object.freeze({
 export type ConnectionStatus =
   (typeof CONNECTION_STATUS)[keyof typeof CONNECTION_STATUS]
 
+// TODO! rename to REMOTE_CONTROL_CONNECTION_STATUS
 export const WEBSOCKET_CONNECTION_STATE = Object.freeze({
   CONNECTING: 'connecting-websockets',
   CONNECTED: 'connected-websockets',

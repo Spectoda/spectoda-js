@@ -11,6 +11,7 @@ import { SpectodaTypes } from '../types/primitives';
 import { Connection, Synchronization, Uint8Vector } from '../types/wasm';
 
 import { IConnector_JS } from './IConnector_JS';
+import { SpectodaAppEvents } from '../types/app-events';
 
 export const SIMULATED_MAC_ADDRESS = '00:00:23:34:45:56';
 
@@ -373,7 +374,7 @@ export class SpectodaSimulatedConnector {
       await sleep(Math.random() * 1000); // connecting logic process delay
 
       this.#connected = true;
-      this.#runtimeReference.emit('#connected');
+      this.#runtimeReference.emit(SpectodaAppEvents.PRIVATE_CONNECTED);
       resolve({ connector: this.type });
     });
   }
@@ -387,7 +388,7 @@ export class SpectodaSimulatedConnector {
         await sleep(100); // disconnecting logic process delay
 
         this.#connected = false;
-        this.#runtimeReference.emit('#disconnected');
+        this.#runtimeReference.emit(SpectodaAppEvents.PRIVATE_DISCONNECTED);
       }
       resolve(null); // always resolves even if there are internal errors
     });
@@ -540,17 +541,17 @@ export class SpectodaSimulatedConnector {
         reject('DeviceDisconnected');
         return;
       }
-      this.#runtimeReference.emit('ota_status', 'begin');
+      this.#runtimeReference.emit(SpectodaAppEvents.OTA_STATUS, 'begin');
       await sleep(4000); // preparing FW logic.
 
       for (let i = 1; i <= 100; i++) {
-        this.#runtimeReference.emit('ota_progress', i);
+        this.#runtimeReference.emit(SpectodaAppEvents.OTA_PROGRESS, i);
         await sleep(25); // writing FW logic.
       }
 
       await sleep(1000); // finishing FW logic.
 
-      this.#runtimeReference.emit('ota_status', 'success');
+      this.#runtimeReference.emit(SpectodaAppEvents.OTA_STATUS, 'success');
       resolve(null);
     });
   }

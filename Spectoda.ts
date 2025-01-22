@@ -39,7 +39,8 @@ import { SpectodaRuntime, allEventsEmitter } from './src/SpectodaRuntime'
 import { VALUE_LIMITS, VALUE_TYPE } from './src/constants'
 import {
   SpectodaAppEventMap,
-  SpectodaAppEventName as SpectodaJsEventType,
+  SpectodaAppEventName,
+  SpectodaAppEvents,
 } from './src/types/app-events'
 import {
   CONNECTION_STATUS,
@@ -133,9 +134,9 @@ export class Spectoda implements SpectodaClass {
 
       this.#resetReconnectionInterval()
 
-      if (this.#getConnectionState() === 'connected' && this.#reconnecting) {
+      if (this.#getConnectionState() === CONNECTION_STATUS.CONNECTED && this.#reconnecting) {
         logging.debug(`Reconnecting in ${DEFAULT_RECONNECTION_TIME}ms..`)
-        this.#setConnectionState('connecting')
+        this.#setConnectionState(CONNECTION_STATUS.CONNECTING)
 
         return sleep(DEFAULT_RECONNECTION_TIME)
           .then(() => {
@@ -143,14 +144,14 @@ export class Spectoda implements SpectodaClass {
           })
           .then(() => {
             logging.info('Reconnection successful.')
-            this.#setConnectionState('connected')
+            this.#setConnectionState(CONNECTION_STATUS.CONNECTED)
           })
           .catch((error) => {
             logging.warn('Reconnection failed:', error)
-            this.#setConnectionState('disconnected')
+            this.#setConnectionState(CONNECTION_STATUS.DISCONNECTED)
           })
       } else {
-        this.#setConnectionState('disconnected')
+        this.#setConnectionState(CONNECTION_STATUS.DISCONNECTED)
       }
     }
 
@@ -184,7 +185,7 @@ export class Spectoda implements SpectodaClass {
         if (websocketConnectionState !== this.#websocketConnectionState) {
           logging.warn('> Spectoda websockets connecting')
           this.#websocketConnectionState = websocketConnectionState
-          this.runtime.emit('connecting-websockets')
+          this.runtime.emit(SpectodaAppEvents.REMOTE_CONTROL_CONNECTING)
         }
         break
       }
@@ -192,7 +193,7 @@ export class Spectoda implements SpectodaClass {
         if (websocketConnectionState !== this.#websocketConnectionState) {
           logging.warn('> Spectoda websockets connected')
           this.#websocketConnectionState = websocketConnectionState
-          this.runtime.emit('connected-websockets')
+          this.runtime.emit(SpectodaAppEvents.REMOTE_CONTROL_CONNECTED)
         }
         break
       }
@@ -200,7 +201,7 @@ export class Spectoda implements SpectodaClass {
         if (websocketConnectionState !== this.#websocketConnectionState) {
           logging.warn('> Spectoda websockets disconnecting')
           this.#websocketConnectionState = websocketConnectionState
-          this.runtime.emit('disconnecting-websockets')
+          this.runtime.emit(SpectodaAppEvents.REMOTE_CONTROL_DISCONNECTING)
         }
         break
       }
@@ -208,7 +209,7 @@ export class Spectoda implements SpectodaClass {
         if (websocketConnectionState !== this.#websocketConnectionState) {
           logging.warn('> Spectoda websockets disconnected')
           this.#websocketConnectionState = websocketConnectionState
-          this.runtime.emit('disconnected-websockets')
+          this.runtime.emit(SpectodaAppEvents.REMOTE_CONTROL_DISCONNECTED)
         }
         break
       }
@@ -224,8 +225,7 @@ export class Spectoda implements SpectodaClass {
         if (connectionState !== this.#connectionState) {
           logging.warn('> Spectoda connecting')
           this.#connectionState = connectionState
-          // TODO find out how to handle hacky instance return or other way so it will also work through websockets
-          this.runtime.emit('connecting' /*{ target: this }*/)
+          this.runtime.emit(SpectodaAppEvents.CONNECTING)
         }
         break
       }
@@ -233,8 +233,7 @@ export class Spectoda implements SpectodaClass {
         if (connectionState !== this.#connectionState) {
           logging.warn('> Spectoda connected')
           this.#connectionState = connectionState
-          // TODO find out how to handle hacky instance return or other way so it will also work through websockets
-          this.runtime.emit('connected' /*{ target: this }*/)
+          this.runtime.emit(SpectodaAppEvents.CONNECTED)
         }
         break
       }
@@ -242,8 +241,7 @@ export class Spectoda implements SpectodaClass {
         if (connectionState !== this.#connectionState) {
           logging.warn('> Spectoda disconnecting')
           this.#connectionState = connectionState
-          // TODO find out how to handle hacky instance return or other way so it will also work through websockets
-          this.runtime.emit('disconnecting' /*{ target: this }*/)
+          this.runtime.emit(SpectodaAppEvents.DISCONNECTING)
         }
         break
       }
@@ -251,8 +249,7 @@ export class Spectoda implements SpectodaClass {
         if (connectionState !== this.#connectionState) {
           logging.warn('> Spectoda disconnected')
           this.#connectionState = connectionState
-          // TODO find out how to handle hacky instance return or other way so it will also work through websockets
-          this.runtime.emit('disconnected' /*{ target: this }*/)
+          this.runtime.emit(SpectodaAppEvents.DISCONNECTED)
         }
         break
       }
@@ -464,8 +461,8 @@ export class Spectoda implements SpectodaClass {
     this.socket.connect()
     this.requestWakeLock(true)
 
+    // TODO! remove this
     const setConnectionSocketData = async () => {
-      // TODO - find way how to do getCOnnectedPeersInfo with waiting for wasm load
       // const peers = await this.getConnectedPeersInfo();
       // logging.debug("peers", peers);
       // this.socket.emit("set-connection-data", peers);
@@ -474,10 +471,12 @@ export class Spectoda implements SpectodaClass {
 
     // @ts-ignore
     this.socket.___SpectodaListeners = [
-      this.on('connected', async () => {
+      // TODO! remove this
+      this.on(SpectodaAppEvents.CONNECTED, async () => {
         setConnectionSocketData()
       }),
-      this.on('disconnected', () => {
+      // TODO! remove this
+      this.on(SpectodaAppEvents.DISCONNECTED, () => {
         this.socket.emit('set-connection-data', null)
       }),
       allEventsEmitter.on(
@@ -552,7 +551,7 @@ export class Spectoda implements SpectodaClass {
 
     return await new Promise((resolve, reject) => {
       this.socket.on('disconnect', () => {
-        this.#setWebSocketConnectionState('disconnected-websockets')
+        this.#setWebSocketConnectionState(WEBSOCKET_CONNECTION_STATE.DISCONNECTED)
       })
 
       this.socket.on('connect', async () => {
@@ -1844,7 +1843,7 @@ export class Spectoda implements SpectodaClass {
       await sleep(100)
 
       try {
-        this.runtime.emit('ota_status', 'begin')
+        this.runtime.emit(SpectodaAppEvents.OTA_STATUS, 'begin')
 
         {
           //===========// RESET //===========//
@@ -1903,7 +1902,7 @@ export class Spectoda implements SpectodaClass {
               Math.floor((written * 10000) / firmware.length) / 100
 
             logging.info(percentage + '%')
-            this.runtime.emit('ota_progress', percentage)
+            this.runtime.emit(SpectodaAppEvents.OTA_PROGRESS, percentage)
 
             index_from += chunk_size
             index_to = index_from + chunk_size
@@ -1935,12 +1934,12 @@ export class Spectoda implements SpectodaClass {
             ' seconds',
         )
 
-        this.runtime.emit('ota_status', 'success')
+        this.runtime.emit(SpectodaAppEvents.OTA_STATUS, 'success')
 
         resolve(null)
         return
       } catch (e) {
-        this.runtime.emit('ota_status', 'fail')
+        this.runtime.emit(SpectodaAppEvents.OTA_STATUS, 'fail')
         reject(e)
         return
       }
@@ -3394,11 +3393,10 @@ export class Spectoda implements SpectodaClass {
     return this.runtime.execute(bytecode, undefined)
   }
 
-  // emits JS event
   /**
-   * Emits JS events like "connected" or "eventstateupdates"
+   * Emits JS events from SpectodaAppEvents
    */
-  emit(event: SpectodaJsEventType, value: any) {
+  emit(event: SpectodaAppEventName, value: any) {
     this.runtime.emit(event, value)
   }
 
@@ -3561,7 +3559,7 @@ export class Spectoda implements SpectodaClass {
     }
 
     const unregisterListenerEmittedevents = this.runtime.on(
-      'emittedevents',
+      SpectodaAppEvents.EMITTED_EVENTS,
       (events: SpectodaEvent[]) => {
         for (const event of events) {
           if (event.id === 255) {

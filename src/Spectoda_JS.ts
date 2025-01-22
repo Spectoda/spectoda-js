@@ -5,7 +5,8 @@ import { logging } from '../logging';
 
 import { SpectodaRuntime } from './SpectodaRuntime';
 import { SpectodaWasm } from './SpectodaWasm';
-import { SpectodaEventStateValue } from './types/event';
+import { SpectodaAppEvents } from './types/app-events';
+import { SpectodaEvent, SpectodaEventStateValue } from './types/event';
 import { Connection, IConnector_WASM, IConnector_WASMImplementation, Spectoda_WASM, Spectoda_WASMImplementation, Synchronization, Uint8Vector, Value, interface_error_t } from './types/wasm';
 
 // Implements Spectoda_JS in javascript
@@ -71,7 +72,7 @@ export class Spectoda_JS {
             const tngl_bytes = SpectodaWasm.convertUint8VectorUint8Array(tngl_bytes_vector);
             const used_ids = SpectodaWasm.convertUint8VectorUint8Array(used_ids_vector);
 
-            this.#runtimeReference.emit('tngl_update', { tngl_bytes: tngl_bytes, used_ids: used_ids });
+            this.#runtimeReference.emit(SpectodaAppEvents.TNGL_UPDATE, { tngl_bytes: tngl_bytes, used_ids: used_ids });
           } catch {
             //
           }
@@ -79,7 +80,7 @@ export class Spectoda_JS {
           return true;
         },
 
-        _onEvents: (event_array) => {
+        _onEvents: (event_array: SpectodaEvent[]) => {
           logging.verbose('Spectoda_JS::_onEvents', event_array);
 
           {
@@ -115,12 +116,14 @@ export class Spectoda_JS {
             logging.log(debug_log);
           }
 
-          this.#runtimeReference.emit('emittedevents', event_array);
+          // TODO fix ts-error:Argument of type 'SpectodaEvent[]' is not assignable to parameter of type 'SpectodaEvent'
+          // @ts-ignore
+          this.#runtimeReference.emit(SpectodaAppEvents.EMITTED_EVENTS, event_array);
 
           return true;
         },
 
-        _onEventStateUpdates: (event_state_updates_array) => {
+        _onEventStateUpdates: (event_state_updates_array: SpectodaEvent[]) => {
           logging.verbose('Spectoda_JS::_onEventStateUpdates', event_state_updates_array);
 
           if (logging.level >= 3 && event_state_updates_array.length > 0) {
@@ -143,17 +146,9 @@ export class Spectoda_JS {
             logging.log(debug_log);
           }
 
-          // TODO! refactor "emitted_events" for the needs of the Store
-          for (const element of event_state_updates_array) {
-            // ! This will be removed after Store is implemented
-            // @ts-ignore
-            element.timestamp_utc = Date.now();
-          }
-          this.#runtimeReference.emit('eventstateupdates', event_state_updates_array);
-
-          // ! emitted_events is deprecated
+          // TODO fix ts-error:Argument of type 'SpectodaEvent[]' is not assignable to parameter of type 'SpectodaEvent'
           // @ts-ignore
-          this.#runtimeReference.emit('emitted_events', event_state_updates_array);
+          this.#runtimeReference.emit(SpectodaAppEvents.EVENT_STATE_UPDATES, event_state_updates_array);
 
           return true;
         },
@@ -202,7 +197,7 @@ export class Spectoda_JS {
           logging.debug('Spectoda_JS::_onSynchronize', synchronization);
 
           try {
-            this.#runtimeReference.emit('wasm_clock', synchronization.clock_timestamp);
+            this.#runtimeReference.emit(SpectodaAppEvents.PRIVATE_WASM_CLOCK, synchronization.clock_timestamp);
             logging.debug(`🕒 $${this.#spectoda_wasm?.getLabel()}: ${synchronization.clock_timestamp}`);
 
             if (Math.abs(this.#runtimeReference.clock.millis() - synchronization.clock_timestamp) > 10) {
@@ -256,13 +251,12 @@ export class Spectoda_JS {
             }
           }
 
-          // this.#runtimeReference.emit("controller-log", `🖥️ $${name}: \t[?][${filename}]: ${message}`);
         },
 
         _handlePeerConnected: (peer_mac) => {
           logging.debug('Spectoda_JS::_handlePeerConnected', peer_mac);
 
-          this.#runtimeReference.emit('peer_connected', peer_mac);
+          this.#runtimeReference.emit(SpectodaAppEvents.PEER_CONNECTED, peer_mac);
 
           return SpectodaWasm.interface_error_t.SUCCESS;
         },
@@ -270,7 +264,7 @@ export class Spectoda_JS {
         _handlePeerDisconnected: (peer_mac) => {
           logging.debug('Spectoda_JS::_handlePeerDisconnected', peer_mac);
 
-          this.#runtimeReference.emit('peer_disconnected', peer_mac);
+          this.#runtimeReference.emit(SpectodaAppEvents.PEER_DISCONNECTED, peer_mac);
 
           return SpectodaWasm.interface_error_t.SUCCESS;
         },
@@ -295,7 +289,7 @@ export class Spectoda_JS {
           logging.debug('Spectoda_JS::_handleReboot');
 
           setTimeout(async () => {
-            this.#runtimeReference.emit('#disconnected');
+            this.#runtimeReference.emit(SpectodaAppEvents.PRIVATE_DISCONNECTED);
             await sleep(1);
 
             try {
