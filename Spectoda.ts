@@ -772,19 +772,19 @@ export class Spectoda implements SpectodaClass {
                 if (info.tnglFingerprint != tnglFingerprint) {
                   // "fetch" the TNGL from Controller to App localstorage
                   await this.syncTngl().catch((e) => {
-                    logging.error('Tngl sync after reconnection failed:', e)
+                    logging.error('TNGL sync after connection failed:', e)
                   })
                 }
 
                 if (info.eventStoreFingerprint != eventStoreFingerprint) {
                   // "fetch" the EventStore from Controller to App localstorage
                   await this.syncEventHistory().catch((e) => {
-                    logging.error('History sync after reconnection failed:', e)
+                    logging.error('EventStore sync after connection failed:', e)
                   })
                 }
               }) //
               .catch(async (e) => {
-                logging.warn(e)
+                logging.error("Reading controller info after connection failed:", e)
 
                 // App connected to FW that does not support readControllerInfo(),
                 // so remove cashed TNGL and EventStore (EventHistory) from localstogare
@@ -796,12 +796,12 @@ export class Spectoda implements SpectodaClass {
 
                 // "fetch" the TNGL from Controller to App localstorage
                 await this.syncTngl().catch((e) => {
-                  logging.error('Tngl sync after reconnection failed:', e)
+                  logging.error('TNGL sync after connection failed:', e)
                 })
 
                 // "fetch" the EventStore from Controller to App localstorage
                 await this.syncEventHistory().catch((e) => {
-                  logging.error('History sync after reconnection failed:', e)
+                  logging.error('EventStore sync after connection failed:', e)
                 })
               }) //
               .then(() => {
@@ -2649,15 +2649,9 @@ export class Spectoda implements SpectodaClass {
           })
         }
 
-        logging.debug(
-          `count=${count}, peers=\n${peers
-            .map((x) => `mac:${x.mac},rssi:${x.rssi}`)
-            .join('\n')}`,
-        )
-
         logging.info(
-          `Connected peers:\n${peers
-            .map((x) => `mac:${x.mac},rssi:${x.rssi}`)
+          `> Connected peers:\n${peers
+            .map((x) => `  mac:${x.mac}, rssi:${x.rssi}`)
             .join('\n')}`,
         )
 
@@ -3740,7 +3734,7 @@ export class Spectoda implements SpectodaClass {
 
     return this.runtime.request(bytes, true).then((response) => {
       if (response === null) {
-        logging.error('No response received from controller')
+        logging.info('No response received from controller')
         throw 'NoResponseReceived'
       }
 
@@ -3751,16 +3745,14 @@ export class Spectoda implements SpectodaClass {
       const responseFlag = reader.readFlag()
 
       if (responseFlag !== COMMAND_FLAGS.FLAG_READ_CONTROLLER_INFO_RESPONSE) {
-        logging.error(`Invalid response flag received: ${responseFlag}`)
+        logging.info(`Invalid response flag received: ${responseFlag}`)
         throw 'InvalidResponseFlag'
       }
 
       const response_uuid = reader.readUint32()
 
       if (response_uuid != request_uuid) {
-        logging.error(
-          `UUID mismatch - Request: ${request_uuid}, Response: ${response_uuid}`,
-        )
+        logging.info(`UUID mismatch - Request: ${request_uuid}, Response: ${response_uuid}`)
         throw 'InvalidResponseUuid'
       }
 

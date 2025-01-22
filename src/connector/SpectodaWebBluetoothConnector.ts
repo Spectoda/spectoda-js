@@ -165,7 +165,7 @@ export class WebBLEConnection {
   // WIP, event handling from spectoda network to application
   // timeline changes from spectoda network to application ...
   #onNetworkNotification(event: Event) {
-    logging.info('WebBLEConnection::#onNetworkNotification()', event);
+    logging.verbose('WebBLEConnection::#onNetworkNotification()', event);
 
     const bluetoothCharacteristic = event.target as BluetoothRemoteGATTCharacteristic | null;
 
@@ -471,6 +471,8 @@ export class WebBLEConnection {
       return Promise.reject('UpdateFailed');
     }
 
+    logging.info('> Writing firmware to controller...');
+
     this.#writing = true;
 
     return new Promise(async (resolve, reject) => {
@@ -551,7 +553,7 @@ export class WebBLEConnection {
 
         await sleep(2000);
 
-        logging.info('Firmware written in ' + (Date.now() - start_timestamp) / 1000 + ' seconds');
+        logging.info('> Firmware written in ' + (Date.now() - start_timestamp) / 1000 + ' seconds');
 
         this.#runtimeReference.emit('ota_status', 'success');
         resolve(null);
