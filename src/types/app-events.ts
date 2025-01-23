@@ -1,15 +1,15 @@
 import {
   CONNECTION_STATUS,
   ConnectionStatus,
-  WEBSOCKET_CONNECTION_STATE,
-  WebsocketConnectionState,
+  REMOTECONTROL_STATUS,
+  RemoteControlConnectionStatus,
 } from './connect'
 import { ControllerError, ControllerWarning } from './messages'
 import { SpectodaEvent } from './event'
 import { SpectodaTypes } from './primitives'
 
-type WebsocketConnectionStateProps = {
-  [K in WebsocketConnectionState]: undefined
+type RemoteControlConnectionStatusProps = {
+  [K in RemoteControlConnectionStatus]: undefined
 }
 
 type ConnectionStatusProps = {
@@ -22,13 +22,9 @@ type SpectodaAppEventType<T extends string = string> = {
 
 export const SpectodaAppEvents = {
   ...CONNECTION_STATUS,
+  ...REMOTECONTROL_STATUS,
 
   SCAN_RESULTS: 'scan_results',
-
-  REMOTE_CONTROL_CONNECTING: WEBSOCKET_CONNECTION_STATE.CONNECTING,
-  REMOTE_CONTROL_CONNECTED: WEBSOCKET_CONNECTION_STATE.CONNECTED,
-  REMOTE_CONTROL_DISCONNECTING: WEBSOCKET_CONNECTION_STATE.DISCONNECTING,
-  REMOTE_CONTROL_DISCONNECTED: WEBSOCKET_CONNECTION_STATE.DISCONNECTED,
 
   PEER_CONNECTED: 'peer_connected',
   PEER_DISCONNECTED: 'peer_disconnected',
@@ -58,7 +54,7 @@ export const SpectodaAppEvents = {
   
 } as const satisfies SpectodaAppEventType
 
-type PropsMap = WebsocketConnectionStateProps &
+type PropsMap = RemoteControlConnectionStatusProps &
   ConnectionStatusProps & {
 
     // TODO for future payload key: `json`
@@ -84,12 +80,6 @@ type PropsMap = WebsocketConnectionStateProps &
       used_ids: SpectodaTypes.UsedIds
     }
 
-    /** @private event */
-    '#connected': undefined
-
-    /** @private event */
-    '#disconnected': undefined
-
     // TODO for future payload key: `events`
     [SpectodaAppEvents.EVENT_STATE_UPDATES]: SpectodaEvent[]
 
@@ -98,6 +88,21 @@ type PropsMap = WebsocketConnectionStateProps &
 
     [SpectodaAppEvents.NETWORK_ERROR]: ControllerError
     [SpectodaAppEvents.NETWORK_WARNING]: ControllerWarning
+
+    /** @private event */
+    [SpectodaAppEvents.PRIVATE_CONNECTED]: undefined
+
+    /** @private event */
+    [SpectodaAppEvents.PRIVATE_DISCONNECTED]: undefined
+
+    /** @private event */
+    [SpectodaAppEvents.PRIVATE_WASM_CLOCK]: number
+
+    /** @private event */
+    [SpectodaAppEvents.PRIVATE_WASM_REQUEST]: Uint8Array
+
+    /** @private event */
+    [SpectodaAppEvents.PRIVATE_WASM_EXECUTE]: Uint8Array
   }
 
 export type SpectodaAppEventName =
