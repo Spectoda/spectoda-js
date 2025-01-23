@@ -3394,7 +3394,8 @@ export class Spectoda implements SpectodaClass {
   }
 
   /**
-   * Emits JS events from SpectodaAppEvents
+   * Emits SpectodaAppEvents
+   * TODO: should be private and renamed to `emitAppEvent` as SpectodaCore should not be able to emit AppEvents on Spectoda object
    */
   emit(event: SpectodaAppEventName, value: any) {
     this.runtime.emit(event, value)
