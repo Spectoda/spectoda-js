@@ -405,7 +405,7 @@ export class SpectodaRuntime {
 
     this.previewControllers = {};
 
-    this.#eventEmitter.on(SPECTODA_APP_EVENTS.PRIVATE_WASM_EXECUTE, (command: any) => {
+    this.#eventEmitter.on(SPECTODA_APP_EVENTS.PRIVATE_WASM_EXECUTE, (command: Uint8Array) => {
       for (const previewController of Object.values(this.previewControllers)) {
         try {
           previewController.execute(command, SpectodaWasm.Connection.make('11:11:11:11:11:11', SpectodaWasm.connector_type_t.CONNECTOR_UNDEFINED, SpectodaWasm.connection_rssi_t.RSSI_MAX));
@@ -1212,7 +1212,7 @@ export class SpectodaRuntime {
                   const send_execute_query: SendExecuteQuery = item.a;
 
                   try {
-                    this.emit(SpectodaAppEvents.PRIVATE_WASM_EXECUTE, [...send_execute_query.command_bytes]);
+                    this.emit(SpectodaAppEvents.PRIVATE_WASM_EXECUTE, send_execute_query.command_bytes);
 
                     await this.connector
                       .sendExecute(send_execute_query.command_bytes, send_execute_query.source_connection)

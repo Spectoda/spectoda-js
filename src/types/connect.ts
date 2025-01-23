@@ -16,13 +16,18 @@ export const CONNECTION_STATUS = Object.freeze({
 export type ConnectionStatus =
   (typeof CONNECTION_STATUS)[keyof typeof CONNECTION_STATUS]
 
-// TODO! rename to REMOTE_CONTROL_CONNECTION_STATUS
-export const WEBSOCKET_CONNECTION_STATE = Object.freeze({
-  CONNECTING: 'connecting-websockets',
-  CONNECTED: 'connected-websockets',
-  DISCONNECTING: 'disconnecting-websockets',
-  DISCONNECTED: 'disconnected-websockets',
+export const REMOTECONTROL_STATUS = Object.freeze({
+  REMOTECONTROL_CONNECTED: 'connected-websockets',
+  REMOTECONTROL_CONNECTING: 'connecting-websockets',
+  REMOTECONTROL_DISCONNECTED: 'disconnected-websockets',
+  REMOTECONTROL_DISCONNECTING: 'disconnecting-websockets',
 })
 
-export type WebsocketConnectionState =
-  (typeof WEBSOCKET_CONNECTION_STATE)[keyof typeof WEBSOCKET_CONNECTION_STATE]
+export type RemoteControlConnectionStatus =
+  (typeof REMOTECONTROL_STATUS)[keyof typeof REMOTECONTROL_STATUS]
+
+/** @deprecated Use REMOTECONTROL_STATUS instead */
+export const WEBSOCKET_CONNECTION_STATE = REMOTECONTROL_STATUS;
+
+/** @deprecated Use RemoteControlConnectionStatus instead */
+export type WebsocketConnectionState = RemoteControlConnectionStatus;
