@@ -4,7 +4,7 @@ import { io } from 'socket.io-client';
 
 import customParser from 'socket.io-msgpack-parser';
 
-import { SpectodaAppEvents } from './types/app-events';
+import { SpectodaAppEvents } from './src/types/app-events';
 
 import { TimeTrack } from './TimeTrack';
 import { createNanoEvents } from './functions';
