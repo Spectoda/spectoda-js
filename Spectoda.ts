@@ -45,8 +45,8 @@ import {
 import {
   CONNECTION_STATUS,
   ConnectorType,
-  WEBSOCKET_CONNECTION_STATE,
-  WebsocketConnectionState,
+  REMOTECONTROL_STATUS,
+  RemoteControlConnectionStatus,
 } from './src/types/connect'
 import { SpectodaEvent } from './src/types/event'
 import { SpectodaTypes } from './src/types/primitives'
@@ -70,7 +70,7 @@ export class Spectoda implements SpectodaClass {
   #updating: boolean
 
   #connectionState: ConnectionStatus
-  #websocketConnectionState: WebsocketConnectionState
+  #remoteControlConnectionState: RemoteControlConnectionStatus
 
   #criteria: SpectodaTypes.Criteria
   #reconnecting: boolean
@@ -115,7 +115,7 @@ export class Spectoda implements SpectodaClass {
 
     this.#reconnecting = reconnecting ? true : false
     this.#connectionState = CONNECTION_STATUS.DISCONNECTED
-    this.#websocketConnectionState = WEBSOCKET_CONNECTION_STATE.DISCONNECTED
+    this.#remoteControlConnectionState = REMOTECONTROL_STATUS.REMOTECONTROL_DISCONNECTED
 
     this.#isPrioritizedWakelock = false
     this.#autonomousReconnection = false
@@ -134,7 +134,7 @@ export class Spectoda implements SpectodaClass {
 
       this.#resetReconnectionInterval()
 
-      if (this.#getConnectionState() === CONNECTION_STATUS.CONNECTED && this.#reconnecting) {
+      if (this.getConnectionState() === CONNECTION_STATUS.CONNECTED && this.#reconnecting) {
         logging.debug(`Reconnecting in ${DEFAULT_RECONNECTION_TIME}ms..`)
         this.#setConnectionState(CONNECTION_STATUS.CONNECTING)
 
@@ -167,7 +167,7 @@ export class Spectoda implements SpectodaClass {
       if (
         !this.#updating &&
         this.runtime.connector &&
-        this.#getConnectionState() === CONNECTION_STATUS.DISCONNECTED &&
+        this.getConnectionState() === CONNECTION_STATUS.DISCONNECTED &&
         this.#autonomousReconnection
       ) {
         return this.#connect(true).catch((error) => {
@@ -177,46 +177,50 @@ export class Spectoda implements SpectodaClass {
     }, DEFAULT_RECONNECTION_INTERVAL)
   }
 
-  #setWebSocketConnectionState(
-    websocketConnectionState: WebsocketConnectionState,
+  #setRemoteControlConnectionState(
+    remoteControlConnectionState: RemoteControlConnectionStatus,
   ) {
-    switch (websocketConnectionState) {
-      case WEBSOCKET_CONNECTION_STATE.CONNECTING: {
-        if (websocketConnectionState !== this.#websocketConnectionState) {
+    switch (remoteControlConnectionState) {
+      case REMOTECONTROL_STATUS.REMOTECONTROL_CONNECTING: {
+        if (remoteControlConnectionState !== this.#remoteControlConnectionState) {
           logging.warn('> Spectoda websockets connecting')
-          this.#websocketConnectionState = websocketConnectionState
-          this.runtime.emit(SpectodaAppEvents.REMOTE_CONTROL_CONNECTING)
+          this.#remoteControlConnectionState = remoteControlConnectionState
+          this.runtime.emit(SpectodaAppEvents.REMOTECONTROL_CONNECTING)
         }
         break
       }
-      case WEBSOCKET_CONNECTION_STATE.CONNECTED: {
-        if (websocketConnectionState !== this.#websocketConnectionState) {
+      case REMOTECONTROL_STATUS.REMOTECONTROL_CONNECTED: {
+        if (remoteControlConnectionState !== this.#remoteControlConnectionState) {
           logging.warn('> Spectoda websockets connected')
-          this.#websocketConnectionState = websocketConnectionState
-          this.runtime.emit(SpectodaAppEvents.REMOTE_CONTROL_CONNECTED)
+          this.#remoteControlConnectionState = remoteControlConnectionState
+          this.runtime.emit(SpectodaAppEvents.REMOTECONTROL_CONNECTED)
         }
         break
       }
-      case WEBSOCKET_CONNECTION_STATE.DISCONNECTING: {
-        if (websocketConnectionState !== this.#websocketConnectionState) {
+      case REMOTECONTROL_STATUS.REMOTECONTROL_DISCONNECTING: {
+        if (remoteControlConnectionState !== this.#remoteControlConnectionState) {
           logging.warn('> Spectoda websockets disconnecting')
-          this.#websocketConnectionState = websocketConnectionState
-          this.runtime.emit(SpectodaAppEvents.REMOTE_CONTROL_DISCONNECTING)
+          this.#remoteControlConnectionState = remoteControlConnectionState
+          this.runtime.emit(SpectodaAppEvents.REMOTECONTROL_DISCONNECTING)
         }
         break
       }
-      case WEBSOCKET_CONNECTION_STATE.DISCONNECTED: {
-        if (websocketConnectionState !== this.#websocketConnectionState) {
+      case REMOTECONTROL_STATUS.REMOTECONTROL_DISCONNECTED: {
+        if (remoteControlConnectionState !== this.#remoteControlConnectionState) {
           logging.warn('> Spectoda websockets disconnected')
-          this.#websocketConnectionState = websocketConnectionState
-          this.runtime.emit(SpectodaAppEvents.REMOTE_CONTROL_DISCONNECTED)
+          this.#remoteControlConnectionState = remoteControlConnectionState
+          this.runtime.emit(SpectodaAppEvents.REMOTECONTROL_DISCONNECTED)
         }
         break
       }
       default: {
-        throw `InvalidState: ${websocketConnectionState}`
+        throw `InvalidState: ${remoteControlConnectionState}`
       }
     }
+  }
+
+  getRemoteControlConnectionState() {
+    return this.#remoteControlConnectionState
   }
 
   #setConnectionState(connectionState: ConnectionStatus) {
@@ -260,7 +264,7 @@ export class Spectoda implements SpectodaClass {
     }
   }
 
-  #getConnectionState() {
+  getConnectionState() {
     return this.#connectionState
   }
 
@@ -551,7 +555,7 @@ export class Spectoda implements SpectodaClass {
 
     return await new Promise((resolve, reject) => {
       this.socket.on('disconnect', () => {
-        this.#setWebSocketConnectionState(WEBSOCKET_CONNECTION_STATE.DISCONNECTED)
+        this.#setRemoteControlConnectionState(REMOTECONTROL_STATUS.REMOTECONTROL_DISCONNECTED)
       })
 
       this.socket.on('connect', async () => {
@@ -576,8 +580,8 @@ export class Spectoda implements SpectodaClass {
           const roomNumber = response?.roomNumber
 
           if (response?.status === 'success') {
-            this.#setWebSocketConnectionState(
-              WEBSOCKET_CONNECTION_STATE.CONNECTED,
+            this.#setRemoteControlConnectionState(
+              REMOTECONTROL_STATUS.REMOTECONTROL_CONNECTED,
             )
             setConnectionSocketData()
 
@@ -588,22 +592,22 @@ export class Spectoda implements SpectodaClass {
 
             resolve({ status: 'success', roomNumber })
           } else {
-            this.#setWebSocketConnectionState(
-              WEBSOCKET_CONNECTION_STATE.DISCONNECTED,
+            this.#setRemoteControlConnectionState(
+              REMOTECONTROL_STATUS.REMOTECONTROL_DISCONNECTED,
             )
             logging.debug('Remote control session join failed, does not exist')
           }
         } else if (signature) {
           // Handle signature-based logic
-          this.#setWebSocketConnectionState(
-            WEBSOCKET_CONNECTION_STATE.CONNECTING,
+          this.#setRemoteControlConnectionState(
+            REMOTECONTROL_STATUS.REMOTECONTROL_CONNECTING,
           )
           logging.debug('Joining network remotely', signature, key)
           await this.socket
             .emitWithAck('join', { signature, key })
             .then((e: any) => {
-              this.#setWebSocketConnectionState(
-                WEBSOCKET_CONNECTION_STATE.CONNECTED,
+              this.#setRemoteControlConnectionState(
+                REMOTECONTROL_STATUS.REMOTECONTROL_CONNECTED,
               )
               setConnectionSocketData()
 
@@ -612,8 +616,8 @@ export class Spectoda implements SpectodaClass {
               resolve({ status: 'success' })
             })
             .catch((e: any) => {
-              this.#setWebSocketConnectionState(
-                WEBSOCKET_CONNECTION_STATE.DISCONNECTED,
+              this.#setRemoteControlConnectionState(
+                REMOTECONTROL_STATUS.REMOTECONTROL_DISCONNECTED,
               )
               reject(e)
             })
@@ -856,7 +860,7 @@ export class Spectoda implements SpectodaClass {
 
     if (
       !overrideConnection &&
-      this.#getConnectionState() === CONNECTION_STATUS.CONNECTING
+      this.getConnectionState() === CONNECTION_STATUS.CONNECTING
     ) {
       return Promise.reject('ConnectingInProgress')
     }
@@ -915,7 +919,7 @@ export class Spectoda implements SpectodaClass {
 
     logging.debug('> Disconnecting controller...')
 
-    if (this.#getConnectionState() === CONNECTION_STATUS.DISCONNECTED) {
+    if (this.getConnectionState() === CONNECTION_STATUS.DISCONNECTED) {
       logging.warn('> Controller already disconnected')
       return Promise.resolve()
     }
@@ -931,7 +935,7 @@ export class Spectoda implements SpectodaClass {
    * TODO: @immakermatty shoudl return Promise<boolean>
    */
   connected() {
-    return this.#getConnectionState() === CONNECTION_STATUS.CONNECTED
+    return this.getConnectionState() === CONNECTION_STATUS.CONNECTED
       ? this.runtime.connected()
       : Promise.resolve(null)
   }

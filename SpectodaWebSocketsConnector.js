@@ -9,6 +9,7 @@ import { SpectodaAppEvents } from './src/types/app-events';
 import { TimeTrack } from './TimeTrack';
 import { createNanoEvents } from './functions';
 import { logging } from './logging';
+import { REMOTECONTROL_STATUS } from './src/types/connect';
 
 // TODO rewrite this to initiate connect only when needed
 
@@ -96,13 +97,13 @@ export function createSpectodaWebsocket() {
 
   socket.on('connect', () => {
     if (networkJoinParams) {
-      eventStream.emit(SpectodaAppEvents.REMOTE_CONTROL_CONNECTING);
+      eventStream.emit(SpectodaAppEvents.REMOTECONTROL_CONNECTING);
 
       socket
         .emitWithAck('join', networkJoinParams)
         .then(() => {
           logging.info('re/connected to websocket server', networkJoinParams);
-          eventStream.emit(SpectodaAppEvents.REMOTE_CONTROL_CONNECTED);
+          eventStream.emit(SpectodaAppEvents.REMOTECONTROL_CONNECTED);
         })
         .catch((err) => {
           logging.error('error connecting to websocket server', err);
@@ -111,7 +112,7 @@ export function createSpectodaWebsocket() {
   });
 
   socket.on('disconnect', () => {
-    eventStream.emit(SpectodaAppEvents.REMOTE_CONTROL_DISCONNECTED);
+    eventStream.emit(SpectodaAppEvents.REMOTECONTROL_DISCONNECTED);
   });
 
   class SpectodaVirtualProxy {
@@ -169,10 +170,10 @@ export function createSpectodaWebsocket() {
                         //* if the receiver is connected, emit the connected event on the sender
                         if (receiverConnectedCriteria) {
                           //* emit the connected event to the sender app
-                          window.spectoda.emit(SpectodaAppEvents.REMOTE_CONTROL_CONNECTED);
+                          window.spectoda.emit(SpectodaAppEvents.REMOTECONTROL_CONNECTED);
                         } else {
                           //* emit the disconnected event to the sender app
-                          window.spectoda.emit(SpectodaAppEvents.REMOTE_CONTROL_DISCONNECTED);
+                          window.spectoda.emit(SpectodaAppEvents.REMOTECONTROL_DISCONNECTED);
                         }
                       }).catch((err) => {
                         logging.error('error connecting to websocket server', err);
@@ -191,7 +192,11 @@ export function createSpectodaWebsocket() {
               return socket.emitWithAck('list-clients');
             };
           } else if (prop === 'connectionState') {
-            return websocketConnectionState;
+            if (typeof window !== 'undefined' && window.spectoda) {
+              return window.spectoda.getRemoteControlConnectionState();
+            } else {
+              return REMOTECONTROL_STATUS.REMOTECONTROL_DISCONNECTED;
+            }
           }
 
           // Always return an async function for any property
