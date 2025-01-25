@@ -1083,7 +1083,8 @@ export class Spectoda implements SpectodaClass {
       // First remove multiline comments (#- ... -#)
       // Match #- followed by any characters (including newlines) until -#
       // Ignore lines starting with dash/hyphen within the comment
-      const berryMultilineCommentRegex = /#-[^]*?(?<!-)-#/g
+      // TODO @immakermatty please validate its working as expected
+      const berryMultilineCommentRegex = /#-[\s\S]*?-#/g;
 
       minified = minified.replace(berryMultilineCommentRegex, '')
 
