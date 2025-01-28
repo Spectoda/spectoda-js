@@ -4,13 +4,13 @@ import { VALUE_TYPE } from '../constants'
 export namespace SpectodaTypes {
   type criteria_generic = Partial<{
     connector: string
-    mac: string
-    name: string
+    mac: ControllerInfo['macAddress']
+    name: ControllerInfo['fullName']
     nameprefix: string
-    network: string
-    fw: string
-    product: number
-    commisionable: boolean
+    network: ControllerInfo['networkSignature']
+    fw: ControllerInfo['fwVersionFull']
+    product: ControllerInfo['productCode']
+    commisionable: ControllerInfo['commissionable']
   }>
 
   type criteria_ble = criteria_generic
@@ -22,7 +22,7 @@ export namespace SpectodaTypes {
       serialNumber: string
       pnpId: string
       locationId: string
-      productId: string
+      productId: ControllerInfo['productCode']
       vendorId: string
       baudrate: number
       baudRate: number
