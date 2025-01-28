@@ -530,6 +530,7 @@ export class Spectoda implements SpectodaClass {
           })
         }
 
+        // TODO rename to updateControllerFirmware
         if (
           functionName === 'updateDeviceFirmware' ||
           functionName === 'updateNetworkFirmware'
@@ -736,6 +737,7 @@ export class Spectoda implements SpectodaClass {
         return this.runtime.connect()
       })
       .then((connectedDeviceInfo) => {
+        // TODO rename to connectedControllerInfo
         logging.debug('> Synchronizing Network State...')
 
         // return this.requestTimeline()
@@ -1451,6 +1453,7 @@ export class Spectoda implements SpectodaClass {
    */
   emitEvent(
     event_label: SpectodaTypes.Label,
+    // TODO rename to spectodaIds
     device_ids: SpectodaTypes.IDs = 255,
     force_delivery = true,
   ) {
@@ -1777,6 +1780,7 @@ export class Spectoda implements SpectodaClass {
    * Update the firmware of the connected controller.
    * @param {Uint8Array} firmware - The firmware to update the controller with.
    */
+  // todo rename to updateControllerFirmware
   updateDeviceFirmware(firmware: Uint8Array) {
     logging.verbose(`updateDeviceFirmware(firmware.length=${firmware?.length})`)
 
@@ -2020,6 +2024,7 @@ export class Spectoda implements SpectodaClass {
    * ! Useful
    * Get the JSON config of the connected controller.
    */
+  // todo rename to readControllerConfig
   readDeviceConfig() {
     logging.debug('> Reading device config...')
 
@@ -2082,6 +2087,7 @@ export class Spectoda implements SpectodaClass {
    * ! Useful
    * Updates the JSON config of the connected controller.
    */
+  // todo rename to updateControllerConfig
   updateDeviceConfig(config_string: string) {
     logging.debug('> Updating config...')
 
@@ -2130,6 +2136,8 @@ export class Spectoda implements SpectodaClass {
 
       if (error_code === 0) {
         logging.info('Write Config Success')
+        
+        // todo rename to rebootController
         // reboot device
         const payload = [COMMAND_FLAGS.FLAG_DEVICE_REBOOT_REQUEST]
 
@@ -2253,6 +2261,7 @@ export class Spectoda implements SpectodaClass {
    * ! Useful
    * Reboots the controller. This will temporarily disconnect the controller from the network. Spectoda.js will try to reconnect you back to the controller.
    */
+  // todo rename to rebootController
   rebootDevice() {
     logging.debug('> Rebooting device...')
 
@@ -2265,6 +2274,7 @@ export class Spectoda implements SpectodaClass {
    * ! Useful
    * Reboots the controller. This will temporarily disconnect the controller from the network. No automatic reconnection will be attempted.
    */
+  // todo rename to disconnectController
   rebootAndDisconnectDevice() {
     logging.debug('> Rebooting and disconnecting device...')
 
@@ -2755,6 +2765,8 @@ export class Spectoda implements SpectodaClass {
   /**
    * ! Useful
    * Puts CONTROLLER Spectoda.js is `connect`ed to to sleep. To wake him up, power must be cycled by removing and reapplying it.
+   
+  * TODO rename to controllerSleep
    */
   deviceSleep() {
     logging.debug('> Sleep device...')
@@ -2862,6 +2874,7 @@ export class Spectoda implements SpectodaClass {
           throw 'InvalidResponse'
         }
 
+        // TODO rename to controllerMac
         let device_mac = 'null'
 
         const error_code = reader.readUint8()
@@ -3401,6 +3414,7 @@ export class Spectoda implements SpectodaClass {
   /**
    * Emits SpectodaAppEvents
    * TODO: should be private and renamed to `emitAppEvent` as SpectodaCore should not be able to emit AppEvents on Spectoda object
+   * todo @immakermatty use the correct event-value pairing from PropMap, do not use any
    */
   emit(event: SpectodaAppEventName, value: any) {
     this.runtime.emit(event, value)
@@ -3428,6 +3442,7 @@ export class Spectoda implements SpectodaClass {
 
   /**
    * @deprecated
+   * @todo @immakermatty remove this function
    */
   update() {
     // if (detectNode()) {
@@ -3540,10 +3555,12 @@ export class Spectoda implements SpectodaClass {
     return this.runtime.getDateTime()
   }
 
+  /** Refactor suggestion by @mchlkucera registerIDContext */
   registerDeviceContexts(ids: SpectodaTypes.IDs) {
     return this.runtime.registerDeviceContexts(ids)
   }
 
+  /** Refactor suggestion by @mchlkucera registerIDContext */
   registerDeviceContext(id: SpectodaTypes.ID) {
     return this.runtime.registerDeviceContext(id)
   }
@@ -3642,6 +3659,7 @@ export class Spectoda implements SpectodaClass {
     events:
       | SpectodaEvent[]
       | {
+        // TODO @immakermatty remove this generic event type, use only SpectodaEvent 
           label: SpectodaTypes.Label
           type: string | SpectodaTypes.ValueType
           value: null | string | number | boolean
@@ -3681,6 +3699,7 @@ export class Spectoda implements SpectodaClass {
         //   break;
         case 'label':
         case VALUE_TYPE.LABEL: {
+          // todo @immakermatty replace depreacted events
           this.emitLabelEvent(event.label, event.value, event.id)
           break
         }
@@ -3809,6 +3828,7 @@ export class Spectoda implements SpectodaClass {
         const config_fingerprint_hex = uint8ArrayToHexString(config_fingerprint)
 
         // Mock data:
+        // TODO @immakermatty move mock data to __mocks__ directory
         /* {
          *   connectionCriteria: {
          *     name: string = "SC_01",
@@ -3863,7 +3883,9 @@ export class Spectoda implements SpectodaClass {
     })
   }
 }
+
 // ====== NEW PARADIAGM FUNCTIONS ====== //
+// todo @immakermatty what does new paradigm mean?
 
 if (typeof window !== 'undefined') {
   // @ts-ignore
