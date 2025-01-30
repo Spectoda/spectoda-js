@@ -894,24 +894,24 @@ export class SpectodaWebSerialConnector {
         }, timeout + 1000);
 
         if (!this.#writer) {
-          logging.error('ERROR 65432789');
+          logging.error('SERIAL_ERROR 65432789');
           reject('InternalError');
           return;
         }
         
         try {
           await this.#writer.write(new Uint8Array(header_writer.bytes.buffer)).catch((e) => {
-            logging.error('ERROR 65239083', e);
+            logging.error('SERIAL_ERROR 65239083', e);
             reject(e);
             return;
           });
           await this.#writer.write(payload).catch((e) => {
-            logging.error('ERROR 23074934', e);
+            logging.error('SERIAL_ERROR 23074934', e);
             reject(e);
             return;
           });
         } catch (e) {
-          logging.error('ERROR 25340789', e);
+          logging.error('SERIAL_ERROR 25340789', e);
           reject(e);
           return;
         }

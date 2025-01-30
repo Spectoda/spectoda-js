@@ -459,7 +459,7 @@ export class SpectodaRuntime {
         try {
           await this.spectoda_js.process();
         } catch (e) {
-          logging.error(e);
+          logging.error("Error in process:", e);
         }
 
         // TODO if the ups was set to 0 and then back to some value, then the render loop should be started again
@@ -472,7 +472,7 @@ export class SpectodaRuntime {
         try {
           await this.spectoda_js.render();
         } catch (e) {
-          logging.error(e);
+          logging.error("Error in render:", e);
         }
 
         // TODO if the fps was set to 0 and then back to some value, then the render loop should be started again
@@ -484,7 +484,7 @@ export class SpectodaRuntime {
       __process();
       __render();
     } catch (e) {
-      logging.error(e);
+      logging.error("Error in runtime:", e);
     }
   };
 
