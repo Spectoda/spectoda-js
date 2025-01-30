@@ -7,7 +7,20 @@ import { SpectodaRuntime } from './SpectodaRuntime';
 import { SpectodaWasm } from './SpectodaWasm';
 import { SpectodaAppEvents } from './types/app-events';
 import { SpectodaEvent, SpectodaEventStateValue } from './types/event';
+import { SpectodaTypes } from './types/primitives';
 import { Connection, IConnector_WASM, IConnector_WASMImplementation, Spectoda_WASM, Spectoda_WASMImplementation, Synchronization, Uint8Vector, Value, interface_error_t } from './types/wasm';
+
+/**
+ * SOURCE_CONNECTION_THIS_CONTROLLER is tied to C++ functionality in the WASM module and will be refactored
+ * @see Spectoda_Firmware/components/spectoda-library/src/types.h
+ */
+export const SOURCE_CONNECTION_THIS_CONTROLLER = () => SpectodaWasm.Connection.make("00:00:00:00:00:00", SpectodaWasm.connector_type_t.CONNECTOR_UNDEFINED, SpectodaWasm.connection_rssi_t.RSSI_MAX);
+
+/**
+ * DESTINATION_CONNECTION_THIS_CONTROLLER is tied to C++ functionality in the WASM module and will be refactored
+ * @see Spectoda_Firmware/components/spectoda-library/src/types.h
+ */
+export const DESTINATION_CONNECTION_THIS_CONTROLLER = () => SpectodaWasm.Connection.make("00:00:00:00:00:00", SpectodaWasm.connector_type_t.CONNECTOR_UNDEFINED, SpectodaWasm.connection_rssi_t.RSSI_MAX);
 
 // Implements Spectoda_JS in javascript
 // We can make many objects of Spectoda_JS if we desire (for simulation purposes for example)
@@ -703,5 +716,75 @@ export class Spectoda_JS {
     }
 
     return this.#spectoda_wasm.registerDeviceContext(device_id);
+  }
+
+  /**
+   * Emits the TNGL bytecode to Network from the given connection.
+   * 
+   * @param connection - The connection to emit the TNGL bytecode from.
+   * @param request - The request object containing the TNGL bytecode.
+   * @returns {boolean} True if the TNGL bytecode was emitted successfully, false otherwise.
+   */
+  requestEmitTnglBytecode(connection: string, request: { args: { bytecode: Uint8Array } }): boolean {
+    logging.debug(`Spectoda_JS::requestEmitTnglBytecode(connection=${connection}, bytecode=${request.args.bytecode})`);
+
+    if (!this.#spectoda_wasm) {
+      throw 'NotConstructed';
+    }
+
+    // TODO: Implement controller actions in WASM
+    if (connection != "/") {
+      throw 'ConnectionNotImplemented';
+    }
+
+    return this.#spectoda_wasm.requestEmitTnglBytecode(connection, SpectodaWasm.toHandle(request.args.bytecode));
+  }
+
+
+  /**
+   * Writes the IO variant to the given IO through the given connection.
+   * 
+   * @param connection - The connection to write the IO variant to.
+   * @param ioLabel - The IO label to write the variant to.
+   * @param variant - The variant to write to the IO.
+   * @returns {boolean} True if the IO variant was written successfully, false otherwise.
+   */
+  requestWriteIoVariant(connection: string, request: { args: { label: SpectodaTypes.Label, variant: string, remove_io_variant: boolean } }): boolean {
+    logging.debug(`Spectoda_JS::requestWriteIoVariant(connection=${connection}, ioLabel=${request.args.label}, variant=${request.args.variant}, option_remove_io_variant=${request.args.remove_io_variant})`);
+
+    if (!this.#spectoda_wasm) {
+      throw 'NotConstructed';
+    }
+
+    // TODO: Implement controller actions in WASM
+    if (connection != "/") {
+      throw 'ConnectionNotImplemented';
+    }
+
+    return this.#spectoda_wasm.requestWriteIoVariant(connection, request.args.label, request.args.variant, request.args.remove_io_variant);
+  }
+
+  /**
+   * Writes the IO mapping to the given IO through the given connection.
+   * 
+   * @param connection - The connection to write the IO mapping to.
+   * @param ioLabel - The IO label to write the mapping to.
+   * @param mapping - The mapping to write to the IO.
+   * @param option_remove_io_mapping - Whether to remove the IO mapping.
+   * @returns {boolean} True if the IO mapping was written successfully, false otherwise.
+   */
+  requestWriteIoMapping(connection: string, request: { args: { label: SpectodaTypes.Label, mapping: Int16Array, remove_io_mapping: boolean } }): boolean {
+    logging.debug(`Spectoda_JS::requestWriteIoMapping(connection=${connection}, ioLabel=${request.args.label}, mapping=${request.args.mapping}, option_remove_io_mapping=${request.args.remove_io_mapping})`);
+
+    if (!this.#spectoda_wasm) {
+      throw 'NotConstructed';
+    }
+
+    // TODO: Implement controller actions in WASM
+    if (connection != "/") {
+      throw 'ConnectionNotImplemented';
+    }
+
+    return this.#spectoda_wasm.requestWriteIoMapping(connection, request.args.label, SpectodaWasm.toHandle(request.args.mapping), request.args.remove_io_mapping);
   }
 }

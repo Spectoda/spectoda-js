@@ -52,6 +52,7 @@ import { SpectodaEvent } from './src/types/event'
 import { SpectodaTypes } from './src/types/primitives'
 import { SpectodaClass } from './src/types/spectodaClass'
 import { fetchTnglFromApiById, sendTnglToApi } from './tnglapi'
+import { DESTINATION_CONNECTION_THIS_CONTROLLER } from './src/Spectoda_JS'
 
 const MIN_FIRMWARE_LENGTH = 10000
 const DEFAULT_RECONNECTION_TIME = 2500
@@ -3015,18 +3016,20 @@ export class Spectoda implements SpectodaClass {
    * @param ioLabel - 5 character IO label (e.g. "BTN_1")
    * @param variant - variant name (max 16 characters)
    */
-  writeControllerIoVariant(ioLabel: SpectodaTypes.Label, variant: string) {
-    logging.debug('> Writing Controller IO Variant...')
+  writeControllerIoVariant(ioLabel: SpectodaTypes.Label, variant: string | null) {
+    logging.debug('> Writing Controller IO Variant...');
 
-    const request_uuid = this.#getUUID()
+    const request_uuid = this.#getUUID();
+    const remove_io_variant = variant == null;
+    
     const payload = [
       COMMAND_FLAGS.FLAG_WRITE_IO_VARIANT_REQUEST,
       ...numberToBytes(request_uuid, 4),
       ...labelToBytes(ioLabel),
-      ...stringToBytes(variant, 16, false),
-    ]
+      ...(remove_io_variant ? [] : stringToBytes(variant, 16, false)),
+    ];
 
-    return this.runtime.request(payload, false)
+    return this.runtime.request(payload, false);
   }
 
   /**
@@ -3035,18 +3038,20 @@ export class Spectoda implements SpectodaClass {
    * @param ioLabel - 5 character IO label (e.g. "BTN_1")
    * @param variant - variant name (max 16 characters)
    */
-  writeNetworkIoVariant(ioLabel: SpectodaTypes.Label, variant: string) {
-    logging.debug('> Writing Network IO Variant...')
+  writeNetworkIoVariant(ioLabel: SpectodaTypes.Label, variant: string | null) {
+    logging.debug('> Writing Network IO Variant...');
 
-    const request_uuid = this.#getUUID()
+    const request_uuid = this.#getUUID();
+    const remove_io_variant = variant == null;
+
     const payload = [
       COMMAND_FLAGS.FLAG_WRITE_IO_VARIANT_REQUEST,
       ...numberToBytes(request_uuid, 4),
       ...labelToBytes(ioLabel),
-      ...stringToBytes(variant, 16, false),
-    ]
+      ...(remove_io_variant ? [] : stringToBytes(variant, 16, false)),
+    ];
 
-    return this.runtime.execute(payload, undefined)
+    return this.runtime.execute(payload, undefined);
   }
 
   /**
@@ -3101,6 +3106,133 @@ export class Spectoda implements SpectodaClass {
 
       return variant
     })
+  }
+
+  writeControllerIoMapping(ioLabel: SpectodaTypes.Label, mapping: SpectodaTypes.Pixels[] | null) {
+    logging.debug('> Writing Controller IO Mapping...')
+
+    const request_uuid = this.#getUUID()
+    const bytes = [
+      COMMAND_FLAGS.FLAG_WRITE_IO_MAPPING_REQUEST,
+      ...numberToBytes(request_uuid, 4),
+      ...labelToBytes(ioLabel),
+      ...(mapping ? numberToBytes(mapping.length, 2) : []), // size is uint16_t
+      ...(mapping ? mapping.flatMap(num => numberToBytes(num, 2)) : []), // each item is int16_t
+    ]
+
+    return this.runtime.request(bytes, false)
+  }
+
+  /**
+   * ! Useful
+   * Read IO mapping for a specific IO label from the controller config
+   * @param ioLabel - 5 character IO label (e.g. "BTN_1")
+   * @returns The mapping for the specified IO label
+   */
+  readControllerIoMapping(ioLabel: SpectodaTypes.Label): Promise<SpectodaTypes.Pixels[]> {
+    logging.debug('> Reading Controller IO Mapping...')
+
+    const request_uuid = this.#getUUID()
+    const bytes = [
+      COMMAND_FLAGS.FLAG_READ_IO_MAPPING_REQUEST,
+      ...numberToBytes(request_uuid, 4),
+      ...labelToBytes(ioLabel),
+    ]
+
+    return this.runtime.request(bytes, true).then((response) => {
+      if (response === null) {
+        throw 'NoResponseReceived'
+      }
+
+      const reader = new TnglReader(response)
+
+      logging.verbose(`response.byteLength=${response.byteLength}`)
+
+      if (reader.readFlag() !== COMMAND_FLAGS.FLAG_READ_IO_MAPPING_RESPONSE) {
+        throw 'InvalidResponseFlag'
+      }
+
+      const response_uuid = reader.readUint32()
+
+      if (response_uuid != request_uuid) {
+        throw 'InvalidResponseUuid'
+      }
+
+      const error_code = reader.readUint8()
+
+      logging.verbose(`error_code=${error_code}`)
+
+      let mapping = null
+
+      if (error_code === 0) {
+        const mapping_size = reader.readUint16()
+        mapping = []
+        
+        for (let i = 0; i < mapping_size; i++) {
+          mapping.push(reader.readInt16())
+        }
+      } else {
+        throw 'Fail'
+      }
+
+      logging.verbose(`mapping=${mapping}`)
+      logging.debug(`> IO Mapping for ${ioLabel}: ${mapping}`)
+
+      return mapping
+    })
+  }
+
+  async WIP_emitTnglBytecode(bytecode: Uint8Array) {
+    logging.debug('> Emitting TNGL Bytecode...')
+
+    const connection = "/";
+    const request = {
+      args: {
+        bytecode: bytecode,
+      }
+    };
+
+    return this.runtime.spectoda_js.requestEmitTnglBytecode(connection, request);
+  }
+
+  //* WIP
+  async WIP_writeIoVariant(ioLabel: SpectodaTypes.Label, variant: string | null): Promise<void> {
+    logging.verbose(`writeIoVariant(ioLabel=${ioLabel}, variant=${variant})`);
+
+    logging.info('> Writing IO Variant...');
+
+    const connection = "/";
+    const request = {
+      args: {
+        label: ioLabel,
+        variant: variant ? variant : "",
+        remove_io_variant: variant == null,
+      }
+    };
+
+    if(!this.runtime.spectoda_js.requestWriteIoVariant(connection, request)) {
+      throw 'RequestFailed';
+    }
+  }
+
+  //* WIP
+  async WIP_writeIoMapping(ioLabel: SpectodaTypes.Label, mapping: number[] | null): Promise<void> {
+    logging.verbose(`writeIoMapping(ioLabel=${ioLabel}, mapping=${mapping})`);
+
+    logging.info('> Writing IO Mapping...');
+
+    const connection = "/";
+    const request = {
+      args: {
+        label: ioLabel,
+        mapping: mapping ? new Int16Array(mapping) : new Int16Array(0),
+        remove_io_mapping: mapping == null,
+      }
+    };
+
+    if(!this.runtime.spectoda_js.requestWriteIoMapping(connection, request)) {
+      throw 'RequestFailed';
+    }
   }
 
   /**
