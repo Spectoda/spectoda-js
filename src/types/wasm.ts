@@ -1,35 +1,27 @@
 import { SpectodaEvent } from './event';
 
 /// === auto-generated from Emscripten build process === ///
-/// ========== DEBUG_DEV_0.12.3_20241218.d.ts ========== ///
+/// ========== DEBUG_DEV_0.12.5_20250130.d.ts ========== ///
 
 export interface interface_error_tValue<T extends number> {
   value: T;
 }
-export type interface_error_t = interface_error_tValue<0> | interface_error_tValue<255>;
+export type interface_error_t = interface_error_tValue<0>|interface_error_tValue<255>;
 
 export interface connector_type_tValue<T extends number> {
   value: T;
 }
-export type connector_type_t =
-  | connector_type_tValue<0>
-  | connector_type_tValue<1>
-  | connector_type_tValue<2>
-  | connector_type_tValue<3>
-  | connector_type_tValue<4>
-  | connector_type_tValue<5>
-  | connector_type_tValue<6>
-  | connector_type_tValue<7>;
+export type connector_type_t = connector_type_tValue<0>|connector_type_tValue<1>|connector_type_tValue<2>|connector_type_tValue<3>|connector_type_tValue<4>|connector_type_tValue<5>|connector_type_tValue<6>|connector_type_tValue<7>;
 
 export interface connection_rssi_tValue<T extends number> {
   value: T;
 }
-export type connection_rssi_t = connection_rssi_tValue<127> | connection_rssi_tValue<-128>;
+export type connection_rssi_t = connection_rssi_tValue<127>|connection_rssi_tValue<-128>;
 
 export interface Connection {
   connector_type: connector_type_t;
   connection_rssi: connection_rssi_t;
-  address_string: ArrayBuffer | Uint8Array | Uint8ClampedArray | Int8Array | string;
+  address_string: ArrayBuffer|Uint8Array|Uint8ClampedArray|Int8Array|string;
   delete(): void;
 }
 
@@ -56,9 +48,9 @@ export interface Value {
   getPixels(): number;
   setPercentage(_0: number): void;
   getPercentage(): number;
-  setLabel(_0: ArrayBuffer | Uint8Array | Uint8ClampedArray | Int8Array | string): void;
-  setDate(_0: ArrayBuffer | Uint8Array | Uint8ClampedArray | Int8Array | string): void;
-  setColor(_0: ArrayBuffer | Uint8Array | Uint8ClampedArray | Int8Array | string): void;
+  setLabel(_0: ArrayBuffer|Uint8Array|Uint8ClampedArray|Int8Array|string): void;
+  setDate(_0: ArrayBuffer|Uint8Array|Uint8ClampedArray|Int8Array|string): void;
+  setColor(_0: ArrayBuffer|Uint8Array|Uint8ClampedArray|Int8Array|string): void;
   getLabel(): string;
   getDate(): string;
   getColor(): string;
@@ -72,7 +64,7 @@ export interface Synchronization {
   timeline_clock_timestamp: number;
   tngl_clock_timestamp: number;
   fw_compilation_timestamp: number;
-  origin_address: ArrayBuffer | Uint8Array | Uint8ClampedArray | Int8Array | string;
+  origin_address: ArrayBuffer|Uint8Array|Uint8ClampedArray|Int8Array|string;
   toUint8Array(): any;
   delete(): void;
 }
@@ -94,9 +86,9 @@ export interface IConnector_WASM {
   init(_0: connector_type_t): boolean;
   _sendRequest(_0: number, _1: Uint8Vector, _2: Connection): boolean;
   _sendResponse(_0: number, _1: number, _2: Uint8Vector, _3: Connection): boolean;
-  _scan(_0: ArrayBuffer | Uint8Array | Uint8ClampedArray | Int8Array | string, _1: number, _2: any): boolean;
-  _userConnect(_0: ArrayBuffer | Uint8Array | Uint8ClampedArray | Int8Array | string, _1: number, _2: any): boolean;
-  _autoConnect(_0: ArrayBuffer | Uint8Array | Uint8ClampedArray | Int8Array | string, _1: number, _2: number, _3: any): boolean;
+  _scan(_0: ArrayBuffer|Uint8Array|Uint8ClampedArray|Int8Array|string, _1: number, _2: any): boolean;
+  _userConnect(_0: ArrayBuffer|Uint8Array|Uint8ClampedArray|Int8Array|string, _1: number, _2: any): boolean;
+  _autoConnect(_0: ArrayBuffer|Uint8Array|Uint8ClampedArray|Int8Array|string, _1: number, _2: number, _3: any): boolean;
   delete(): void;
 }
 
@@ -107,7 +99,6 @@ export interface ImplementedIConnector_WASM extends IConnector_WASM {
 
 export interface Spectoda_WASM {
   _handleReboot(): interface_error_t;
-  begin(_0: ArrayBuffer|Uint8Array|Uint8ClampedArray|Int8Array|string, _1: ArrayBuffer|Uint8Array|Uint8ClampedArray|Int8Array|string): void;
   end(): void;
   synchronize(_0: Synchronization, _1: Connection): void;
   eraseHistory(): void;
@@ -126,23 +117,27 @@ export interface Spectoda_WASM {
   getIdentifier(): number;
   setClockTimestamp(_0: number): void;
   getClockTimestamp(): number;
-  _handlePeerConnected(_0: ArrayBuffer | Uint8Array | Uint8ClampedArray | Int8Array | string): interface_error_t;
-  _handlePeerDisconnected(_0: ArrayBuffer | Uint8Array | Uint8ClampedArray | Int8Array | string): interface_error_t;
-  _handleTimelineManipulation(_0: number, _1: boolean, _2: ArrayBuffer | Uint8Array | Uint8ClampedArray | Int8Array | string): interface_error_t;
-  _onLog(_0: number, _1: ArrayBuffer | Uint8Array | Uint8ClampedArray | Int8Array | string, _2: ArrayBuffer | Uint8Array | Uint8ClampedArray | Int8Array | string): void;
-  init(_0: ArrayBuffer | Uint8Array | Uint8ClampedArray | Int8Array | string, _1: ArrayBuffer | Uint8Array | Uint8ClampedArray | Int8Array | string): boolean;
+  _handlePeerConnected(_0: ArrayBuffer|Uint8Array|Uint8ClampedArray|Int8Array|string): interface_error_t;
+  _handlePeerDisconnected(_0: ArrayBuffer|Uint8Array|Uint8ClampedArray|Int8Array|string): interface_error_t;
+  _handleTimelineManipulation(_0: number, _1: boolean, _2: ArrayBuffer|Uint8Array|Uint8ClampedArray|Int8Array|string): interface_error_t;
+  _onLog(_0: number, _1: ArrayBuffer|Uint8Array|Uint8ClampedArray|Int8Array|string, _2: ArrayBuffer|Uint8Array|Uint8ClampedArray|Int8Array|string): void;
+  init(_0: ArrayBuffer|Uint8Array|Uint8ClampedArray|Int8Array|string, _1: ArrayBuffer|Uint8Array|Uint8ClampedArray|Int8Array|string): boolean;
+  begin(_0: ArrayBuffer|Uint8Array|Uint8ClampedArray|Int8Array|string, _1: ArrayBuffer|Uint8Array|Uint8ClampedArray|Int8Array|string): void;
   getLabel(): string;
-  writeIO(_0: ArrayBuffer | Uint8Array | Uint8ClampedArray | Int8Array | string, _1: number, _2: Value): boolean;
-  readIO(_0: ArrayBuffer | Uint8Array | Uint8ClampedArray | Int8Array | string, _1: number, _2: Value): boolean;
-  emitValue(_0: ArrayBuffer | Uint8Array | Uint8ClampedArray | Int8Array | string, _1: Value, _2: number, _3: boolean): boolean;
+  writeIO(_0: ArrayBuffer|Uint8Array|Uint8ClampedArray|Int8Array|string, _1: number, _2: Value): boolean;
+  readIO(_0: ArrayBuffer|Uint8Array|Uint8ClampedArray|Int8Array|string, _1: number, _2: Value): boolean;
+  emitValue(_0: ArrayBuffer|Uint8Array|Uint8ClampedArray|Int8Array|string, _1: Value, _2: number, _3: boolean): boolean;
   getTnglFingerprint(): string;
   getEventStoreFingerprint(): string;
+  requestEmitTnglBytecode(_0: ArrayBuffer|Uint8Array|Uint8ClampedArray|Int8Array|string, _1: number): boolean;
+  requestWriteIoVariant(_0: ArrayBuffer|Uint8Array|Uint8ClampedArray|Int8Array|string, _1: ArrayBuffer|Uint8Array|Uint8ClampedArray|Int8Array|string, _2: ArrayBuffer|Uint8Array|Uint8ClampedArray|Int8Array|string, _3: boolean): boolean;
+  requestWriteIoMapping(_0: ArrayBuffer|Uint8Array|Uint8ClampedArray|Int8Array|string, _1: ArrayBuffer|Uint8Array|Uint8ClampedArray|Int8Array|string, _2: number, _3: boolean): boolean;
   _onEvents(_0: any): boolean;
   _onEventStateUpdates(_0: any): boolean;
   _onProcess(_0: any): boolean;
-  makePort(_0: ArrayBuffer | Uint8Array | Uint8ClampedArray | Int8Array | string, _1: ArrayBuffer | Uint8Array | Uint8ClampedArray | Int8Array | string): any;
+  makePort(_0: ArrayBuffer|Uint8Array|Uint8ClampedArray|Int8Array|string, _1: ArrayBuffer|Uint8Array|Uint8ClampedArray|Int8Array|string): any;
   readVariableAddress(_0: number, _1: number): any;
-  getEventState(_0: ArrayBuffer | Uint8Array | Uint8ClampedArray | Int8Array | string, _1: number): any;
+  getEventState(_0: ArrayBuffer|Uint8Array|Uint8ClampedArray|Int8Array|string, _1: number): any;
   getDateTime(): any;
   delete(): void;
 }
@@ -153,40 +148,22 @@ export interface ImplementedSpectoda_WASM extends Spectoda_WASM {
 }
 
 export interface MainModule {
-  interface_error_t: { SUCCESS: interface_error_tValue<0>; FAIL: interface_error_tValue<255> };
-  connector_type_t: {
-    CONNECTOR_UNDEFINED: connector_type_tValue<0>;
-    CONNECTOR_ESPNOW: connector_type_tValue<1>;
-    CONNECTOR_BLE: connector_type_tValue<2>;
-    CONNECTOR_SERIAL: connector_type_tValue<3>;
-    CONNECTOR_WEBSOCKETS: connector_type_tValue<4>;
-    CONNECTOR_TWAI: connector_type_tValue<5>;
-    CONNECTOR_SIMULATED: connector_type_tValue<6>;
-    CONNECTOR_MAX: connector_type_tValue<7>;
-  };
-  connection_rssi_t: { RSSI_MAX: connection_rssi_tValue<127>; RSSI_MIN: connection_rssi_tValue<-128> };
-  Connection: { make(_0: ArrayBuffer | Uint8Array | Uint8ClampedArray | Int8Array | string, _1: connector_type_t, _2: connection_rssi_t): any };
-  Value: {
-    makeNumber(_0: number): any;
-    makeLabel(_0: ArrayBuffer | Uint8Array | Uint8ClampedArray | Int8Array | string): any;
-    makeTimestamp(_0: number): any;
-    makePercentage(_0: number): any;
-    makeDate(_0: ArrayBuffer | Uint8Array | Uint8ClampedArray | Int8Array | string): any;
-    makeColor(_0: ArrayBuffer | Uint8Array | Uint8ClampedArray | Int8Array | string): any;
-    makePixels(_0: number): any;
-    makeBoolean(_0: boolean): any;
-    makeNull(): any;
-    makeUndefined(): any;
-  };
-  Synchronization: { make(_0: number, _1: ArrayBuffer | Uint8Array | Uint8ClampedArray | Int8Array | string, _2: number, _3: number, _4: number, _5: number, _6: number): any; makeFromUint8Array(_0: any): any };
-  Uint8Vector: { new (): Uint8Vector };
-  IConnector_WASM: { implement(_0: any): ImplementedIConnector_WASM; extend(_0: ArrayBuffer | Uint8Array | Uint8ClampedArray | Int8Array | string, _1: any): any };
+  interface_error_t: {SUCCESS: interface_error_tValue<0>, FAIL: interface_error_tValue<255>};
+  connector_type_t: {CONNECTOR_UNDEFINED: connector_type_tValue<0>, CONNECTOR_ESPNOW: connector_type_tValue<1>, CONNECTOR_BLE: connector_type_tValue<2>, CONNECTOR_SERIAL: connector_type_tValue<3>, CONNECTOR_WEBSOCKETS: connector_type_tValue<4>, CONNECTOR_TWAI: connector_type_tValue<5>, CONNECTOR_SIMULATED: connector_type_tValue<6>, CONNECTOR_MAX: connector_type_tValue<7>};
+  connection_rssi_t: {RSSI_MAX: connection_rssi_tValue<127>, RSSI_MIN: connection_rssi_tValue<-128>};
+  Connection: {make(_0: ArrayBuffer|Uint8Array|Uint8ClampedArray|Int8Array|string, _1: connector_type_t, _2: connection_rssi_t): any};
+  Value: {makeNumber(_0: number): any; makeLabel(_0: ArrayBuffer|Uint8Array|Uint8ClampedArray|Int8Array|string): any; makeTimestamp(_0: number): any; makePercentage(_0: number): any; makeDate(_0: ArrayBuffer|Uint8Array|Uint8ClampedArray|Int8Array|string): any; makeColor(_0: ArrayBuffer|Uint8Array|Uint8ClampedArray|Int8Array|string): any; makePixels(_0: number): any; makeBoolean(_0: boolean): any; makeNull(): any; makeUndefined(): any};
+  Synchronization: {make(_0: number, _1: ArrayBuffer|Uint8Array|Uint8ClampedArray|Int8Array|string, _2: number, _3: number, _4: number, _5: number, _6: number): any; makeFromUint8Array(_0: any): any};
+  Uint8Vector: {new(): Uint8Vector};
+  IConnector_WASM: {implement(_0: any): ImplementedIConnector_WASM; extend(_0: ArrayBuffer|Uint8Array|Uint8ClampedArray|Int8Array|string, _1: any): any};
   ImplementedIConnector_WASM: {};
-  Spectoda_WASM: { implement(_0: any): ImplementedSpectoda_WASM; extend(_0: ArrayBuffer | Uint8Array | Uint8ClampedArray | Int8Array | string, _1: any): any };
+  Spectoda_WASM: {implement(_0: any): ImplementedSpectoda_WASM; extend(_0: ArrayBuffer|Uint8Array|Uint8ClampedArray|Int8Array|string, _1: any): any};
   ImplementedSpectoda_WASM: {};
 }
 
-/// ========== DEBUG_DEV_0.12.3_20241218.d.ts ========== ///
+
+
+/// ========== DEBUG_DEV_0.12.5_20250130.d.ts ========== ///
 
 /// =================== MANUALLY DEFINED INTERFACES ================= ///
 
