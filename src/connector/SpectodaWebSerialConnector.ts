@@ -127,7 +127,7 @@ type WebSerialPort = SerialPort;
 
 ///////////////////////////////////////////////////////////////////////////////////
 
-const DEFAULT_PORT_OPTIONS: SerialOptions = { baudRate: 1500000, dataBits: 8, stopBits: 1, parity: 'none', bufferSize: 65535, flowControl: 'none' };
+const DEFAULT_PORT_OPTIONS: SerialOptions = { baudRate: 921600, dataBits: 8, stopBits: 1, parity: 'none', bufferSize: 65535, flowControl: 'none' };
 
 const HEADER_BYTES_SIZE = 20;
 
