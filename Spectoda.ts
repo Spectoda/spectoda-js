@@ -448,6 +448,30 @@ export class Spectoda implements SpectodaClass {
   }) {
     logging.debug('> Connecting to Remote Control')
 
+    //* Added by @immakermatty to automatically connect the sender app if the receiver is connected
+    const postJoinActions = () => {
+      {
+        //* if the receiver is connected, emit the connected event on the sender
+        //* so that sender will switch to connected state
+        this.connected() ////
+        .then((connectedCriteria) => {
+          if (connectedCriteria) {
+            //* emit the connected event to the sender app
+            this.emit(SpectodaAppEvents.CONNECTED, null);
+          } else {
+            //* emit the disconnected event to the sender app
+            this.emit(SpectodaAppEvents.DISCONNECTED, null);
+          }
+        }).then(() => {
+          //* reload tngl to get all event state updates from the receiver
+          this.reloadTngl();
+        })
+        .catch((err: any) => {
+          logging.error('RC Receiver postJoinActions() error:', err);
+        });
+      }
+    }
+
     if (this.socket) {
       this.socket.removeAllListeners() // Removes all listeners attached to the socket
       this.socket.disconnect()
@@ -556,10 +580,14 @@ export class Spectoda implements SpectodaClass {
 
     return await new Promise((resolve, reject) => {
       this.socket.on('disconnect', () => {
+        logging.log('> RC Receiver disconnected')
+
         this.#setRemoteControlConnectionState(REMOTECONTROL_STATUS.REMOTECONTROL_DISCONNECTED)
       })
 
       this.socket.on('connect', async () => {
+        logging.log('> RC Receiver connected')
+
         logging.setLogCallback((...e) => {
           console.log(...e)
           this.socket.emit('event', { name: 'log', args: e })
@@ -603,16 +631,16 @@ export class Spectoda implements SpectodaClass {
           this.#setRemoteControlConnectionState(
             REMOTECONTROL_STATUS.REMOTECONTROL_CONNECTING,
           )
-          logging.debug('Joining network remotely', signature, key)
+
           await this.socket
             .emitWithAck('join', { signature, key })
             .then((e: any) => {
-              this.#setRemoteControlConnectionState(
-                REMOTECONTROL_STATUS.REMOTECONTROL_CONNECTED,
-              )
-              setConnectionSocketData()
+              logging.log('> RC Receiver joined')
+              this.#setRemoteControlConnectionState(REMOTECONTROL_STATUS.REMOTECONTROL_CONNECTED)
+              postJoinActions()
 
-              logging.info('> Connected and joined network remotely')
+              // TODO! remove this
+              setConnectionSocketData()
 
               resolve({ status: 'success' })
             })

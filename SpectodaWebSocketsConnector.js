@@ -68,6 +68,35 @@ export const isCurrentSpectodaInstanceLocal = () => {
   return typeof spectoda.init === 'undefined';
 };
 
+//** Added by @immakermatty to automatically connect the sender app if the receiver is connected */
+//* if receiver is connected, emit the connected event on the sender
+const postJoinActions = () => {
+  if (typeof window !== 'undefined' && window.spectoda) {
+    //* if the receiver is connected, emit the connected event on the sender
+    //* so that sender will switch to connected state
+    window.spectoda.connected() ////
+    .then((receiverConnectedCriteria) => {
+      logging.info('Spectoda_JS on the receiver side connected to ', receiverConnectedCriteria);
+
+      //* if the receiver is connected, emit the connected event on the sender
+      if (receiverConnectedCriteria) {
+        //* emit the connected event to the sender app
+        window.spectoda.emit(SpectodaAppEvents.CONNECTED);
+      } else {
+        //* emit the disconnected event to the sender app
+        window.spectoda.emit(SpectodaAppEvents.DISCONNECTED);
+      }
+    }) ////
+    .then(() => {
+      //* reload tngl to get all event state updates from the receiver
+      window.spectoda.reloadTngl();
+    }) ////
+    .catch((err) => {
+      logging.error('RC Sender postJoinActions() error:', err);
+    });
+  }
+}
+
 export function createSpectodaWebsocket() {
   const timeline = new TimeTrack();
 
@@ -96,14 +125,17 @@ export function createSpectodaWebsocket() {
   let networkJoinParams = [];
 
   socket.on('connect', () => {
+    logging.log('> RC Sender connected')
+
     if (networkJoinParams) {
       eventStream.emit(SpectodaAppEvents.REMOTECONTROL_CONNECTING);
 
       socket
         .emitWithAck('join', networkJoinParams)
         .then(() => {
-          logging.info('re/connected to websocket server', networkJoinParams);
+          logging.log('> RC Sender joined')
           eventStream.emit(SpectodaAppEvents.REMOTECONTROL_CONNECTED);
+          postJoinActions();
         })
         .catch((err) => {
           logging.error('error connecting to websocket server', err);
@@ -112,6 +144,8 @@ export function createSpectodaWebsocket() {
   });
 
   socket.on('disconnect', () => {
+    logging.log('> RC Sender disconnected')
+
     eventStream.emit(SpectodaAppEvents.REMOTECONTROL_DISCONNECTED);
   });
 
@@ -151,7 +185,8 @@ export function createSpectodaWebsocket() {
               if (params?.sessionOnly) {
                 return socket.emitWithAck('join-session', params?.roomNumber).then((response) => {
                   if (response.status === 'success') {
-                    logging.info('Remote joined session', response.roomNumber);
+                    logging.info('RC Sender joined session', response.roomNumber);
+                    postJoinActions();
                   } else {
                     throw new Error(response.error);
                   }
@@ -159,28 +194,8 @@ export function createSpectodaWebsocket() {
               } else {
                 return socket.emitWithAck('join', params).then((response) => {
                   if (response.status === 'success') {
-                    logging.info('Remote joined network', response.roomNumber);
-
-                    //** Added by @immakermatty to automatically connect the sender app if the receiver is connected */
-                    //* if receiver is connected, emit the connected event on the sender
-                    if (typeof window !== 'undefined' && window.spectoda) {
-                      window.spectoda.connected().then((receiverConnectedCriteria) => {
-                        logging.info('Spectoda_JS on the other side connected to ', receiverConnectedCriteria);
-
-                        //* if the receiver is connected, emit the connected event on the sender
-                        if (receiverConnectedCriteria) {
-                          //* emit the connected event to the sender app
-                          window.spectoda.emit(SpectodaAppEvents.REMOTECONTROL_CONNECTED);
-                        } else {
-                          //* emit the disconnected event to the sender app
-                          window.spectoda.emit(SpectodaAppEvents.REMOTECONTROL_DISCONNECTED);
-                        }
-                      }).catch((err) => {
-                        logging.error('error connecting to websocket server', err);
-                      });
-                    }
-
-                  
+                    logging.info('RC Sender joined', response);
+                    postJoinActions();
                   } else {
                     throw new Error(response.error);
                   }
@@ -215,17 +230,14 @@ export function createSpectodaWebsocket() {
             const result = await this.sendThroughWebsocket(payload);
 
             if (result.status === 'success') {
-              for (let res of result?.data) {
+              // Iterate over each item inside result.data (if any) to check for errors.
+              for (const res of result.data ?? []) {
                 if (res.status === 'error') {
-                  logging.error(result);
-                  // logging.error("[WEBSOCKET]", result);
+                  logging.error(res);
                   throw new Error(res.error);
                 }
               }
-
-              // logging.verbose("[WEBSOCKET]", result);
-
-              return result?.data?.[0].result;
+              return result.data?.[0]?.result;
             } else {
               logging.error('[WEBSOCKET]', result);
 
