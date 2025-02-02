@@ -606,7 +606,7 @@ export class SpectodaRuntime {
 
       case 'simulated': {
         this.connector = new SpectodaSimulatedConnector(this);
-        this.connector.initilize(this.#assignedConnectorParameter);
+        await this.connector.initilize(this.#assignedConnectorParameter);
         break;
       }
 

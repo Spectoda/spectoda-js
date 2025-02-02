@@ -227,6 +227,7 @@ export class PreviewController {
       this.#instance.begin('00000000000000000000000000000000', '00000000000000000000000000000000');
 
       if (this.#connector !== undefined) {
+        // logging.info('PreviewController::construct() registering connector');
         this.#instance.registerConnector(this.#connector.getWasmInstance());
       }
 
