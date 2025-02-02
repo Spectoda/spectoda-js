@@ -1,7 +1,7 @@
 import { SpectodaEvent } from './event';
 
 /// === auto-generated from Emscripten build process === ///
-/// ========== DEBUG_DEV_0.12.5_20250130.d.ts ========== ///
+/// ========== DEBUG_DEV_0.12.5_20250201.d.ts ========== ///
 
 export interface interface_error_tValue<T extends number> {
   value: T;
@@ -129,6 +129,7 @@ export interface Spectoda_WASM {
   emitValue(_0: ArrayBuffer|Uint8Array|Uint8ClampedArray|Int8Array|string, _1: Value, _2: number, _3: boolean): boolean;
   getTnglFingerprint(): string;
   getEventStoreFingerprint(): string;
+  requestReloadTngl(_0: ArrayBuffer|Uint8Array|Uint8ClampedArray|Int8Array|string): boolean;
   requestEmitTnglBytecode(_0: ArrayBuffer|Uint8Array|Uint8ClampedArray|Int8Array|string, _1: number): boolean;
   requestWriteIoVariant(_0: ArrayBuffer|Uint8Array|Uint8ClampedArray|Int8Array|string, _1: ArrayBuffer|Uint8Array|Uint8ClampedArray|Int8Array|string, _2: ArrayBuffer|Uint8Array|Uint8ClampedArray|Int8Array|string, _3: boolean): boolean;
   requestWriteIoMapping(_0: ArrayBuffer|Uint8Array|Uint8ClampedArray|Int8Array|string, _1: ArrayBuffer|Uint8Array|Uint8ClampedArray|Int8Array|string, _2: number, _3: boolean): boolean;
@@ -163,7 +164,7 @@ export interface MainModule {
 
 
 
-/// ========== DEBUG_DEV_0.12.5_20250130.d.ts ========== ///
+/// ========== DEBUG_DEV_0.12.5_20250201.d.ts ========== ///
 
 /// =================== MANUALLY DEFINED INTERFACES ================= ///
 

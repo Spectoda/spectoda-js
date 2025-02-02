@@ -718,6 +718,8 @@ export class Spectoda_JS {
     return this.#spectoda_wasm.registerDeviceContext(device_id);
   }
 
+  // === REQUESTS ===
+
   /**
    * Emits the TNGL bytecode to Network from the given connection.
    * 
@@ -725,6 +727,7 @@ export class Spectoda_JS {
    * @param request - The request object containing the TNGL bytecode.
    * @returns {boolean} True if the TNGL bytecode was emitted successfully, false otherwise.
    */
+  // TODO! rename to requestEmitWriteTnglBytecode()
   requestEmitTnglBytecode(connection: string, request: { args: { bytecode: Uint8Array } }): boolean {
     logging.debug(`Spectoda_JS::requestEmitTnglBytecode(connection=${connection}, bytecode=${request.args.bytecode})`);
 
@@ -740,6 +743,26 @@ export class Spectoda_JS {
     return this.#spectoda_wasm.requestEmitTnglBytecode(connection, SpectodaWasm.toHandle(request.args.bytecode));
   }
 
+  /**
+   * Reloads the TNGL on given controller
+   * 
+   * @param connection - The connection to reload the TNGL on.
+   * @returns {boolean} True if the TNGL was reloaded successfully, false otherwise.
+   */
+  requestReloadTngl(connection: string) {
+    logging.debug(`Spectoda_JS::requestReloadTngl(connection=${connection})`);
+
+    if (!this.#spectoda_wasm) {
+      throw 'NotConstructed';
+    }
+
+    // TODO: Implement controller actions in WASM
+    if (connection != "/") {
+      throw 'ConnectionNotImplemented';
+    }
+
+    return this.#spectoda_wasm.requestReloadTngl(connection);
+  }
 
   /**
    * Writes the IO variant to the given IO through the given connection.

@@ -3586,7 +3586,16 @@ export class Spectoda implements SpectodaClass {
   }
 
   /**
-   * Erase current TNGL
+   * Reloads the TNGL in this APP Controller
+   */
+  reloadTngl() {
+    logging.debug('> Reloading TNGL...');
+
+    return this.runtime.spectoda_js.requestReloadTngl("/");
+  }
+
+  /**
+   * Erase current TNGL on the whole network
    */
   eraseTngl() {
     logging.debug('> Erasing TNGL...')
