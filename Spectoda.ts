@@ -3808,22 +3808,22 @@ export class Spectoda implements SpectodaClass {
       switch (event.type) {
         // case "number":
         // case VALUE_TYPE.NUMBER:
-        //   this.emitNumberEvent(event.label, event.value, event.id);
+        //   this.emitNumber(event.label, event.value, event.id);
         //   break;
         case 'label':
         case VALUE_TYPE.LABEL: {
-          this.emitLabelEvent(event.label, event.value, event.id)
+          this.emitLabel(event.label, event.value as string, event.id)
           break
         }
         case 'timestamp':
         case 'time':
         case VALUE_TYPE.TIME: {
-          this.emitTimestampEvent(event.label, event.value, event.id)
+          this.emitTimestamp(event.label, event.value as number, event.id)
           break
         }
         case 'percentage':
         case VALUE_TYPE.PERCENTAGE: {
-          this.emitPercentageEvent(event.label, event.value, event.id)
+          this.emitPercentage(event.label, event.value as number, event.id)
           break
         }
         // case VALUE_TYPE.DATE:
@@ -3831,7 +3831,7 @@ export class Spectoda implements SpectodaClass {
         //   break;
         case 'color':
         case VALUE_TYPE.COLOR: {
-          this.emitColorEvent(event.label, event.value, event.id)
+          this.emitColor(event.label, event.value as string, event.id)
           break
         }
         // case VALUE_TYPE.PIXELS:
@@ -3842,7 +3842,7 @@ export class Spectoda implements SpectodaClass {
         //   break;
         case 'none':
         case VALUE_TYPE.NULL: {
-          this.emitNullEvent(event.label, event.id)
+          this.emitEvent(event.label, event.id)
           break
         }
         default: {
