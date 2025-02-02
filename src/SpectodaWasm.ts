@@ -114,11 +114,10 @@ export class SpectodaWasm {
       // @ts-ignore - FS is a global object of Emscripten
       Module.FS.syncfs(true, (err: any) => {
         if (err) {
-          logging.error('FS.syncfs error:', err);
-          console.log('Failed to load WASM Filesystem');
+          logging.error('SpectodaWasm::loadFS() ERROR:', err);
           reject(err);
         } else {
-          console.log('WASM Filesystem was loaded');
+          logging.info('SpectodaWasm::loadFS() Filesystem loaded');
           resolve(null);
         }
       });
@@ -130,11 +129,10 @@ export class SpectodaWasm {
       // @ts-ignore - FS is a global object of Emscripten
       Module.FS.syncfs(false, (err: any) => {
         if (err) {
-          logging.error('FS.syncfs error:', err);
-          console.log('Failed to save WASM Filesystem');
+          logging.error('SpectodaWasm::saveFS() ERROR:', err);
           reject(err);
         } else {
-          console.log('WASM Filesystem was saved');
+          logging.info('SpectodaWasm::saveFS() Filesystem saved');
           resolve(null);
         }
       });

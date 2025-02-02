@@ -77,7 +77,9 @@ export class Spectoda_JS {
 
           {
             // Save FS after TNGL upload
-            SpectodaWasm.saveFS();
+            SpectodaWasm.saveFS().catch(e => {
+              logging.error("SpectodaWasm::_onTnglUpdate():", e);
+            });
           }
         
           try {
@@ -106,7 +108,10 @@ export class Spectoda_JS {
             }
             // after events are emitted wait and if it is quiet, then save FS
             this.#eventSaveFsTimeoutHandle = setTimeout(() => {
-              SpectodaWasm.saveFS();
+              SpectodaWasm.saveFS().catch(e => {
+                logging.error("SpectodaWasm::_onEvents():", e);
+              });
+              
               this.#eventSaveFsTimeoutHandle = null;
             }, SAVE_FS_AFTER_MS);
           }
@@ -117,13 +122,13 @@ export class Spectoda_JS {
             {
               const e = event_array[0];
 
-              debug_log += `🕹️ $${e.label} -> ${e.id}: ${e.debug} [🕒 ${e.timestamp}]`;
+              debug_log += `🕹️ $${e.label.padEnd(5)} -> ${e.id}: ${e.debug} [🕒 ${e.timestamp}]`;
             }
 
             for (let i = 1; i < event_array.length; i++) {
               const e = event_array[i];
 
-              debug_log += `\n🕹️ $${e.label} -> ${e.id}: ${e.debug} [🕒 ${e.timestamp}]`;
+              debug_log += `\n🕹️ $${e.label.padEnd(5)} -> ${e.id}: ${e.debug} [🕒 ${e.timestamp}]`;
             }
 
             logging.log(debug_log);
@@ -147,13 +152,13 @@ export class Spectoda_JS {
             {
               const e = event_state_updates_array[0];
 
-              debug_log += `🖥️ $${name}: \t📍 $${e.label} <- ${e.id}: ${e.debug} [🕒 ${e.timestamp}]`;
+              debug_log += `🖥️ $${name}: \t📍 $${e.label.padEnd(5)} <- ${e.id}: ${e.debug} [🕒 ${e.timestamp}]`;
             }
 
             for (let i = 1; i < event_state_updates_array.length; i++) {
               const e = event_state_updates_array[i];
 
-              debug_log += `\n🖥️ $${name}: \t📍 $${e.label} <- ${e.id}: ${e.debug} [🕒 ${e.timestamp}]`;
+              debug_log += `\n🖥️ $${name}: \t📍 $${e.label.padEnd(5)} <- ${e.id}: ${e.debug} [🕒 ${e.timestamp}]`;
             }
 
             logging.log(debug_log);
