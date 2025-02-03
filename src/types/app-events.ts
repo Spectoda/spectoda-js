@@ -51,12 +51,10 @@ export const SpectodaAppEvents = {
   PRIVATE_WASM_REQUEST: '#wasm_request',
   /** @private for spectoda-js internal use only */
   PRIVATE_WASM_EXECUTE: '#wasm_execute',
-  
 } as const satisfies SpectodaAppEventType
 
 type PropsMap = RemoteControlConnectionStatusProps &
   ConnectionStatusProps & {
-
     // TODO for future payload key: `json`
     [SpectodaAppEvents.SCAN_RESULTS]: string
 

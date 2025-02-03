@@ -28,39 +28,44 @@
  */
 
 export interface ErrorFormat {
-  title: string;
-  message: string;
-  url?: string;
+  title: string
+  message: string
+  url?: string
 }
 interface ErrorList {
-  [key: string]: ErrorFormat;
+  [key: string]: ErrorFormat
 }
 
 // Errors specific for NARA
 export const app: ErrorList = {
   MicAccessDenied: {
     title: 'Mikrofon se nepodařilo spustit.',
-    message: 'Zkontrolujte, zda jste v Nastavení povolili aplikaci přístup k mikrofonu.',
+    message:
+      'Zkontrolujte, zda jste v Nastavení povolili aplikaci přístup k mikrofonu.',
   },
   UserCanceledSelection: {
     title: 'Spárování nové lampy se nezdařilo',
-    message: 'Pro připojení již spárované lampy prosím stiskněte jakýkoli symbol' + ' "🛑"',
+    message:
+      'Pro připojení již spárované lampy prosím stiskněte jakýkoli symbol' +
+      ' "🛑"',
   },
-} as const;
+} as const
 
 // Errors specific for STUDIO
 export const studio = {
   MicAccessDenied: {
     title: 'Microphone access denied',
-    message: 'Make sure you\'ve enabled microphone access in Settings. If so, refresh the current page, delete cookies and try again.',
+    message:
+      'Make sure you\'ve enabled microphone access in Settings. If so, refresh the current page, delete cookies and try again.',
   },
-} as const;
+} as const
 
 // General error messages
 export const general = {
   DeviceDisconnected: {
     title: 'Device Disconnected',
-    message: 'The device has been disconnected. Please reconnect the device and try again.',
+    message:
+      'The device has been disconnected. Please reconnect the device and try again.',
   },
   DeviceUnsupported: {
     title: 'Your device is not supported',
@@ -72,15 +77,18 @@ export const general = {
   },
   UserCanceledSelection: {
     title: 'Connection canceled',
-    message: 'Device selection has been canceled. To complete connection, select a device from the dropdown list and select "Pair".',
+    message:
+      'Device selection has been canceled. To complete connection, select a device from the dropdown list and select "Pair".',
   },
   ReadOutOfRange: {
     title: 'Internal Processing Error',
-    message: 'Something went wrong while processing your request. Please try again later or contact support for assistance.',
+    message:
+      'Something went wrong while processing your request. Please try again later or contact support for assistance.',
   },
   WriteOutOfRange: {
     title: 'Internal Processing Error',
-    message: 'Something went wrong while processing your request. Please try again later or contact support for assistance.',
+    message:
+      'Something went wrong while processing your request. Please try again later or contact support for assistance.',
   },
   UserNotLoggedInSwitchToIntegratedNetwork: {
     title: 'You are not logged in',
@@ -88,11 +96,13 @@ export const general = {
   },
   NetworkDoesNotExistSwitchNetwork: {
     title: 'Network does not exist',
-    message: 'The network you are trying to switch to does not exist. Please contact support for assistance.',
+    message:
+      'The network you are trying to switch to does not exist. Please contact support for assistance.',
   },
   NetworkNotFound: {
     title: 'Network not found',
-    message: 'The network you are trying to access does not exist. Please contact support for assistance.',
+    message:
+      'The network you are trying to access does not exist. Please contact support for assistance.',
   },
   NetworkAlreadyLoaded: {
     title: 'Network already loaded',
@@ -100,26 +110,29 @@ export const general = {
   },
   ActiveNetworkNotFoundAddController: {
     title: 'Could not add controller',
-    message: 'We could not find the network you are trying to add a controller to due to a technical issue on our end. Please contact support for assistance.',
+    message:
+      'We could not find the network you are trying to add a controller to due to a technical issue on our end. Please contact support for assistance.',
   },
   ActiveNetworkNotFoundEditDevice: {
     title: 'Could not edit device',
-    message: 'We could not find the network you are trying to edit a device on due to a technical issue on our end. Please contact support for assistance.',
+    message:
+      'We could not find the network you are trying to edit a device on due to a technical issue on our end. Please contact support for assistance.',
   },
   ControllerNameAlreadyExists: {
     title: 'Controller name already exists',
-    message: 'The controller name you are trying to use already exists. Please choose a different name.',
+    message:
+      'The controller name you are trying to use already exists. Please choose a different name.',
   },
   DeviceAlreadyDisconnected: {
     title: 'Device already disconnected',
     message: 'The device you are trying to disconnect is already disconnected.',
   },
-} as const;
+} as const
 
 // Appears when error is not defined above
 export const unknownError = {
   title: 'Unknown Error',
   message: 'An unknown error has occurred. Please contact us for support.',
-};
+}
 
-export type ErrorCode = keyof typeof general;
+export type ErrorCode = keyof typeof general

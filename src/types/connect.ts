@@ -27,7 +27,7 @@ export type RemoteControlConnectionStatus =
   (typeof REMOTECONTROL_STATUS)[keyof typeof REMOTECONTROL_STATUS]
 
 /** @deprecated Use REMOTECONTROL_STATUS instead */
-export const WEBSOCKET_CONNECTION_STATE = REMOTECONTROL_STATUS;
+export const WEBSOCKET_CONNECTION_STATE = REMOTECONTROL_STATUS
 
 /** @deprecated Use RemoteControlConnectionStatus instead */
-export type WebsocketConnectionState = RemoteControlConnectionStatus;
+export type WebsocketConnectionState = RemoteControlConnectionStatus

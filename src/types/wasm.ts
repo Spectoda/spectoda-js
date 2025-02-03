@@ -1,168 +1,325 @@
-import { SpectodaEvent } from './event';
+import { SpectodaEvent } from './event'
 
 /// === auto-generated from Emscripten build process === ///
 /// ========== DEBUG_DEV_0.12.5_20250201.d.ts ========== ///
 
 export interface interface_error_tValue<T extends number> {
-  value: T;
+  value: T
 }
-export type interface_error_t = interface_error_tValue<0>|interface_error_tValue<255>;
+export type interface_error_t =
+  | interface_error_tValue<0>
+  | interface_error_tValue<255>
 
 export interface connector_type_tValue<T extends number> {
-  value: T;
+  value: T
 }
-export type connector_type_t = connector_type_tValue<0>|connector_type_tValue<1>|connector_type_tValue<2>|connector_type_tValue<3>|connector_type_tValue<4>|connector_type_tValue<5>|connector_type_tValue<6>|connector_type_tValue<7>;
+export type connector_type_t =
+  | connector_type_tValue<0>
+  | connector_type_tValue<1>
+  | connector_type_tValue<2>
+  | connector_type_tValue<3>
+  | connector_type_tValue<4>
+  | connector_type_tValue<5>
+  | connector_type_tValue<6>
+  | connector_type_tValue<7>
 
 export interface connection_rssi_tValue<T extends number> {
-  value: T;
+  value: T
 }
-export type connection_rssi_t = connection_rssi_tValue<127>|connection_rssi_tValue<-128>;
+export type connection_rssi_t =
+  | connection_rssi_tValue<127>
+  | connection_rssi_tValue<-128>
 
 export interface Connection {
-  connector_type: connector_type_t;
-  connection_rssi: connection_rssi_t;
-  address_string: ArrayBuffer|Uint8Array|Uint8ClampedArray|Int8Array|string;
-  delete(): void;
+  connector_type: connector_type_t
+  connection_rssi: connection_rssi_t
+  address_string:
+    | ArrayBuffer
+    | Uint8Array
+    | Uint8ClampedArray
+    | Int8Array
+    | string
+  delete(): void
 }
 
 export interface Value {
-  setNull(): void;
-  setUndefined(): void;
-  isNumber(): boolean;
-  isLabel(): boolean;
-  isTimestamp(): boolean;
-  isPercentage(): boolean;
-  isDate(): boolean;
-  isColor(): boolean;
-  isPixels(): boolean;
-  isBoolean(): boolean;
-  isNull(): boolean;
-  isUndefined(): boolean;
-  setBoolean(_0: boolean): void;
-  getBoolean(): boolean;
-  setNumber(_0: number): void;
-  setTimestamp(_0: number): void;
-  setPixels(_0: number): void;
-  getNumber(): number;
-  getTimestamp(): number;
-  getPixels(): number;
-  setPercentage(_0: number): void;
-  getPercentage(): number;
-  setLabel(_0: ArrayBuffer|Uint8Array|Uint8ClampedArray|Int8Array|string): void;
-  setDate(_0: ArrayBuffer|Uint8Array|Uint8ClampedArray|Int8Array|string): void;
-  setColor(_0: ArrayBuffer|Uint8Array|Uint8ClampedArray|Int8Array|string): void;
-  getLabel(): string;
-  getDate(): string;
-  getColor(): string;
-  delete(): void;
+  setNull(): void
+  setUndefined(): void
+  isNumber(): boolean
+  isLabel(): boolean
+  isTimestamp(): boolean
+  isPercentage(): boolean
+  isDate(): boolean
+  isColor(): boolean
+  isPixels(): boolean
+  isBoolean(): boolean
+  isNull(): boolean
+  isUndefined(): boolean
+  setBoolean(_0: boolean): void
+  getBoolean(): boolean
+  setNumber(_0: number): void
+  setTimestamp(_0: number): void
+  setPixels(_0: number): void
+  getNumber(): number
+  getTimestamp(): number
+  getPixels(): number
+  setPercentage(_0: number): void
+  getPercentage(): number
+  setLabel(
+    _0: ArrayBuffer | Uint8Array | Uint8ClampedArray | Int8Array | string,
+  ): void
+  setDate(
+    _0: ArrayBuffer | Uint8Array | Uint8ClampedArray | Int8Array | string,
+  ): void
+  setColor(
+    _0: ArrayBuffer | Uint8Array | Uint8ClampedArray | Int8Array | string,
+  ): void
+  getLabel(): string
+  getDate(): string
+  getColor(): string
+  delete(): void
 }
 
 export interface Synchronization {
-  history_fingerprint: number;
-  tngl_fingerprint: number;
-  clock_timestamp: number;
-  timeline_clock_timestamp: number;
-  tngl_clock_timestamp: number;
-  fw_compilation_timestamp: number;
-  origin_address: ArrayBuffer|Uint8Array|Uint8ClampedArray|Int8Array|string;
-  toUint8Array(): any;
-  delete(): void;
+  history_fingerprint: number
+  tngl_fingerprint: number
+  clock_timestamp: number
+  timeline_clock_timestamp: number
+  tngl_clock_timestamp: number
+  fw_compilation_timestamp: number
+  origin_address:
+    | ArrayBuffer
+    | Uint8Array
+    | Uint8ClampedArray
+    | Int8Array
+    | string
+  toUint8Array(): any
+  delete(): void
 }
 
 export interface Uint8Vector {
-  push_back(_0: number): void;
-  resize(_0: number, _1: number): void;
-  size(): number;
-  set(_0: number, _1: number): boolean;
-  get(_0: number): any;
-  delete(): void;
+  push_back(_0: number): void
+  resize(_0: number, _1: number): void
+  size(): number
+  set(_0: number, _1: number): boolean
+  get(_0: number): any
+  delete(): void
 }
 
 export interface IConnector_WASM {
-  _process(): void;
-  _sendExecute(_0: Uint8Vector, _1: Connection): void;
-  _sendSynchronize(_0: Synchronization, _1: Connection): void;
-  _disconnect(_0: Connection): boolean;
-  init(_0: connector_type_t): boolean;
-  _sendRequest(_0: number, _1: Uint8Vector, _2: Connection): boolean;
-  _sendResponse(_0: number, _1: number, _2: Uint8Vector, _3: Connection): boolean;
-  _scan(_0: ArrayBuffer|Uint8Array|Uint8ClampedArray|Int8Array|string, _1: number, _2: any): boolean;
-  _userConnect(_0: ArrayBuffer|Uint8Array|Uint8ClampedArray|Int8Array|string, _1: number, _2: any): boolean;
-  _autoConnect(_0: ArrayBuffer|Uint8Array|Uint8ClampedArray|Int8Array|string, _1: number, _2: number, _3: any): boolean;
-  delete(): void;
+  _process(): void
+  _sendExecute(_0: Uint8Vector, _1: Connection): void
+  _sendSynchronize(_0: Synchronization, _1: Connection): void
+  _disconnect(_0: Connection): boolean
+  init(_0: connector_type_t): boolean
+  _sendRequest(_0: number, _1: Uint8Vector, _2: Connection): boolean
+  _sendResponse(
+    _0: number,
+    _1: number,
+    _2: Uint8Vector,
+    _3: Connection,
+  ): boolean
+  _scan(
+    _0: ArrayBuffer | Uint8Array | Uint8ClampedArray | Int8Array | string,
+    _1: number,
+    _2: any,
+  ): boolean
+  _userConnect(
+    _0: ArrayBuffer | Uint8Array | Uint8ClampedArray | Int8Array | string,
+    _1: number,
+    _2: any,
+  ): boolean
+  _autoConnect(
+    _0: ArrayBuffer | Uint8Array | Uint8ClampedArray | Int8Array | string,
+    _1: number,
+    _2: number,
+    _3: any,
+  ): boolean
+  delete(): void
 }
 
 export interface ImplementedIConnector_WASM extends IConnector_WASM {
-  notifyOnDestruction(): void;
-  delete(): void;
+  notifyOnDestruction(): void
+  delete(): void
 }
 
 export interface Spectoda_WASM {
-  _handleReboot(): interface_error_t;
-  end(): void;
-  synchronize(_0: Synchronization, _1: Connection): void;
-  eraseHistory(): void;
-  eraseTimeline(): void;
-  eraseTngl(): void;
-  registerConnector(_0: IConnector_WASM): void;
-  _onTnglUpdate(_0: Uint8Vector, _1: Uint8Vector): boolean;
-  _onExecute(_0: Uint8Vector): boolean;
-  _onSynchronize(_0: Synchronization): boolean;
-  process(_0: boolean, _1: boolean, _2: boolean, _3: boolean): void;
-  render(_0: number): void;
-  registerDeviceContext(_0: number): boolean;
-  _onRequest(_0: number, _1: Uint8Vector, _2: Connection): boolean;
-  execute(_0: number, _1: Connection): boolean;
-  request(_0: number, _1: Uint8Vector, _2: Connection): boolean;
-  getIdentifier(): number;
-  setClockTimestamp(_0: number): void;
-  getClockTimestamp(): number;
-  _handlePeerConnected(_0: ArrayBuffer|Uint8Array|Uint8ClampedArray|Int8Array|string): interface_error_t;
-  _handlePeerDisconnected(_0: ArrayBuffer|Uint8Array|Uint8ClampedArray|Int8Array|string): interface_error_t;
-  _handleTimelineManipulation(_0: number, _1: boolean, _2: ArrayBuffer|Uint8Array|Uint8ClampedArray|Int8Array|string): interface_error_t;
-  _onLog(_0: number, _1: ArrayBuffer|Uint8Array|Uint8ClampedArray|Int8Array|string, _2: ArrayBuffer|Uint8Array|Uint8ClampedArray|Int8Array|string): void;
-  init(_0: ArrayBuffer|Uint8Array|Uint8ClampedArray|Int8Array|string, _1: ArrayBuffer|Uint8Array|Uint8ClampedArray|Int8Array|string): boolean;
-  begin(_0: ArrayBuffer|Uint8Array|Uint8ClampedArray|Int8Array|string, _1: ArrayBuffer|Uint8Array|Uint8ClampedArray|Int8Array|string): void;
-  getLabel(): string;
-  writeIO(_0: ArrayBuffer|Uint8Array|Uint8ClampedArray|Int8Array|string, _1: number, _2: Value): boolean;
-  readIO(_0: ArrayBuffer|Uint8Array|Uint8ClampedArray|Int8Array|string, _1: number, _2: Value): boolean;
-  emitValue(_0: ArrayBuffer|Uint8Array|Uint8ClampedArray|Int8Array|string, _1: Value, _2: number, _3: boolean): boolean;
-  getTnglFingerprint(): string;
-  getEventStoreFingerprint(): string;
-  requestReloadTngl(_0: ArrayBuffer|Uint8Array|Uint8ClampedArray|Int8Array|string): boolean;
-  requestEmitTnglBytecode(_0: ArrayBuffer|Uint8Array|Uint8ClampedArray|Int8Array|string, _1: number): boolean;
-  requestWriteIoVariant(_0: ArrayBuffer|Uint8Array|Uint8ClampedArray|Int8Array|string, _1: ArrayBuffer|Uint8Array|Uint8ClampedArray|Int8Array|string, _2: ArrayBuffer|Uint8Array|Uint8ClampedArray|Int8Array|string, _3: boolean): boolean;
-  requestWriteIoMapping(_0: ArrayBuffer|Uint8Array|Uint8ClampedArray|Int8Array|string, _1: ArrayBuffer|Uint8Array|Uint8ClampedArray|Int8Array|string, _2: number, _3: boolean): boolean;
-  _onEvents(_0: any): boolean;
-  _onEventStateUpdates(_0: any): boolean;
-  _onProcess(_0: any): boolean;
-  makePort(_0: ArrayBuffer|Uint8Array|Uint8ClampedArray|Int8Array|string, _1: ArrayBuffer|Uint8Array|Uint8ClampedArray|Int8Array|string): any;
-  readVariableAddress(_0: number, _1: number): any;
-  getEventState(_0: ArrayBuffer|Uint8Array|Uint8ClampedArray|Int8Array|string, _1: number): any;
-  getDateTime(): any;
-  delete(): void;
+  _handleReboot(): interface_error_t
+  end(): void
+  synchronize(_0: Synchronization, _1: Connection): void
+  eraseHistory(): void
+  eraseTimeline(): void
+  eraseTngl(): void
+  registerConnector(_0: IConnector_WASM): void
+  _onTnglUpdate(_0: Uint8Vector, _1: Uint8Vector): boolean
+  _onExecute(_0: Uint8Vector): boolean
+  _onSynchronize(_0: Synchronization): boolean
+  process(_0: boolean, _1: boolean, _2: boolean, _3: boolean): void
+  render(_0: number): void
+  registerDeviceContext(_0: number): boolean
+  _onRequest(_0: number, _1: Uint8Vector, _2: Connection): boolean
+  execute(_0: number, _1: Connection): boolean
+  request(_0: number, _1: Uint8Vector, _2: Connection): boolean
+  getIdentifier(): number
+  setClockTimestamp(_0: number): void
+  getClockTimestamp(): number
+  _handlePeerConnected(
+    _0: ArrayBuffer | Uint8Array | Uint8ClampedArray | Int8Array | string,
+  ): interface_error_t
+  _handlePeerDisconnected(
+    _0: ArrayBuffer | Uint8Array | Uint8ClampedArray | Int8Array | string,
+  ): interface_error_t
+  _handleTimelineManipulation(
+    _0: number,
+    _1: boolean,
+    _2: ArrayBuffer | Uint8Array | Uint8ClampedArray | Int8Array | string,
+  ): interface_error_t
+  _onLog(
+    _0: number,
+    _1: ArrayBuffer | Uint8Array | Uint8ClampedArray | Int8Array | string,
+    _2: ArrayBuffer | Uint8Array | Uint8ClampedArray | Int8Array | string,
+  ): void
+  init(
+    _0: ArrayBuffer | Uint8Array | Uint8ClampedArray | Int8Array | string,
+    _1: ArrayBuffer | Uint8Array | Uint8ClampedArray | Int8Array | string,
+  ): boolean
+  begin(
+    _0: ArrayBuffer | Uint8Array | Uint8ClampedArray | Int8Array | string,
+    _1: ArrayBuffer | Uint8Array | Uint8ClampedArray | Int8Array | string,
+  ): void
+  getLabel(): string
+  writeIO(
+    _0: ArrayBuffer | Uint8Array | Uint8ClampedArray | Int8Array | string,
+    _1: number,
+    _2: Value,
+  ): boolean
+  readIO(
+    _0: ArrayBuffer | Uint8Array | Uint8ClampedArray | Int8Array | string,
+    _1: number,
+    _2: Value,
+  ): boolean
+  emitValue(
+    _0: ArrayBuffer | Uint8Array | Uint8ClampedArray | Int8Array | string,
+    _1: Value,
+    _2: number,
+    _3: boolean,
+  ): boolean
+  getTnglFingerprint(): string
+  getEventStoreFingerprint(): string
+  requestReloadTngl(
+    _0: ArrayBuffer | Uint8Array | Uint8ClampedArray | Int8Array | string,
+  ): boolean
+  requestEmitTnglBytecode(
+    _0: ArrayBuffer | Uint8Array | Uint8ClampedArray | Int8Array | string,
+    _1: number,
+  ): boolean
+  requestWriteIoVariant(
+    _0: ArrayBuffer | Uint8Array | Uint8ClampedArray | Int8Array | string,
+    _1: ArrayBuffer | Uint8Array | Uint8ClampedArray | Int8Array | string,
+    _2: ArrayBuffer | Uint8Array | Uint8ClampedArray | Int8Array | string,
+    _3: boolean,
+  ): boolean
+  requestWriteIoMapping(
+    _0: ArrayBuffer | Uint8Array | Uint8ClampedArray | Int8Array | string,
+    _1: ArrayBuffer | Uint8Array | Uint8ClampedArray | Int8Array | string,
+    _2: number,
+    _3: boolean,
+  ): boolean
+  _onEvents(_0: any): boolean
+  _onEventStateUpdates(_0: any): boolean
+  _onProcess(_0: any): boolean
+  makePort(
+    _0: ArrayBuffer | Uint8Array | Uint8ClampedArray | Int8Array | string,
+    _1: ArrayBuffer | Uint8Array | Uint8ClampedArray | Int8Array | string,
+  ): any
+  readVariableAddress(_0: number, _1: number): any
+  getEventState(
+    _0: ArrayBuffer | Uint8Array | Uint8ClampedArray | Int8Array | string,
+    _1: number,
+  ): any
+  getDateTime(): any
+  delete(): void
 }
 
 export interface ImplementedSpectoda_WASM extends Spectoda_WASM {
-  notifyOnDestruction(): void;
-  delete(): void;
+  notifyOnDestruction(): void
+  delete(): void
 }
 
 export interface MainModule {
-  interface_error_t: {SUCCESS: interface_error_tValue<0>, FAIL: interface_error_tValue<255>};
-  connector_type_t: {CONNECTOR_UNDEFINED: connector_type_tValue<0>, CONNECTOR_ESPNOW: connector_type_tValue<1>, CONNECTOR_BLE: connector_type_tValue<2>, CONNECTOR_SERIAL: connector_type_tValue<3>, CONNECTOR_WEBSOCKETS: connector_type_tValue<4>, CONNECTOR_TWAI: connector_type_tValue<5>, CONNECTOR_SIMULATED: connector_type_tValue<6>, CONNECTOR_MAX: connector_type_tValue<7>};
-  connection_rssi_t: {RSSI_MAX: connection_rssi_tValue<127>, RSSI_MIN: connection_rssi_tValue<-128>};
-  Connection: {make(_0: ArrayBuffer|Uint8Array|Uint8ClampedArray|Int8Array|string, _1: connector_type_t, _2: connection_rssi_t): any};
-  Value: {makeNumber(_0: number): any; makeLabel(_0: ArrayBuffer|Uint8Array|Uint8ClampedArray|Int8Array|string): any; makeTimestamp(_0: number): any; makePercentage(_0: number): any; makeDate(_0: ArrayBuffer|Uint8Array|Uint8ClampedArray|Int8Array|string): any; makeColor(_0: ArrayBuffer|Uint8Array|Uint8ClampedArray|Int8Array|string): any; makePixels(_0: number): any; makeBoolean(_0: boolean): any; makeNull(): any; makeUndefined(): any};
-  Synchronization: {make(_0: number, _1: ArrayBuffer|Uint8Array|Uint8ClampedArray|Int8Array|string, _2: number, _3: number, _4: number, _5: number, _6: number): any; makeFromUint8Array(_0: any): any};
-  Uint8Vector: {new(): Uint8Vector};
-  IConnector_WASM: {implement(_0: any): ImplementedIConnector_WASM; extend(_0: ArrayBuffer|Uint8Array|Uint8ClampedArray|Int8Array|string, _1: any): any};
-  ImplementedIConnector_WASM: {};
-  Spectoda_WASM: {implement(_0: any): ImplementedSpectoda_WASM; extend(_0: ArrayBuffer|Uint8Array|Uint8ClampedArray|Int8Array|string, _1: any): any};
-  ImplementedSpectoda_WASM: {};
+  interface_error_t: {
+    SUCCESS: interface_error_tValue<0>
+    FAIL: interface_error_tValue<255>
+  }
+  connector_type_t: {
+    CONNECTOR_UNDEFINED: connector_type_tValue<0>
+    CONNECTOR_ESPNOW: connector_type_tValue<1>
+    CONNECTOR_BLE: connector_type_tValue<2>
+    CONNECTOR_SERIAL: connector_type_tValue<3>
+    CONNECTOR_WEBSOCKETS: connector_type_tValue<4>
+    CONNECTOR_TWAI: connector_type_tValue<5>
+    CONNECTOR_SIMULATED: connector_type_tValue<6>
+    CONNECTOR_MAX: connector_type_tValue<7>
+  }
+  connection_rssi_t: {
+    RSSI_MAX: connection_rssi_tValue<127>
+    RSSI_MIN: connection_rssi_tValue<-128>
+  }
+  Connection: {
+    make(
+      _0: ArrayBuffer | Uint8Array | Uint8ClampedArray | Int8Array | string,
+      _1: connector_type_t,
+      _2: connection_rssi_t,
+    ): any
+  }
+  Value: {
+    makeNumber(_0: number): any
+    makeLabel(
+      _0: ArrayBuffer | Uint8Array | Uint8ClampedArray | Int8Array | string,
+    ): any
+    makeTimestamp(_0: number): any
+    makePercentage(_0: number): any
+    makeDate(
+      _0: ArrayBuffer | Uint8Array | Uint8ClampedArray | Int8Array | string,
+    ): any
+    makeColor(
+      _0: ArrayBuffer | Uint8Array | Uint8ClampedArray | Int8Array | string,
+    ): any
+    makePixels(_0: number): any
+    makeBoolean(_0: boolean): any
+    makeNull(): any
+    makeUndefined(): any
+  }
+  Synchronization: {
+    make(
+      _0: number,
+      _1: ArrayBuffer | Uint8Array | Uint8ClampedArray | Int8Array | string,
+      _2: number,
+      _3: number,
+      _4: number,
+      _5: number,
+      _6: number,
+    ): any
+    makeFromUint8Array(_0: any): any
+  }
+  Uint8Vector: { new (): Uint8Vector }
+  IConnector_WASM: {
+    implement(_0: any): ImplementedIConnector_WASM
+    extend(
+      _0: ArrayBuffer | Uint8Array | Uint8ClampedArray | Int8Array | string,
+      _1: any,
+    ): any
+  }
+  ImplementedIConnector_WASM: {}
+  Spectoda_WASM: {
+    implement(_0: any): ImplementedSpectoda_WASM
+    extend(
+      _0: ArrayBuffer | Uint8Array | Uint8ClampedArray | Int8Array | string,
+      _1: any,
+    ): any
+  }
+  ImplementedSpectoda_WASM: {}
 }
-
-
 
 /// ========== DEBUG_DEV_0.12.5_20250201.d.ts ========== ///
 
@@ -181,10 +338,10 @@ export interface MainModule {
 // };
 
 export interface ProcessOptions {
-  skip_berry_plugin_update: boolean;
-  skip_eventstate_updates: boolean;
-  force_event_emittion: boolean;
-  skip_event_emittion: boolean;
+  skip_berry_plugin_update: boolean
+  skip_eventstate_updates: boolean
+  force_event_emittion: boolean
+  skip_event_emittion: boolean
 }
 
 // ! from C++ types.h in Spectoda_Firmware
@@ -195,9 +352,9 @@ export interface ProcessOptions {
 // };
 
 export interface RenderOptions {
-  force_clear_ports_flag: boolean;
-  force_bake_flag: boolean;
-  power: number;
+  force_clear_ports_flag: boolean
+  force_bake_flag: boolean
+  power: number
 }
 
 export interface Spectoda_WASMImplementation {
@@ -267,18 +424,26 @@ export interface Spectoda_WASMImplementation {
 
   // // __construct: function () {}
   // // __destruct: function () {}
-  _onTnglUpdate(tngl_bytes: Uint8Vector, used_ids: Uint8Vector): boolean;
-  _onEvents(event_array: SpectodaEvent[]): boolean;
-  _onEventStateUpdates(event_array: SpectodaEvent[]): boolean;
-  _onExecute(execute_bytecode: Uint8Vector): boolean;
-  _onRequest(request_ticket_number: number, request_bytecode_vector: Uint8Vector, destination_connection: Connection): boolean;
-  _onSynchronize(synchronization: Synchronization): boolean;
-  _onProcess(options: ProcessOptions): boolean;
-  _handlePeerConnected(peer_mac: string): interface_error_t;
-  _handlePeerDisconnected(peer_mac: string): interface_error_t;
-  _handleTimelineManipulation(timeline_timestamp: number, timeline_paused: boolean, timeline_date: string): interface_error_t;
-  _handleReboot(): interface_error_t;
-  _onLog(level: number, where: string, message: string): void;
+  _onTnglUpdate(tngl_bytes: Uint8Vector, used_ids: Uint8Vector): boolean
+  _onEvents(event_array: SpectodaEvent[]): boolean
+  _onEventStateUpdates(event_array: SpectodaEvent[]): boolean
+  _onExecute(execute_bytecode: Uint8Vector): boolean
+  _onRequest(
+    request_ticket_number: number,
+    request_bytecode_vector: Uint8Vector,
+    destination_connection: Connection,
+  ): boolean
+  _onSynchronize(synchronization: Synchronization): boolean
+  _onProcess(options: ProcessOptions): boolean
+  _handlePeerConnected(peer_mac: string): interface_error_t
+  _handlePeerDisconnected(peer_mac: string): interface_error_t
+  _handleTimelineManipulation(
+    timeline_timestamp: number,
+    timeline_paused: boolean,
+    timeline_date: string,
+  ): interface_error_t
+  _handleReboot(): interface_error_t
+  _onLog(level: number, where: string, message: string): void
 }
 
 export interface IConnector_WASMImplementation {
@@ -333,15 +498,43 @@ export interface IConnector_WASMImplementation {
 
   // // __construct: function () {}
   // // __destruct: function () {}
-  _scan: (criteria_json: string, scan_period: number, result_out: any) => boolean;
-  _autoConnect: (criteria_json: string, scan_period: number, timeout: number, result_out: any) => boolean;
-  _userConnect: (criteria_json: string, timeout: number, result_out: any) => boolean;
-  _disconnect: (connection: Connection) => boolean;
-  _sendExecute: (command_bytes: Uint8Vector, source_connection: Connection) => void;
-  _sendRequest: (request_ticket_number: number, request_bytecode: Uint8Vector, destination_connection: Connection) => boolean;
-  _sendResponse: (request_ticket_number: number, request_result: number, response_bytecode: Uint8Vector, destination_connection: Connection) => boolean;
-  _sendSynchronize: (synchronization: Synchronization, source_connection: Connection) => void;
-  _process: () => void;
+  _scan: (
+    criteria_json: string,
+    scan_period: number,
+    result_out: any,
+  ) => boolean
+  _autoConnect: (
+    criteria_json: string,
+    scan_period: number,
+    timeout: number,
+    result_out: any,
+  ) => boolean
+  _userConnect: (
+    criteria_json: string,
+    timeout: number,
+    result_out: any,
+  ) => boolean
+  _disconnect: (connection: Connection) => boolean
+  _sendExecute: (
+    command_bytes: Uint8Vector,
+    source_connection: Connection,
+  ) => void
+  _sendRequest: (
+    request_ticket_number: number,
+    request_bytecode: Uint8Vector,
+    destination_connection: Connection,
+  ) => boolean
+  _sendResponse: (
+    request_ticket_number: number,
+    request_result: number,
+    response_bytecode: Uint8Vector,
+    destination_connection: Connection,
+  ) => boolean
+  _sendSynchronize: (
+    synchronization: Synchronization,
+    source_connection: Connection,
+  ) => void
+  _process: () => void
 }
 
 /// ======================================================= ///
