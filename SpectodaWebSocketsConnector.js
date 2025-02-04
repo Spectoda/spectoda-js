@@ -76,10 +76,7 @@ const postJoinActions = () => {
     window.spectoda
       .connected() ////
       .then((receiverConnectedCriteria) => {
-        logging.info(
-          'Spectoda_JS on the receiver side connected to ',
-          receiverConnectedCriteria,
-        )
+        logging.info('Spectoda_JS on the receiver side connected to ', receiverConnectedCriteria)
 
         //* if the receiver is connected, emit the connected event on the sender
         if (receiverConnectedCriteria) {
@@ -186,19 +183,14 @@ export function createSpectodaWebsocket() {
               networkJoinParams = params
 
               if (params?.sessionOnly) {
-                return socket
-                  .emitWithAck('join-session', params?.roomNumber)
-                  .then((response) => {
-                    if (response.status === 'success') {
-                      logging.info(
-                        'RC Sender joined session',
-                        response.roomNumber,
-                      )
-                      postJoinActions()
-                    } else {
-                      throw new Error(response.error)
-                    }
-                  })
+                return socket.emitWithAck('join-session', params?.roomNumber).then((response) => {
+                  if (response.status === 'success') {
+                    logging.info('RC Sender joined session', response.roomNumber)
+                    postJoinActions()
+                  } else {
+                    throw new Error(response.error)
+                  }
+                })
               } else {
                 return socket.emitWithAck('join', params).then((response) => {
                   if (response.status === 'success') {
@@ -229,10 +221,7 @@ export function createSpectodaWebsocket() {
               arguments: args,
             }
 
-            if (
-              prop === 'updateDeviceFirmware' ||
-              prop === 'updateNetworkFirmware'
-            ) {
+            if (prop === 'updateDeviceFirmware' || prop === 'updateNetworkFirmware') {
               if (Array.isArray(args?.[0])) {
                 args[0] = Uint8Array.from(args[0]).buffer
               }

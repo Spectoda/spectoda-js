@@ -107,10 +107,7 @@ class FlutterConnection {
         this.#networkNotificationBuffer = null
 
         // @ts-ignore
-        window.flutterConnection.emit(
-          SpectodaAppEvents.PRIVATE_CONNECTED,
-          value,
-        )
+        window.flutterConnection.emit(SpectodaAppEvents.PRIVATE_CONNECTED, value)
       })
 
       window.addEventListener('#disconnected', (e) => {
@@ -123,10 +120,7 @@ class FlutterConnection {
         this.#networkNotificationBuffer = null
 
         // @ts-ignore
-        window.flutterConnection.emit(
-          SpectodaAppEvents.PRIVATE_DISCONNECTED,
-          value,
-        )
+        window.flutterConnection.emit(SpectodaAppEvents.PRIVATE_DISCONNECTED, value)
       })
 
       // network characteristics notification
@@ -140,9 +134,7 @@ class FlutterConnection {
           this.#networkNotificationBuffer = payload
         } else {
           // Create new array with combined length
-          const newBuffer = new Uint8Array(
-            this.#networkNotificationBuffer.length + payload.length,
-          )
+          const newBuffer = new Uint8Array(this.#networkNotificationBuffer.length + payload.length)
 
           // Copy existing buffer
           newBuffer.set(this.#networkNotificationBuffer)
@@ -188,10 +180,7 @@ class FlutterConnection {
         // @ts-ignore
         const synchronizationBytes = new Uint8Array(e.detail.value)
 
-        logging.info(
-          `Triggered #clock: [${synchronizationBytes}]`,
-          synchronizationBytes,
-        )
+        logging.info(`Triggered #clock: [${synchronizationBytes}]`, synchronizationBytes)
 
         // uint64_t clock_timestamp;
         // uint64_t origin_address_handle;
@@ -203,14 +192,11 @@ class FlutterConnection {
         const SYNCHRONIZATION_BYTE_SIZE = 48
 
         if (synchronizationBytes.length < SYNCHRONIZATION_BYTE_SIZE) {
-          logging.error(
-            'synchronizationBytes.length < SYNCHRONIZATION_BYTE_SIZE',
-          )
+          logging.error('synchronizationBytes.length < SYNCHRONIZATION_BYTE_SIZE')
           return
         }
 
-        const synchronization =
-          SpectodaWasm.Synchronization.makeFromUint8Array(synchronizationBytes)
+        const synchronization = SpectodaWasm.Synchronization.makeFromUint8Array(synchronizationBytes)
 
         // @ts-ignore
         window.flutterConnection.synchronize(synchronization)
@@ -246,13 +232,7 @@ class FlutterConnection {
       window.flutter_inappwebview = {}
 
       // @ts-ignore
-      window.flutter_inappwebview.callHandler = async function (
-        handler,
-        a,
-        b,
-        c,
-        d,
-      ) {
+      window.flutter_inappwebview.callHandler = async function (handler, a, b, c, d) {
         //
         switch (handler) {
           //
@@ -277,9 +257,7 @@ class FlutterConnection {
               }
               _selected = true
               // @ts-ignore
-              window.flutterConnection.resolve(
-                '{"connector":"flutterbluetooth"}',
-              )
+              window.flutterConnection.resolve('{"connector":"flutterbluetooth"}')
             }
             break
           }
@@ -299,9 +277,7 @@ class FlutterConnection {
               }
               _selected = true
               // @ts-ignore
-              window.flutterConnection.resolve(
-                '{"connector":"flutterbluetooth"}',
-              ) // resolve with json containing the information about the connected device
+              window.flutterConnection.resolve('{"connector":"flutterbluetooth"}') // resolve with json containing the information about the connected device
             }
             break
           }
@@ -311,9 +287,7 @@ class FlutterConnection {
               // params: ()
               if (_selected) {
                 // @ts-ignore
-                window.flutterConnection.resolve(
-                  '{"connector":"flutterbluetooth"}',
-                ) // if the device is selected, return json
+                window.flutterConnection.resolve('{"connector":"flutterbluetooth"}') // if the device is selected, return json
               } else {
                 // @ts-ignore
                 window.flutterConnection.resolve() // if no device is selected resolve nothing
@@ -352,9 +326,7 @@ class FlutterConnection {
               }
               _selected = true
               // @ts-ignore
-              window.flutterConnection.resolve(
-                '{"connector":"flutterbluetooth"}',
-              ) // resolve with json containing the information about the connected device
+              window.flutterConnection.resolve('{"connector":"flutterbluetooth"}') // resolve with json containing the information about the connected device
             }
             break
           }
@@ -376,9 +348,7 @@ class FlutterConnection {
               _connected = true
               // @ts-ignore
               // @ts-ignore
-              window.flutterConnection.resolve(
-                '{"connector":"flutterbluetooth"}',
-              )
+              window.flutterConnection.resolve('{"connector":"flutterbluetooth"}')
               // after connection the SpectodaConnect can any time emit #disconnect event.
 
               await sleep(1000) // unselect logic
@@ -388,9 +358,7 @@ class FlutterConnection {
 
               setTimeout(() => {
                 // @ts-ignore
-                window.flutterConnection.emit(
-                  SpectodaAppEvents.PRIVATE_DISCONNECTED,
-                )
+                window.flutterConnection.emit(SpectodaAppEvents.PRIVATE_DISCONNECTED)
                 //}, Math.random() * 60000);
                 _connected = false
               }, 60000)
@@ -405,9 +373,7 @@ class FlutterConnection {
                 await sleep(100) // disconnecting logic
                 _connected = false
                 // @ts-ignore
-                window.flutterConnection.emit(
-                  SpectodaAppEvents.PRIVATE_DISCONNECTED,
-                )
+                window.flutterConnection.emit(SpectodaAppEvents.PRIVATE_DISCONNECTED)
               }
               // @ts-ignore
               window.flutterConnection.resolve() // always resolves even if there are internal errors
@@ -420,9 +386,7 @@ class FlutterConnection {
               // params: ()
               if (_connected) {
                 // @ts-ignore
-                window.flutterConnection.resolve(
-                  '{"connector":"flutterbluetooth"}',
-                )
+                window.flutterConnection.resolve('{"connector":"flutterbluetooth"}')
               } else {
                 // @ts-ignore
                 window.flutterConnection.resolve()
@@ -487,9 +451,7 @@ class FlutterConnection {
               }
 
               // @ts-ignore
-              window.flutterConnection.resolve([
-                246, 1, 0, 0, 0, 188, 251, 18, 0, 212, 247, 18, 0, 0,
-              ]) // returns data as an array of bytes: [0,255,123,89]
+              window.flutterConnection.resolve([246, 1, 0, 0, 0, 188, 251, 18, 0, 212, 247, 18, 0, 0]) // returns data as an array of bytes: [0,255,123,89]
             }
             break
           }
@@ -543,17 +505,11 @@ class FlutterConnection {
                 return
               }
               // @ts-ignore
-              window.flutterConnection.emit(
-                SpectodaAppEvents.OTA_STATUS,
-                'begin',
-              )
+              window.flutterConnection.emit(SpectodaAppEvents.OTA_STATUS, 'begin')
               await sleep(10000) // preparing FW logic.
               if (_fail(0.1)) {
                 // @ts-ignore
-                window.flutterConnection.emit(
-                  SpectodaAppEvents.OTA_STATUS,
-                  'fail',
-                )
+                window.flutterConnection.emit(SpectodaAppEvents.OTA_STATUS, 'fail')
                 // @ts-ignore
                 window.flutterConnection.reject('UpdateFailed')
                 return
@@ -564,10 +520,7 @@ class FlutterConnection {
                 await sleep(25) // writing FW logic.
                 if (_fail(0.01)) {
                   // @ts-ignore
-                  window.flutterConnection.emit(
-                    SpectodaAppEvents.OTA_STATUS,
-                    'fail',
-                  )
+                  window.flutterConnection.emit(SpectodaAppEvents.OTA_STATUS, 'fail')
                   // @ts-ignore
                   window.flutterConnection.reject('UpdateFailed')
                   return
@@ -576,19 +529,13 @@ class FlutterConnection {
               await sleep(1000) // finishing FW logic.
               if (_fail(0.1)) {
                 // @ts-ignore
-                window.flutterConnection.emit(
-                  SpectodaAppEvents.OTA_STATUS,
-                  'fail',
-                )
+                window.flutterConnection.emit(SpectodaAppEvents.OTA_STATUS, 'fail')
                 // @ts-ignore
                 window.flutterConnection.reject('UpdateFailed')
                 return
               }
               // @ts-ignore
-              window.flutterConnection.emit(
-                SpectodaAppEvents.OTA_STATUS,
-                'success',
-              )
+              window.flutterConnection.emit(SpectodaAppEvents.OTA_STATUS, 'success')
               // @ts-ignore
               window.flutterConnection.resolve()
             }
@@ -640,19 +587,12 @@ export class SpectodaConnectConnector extends FlutterConnection {
         SpectodaWasm.connection_rssi_t.RSSI_MAX,
       )
 
-      this.#runtimeReference.spectoda_js.execute(
-        commandBytes,
-        DUMMY_BLE_CONNECTION,
-      )
+      this.#runtimeReference.spectoda_js.execute(commandBytes, DUMMY_BLE_CONNECTION)
     }
 
     // @ts-ignore
-    window.flutterConnection.synchronize = (
-      synchronization: Synchronization,
-    ) => {
-      logging.debug(
-        `flutterConnection.synchronize(synchronization=${synchronization})`,
-      )
+    window.flutterConnection.synchronize = (synchronization: Synchronization) => {
+      logging.debug(`flutterConnection.synchronize(synchronization=${synchronization})`)
 
       const DUMMY_BLE_CONNECTION = SpectodaWasm.Connection.make(
         '11:11:11:11:11:11',
@@ -660,18 +600,11 @@ export class SpectodaConnectConnector extends FlutterConnection {
         SpectodaWasm.connection_rssi_t.RSSI_MAX,
       )
 
-      this.#runtimeReference.spectoda_js.synchronize(
-        synchronization,
-        DUMMY_BLE_CONNECTION,
-      )
+      this.#runtimeReference.spectoda_js.synchronize(synchronization, DUMMY_BLE_CONNECTION)
     }
   }
 
-  #applyTimeout(
-    promise: Promise<any> | null,
-    timeout_number: number,
-    message: string,
-  ) {
+  #applyTimeout(promise: Promise<any> | null, timeout_number: number, message: string) {
     if (!promise) {
       // ? No promise provided to #applyTimeout()
       return Promise.reject('NoPromiseProvided')
@@ -725,9 +658,7 @@ export class SpectodaConnectConnector extends FlutterConnection {
 
     const criteria_json = JSON.stringify(criterium_array)
 
-    logging.debug(
-      `userSelect(criteria=${criteria_json}, timeout=${timeout_number})`,
-    )
+    logging.debug(`userSelect(criteria=${criteria_json}, timeout=${timeout_number})`)
 
     /**
      * Creates an invisible overlay that blocks all user interactions.
@@ -795,19 +726,11 @@ export class SpectodaConnectConnector extends FlutterConnection {
     })
 
     // @ts-ignore
-    window.flutter_inappwebview.callHandler(
-      'userSelect',
-      criteria_json,
-      timeout_number,
-    )
+    window.flutter_inappwebview.callHandler('userSelect', criteria_json, timeout_number)
 
     const FLUTTER_RESPONSE_TIMEOUT = timeout_number + 60000
 
-    return this.#applyTimeout(
-      this.#promise,
-      FLUTTER_RESPONSE_TIMEOUT,
-      'userSelect',
-    )
+    return this.#applyTimeout(this.#promise, FLUTTER_RESPONSE_TIMEOUT, 'userSelect')
   }
 
   // takes the criteria, scans for scan_duration and automatically selects the device,
@@ -865,9 +788,7 @@ export class SpectodaConnectConnector extends FlutterConnection {
         // @ts-ignore
         window.flutterConnection.reject = reject
 
-        console.warn(
-          'autoSelect() with minimal timeout timeouted, trying it again with the full timeout...',
-        )
+        console.warn('autoSelect() with minimal timeout timeouted, trying it again with the full timeout...')
         // @ts-ignore
         window.flutter_inappwebview.callHandler(
           'autoSelect',
@@ -891,11 +812,7 @@ export class SpectodaConnectConnector extends FlutterConnection {
       Math.max(MINIMAL_AUTOSELECT_TIMEOUT, timeout_number) +
       5000
 
-    return this.#applyTimeout(
-      this.#promise,
-      FLUTTER_RESPONSE_TIMEOUT,
-      'autoSelect',
-    )
+    return this.#applyTimeout(this.#promise, FLUTTER_RESPONSE_TIMEOUT, 'autoSelect')
   }
 
   selected(): Promise<SpectodaTypes.Criterium | null> {
@@ -920,11 +837,7 @@ export class SpectodaConnectConnector extends FlutterConnection {
 
     const FLUTTER_RESPONSE_TIMEOUT = 1000
 
-    return this.#applyTimeout(
-      this.#promise,
-      FLUTTER_RESPONSE_TIMEOUT,
-      'selected',
-    )
+    return this.#applyTimeout(this.#promise, FLUTTER_RESPONSE_TIMEOUT, 'selected')
   }
 
   unselect(): Promise<null> {
@@ -942,11 +855,7 @@ export class SpectodaConnectConnector extends FlutterConnection {
 
     const FLUTTER_RESPONSE_TIMEOUT = 1000
 
-    return this.#applyTimeout(
-      this.#promise,
-      FLUTTER_RESPONSE_TIMEOUT,
-      'unselect',
-    )
+    return this.#applyTimeout(this.#promise, FLUTTER_RESPONSE_TIMEOUT, 'unselect')
   }
 
   // takes the criteria, scans for scan_duration and returns the scanning results
@@ -964,9 +873,7 @@ export class SpectodaConnectConnector extends FlutterConnection {
 
     const criteria_json = JSON.stringify(criterium_array)
 
-    logging.debug(
-      `scan(criteria=${criteria_json}, scan_duration=${scan_duration_number})`,
-    )
+    logging.debug(`scan(criteria=${criteria_json}, scan_duration=${scan_duration_number})`)
 
     this.#promise = new Promise((resolve, reject) => {
       // @ts-ignore
@@ -983,11 +890,7 @@ export class SpectodaConnectConnector extends FlutterConnection {
     })
 
     // @ts-ignore
-    window.flutter_inappwebview.callHandler(
-      'scan',
-      criteria_json,
-      scan_duration_number,
-    )
+    window.flutter_inappwebview.callHandler('scan', criteria_json, scan_duration_number)
 
     const FLUTTER_RESPONSE_TIMEOUT = scan_duration_number + 5000
 
@@ -1000,9 +903,7 @@ export class SpectodaConnectConnector extends FlutterConnection {
 
   */
   // timeout 20000ms for the old slow devices to be able to connect
-  connect(
-    timeout_number: number | typeof DEFAULT_TIMEOUT = DEFAULT_TIMEOUT,
-  ): Promise<SpectodaTypes.Criterium> {
+  connect(timeout_number: number | typeof DEFAULT_TIMEOUT = DEFAULT_TIMEOUT): Promise<SpectodaTypes.Criterium> {
     if (timeout_number === DEFAULT_TIMEOUT) {
       timeout_number = 20000
     }
@@ -1036,14 +937,9 @@ export class SpectodaConnectConnector extends FlutterConnection {
         // @ts-ignore
         window.flutterConnection.reject = reject
 
-        console.warn(
-          'Connect with minimal timeout timeouted, trying it again with the full timeout...',
-        )
+        console.warn('Connect with minimal timeout timeouted, trying it again with the full timeout...')
         // @ts-ignore
-        window.flutter_inappwebview.callHandler(
-          'connect',
-          Math.max(MINIMAL_CONNECT_TIMEOUT, timeout_number),
-        ) // on old Androids the minimal timeout is not enough
+        window.flutter_inappwebview.callHandler('connect', Math.max(MINIMAL_CONNECT_TIMEOUT, timeout_number)) // on old Androids the minimal timeout is not enough
       }
     })
 
@@ -1056,16 +952,9 @@ export class SpectodaConnectConnector extends FlutterConnection {
     // }, MINIMAL_CONNECT_TIMEOUT);
 
     // the timeout must be long enough to handle the slowest devices
-    const FLUTTER_RESPONSE_TIMEOUT =
-      MINIMAL_CONNECT_TIMEOUT +
-      Math.max(MINIMAL_CONNECT_TIMEOUT, timeout_number) +
-      5000
+    const FLUTTER_RESPONSE_TIMEOUT = MINIMAL_CONNECT_TIMEOUT + Math.max(MINIMAL_CONNECT_TIMEOUT, timeout_number) + 5000
 
-    return this.#applyTimeout(
-      this.#promise,
-      FLUTTER_RESPONSE_TIMEOUT,
-      'connect',
-    ).then(() => {
+    return this.#applyTimeout(this.#promise, FLUTTER_RESPONSE_TIMEOUT, 'connect').then(() => {
       logging.debug('Sleeping for 100ms after connect...')
       return sleep(100).then(() => {
         return { connector: 'spectodaconnect' }
@@ -1089,11 +978,7 @@ export class SpectodaConnectConnector extends FlutterConnection {
 
     const FLUTTER_RESPONSE_TIMEOUT = 5000
 
-    return this.#applyTimeout(
-      this.#promise,
-      FLUTTER_RESPONSE_TIMEOUT,
-      'disconnect',
-    )
+    return this.#applyTimeout(this.#promise, FLUTTER_RESPONSE_TIMEOUT, 'disconnect')
   }
 
   connected(): Promise<SpectodaTypes.Criterium | null> {
@@ -1121,11 +1006,7 @@ export class SpectodaConnectConnector extends FlutterConnection {
 
     const FLUTTER_RESPONSE_TIMEOUT = 1000
 
-    return this.#applyTimeout(
-      this.#promise,
-      FLUTTER_RESPONSE_TIMEOUT,
-      'connected',
-    )
+    return this.#applyTimeout(this.#promise, FLUTTER_RESPONSE_TIMEOUT, 'connected')
   }
 
   // deliver handles the communication with the Spectoda Controller in a way
@@ -1137,9 +1018,7 @@ export class SpectodaConnectConnector extends FlutterConnection {
     if (timeout_number === DEFAULT_TIMEOUT) {
       timeout_number = 5000
     }
-    logging.debug(
-      `deliver(payload=[${payload_bytes}], timeout=${timeout_number})`,
-    )
+    logging.debug(`deliver(payload=[${payload_bytes}], timeout=${timeout_number})`)
 
     this.#promise = new Promise((resolve, reject) => {
       // @ts-ignore
@@ -1149,21 +1028,13 @@ export class SpectodaConnectConnector extends FlutterConnection {
     })
 
     // @ts-ignore
-    window.flutter_inappwebview.callHandler(
-      'deliver',
-      payload_bytes,
-      timeout_number,
-    )
+    window.flutter_inappwebview.callHandler('deliver', payload_bytes, timeout_number)
     // fix bug in spectoda-connect and then enable this line
     // TODO window.flutter_inappwebview.callHandler("deliver", Array.from(payload_bytes), timeout_number);
 
     const FLUTTER_RESPONSE_TIMEOUT = timeout_number + 5000
 
-    return this.#applyTimeout(
-      this.#promise,
-      FLUTTER_RESPONSE_TIMEOUT,
-      'deliver',
-    )
+    return this.#applyTimeout(this.#promise, FLUTTER_RESPONSE_TIMEOUT, 'deliver')
   }
 
   // transmit handles the communication with the Spectoda Controller in a way
@@ -1175,9 +1046,7 @@ export class SpectodaConnectConnector extends FlutterConnection {
     if (timeout_number === DEFAULT_TIMEOUT) {
       timeout_number = 1000
     }
-    logging.debug(
-      `transmit(payload=[${payload_bytes}], timeout=${timeout_number})`,
-    )
+    logging.debug(`transmit(payload=[${payload_bytes}], timeout=${timeout_number})`)
 
     this.#promise = new Promise((resolve, reject) => {
       // @ts-ignore
@@ -1187,19 +1056,11 @@ export class SpectodaConnectConnector extends FlutterConnection {
     })
 
     // @ts-ignore
-    window.flutter_inappwebview.callHandler(
-      'transmit',
-      [...payload_bytes],
-      timeout_number,
-    )
+    window.flutter_inappwebview.callHandler('transmit', [...payload_bytes], timeout_number)
 
     const FLUTTER_RESPONSE_TIMEOUT = timeout_number + 5000
 
-    return this.#applyTimeout(
-      this.#promise,
-      FLUTTER_RESPONSE_TIMEOUT,
-      'transmit',
-    )
+    return this.#applyTimeout(this.#promise, FLUTTER_RESPONSE_TIMEOUT, 'transmit')
   }
 
   // request handles the requests on the Spectoda Controller. The payload request
@@ -1228,28 +1089,17 @@ export class SpectodaConnectConnector extends FlutterConnection {
     })
 
     // @ts-ignore
-    window.flutter_inappwebview.callHandler(
-      'request',
-      [...payload_bytes],
-      read_response,
-      timeout_number,
-    )
+    window.flutter_inappwebview.callHandler('request', [...payload_bytes], read_response, timeout_number)
 
     const FLUTTER_RESPONSE_TIMEOUT = timeout_number + 5000
 
-    return this.#applyTimeout(
-      this.#promise,
-      FLUTTER_RESPONSE_TIMEOUT,
-      'request',
-    )
+    return this.#applyTimeout(this.#promise, FLUTTER_RESPONSE_TIMEOUT, 'request')
   }
 
   // synchronizes the device internal clock with the provided TimeTrack clock
   // of the application as precisely as possible
   setClock(clock: TimeTrack): Promise<unknown> {
-    logging.info(
-      `SpectodaConnectConnector::setClock(clock.millis=${clock.millis()})`,
-    )
+    logging.info(`SpectodaConnectConnector::setClock(clock.millis=${clock.millis()})`)
 
     return new Promise(async (resolve, reject) => {
       for (let tries = 0; tries < 3; tries++) {
@@ -1273,11 +1123,7 @@ export class SpectodaConnectConnector extends FlutterConnection {
 
           const FLUTTER_RESPONSE_TIMEOUT = 5000
 
-          await this.#applyTimeout(
-            this.#promise,
-            FLUTTER_RESPONSE_TIMEOUT,
-            'writeClock',
-          )
+          await this.#applyTimeout(this.#promise, FLUTTER_RESPONSE_TIMEOUT, 'writeClock')
           logging.debug('Clock write success:', timestamp)
 
           // @ts-ignore
@@ -1316,11 +1162,7 @@ export class SpectodaConnectConnector extends FlutterConnection {
           window.flutter_inappwebview.callHandler('readClock')
 
           const FLUTTER_RESPONSE_TIMEOUT = 5000
-          const bytes = await this.#applyTimeout(
-            this.#promise,
-            FLUTTER_RESPONSE_TIMEOUT,
-            'readClock',
-          )
+          const bytes = await this.#applyTimeout(this.#promise, FLUTTER_RESPONSE_TIMEOUT, 'readClock')
 
           const reader = new TnglReader(new Uint8Array(bytes))
           const timestamp = reader.readUint64()
@@ -1388,11 +1230,7 @@ export class SpectodaConnectConnector extends FlutterConnection {
           //===========// RESET //===========//
           logging.info('OTA RESET')
 
-          const device_bytes = [
-            COMMAND_FLAGS.FLAG_OTA_RESET,
-            0x00,
-            ...numberToBytes(0x00000000, 4),
-          ]
+          const device_bytes = [COMMAND_FLAGS.FLAG_OTA_RESET, 0x00, ...numberToBytes(0x00000000, 4)]
 
           await this.request(new Uint8Array(device_bytes), false, 10000)
         }
@@ -1403,11 +1241,7 @@ export class SpectodaConnectConnector extends FlutterConnection {
           //===========// BEGIN //===========//
           logging.info('OTA BEGIN')
 
-          const device_bytes = [
-            COMMAND_FLAGS.FLAG_OTA_BEGIN,
-            0x00,
-            ...numberToBytes(firmware_bytes.length, 4),
-          ]
+          const device_bytes = [COMMAND_FLAGS.FLAG_OTA_BEGIN, 0x00, ...numberToBytes(firmware_bytes.length, 4)]
 
           await this.request(new Uint8Array(device_bytes), false, 20000)
         }
@@ -1434,14 +1268,10 @@ export class SpectodaConnectConnector extends FlutterConnection {
 
             written += index_to - index_from
 
-            const percentage =
-              Math.floor((written * 10000) / firmware_bytes.length) / 100
+            const percentage = Math.floor((written * 10000) / firmware_bytes.length) / 100
 
             logging.debug(percentage + '%')
-            this.#runtimeReference.emit(
-              SpectodaAppEvents.OTA_PROGRESS,
-              percentage,
-            )
+            this.#runtimeReference.emit(SpectodaAppEvents.OTA_PROGRESS, percentage)
 
             index_from += chunk_size
             index_to = index_from + chunk_size
@@ -1454,11 +1284,7 @@ export class SpectodaConnectConnector extends FlutterConnection {
           //===========// END //===========//
           logging.info('OTA END')
 
-          const device_bytes = [
-            COMMAND_FLAGS.FLAG_OTA_END,
-            0x00,
-            ...numberToBytes(written, 4),
-          ]
+          const device_bytes = [COMMAND_FLAGS.FLAG_OTA_END, 0x00, ...numberToBytes(written, 4)]
 
           await this.request(new Uint8Array(device_bytes), false, 10000)
         }
@@ -1471,11 +1297,7 @@ export class SpectodaConnectConnector extends FlutterConnection {
 
         await this.request(new Uint8Array(device_bytes), false)
 
-        logging.debug(
-          'Firmware written in ' +
-            (Date.now() - start_timestamp) / 1000 +
-            ' seconds',
-        )
+        logging.debug('Firmware written in ' + (Date.now() - start_timestamp) / 1000 + ' seconds')
 
         this.#runtimeReference.emit(SpectodaAppEvents.OTA_STATUS, 'success')
 
@@ -1517,10 +1339,7 @@ export class SpectodaConnectConnector extends FlutterConnection {
       `SpectodaConnectConnector::sendExecute(command_bytes=${command_bytes}, source_connection=${source_connection})`,
     )
 
-    if (
-      source_connection.connector_type ==
-      SpectodaWasm.connector_type_t.CONNECTOR_BLE
-    ) {
+    if (source_connection.connector_type == SpectodaWasm.connector_type_t.CONNECTOR_BLE) {
       return Promise.resolve()
     }
 
@@ -1529,11 +1348,7 @@ export class SpectodaConnectConnector extends FlutterConnection {
 
   // bool _sendRequest(const int32_t request_ticket_number, std::vector<uint8_t>& request_bytecode, const Connection& destination_connection) = 0;
 
-  sendRequest(
-    request_ticket_number: number,
-    request_bytecode: Uint8Array,
-    destination_connection: Connection,
-  ) {
+  sendRequest(request_ticket_number: number, request_bytecode: Uint8Array, destination_connection: Connection) {
     logging.verbose(
       `SpectodaConnectConnector::sendRequest(request_ticket_number=${request_ticket_number}, request_bytecode=${request_bytecode}, destination_connection=${destination_connection})`,
     )
@@ -1557,18 +1372,12 @@ export class SpectodaConnectConnector extends FlutterConnection {
 
   // void _sendSynchronize(const Synchronization& synchronization, const Connection& source_connection) = 0;
 
-  sendSynchronize(
-    synchronization: Synchronization,
-    source_connection: Connection,
-  ) {
+  sendSynchronize(synchronization: Synchronization, source_connection: Connection) {
     logging.verbose(
       `SpectodaConnectConnector::sendSynchronize(synchronization=${synchronization}, source_connection=${source_connection})`,
     )
 
-    if (
-      source_connection.connector_type ==
-      SpectodaWasm.connector_type_t.CONNECTOR_BLE
-    ) {
+    if (source_connection.connector_type == SpectodaWasm.connector_type_t.CONNECTOR_BLE) {
       return Promise.resolve()
     }
 
@@ -1588,10 +1397,7 @@ export class SpectodaConnectConnector extends FlutterConnection {
           const synchronization_bytes = [...synchronization.toUint8Array()]
 
           // @ts-ignore
-          window.flutter_inappwebview.callHandler(
-            'writeClock',
-            synchronization_bytes,
-          )
+          window.flutter_inappwebview.callHandler('writeClock', synchronization_bytes)
 
           await this.#applyTimeout(this.#promise, 5000, 'synchronization')
 

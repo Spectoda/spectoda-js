@@ -94,9 +94,7 @@ type Queries = {
   >
 }
 
-type SpectodaStore = Queries &
-  CustomMethods &
-  Record<'data', SpectodaDataObject>
+type SpectodaStore = Queries & CustomMethods & Record<'data', SpectodaDataObject>
 
 export type SpectodaDataObject = {
   [key in keyof Queries]: Queries[key]['data'] | null
@@ -130,11 +128,7 @@ const spectodaStore = createStore<SpectodaStore>()(
         }))
       }
 
-      const createQuery = <
-        Key extends keyof Queries,
-        FetchedType,
-        DataType extends Queries[Key]['data'],
-      >({
+      const createQuery = <Key extends keyof Queries, FetchedType, DataType extends Queries[Key]['data']>({
         key,
         fetchFunction,
         FetchedDataSchema,
@@ -150,14 +144,8 @@ const spectodaStore = createStore<SpectodaStore>()(
         dataTransform?: (fetchedData: FetchedType) => DataType | null
         DataSchema?: z.ZodType<DataType>
         setFunction?: (newData: DataType) => Promise<void>
-      }): Record<
-        Key,
-        Query<DataType, typeof setFunction extends undefined ? false : true>
-      > => {
-        const storeItem: Query<
-          DataType,
-          typeof setFunction extends undefined ? false : true
-        > = {
+      }): Record<Key, Query<DataType, typeof setFunction extends undefined ? false : true>> => {
+        const storeItem: Query<DataType, typeof setFunction extends undefined ? false : true> = {
           data: defaultReturn,
           isStale: true,
           get: async () => {
@@ -171,14 +159,10 @@ const spectodaStore = createStore<SpectodaStore>()(
             log(`👀 Reading ${key}...`)
 
             const fetchedData = await fetchFunction()
-            const fetchedDataValidation =
-              FetchedDataSchema.safeParse(fetchedData)
+            const fetchedDataValidation = FetchedDataSchema.safeParse(fetchedData)
 
             if (!fetchedDataValidation.success) {
-              console.error(
-                `Validating ${key} failed:`,
-                fetchedDataValidation.error.errors[0],
-              )
+              console.error(`Validating ${key} failed:`, fetchedDataValidation.error.errors[0])
               return defaultReturn as DataType
             }
 
@@ -186,14 +170,10 @@ const spectodaStore = createStore<SpectodaStore>()(
 
             if (typeof dataTransform === 'function' && DataSchema) {
               const transformed = dataTransform(fetchedDataValidation.data)
-              const transformedDataValidation =
-                DataSchema.safeParse(transformed)
+              const transformedDataValidation = DataSchema.safeParse(transformed)
 
               if (!transformedDataValidation.success) {
-                console.error(
-                  `Validating ${key} failed:`,
-                  transformedDataValidation.error.errors[0],
-                )
+                console.error(`Validating ${key} failed:`, transformedDataValidation.error.errors[0])
                 return defaultReturn as DataType
               }
 
@@ -259,19 +239,11 @@ const spectodaStore = createStore<SpectodaStore>()(
             results.codes = await get().codes.get()
           } catch (error) {
             if (error instanceof Error) {
-              console.error(
-                `Load data failed while getting ${resource} due. Reason:`,
-                error.message,
-              )
+              console.error(`Load data failed while getting ${resource} due. Reason:`, error.message)
             } else if (typeof error === 'string') {
-              console.error(
-                `Load data failed while getting ${resource}. Reason: ${error}`,
-              )
+              console.error(`Load data failed while getting ${resource}. Reason: ${error}`)
             } else {
-              console.error(
-                `Load data failed while getting ${resource} for unknown reason.`,
-                error,
-              )
+              console.error(`Load data failed while getting ${resource} for unknown reason.`, error)
             }
           } finally {
             get().endBatching()

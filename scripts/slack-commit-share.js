@@ -67,15 +67,11 @@ async function postCommitToSlack() {
 
     // Extract dev-XXXX from branch name
     const devId = branchName.match(/dev-\d+/i)
-    const clickupUrl = devId
-      ? `(<https://app.clickup.com/t/4663973/${devId[0]}|ClickUp>)`
-      : ''
+    const clickupUrl = devId ? `(<https://app.clickup.com/t/4663973/${devId[0]}|ClickUp>)` : ''
 
     const githubUrl = `(<${githubProject}/commit/${commitHash}|GitHub>)`
 
-    const studioLink = getStudioLinkForBranch(branchName)
-      ? `(<${getStudioLinkForBranch(branchName)}|Link>)`
-      : ''
+    const studioLink = getStudioLinkForBranch(branchName) ? `(<${getStudioLinkForBranch(branchName)}|Link>)` : ''
 
     if (tagName) {
       // Tag specific message

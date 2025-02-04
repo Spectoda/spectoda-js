@@ -192,17 +192,11 @@ DSP.getChannel = DSP.deinterleave
  *
  * @returns A new Float64Array interleaved buffer.
  */
-DSP.mixSampleBuffers = function (
-  sampleBuffer1,
-  sampleBuffer2,
-  negate,
-  volumeCorrection,
-) {
+DSP.mixSampleBuffers = function (sampleBuffer1, sampleBuffer2, negate, volumeCorrection) {
   var outputSamples = new Float64Array(sampleBuffer1)
 
   for (var i = 0; i < sampleBuffer1.length; i++) {
-    outputSamples[i] +=
-      (negate ? -sampleBuffer2[i] : sampleBuffer2[i]) / volumeCorrection
+    outputSamples[i] += (negate ? -sampleBuffer2[i] : sampleBuffer2[i]) / volumeCorrection
   }
 
   return outputSamples
@@ -410,10 +404,7 @@ FFT.prototype.forward = function (buffer) {
   }
   if (bufferSize !== buffer.length) {
     throw (
-      'Supplied buffer is not the same size as defined FFT. FFT Size: ' +
-      bufferSize +
-      ' Buffer Size: ' +
-      buffer.length
+      'Supplied buffer is not the same size as defined FFT. FFT Size: ' + bufferSize + ' Buffer Size: ' + buffer.length
     )
   }
 
@@ -447,10 +438,8 @@ FFT.prototype.forward = function (buffer) {
 
       while (i < bufferSize) {
         off = i + halfSize
-        tr =
-          currentPhaseShiftReal * real[off] - currentPhaseShiftImag * imag[off]
-        ti =
-          currentPhaseShiftReal * imag[off] + currentPhaseShiftImag * real[off]
+        tr = currentPhaseShiftReal * real[off] - currentPhaseShiftImag * imag[off]
+        ti = currentPhaseShiftReal * imag[off] + currentPhaseShiftImag * real[off]
 
         real[off] = real[i] - tr
         imag[off] = imag[i] - ti
@@ -461,12 +450,8 @@ FFT.prototype.forward = function (buffer) {
       }
 
       tmpReal = currentPhaseShiftReal
-      currentPhaseShiftReal =
-        tmpReal * phaseShiftStepReal -
-        currentPhaseShiftImag * phaseShiftStepImag
-      currentPhaseShiftImag =
-        tmpReal * phaseShiftStepImag +
-        currentPhaseShiftImag * phaseShiftStepReal
+      currentPhaseShiftReal = tmpReal * phaseShiftStepReal - currentPhaseShiftImag * phaseShiftStepImag
+      currentPhaseShiftImag = tmpReal * phaseShiftStepImag + currentPhaseShiftImag * phaseShiftStepReal
     }
 
     halfSize = halfSize << 1
@@ -523,10 +508,8 @@ FFT.prototype.inverse = function (real, imag) {
 
       while (i < bufferSize) {
         off = i + halfSize
-        tr =
-          currentPhaseShiftReal * real[off] - currentPhaseShiftImag * imag[off]
-        ti =
-          currentPhaseShiftReal * imag[off] + currentPhaseShiftImag * real[off]
+        tr = currentPhaseShiftReal * real[off] - currentPhaseShiftImag * imag[off]
+        ti = currentPhaseShiftReal * imag[off] + currentPhaseShiftImag * real[off]
 
         real[off] = real[i] - tr
         imag[off] = imag[i] - ti
@@ -537,12 +520,8 @@ FFT.prototype.inverse = function (real, imag) {
       }
 
       tmpReal = currentPhaseShiftReal
-      currentPhaseShiftReal =
-        tmpReal * phaseShiftStepReal -
-        currentPhaseShiftImag * phaseShiftStepImag
-      currentPhaseShiftImag =
-        tmpReal * phaseShiftStepImag +
-        currentPhaseShiftImag * phaseShiftStepReal
+      currentPhaseShiftReal = tmpReal * phaseShiftStepReal - currentPhaseShiftImag * phaseShiftStepImag
+      currentPhaseShiftImag = tmpReal * phaseShiftStepImag + currentPhaseShiftImag * phaseShiftStepReal
     }
 
     halfSize = halfSize << 1
@@ -878,16 +857,7 @@ RFFT.prototype.forward = function (buffer) {
   return spectrum
 }
 
-function Sampler(
-  file,
-  bufferSize,
-  sampleRate,
-  playStart,
-  playEnd,
-  loopStart,
-  loopEnd,
-  loopMode,
-) {
+function Sampler(file, bufferSize, sampleRate, playStart, playEnd, loopStart, loopEnd, loopMode) {
   this.file = file
   this.bufferSize = bufferSize
   this.sampleRate = sampleRate
@@ -946,8 +916,7 @@ Sampler.prototype.applyEnvelope = function () {
 Sampler.prototype.generate = function () {
   var frameOffset = this.frameCount * this.bufferSize
 
-  var loopWidth =
-    this.playEnd * this.samples.length - this.playStart * this.samples.length
+  var loopWidth = this.playEnd * this.samples.length - this.playStart * this.samples.length
   var playStartSamples = this.playStart * this.samples.length // ie 0.5 -> 50% of the length
   var playEndSamples = this.playEnd * this.samples.length // ie 0.5 -> 50% of the length
   var offset
@@ -955,9 +924,7 @@ Sampler.prototype.generate = function () {
   for (var i = 0; i < this.bufferSize; i++) {
     switch (this.loopMode) {
       case DSP.OFF:
-        this.playhead = Math.round(
-          this.samplesProcessed * this.step + playStartSamples,
-        )
+        this.playhead = Math.round(this.samplesProcessed * this.step + playStartSamples)
         if (this.playhead < this.playEnd * this.samples.length) {
           this.signal[i] = this.samples[this.playhead] * this.amplitude
         } else {
@@ -966,36 +933,24 @@ Sampler.prototype.generate = function () {
         break
 
       case DSP.FW:
-        this.playhead = Math.round(
-          ((this.samplesProcessed * this.step) % loopWidth) + playStartSamples,
-        )
+        this.playhead = Math.round(((this.samplesProcessed * this.step) % loopWidth) + playStartSamples)
         if (this.playhead < this.playEnd * this.samples.length) {
           this.signal[i] = this.samples[this.playhead] * this.amplitude
         }
         break
 
       case DSP.BW:
-        this.playhead =
-          playEndSamples -
-          Math.round((this.samplesProcessed * this.step) % loopWidth)
+        this.playhead = playEndSamples - Math.round((this.samplesProcessed * this.step) % loopWidth)
         if (this.playhead < this.playEnd * this.samples.length) {
           this.signal[i] = this.samples[this.playhead] * this.amplitude
         }
         break
 
       case DSP.FWBW:
-        if (
-          Math.floor((this.samplesProcessed * this.step) / loopWidth) % 2 ===
-          0
-        ) {
-          this.playhead = Math.round(
-            ((this.samplesProcessed * this.step) % loopWidth) +
-              playStartSamples,
-          )
+        if (Math.floor((this.samplesProcessed * this.step) / loopWidth) % 2 === 0) {
+          this.playhead = Math.round(((this.samplesProcessed * this.step) % loopWidth) + playStartSamples)
         } else {
-          this.playhead =
-            playEndSamples -
-            Math.round((this.samplesProcessed * this.step) % loopWidth)
+          this.playhead = playEndSamples - Math.round((this.samplesProcessed * this.step) % loopWidth)
         }
         if (this.playhead < this.playEnd * this.samples.length) {
           this.signal[i] = this.samples[this.playhead] * this.amplitude
@@ -1074,9 +1029,7 @@ function Oscillator(type, frequency, amplitude, bufferSize, sampleRate) {
     var waveTableHz = 1 / waveTableTime
 
     for (var i = 0; i < this.waveTableLength; i++) {
-      Oscillator.waveTable[this.func][i] = this.func(
-        (i * waveTableHz) / this.sampleRate,
-      )
+      Oscillator.waveTable[this.func][i] = this.func((i * waveTableHz) / this.sampleRate)
     }
   }
 
@@ -1167,8 +1120,7 @@ Oscillator.prototype.generate = function () {
     //this.signal[i] = this.func(step) * this.amplitude;
     //this.signal[i] = this.valueAt(Math.round((frameOffset + i) * step)) * this.amplitude;
     offset = Math.round((frameOffset + i) * step)
-    this.signal[i] =
-      this.waveTable[offset % this.waveTableLength] * this.amplitude
+    this.signal[i] = this.waveTable[offset % this.waveTableLength] * this.amplitude
   }
 
   this.frameCount++
@@ -1196,14 +1148,7 @@ Oscillator.Pulse = function (step) {
   // stub
 }
 
-function ADSR(
-  attackLength,
-  decayLength,
-  sustainLevel,
-  sustainLength,
-  releaseLength,
-  sampleRate,
-) {
+function ADSR(attackLength, decayLength, sustainLevel, sustainLength, releaseLength, sampleRate) {
   this.sampleRate = sampleRate
   // Length in seconds
   this.attackLength = attackLength
@@ -1249,27 +1194,14 @@ ADSR.prototype.processSample = function (sample) {
 
   if (this.samplesProcessed <= this.attack) {
     amplitude = 0 + (1 - 0) * ((this.samplesProcessed - 0) / (this.attack - 0))
-  } else if (
-    this.samplesProcessed > this.attack &&
-    this.samplesProcessed <= this.decay
-  ) {
-    amplitude =
-      1 +
-      (this.sustainLevel - 1) *
-        ((this.samplesProcessed - this.attack) / (this.decay - this.attack))
-  } else if (
-    this.samplesProcessed > this.decay &&
-    this.samplesProcessed <= this.sustain
-  ) {
+  } else if (this.samplesProcessed > this.attack && this.samplesProcessed <= this.decay) {
+    amplitude = 1 + (this.sustainLevel - 1) * ((this.samplesProcessed - this.attack) / (this.decay - this.attack))
+  } else if (this.samplesProcessed > this.decay && this.samplesProcessed <= this.sustain) {
     amplitude = this.sustainLevel
-  } else if (
-    this.samplesProcessed > this.sustain &&
-    this.samplesProcessed <= this.release
-  ) {
+  } else if (this.samplesProcessed > this.sustain && this.samplesProcessed <= this.release) {
     amplitude =
       this.sustainLevel +
-      (0 - this.sustainLevel) *
-        ((this.samplesProcessed - this.sustain) / (this.release - this.sustain))
+      (0 - this.sustainLevel) * ((this.samplesProcessed - this.sustain) / (this.release - this.sustain))
   }
 
   return sample * amplitude
@@ -1280,27 +1212,14 @@ ADSR.prototype.value = function () {
 
   if (this.samplesProcessed <= this.attack) {
     amplitude = 0 + (1 - 0) * ((this.samplesProcessed - 0) / (this.attack - 0))
-  } else if (
-    this.samplesProcessed > this.attack &&
-    this.samplesProcessed <= this.decay
-  ) {
-    amplitude =
-      1 +
-      (this.sustainLevel - 1) *
-        ((this.samplesProcessed - this.attack) / (this.decay - this.attack))
-  } else if (
-    this.samplesProcessed > this.decay &&
-    this.samplesProcessed <= this.sustain
-  ) {
+  } else if (this.samplesProcessed > this.attack && this.samplesProcessed <= this.decay) {
+    amplitude = 1 + (this.sustainLevel - 1) * ((this.samplesProcessed - this.attack) / (this.decay - this.attack))
+  } else if (this.samplesProcessed > this.decay && this.samplesProcessed <= this.sustain) {
     amplitude = this.sustainLevel
-  } else if (
-    this.samplesProcessed > this.sustain &&
-    this.samplesProcessed <= this.release
-  ) {
+  } else if (this.samplesProcessed > this.sustain && this.samplesProcessed <= this.release) {
     amplitude =
       this.sustainLevel +
-      (0 - this.sustainLevel) *
-        ((this.samplesProcessed - this.sustain) / (this.release - this.sustain))
+      (0 - this.sustainLevel) * ((this.samplesProcessed - this.sustain) / (this.release - this.sustain))
   }
 
   return amplitude
@@ -1372,8 +1291,7 @@ IIRFilter.LP12 = function (cutoff, resonance, sampleRate) {
 
   this.calcCoeff = function (cutoff, resonance) {
     this.w = (2.0 * Math.PI * cutoff) / this.sampleRate
-    this.q =
-      1.0 - this.w / (2.0 * (resonance + 0.5 / (1.0 + this.w)) + this.w - 2.0)
+    this.q = 1.0 - this.w / (2.0 * (resonance + 0.5 / (1.0 + this.w)) + this.w - 2.0)
     this.r = this.q * this.q
     this.c = this.r + 1.0 - 2.0 * Math.cos(this.w) * this.q
 
@@ -1404,9 +1322,7 @@ IIRFilter.LP12 = function (cutoff, resonance, sampleRate) {
       */
 
       if (this.envelope) {
-        buffer[i] =
-          buffer[i] * (1 - this.envelope.value()) +
-          this.vibraPos * this.envelope.value()
+        buffer[i] = buffer[i] * (1 - this.envelope.value()) + this.vibraPos * this.envelope.value()
         this.envelope.samplesProcessed++
       } else {
         buffer[i] = this.vibraPos
@@ -1432,12 +1348,8 @@ function IIRFilter2(type, cutoff, resonance, sampleRate) {
   this.f[3] = 0.0 // br
 
   this.calcCoeff = function (cutoff, resonance) {
-    this.freq =
-      2 * Math.sin(Math.PI * Math.min(0.25, cutoff / (this.sampleRate * 2)))
-    this.damp = Math.min(
-      2 * (1 - Math.pow(resonance, 0.25)),
-      Math.min(2, 2 / this.freq - this.freq * 0.5),
-    )
+    this.freq = 2 * Math.sin(Math.PI * Math.min(0.25, cutoff / (this.sampleRate * 2)))
+    this.damp = Math.min(2 * (1 - Math.pow(resonance, 0.25)), Math.min(2, 2 / this.freq - this.freq * 0.5))
   }
 
   this.calcCoeff(cutoff, resonance)
@@ -1465,8 +1377,7 @@ IIRFilter2.prototype.process = function (buffer) {
     output += 0.5 * f[this.type]
 
     if (this.envelope) {
-      buffer[i] =
-        buffer[i] * (1 - this.envelope.value()) + output * this.envelope.value()
+      buffer[i] = buffer[i] * (1 - this.envelope.value()) + output * this.envelope.value()
       this.envelope.samplesProcessed++
     } else {
       buffer[i] = output
@@ -1544,17 +1455,11 @@ WindowFunction.prototype.process = function (buffer) {
 }
 
 WindowFunction.Bartlett = function (length, index) {
-  return (
-    (2 / (length - 1)) * ((length - 1) / 2 - Math.abs(index - (length - 1) / 2))
-  )
+  return (2 / (length - 1)) * ((length - 1) / 2 - Math.abs(index - (length - 1) / 2))
 }
 
 WindowFunction.BartlettHann = function (length, index) {
-  return (
-    0.62 -
-    0.48 * Math.abs(index / (length - 1) - 0.5) -
-    0.38 * Math.cos((DSP.TWO_PI * index) / (length - 1))
-  )
+  return 0.62 - 0.48 * Math.abs(index / (length - 1) - 0.5) - 0.38 * Math.cos((DSP.TWO_PI * index) / (length - 1))
 }
 
 WindowFunction.Blackman = function (length, index, alpha) {
@@ -1562,11 +1467,7 @@ WindowFunction.Blackman = function (length, index, alpha) {
   var a1 = 0.5
   var a2 = alpha / 2
 
-  return (
-    a0 -
-    a1 * Math.cos((DSP.TWO_PI * index) / (length - 1)) +
-    a2 * Math.cos((4 * Math.PI * index) / (length - 1))
-  )
+  return a0 - a1 * Math.cos((DSP.TWO_PI * index) / (length - 1)) + a2 * Math.cos((4 * Math.PI * index) / (length - 1))
 }
 
 WindowFunction.Cosine = function (length, index) {
@@ -1574,11 +1475,7 @@ WindowFunction.Cosine = function (length, index) {
 }
 
 WindowFunction.Gauss = function (length, index, alpha) {
-  return Math.pow(
-    Math.E,
-    -0.5 *
-      Math.pow((index - (length - 1) / 2) / ((alpha * (length - 1)) / 2), 2),
-  )
+  return Math.pow(Math.E, -0.5 * Math.pow((index - (length - 1) / 2) / ((alpha * (length - 1)) / 2), 2))
 }
 
 WindowFunction.Hamming = function (length, index) {
@@ -1721,11 +1618,7 @@ function Biquad(type, sampleRate) {
   this.recalculateCoefficients = function () {
     var A
 
-    if (
-      type === DSP.PEAKING_EQ ||
-      type === DSP.LOW_SHELF ||
-      type === DSP.HIGH_SHELF
-    ) {
+    if (type === DSP.PEAKING_EQ || type === DSP.LOW_SHELF || type === DSP.HIGH_SHELF) {
       A = Math.pow(10, this.dBgain / 40) // for peaking and shelving EQ filters only
     } else {
       A = Math.sqrt(Math.pow(10, this.dBgain / 20))
@@ -1988,10 +1881,7 @@ DSP.freqz = function (b, a, w) {
 
     result[i] =
       sqrt(numerator.real * numerator.real + numerator.imag * numerator.imag) /
-      sqrt(
-        denominator.real * denominator.real +
-          denominator.imag * denominator.imag,
-      )
+      sqrt(denominator.real * denominator.real + denominator.imag * denominator.imag)
   }
 
   return result
@@ -2020,9 +1910,7 @@ function GraphicalEq(sampleRate) {
   this.calculateFreqzs = true
 
   this.recalculateFilters = function () {
-    var bandCount = Math.round(
-      (Math.log(this.maxFreq / this.minFreq) * this.bandsPerOctave) / Math.LN2,
-    )
+    var bandCount = Math.round((Math.log(this.maxFreq / this.minFreq) * this.bandsPerOctave) / Math.LN2)
 
     this.filters = []
     for (var i = 0; i < bandCount; i++) {
@@ -2090,16 +1978,8 @@ function GraphicalEq(sampleRate) {
       }
     }
 
-    var b = [
-      this.filters[bandIndex].b0,
-      this.filters[bandIndex].b1,
-      this.filters[bandIndex].b2,
-    ]
-    var a = [
-      this.filters[bandIndex].a0,
-      this.filters[bandIndex].a1,
-      this.filters[bandIndex].a2,
-    ]
+    var b = [this.filters[bandIndex].b0, this.filters[bandIndex].b1, this.filters[bandIndex].b2]
+    var a = [this.filters[bandIndex].a0, this.filters[bandIndex].a1, this.filters[bandIndex].a2]
 
     this.freqzs[bandIndex] = DSP.mag2db(DSP.freqz(b, a, this.w))
   }
@@ -2143,12 +2023,7 @@ function GraphicalEq(sampleRate) {
  *
  * @constructor
  */
-function MultiDelay(
-  maxDelayInSamplesSize,
-  delayInSamples,
-  masterVolume,
-  delayVolume,
-) {
+function MultiDelay(maxDelayInSamplesSize, delayInSamples, masterVolume, delayVolume) {
   this.delayBufferSamples = new Float64Array(maxDelayInSamplesSize) // The maximum size of delay
   this.delayInputPointer = delayInSamples
   this.delayOutputPointer = 0
@@ -2169,8 +2044,7 @@ MultiDelay.prototype.setDelayInSamples = function (delayInSamples) {
   this.delayInputPointer = this.delayOutputPointer + delayInSamples
 
   if (this.delayInputPointer >= this.delayBufferSamples.length - 1) {
-    this.delayInputPointer =
-      this.delayInputPointer - this.delayBufferSamples.length
+    this.delayInputPointer = this.delayInputPointer - this.delayBufferSamples.length
   }
 }
 
@@ -2206,9 +2080,7 @@ MultiDelay.prototype.process = function (samples) {
   for (var i = 0; i < samples.length; i++) {
     // delayBufferSamples could contain initial NULL's, return silence in that case
     var delaySample =
-      this.delayBufferSamples[this.delayOutputPointer] === null
-        ? 0.0
-        : this.delayBufferSamples[this.delayOutputPointer]
+      this.delayBufferSamples[this.delayOutputPointer] === null ? 0.0 : this.delayBufferSamples[this.delayOutputPointer]
 
     // Mix normal audio data with delayed audio
     var sample = delaySample * this.delayVolume + samples[i]
@@ -2272,8 +2144,7 @@ SingleDelay.prototype.setDelayInSamples = function (delayInSamples) {
   this.delayInputPointer = this.delayOutputPointer + delayInSamples
 
   if (this.delayInputPointer >= this.delayBufferSamples.length - 1) {
-    this.delayInputPointer =
-      this.delayInputPointer - this.delayBufferSamples.length
+    this.delayInputPointer = this.delayInputPointer - this.delayBufferSamples.length
   }
 }
 
@@ -2344,14 +2215,7 @@ SingleDelay.prototype.process = function (samples) {
  *
  * @constructor
  */
-function Reverb(
-  maxDelayInSamplesSize,
-  delayInSamples,
-  masterVolume,
-  mixVolume,
-  delayVolume,
-  dampFrequency,
-) {
+function Reverb(maxDelayInSamplesSize, delayInSamples, masterVolume, mixVolume, delayVolume, dampFrequency) {
   this.delayInSamples = delayInSamples
   this.masterVolume = masterVolume
   this.mixVolume = mixVolume
@@ -2402,16 +2266,12 @@ Reverb.prototype.setDelayInSamples = function (delayInSamples) {
 
   for (i = 0; i < this.NR_OF_SINGLEDELAYS; i++) {
     delayMultiply = 1.0 + i / 7.0 // 1.0, 1.1, 1.2...
-    this.singleDelays[i].setDelayInSamples(
-      Math.round(this.delayInSamples * delayMultiply),
-    )
+    this.singleDelays[i].setDelayInSamples(Math.round(this.delayInSamples * delayMultiply))
   }
 
   for (i = 0; i < this.NR_OF_MULTIDELAYS; i++) {
     delayMultiply = 1.0 + i / 10.0 // 1.0, 1.1, 1.2...
-    this.multiDelays[i].setDelayInSamples(
-      Math.round(this.delayInSamples * delayMultiply),
-    )
+    this.multiDelays[i].setDelayInSamples(Math.round(this.delayInSamples * delayMultiply))
   }
 }
 
@@ -2480,10 +2340,7 @@ Reverb.prototype.process = function (interleavedSamples) {
 
   this.LOWPASSL.process(leftRightMix[DSP.LEFT])
   this.LOWPASSR.process(leftRightMix[DSP.RIGHT])
-  var filteredSamples = DSP.interleave(
-    leftRightMix[DSP.LEFT],
-    leftRightMix[DSP.RIGHT],
-  )
+  var filteredSamples = DSP.interleave(leftRightMix[DSP.LEFT], leftRightMix[DSP.RIGHT])
 
   var i
 
@@ -2517,12 +2374,7 @@ Reverb.prototype.process = function (interleavedSamples) {
   }
 
   // Mix the original signal with the reverb signal
-  outputSamples = DSP.mixSampleBuffers(
-    singleDelaySamples,
-    interleavedSamples,
-    0,
-    1,
-  )
+  outputSamples = DSP.mixSampleBuffers(singleDelaySamples, interleavedSamples, 0, 1)
 
   // Apply the master volume to the complete signal
   for (i = 0; i < outputSamples.length; i++) {

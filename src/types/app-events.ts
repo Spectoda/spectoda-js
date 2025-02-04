@@ -1,9 +1,4 @@
-import {
-  CONNECTION_STATUS,
-  ConnectionStatus,
-  REMOTECONTROL_STATUS,
-  RemoteControlConnectionStatus,
-} from './connect'
+import { CONNECTION_STATUS, ConnectionStatus, REMOTECONTROL_STATUS, RemoteControlConnectionStatus } from './connect'
 import { ControllerError, ControllerWarning } from './messages'
 import { SpectodaEvent } from './event'
 import { SpectodaTypes } from './primitives'
@@ -103,8 +98,7 @@ type PropsMap = RemoteControlConnectionStatusProps &
     [SpectodaAppEvents.PRIVATE_WASM_EXECUTE]: Uint8Array
   }
 
-export type SpectodaAppEventName =
-  (typeof SpectodaAppEvents)[keyof typeof SpectodaAppEvents]
+export type SpectodaAppEventName = (typeof SpectodaAppEvents)[keyof typeof SpectodaAppEvents]
 
 export type SpectodaAppEventMap = {
   [K in SpectodaAppEventName]: PropsMap[K]

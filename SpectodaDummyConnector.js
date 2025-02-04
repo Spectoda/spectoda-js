@@ -19,11 +19,7 @@ export class SpectodaDummyConnector {
 
   #clock
 
-  constructor(
-    interfaceReference,
-    enableErrors = false,
-    dummyFWVersion = 'DUMMY_0.0.0_00000000',
-  ) {
+  constructor(interfaceReference, enableErrors = false, dummyFWVersion = 'DUMMY_0.0.0_00000000') {
     this.type = enableErrors ? 'edummy' : 'dummy'
 
     this.#interfaceReference = interfaceReference
@@ -79,15 +75,7 @@ export class SpectodaDummyConnector {
   // are eligible.
 
   autoSelect(criteria, scan_period, timeout) {
-    logging.verbose(
-      'autoSelect(criteria=',
-      criteria,
-      ', scan_period=',
-      scan_period,
-      'timeout=',
-      timeout,
-      ')',
-    )
+    logging.verbose('autoSelect(criteria=', criteria, ', scan_period=', scan_period, 'timeout=', timeout, ')')
     // step 1. for the scan_period scan the surroundings for BLE devices.
     // step 2. if some devices matching the criteria are found, then select the one with
     //         the greatest signal strength. If no device is found until the timeout,
@@ -236,16 +224,14 @@ export class SpectodaDummyConnector {
   // is guaranteed to get a response
   request(payload, read_response = true, timeout) {
     logging.verbose(
-      `request(payload=${payload}, read_response=${
-        read_response ? 'true' : 'false'
-      }, timeout=${timeout})`,
+      `request(payload=${payload}, read_response=${read_response ? 'true' : 'false'}, timeout=${timeout})`,
     )
 
     const ERROR_CODE_SUCCESS = 0
     const ERROR_CODE_ERROR = 255
     const DUMMY_MACS = [
-      0x111111111111, 0x222222222222, 0x333333333333, 0x444444444444,
-      0x555555555555, 0x666666666666, 0x777777777777, 0x888888888888,
+      0x111111111111, 0x222222222222, 0x333333333333, 0x444444444444, 0x555555555555, 0x666666666666, 0x777777777777,
+      0x888888888888,
     ]
 
     return new Promise(async (resolve, reject) => {
@@ -426,12 +412,7 @@ export class SpectodaDummyConnector {
   }
   // bool _sendResponse(const int32_t request_ticket_number, const int32_t request_result, std::vector<uint8_t>& response_bytecode, const Connection& destination_connection) = 0;
 
-  sendResponse(
-    request_ticket_number,
-    request_result,
-    response_bytecode,
-    destination_connection,
-  ) {
+  sendResponse(request_ticket_number, request_result, response_bytecode, destination_connection) {
     logging.verbose(
       `SpectodaDummyConnector::sendResponse(request_ticket_number=${request_ticket_number}, request_result=${request_result}, response_bytecode=${response_bytecode}, destination_connection=${destination_connection})`,
     )

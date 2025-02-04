@@ -321,12 +321,7 @@ export class TnglCompiler {
         break
 
       default:
-        logging.warn(
-          'Unknown token type >',
-          element.type,
-          '<',
-          typeof element.type,
-        )
+        logging.warn('Unknown token type >', element.type, '<', typeof element.type)
         break
     }
   }
@@ -540,9 +535,7 @@ export class TnglCompiler {
 
   // takes in html color string "#abcdef" and encodes it into 24 bits [FLAG.VALUE_COLOR, R, G, B]
   compileColor(color) {
-    let reg = color.match(
-      /#([0-9a-f][0-9a-f])([0-9a-f][0-9a-f])([0-9a-f][0-9a-f])/i,
-    )
+    let reg = color.match(/#([0-9a-f][0-9a-f])([0-9a-f][0-9a-f])([0-9a-f][0-9a-f])/i)
 
     if (!reg) {
       logging.error('Failed to compile color')
@@ -592,13 +585,7 @@ export class TnglCompiler {
     } else if (val < -100.0 + UNIT_ERROR) {
       this.#tnglWriter.writeFlag(TNGL_FLAGS.CONST_PERCENTAGE_MINUS_100)
     } else {
-      const remapped = mapValue(
-        val,
-        -100.0,
-        100.0,
-        -VALUE_LIMITS.PERCENTAGE_100,
-        VALUE_LIMITS.PERCENTAGE_100,
-      )
+      const remapped = mapValue(val, -100.0, 100.0, -VALUE_LIMITS.PERCENTAGE_100, VALUE_LIMITS.PERCENTAGE_100)
 
       this.#tnglWriter.writeFlag(TNGL_FLAGS.VALUE_PERCENTAGE)
       this.#tnglWriter.writeInt32(parseInt(remapped))
@@ -679,9 +666,7 @@ export class TnglCompiler {
     logging.verbose(`compileConstDeclaration("${variable_declaration}")`)
 
     // TODO @immakermatty implement const declaration
-    logging.error(
-      'const declaration is not supported in TNGL in this version of the compiler',
-    )
+    logging.error('const declaration is not supported in TNGL in this version of the compiler')
     throw 'ConstDeclarationNotSupported'
 
     let reg = variable_declaration.match(/const +([A-Za-z_][\w]*) *=/)
@@ -703,9 +688,7 @@ export class TnglCompiler {
     logging.verbose(`compileLetDeclaration(${variable_declaration})`)
 
     // TODO @immakermatty implement let declaration
-    logging.error(
-      'let declaration is not supported in TNGL in this version of the compiler',
-    )
+    logging.error('let declaration is not supported in TNGL in this version of the compiler')
     throw 'LetDeclarationNotSupported'
 
     let reg = variable_declaration.match(/let +([A-Za-z_][\w]*) *=/)
@@ -1046,9 +1029,7 @@ export class TnglCompiler {
         }
 
         if (var_address !== undefined) {
-          logging.verbose(
-            `VALUE_READ_ADDRESS name=${word}, address=${var_address}`,
-          )
+          logging.verbose(`VALUE_READ_ADDRESS name=${word}, address=${var_address}`)
           this.#tnglWriter.writeFlag(TNGL_FLAGS.VALUE_READ_ADDRESS)
           this.#tnglWriter.writeUint16(var_address)
           break
@@ -1064,9 +1045,7 @@ export class TnglCompiler {
     switch (puctuation) {
       case '{':
         // push the current depth of the variable stack to the depth stack
-        this.#const_scope_depth_stack.push(
-          this.#const_declarations_stack.length,
-        )
+        this.#const_scope_depth_stack.push(this.#const_declarations_stack.length)
         this.#let_scope_depth_stack.push(this.#let_declarations_stack.length)
         break
 
@@ -1117,10 +1096,7 @@ export class TnglCompiler {
   compileId(id) {
     // Check if the string starts with "ID" or "id" (case-insensitive)
     if (typeof id !== 'string' || !id.startsWith('ID')) {
-      logging.error(
-        'Invalid ID format! Expected \'ID0\' to \'ID255\'. Received:',
-        id,
-      )
+      logging.error('Invalid ID format! Expected \'ID0\' to \'ID255\'. Received:', id)
       this.#tnglWriter.writeFlag(TNGL_FLAGS.ID)
       this.#tnglWriter.writeUint16(0)
       return
@@ -1153,10 +1129,7 @@ export class TnglCompiler {
   compileParametersMap(parameter) {
     // Check if parameter is a string and matches parameter map format
     if (typeof parameter !== 'string') {
-      logging.error(
-        'Invalid parameter format! Expected parameter map string. Received:',
-        parameter,
-      )
+      logging.error('Invalid parameter format! Expected parameter map string. Received:', parameter)
       return
     }
 
@@ -1188,10 +1161,7 @@ export class TnglCompiler {
     // Process each ID:value pair
     for (const match of matches) {
       if (!match[0]) {
-        logging.error(
-          'Invalid parameter map format! Expected ID:value pairs. Received:',
-          parameter,
-        )
+        logging.error('Invalid parameter map format! Expected ID:value pairs. Received:', parameter)
         continue
       }
 
@@ -1203,11 +1173,7 @@ export class TnglCompiler {
   }
 
   get tnglBytes() {
-    return new Uint8Array(
-      this.#tnglWriter.bytes.buffer,
-      0,
-      this.#tnglWriter.written,
-    )
+    return new Uint8Array(this.#tnglWriter.bytes.buffer, 0, this.#tnglWriter.written)
   }
 
   static PARSES = Object.freeze({

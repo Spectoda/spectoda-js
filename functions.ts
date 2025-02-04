@@ -7,10 +7,7 @@ import { VALUE_LIMITS } from './src/constants'
 import { logging } from './logging'
 
 export const createNanoEvents = () => ({
-  emit<K extends keyof SpectodaJsEventMap>(
-    event: K,
-    ...args: SpectodaJsEventMap[K]
-  ) {
+  emit<K extends keyof SpectodaJsEventMap>(event: K, ...args: SpectodaJsEventMap[K]) {
     const callbacks = this.events[event] || []
 
     for (let i = 0, length = callbacks.length; i < length; i++) {
@@ -18,10 +15,7 @@ export const createNanoEvents = () => ({
     }
   },
   events: {},
-  on<K extends keyof SpectodaJsEventMap>(
-    event: K,
-    cb: (props: SpectodaJsEventMap[K]) => void,
-  ) {
+  on<K extends keyof SpectodaJsEventMap>(event: K, cb: (props: SpectodaJsEventMap[K]) => void) {
     this.events[event]?.push(cb) || (this.events[event] = [cb])
     return () => {
       this.events[event] = this.events[event]?.filter((i) => cb !== i)
@@ -30,10 +24,7 @@ export const createNanoEvents = () => ({
 })
 
 export const createNanoEventsWithWrappedEmit = (emitHandler) => ({
-  emit<K extends keyof SpectodaJsEventMap>(
-    event: K,
-    ...args: SpectodaJsEventMap[K]
-  ) {
+  emit<K extends keyof SpectodaJsEventMap>(event: K, ...args: SpectodaJsEventMap[K]) {
     emitHandler({ event, args })
 
     const callbacks = this.events[event] || []
@@ -43,10 +34,7 @@ export const createNanoEventsWithWrappedEmit = (emitHandler) => ({
     }
   },
   events: {},
-  on<K extends keyof SpectodaJsEventMap>(
-    event: K,
-    cb: (props: SpectodaJsEventMap[K]) => void,
-  ) {
+  on<K extends keyof SpectodaJsEventMap>(event: K, cb: (props: SpectodaJsEventMap[K]) => void) {
     this.events[event]?.push(cb) || (this.events[event] = [cb])
     return () => {
       this.events[event] = this.events[event]?.filter((i) => cb !== i)
@@ -200,8 +188,7 @@ export function mapValue(x, in_min, in_max, out_min, out_max) {
     x = maximum
   }
 
-  let result =
-    ((x - in_min) * (out_max - out_min)) / (in_max - in_min) + out_min
+  let result = ((x - in_min) * (out_max - out_min)) / (in_max - in_min) + out_min
 
   minimum = Math.min(out_min, out_max)
   maximum = Math.max(out_min, out_max)
@@ -220,11 +207,7 @@ export function labelToBytes(label_string: string): number[] {
   return stringToBytes(label_string, 5, false)
 }
 
-export function stringToBytes(
-  string: string,
-  length: number,
-  nullTerminated: boolean,
-): number[] {
+export function stringToBytes(string: string, length: number, nullTerminated: boolean): number[] {
   const byteArray: number[] = []
 
   for (let index = 0; index < length; index++) {
@@ -262,13 +245,7 @@ export function colorToBytes(color_hex_code: string): number[] {
 }
 
 export function percentageToBytes(percentage_float: number): number[] {
-  const value = mapValue(
-    percentage_float,
-    -100,
-    100,
-    VALUE_LIMITS.PERCENTAGE_MINUS_100,
-    VALUE_LIMITS.PERCENTAGE_100,
-  )
+  const value = mapValue(percentage_float, -100, 100, VALUE_LIMITS.PERCENTAGE_MINUS_100, VALUE_LIMITS.PERCENTAGE_100)
 
   return numberToBytes(Math.floor(value), 4)
 }
@@ -295,8 +272,7 @@ export function strMacToBytes(mac_str: string): number[] {
 // IPhone SE Spectoda Connect       Mozilla/5.0 (iPhone; CPU iPhone OS 15_6_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148
 // IPhone SE Safari                 Mozilla/5.0 (iPhone; CPU iPhone OS 15_6_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/15.6.1 Mobile/15E148 Safari/604.1
 
-const spectodaNodeDetected =
-  typeof process !== 'undefined' && process.versions && process.versions.node
+const spectodaNodeDetected = typeof process !== 'undefined' && process.versions && process.versions.node
 
 export function detectNode() {
   return spectodaNodeDetected
@@ -322,17 +298,14 @@ export function detectGW() {
   return detectNode() && !detectNext()
 }
 
-const spectodaConnectDetected =
-  typeof window !== 'undefined' && 'flutter_inappwebview' in window
+const spectodaConnectDetected = typeof window !== 'undefined' && 'flutter_inappwebview' in window
 
 export function detectSpectodaConnect() {
   return spectodaConnectDetected
 }
 
-const navigatorUserAgent =
-  typeof navigator === 'undefined' ? '' : navigator.userAgent.toLowerCase()
-const navigatorUserAgentData =
-  typeof navigator === 'undefined' ? {} : navigator.userAgentData
+const navigatorUserAgent = typeof navigator === 'undefined' ? '' : navigator.userAgent.toLowerCase()
+const navigatorUserAgentData = typeof navigator === 'undefined' ? {} : navigator.userAgentData
 
 const androidDetected = navigatorUserAgent.includes('android')
 
@@ -370,28 +343,20 @@ export function detectChrome() {
   return chromeDetected && !spectodaConnectDetected
 }
 
-const safariDetected =
-  navigatorUserAgent.includes('safari') &&
-  !navigatorUserAgent.includes('chrome')
+const safariDetected = navigatorUserAgent.includes('safari') && !navigatorUserAgent.includes('chrome')
 
 export function detectSafari() {
   return safariDetected && !spectodaConnectDetected
 }
 
 //////////////////////////////////////////////////////
-export function computeTnglFingerprint(
-  tngl_bytes: Uint8Array | ArrayBuffer,
-  tngl_label = 'fingerprint',
-) {
+export function computeTnglFingerprint(tngl_bytes: Uint8Array | ArrayBuffer, tngl_label = 'fingerprint') {
   const enc = new TextEncoder()
   const algorithm = { name: 'HMAC', hash: 'SHA-256' }
   const body = new Uint8Array(tngl_bytes)
 
   return crypto.subtle
-    .importKey('raw', enc.encode(tngl_label), algorithm, false, [
-      'sign',
-      'verify',
-    ])
+    .importKey('raw', enc.encode(tngl_label), algorithm, false, ['sign', 'verify'])
     .then((key) => {
       return crypto.subtle.sign(algorithm.name, key, body)
     })
@@ -402,10 +367,7 @@ export function computeTnglFingerprint(
 
 export async function computeTnglCodeFingerprint(tnglCode: string) {
   const newTnglBytecode = new TnglCodeParser().parseTnglCode(tnglCode)
-  const newTnglFingerprint = await computeTnglFingerprint(
-    newTnglBytecode,
-    'fingerprint',
-  )
+  const newTnglFingerprint = await computeTnglFingerprint(newTnglBytecode, 'fingerprint')
   const newTnglFingerprintHex = uint8ArrayToHexString(newTnglFingerprint)
 
   return newTnglFingerprintHex
@@ -433,9 +395,7 @@ export function hexStringToUint8Array(hexString, arrayLength) {
 }
 
 export function uint8ArrayToHexString(bytes) {
-  return [...new Uint8Array(bytes)]
-    .map((x) => x.toString(16).padStart(2, '0'))
-    .join('')
+  return [...new Uint8Array(bytes)].map((x) => x.toString(16).padStart(2, '0')).join('')
 }
 
 export function czechHackyToEnglish(string) {
@@ -479,11 +439,7 @@ export function enableDebugMode() {
 }
 
 export function deactivateDebugMode() {
-  if (
-    typeof window !== 'undefined' &&
-    'eruda' in window &&
-    window.eruda.hasOwnProperty('destroy')
-  ) {
+  if (typeof window !== 'undefined' && 'eruda' in window && window.eruda.hasOwnProperty('destroy')) {
     window.eruda.destroy()
   }
 }
@@ -593,21 +549,11 @@ export function validateTimestamp(value) {
 
   value = value.trim()
 
-  if (
-    value == 'inf' ||
-    value == 'Inf' ||
-    value == 'infinity' ||
-    value == 'Infinity'
-  ) {
+  if (value == 'inf' || value == 'Inf' || value == 'infinity' || value == 'Infinity') {
     return [86400000, 'Infinity']
   }
 
-  if (
-    value == '-inf' ||
-    value == '-Inf' ||
-    value == '-infinity' ||
-    value == '-Infinity'
-  ) {
+  if (value == '-inf' || value == '-Inf' || value == '-infinity' || value == '-Infinity') {
     return [-86400000, '-Infinity']
   }
 
@@ -683,12 +629,7 @@ export function validateTimestamp(value) {
 }
 
 export function getColorString(r: number, g: number, b: number) {
-  return (
-    '#' +
-    ('0' + r.toString(16)).slice(-2) +
-    ('0' + g.toString(16)).slice(-2) +
-    ('0' + b.toString(16)).slice(-2)
-  )
+  return '#' + ('0' + r.toString(16)).slice(-2) + ('0' + g.toString(16)).slice(-2) + ('0' + b.toString(16)).slice(-2)
 }
 
 export function toUint8Array(numbers) {
@@ -801,9 +742,7 @@ const barvy_bez_hacku: { [key: string]: string } = {
   med: '#b87333',
 }
 
-export function cssColorToHex(
-  color: typeof barvy | typeof barvy_bez_hacku | string,
-) {
+export function cssColorToHex(color: typeof barvy | typeof barvy_bez_hacku | string) {
   if (typeof color !== 'string' || color.trim() === '') {
     logging.error('Invalid color type: ' + color + ' (' + typeof color + ')')
     return null

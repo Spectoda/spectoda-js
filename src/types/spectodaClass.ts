@@ -37,25 +37,15 @@ export interface SpectodaClass {
     event: K,
     callback: (props: SpectodaAppEventMap[K]) => void,
   ): () => void
-  on<K extends keyof SpectodaAppEventMap>(
-    event: K,
-    callback: (props: SpectodaAppEventMap[K]) => void,
-  ): () => void
+  on<K extends keyof SpectodaAppEventMap>(event: K, callback: (props: SpectodaAppEventMap[K]) => void): () => void
 
   // TNGL methods
   preprocessTngl(tngl_code: string): Promise<string>
-  writeTngl(
-    tngl_code: string | null,
-    tngl_bytes: Uint8Array | null,
-  ): Promise<any>
+  writeTngl(tngl_code: string | null, tngl_bytes: Uint8Array | null): Promise<any>
   getTnglFingerprint(): Promise<Uint8Array>
 
   // Event emission methods
-  emitEvent(
-    event_label: SpectodaTypes.Label,
-    device_ids?: SpectodaTypes.IDs,
-    force_delivery?: boolean,
-  ): Promise<any>
+  emitEvent(event_label: SpectodaTypes.Label, device_ids?: SpectodaTypes.IDs, force_delivery?: boolean): Promise<any>
   emitTimestamp(
     event_label: SpectodaTypes.Label,
     event_value: SpectodaTypes.Timestamp,
@@ -90,14 +80,8 @@ export interface SpectodaClass {
   networkSleep(): Promise<any>
 
   // Controller configuration
-  writeOwner(
-    ownerSignature?: SpectodaTypes.NetworkSignature,
-    ownerKey?: SpectodaTypes.NetworkKey,
-  ): Promise<any>
-  writeNetworkOwner(
-    ownerSignature?: SpectodaTypes.NetworkSignature,
-    ownerKey?: SpectodaTypes.NetworkKey,
-  ): Promise<any>
+  writeOwner(ownerSignature?: SpectodaTypes.NetworkSignature, ownerKey?: SpectodaTypes.NetworkKey): Promise<any>
+  writeNetworkOwner(ownerSignature?: SpectodaTypes.NetworkSignature, ownerKey?: SpectodaTypes.NetworkKey): Promise<any>
   writeControllerName(label: SpectodaTypes.Label): Promise<any>
   readControllerName(): Promise<any>
 

@@ -88,9 +88,7 @@ export class SpectodaSound {
             .getUserMedia(constraints)
             .then((stream) => {
               this.#stream = stream
-              this.#source = this.#audioContext.createMediaStreamSource(
-                this.#stream,
-              )
+              this.#source = this.#audioContext.createMediaStreamSource(this.#stream)
               resolve()
               logging.debug('SpectodaSound.connect', 'Connected microphone')
             })
@@ -129,9 +127,7 @@ export class SpectodaSound {
           .getDisplayMedia(gdmOptions)
           .then((stream) => {
             this.#stream = stream
-            this.#source = this.#audioContext.createMediaStreamSource(
-              this.#stream,
-            )
+            this.#source = this.#audioContext.createMediaStreamSource(this.#stream)
             resolve()
             logging.debug('SpectodaSound.connect', 'Connected SystemSound')
           })
@@ -158,8 +154,7 @@ export class SpectodaSound {
       this.#gain_node.connect(this.#audioContext.destination)
 
       // TODO use audio worklet https://developer.chrome.com/blog/audio-worklet/
-      this.#script_processor_get_audio_samples =
-        this.#audioContext.createScriptProcessor(this.BUFF_SIZE, 1, 1)
+      this.#script_processor_get_audio_samples = this.#audioContext.createScriptProcessor(this.BUFF_SIZE, 1, 1)
       this.#script_processor_get_audio_samples.connect(this.#gain_node)
 
       logging.info('Sample rate of soundcard: ' + this.#audioContext.sampleRate)
@@ -176,10 +171,7 @@ export class SpectodaSound {
       // Tato funkce se provede pokaždé když dojde k naplnění bufferu o velikosti 2048 vzorků.
       // Při vzorkovacím kmitočku 48 kHz se tedy zavolá jednou za cca 42 ms.
 
-      this.#script_processor_get_audio_samples.addEventListener(
-        'audioprocess',
-        this.processHandler.bind(this),
-      )
+      this.#script_processor_get_audio_samples.addEventListener('audioprocess', this.processHandler.bind(this))
     }
   }
 
@@ -193,9 +185,7 @@ export class SpectodaSound {
 
   getBufferedDataAverage() {
     if (this.#bufferedValues.length > 0) {
-      let value =
-        this.#bufferedValues.reduce((p, v) => p + v) /
-        this.#bufferedValues.length
+      let value = this.#bufferedValues.reduce((p, v) => p + v) / this.#bufferedValues.length
 
       this.#bufferedValues = []
 
@@ -230,9 +220,7 @@ export class SpectodaSound {
     let data = this.getBufferedDataAverage()
 
     if (data) {
-      func(calculateSensitivityValue(data.value, this.#sensitivity)).finally(
-        () => this.autoEmitFunctionValue(func),
-      )
+      func(calculateSensitivityValue(data.value, this.#sensitivity)).finally(() => this.autoEmitFunctionValue(func))
     } else {
       if (this.running) {
         sleep(10).finally(() => this.autoEmitFunctionValue(func))
@@ -325,13 +313,7 @@ export class SpectodaSound {
 
     // Mapování efektivní hodnoty signálu na rozmezí 0-255 pro vhodný přenos dat.
     // Zde je zejmána nutné dobře nastavit mapovací prahy. Spodní pro odstranění šumu okolí a horní nám udává výslednou dynamiku.
-    var out = mapValue(
-      rms_loudness_spectrum,
-      this.#rmsMin,
-      this.#rmsMax,
-      0.0,
-      100.0,
-    )
+    var out = mapValue(rms_loudness_spectrum, this.#rmsMin, this.#rmsMax, 0.0, 100.0)
 
     // logging.debug(
     //   rms_loudness_spectrum.toFixed(5),

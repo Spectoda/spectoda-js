@@ -45,9 +45,7 @@ export class TimeTrack {
       this.memory_ = Date.now() - this.memory_
     }
 
-    this.memory_ = this.paused_
-      ? current_timestamp
-      : Date.now() - current_timestamp
+    this.memory_ = this.paused_ ? current_timestamp : Date.now() - current_timestamp
     this.eventEmitter_.emit('change', { target: this })
     // TODO implement event handlers
   }
@@ -58,15 +56,11 @@ export class TimeTrack {
       this.memory_ = Date.now() - this.memory_
     }
 
-    this.memory_ = this.paused_
-      ? current_timestamp
-      : Date.now() - current_timestamp
+    this.memory_ = this.paused_ ? current_timestamp : Date.now() - current_timestamp
   }
 
   setMillis(current_timestamp) {
-    this.memory_ = this.paused_
-      ? current_timestamp
-      : Date.now() - current_timestamp
+    this.memory_ = this.paused_ ? current_timestamp : Date.now() - current_timestamp
     this.eventEmitter_.emit('change', { target: this })
 
     this.eventEmitter_.emit('millis', current_timestamp)
@@ -77,9 +71,7 @@ export class TimeTrack {
   }
 
   setMillisWithoutEvent(current_timestamp) {
-    this.memory_ = this.paused_
-      ? current_timestamp
-      : Date.now() - current_timestamp
+    this.memory_ = this.paused_ ? current_timestamp : Date.now() - current_timestamp
   }
 
   setPaused(paused) {

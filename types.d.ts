@@ -13,13 +13,7 @@ declare global {
 
     MSStream: any
     validateTimestamp: typeof validateTimestamp
-    mapValue: (
-      x: any,
-      in_min: any,
-      in_max: any,
-      out_min: any,
-      out_max: any,
-    ) => any
+    mapValue: (x: any, in_min: any, in_max: any, out_min: any, out_max: any) => any
     eruda: any
 
     flutter_inappwebview: any

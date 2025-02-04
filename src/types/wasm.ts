@@ -6,9 +6,7 @@ import { SpectodaEvent } from './event'
 export interface interface_error_tValue<T extends number> {
   value: T
 }
-export type interface_error_t =
-  | interface_error_tValue<0>
-  | interface_error_tValue<255>
+export type interface_error_t = interface_error_tValue<0> | interface_error_tValue<255>
 
 export interface connector_type_tValue<T extends number> {
   value: T
@@ -26,19 +24,12 @@ export type connector_type_t =
 export interface connection_rssi_tValue<T extends number> {
   value: T
 }
-export type connection_rssi_t =
-  | connection_rssi_tValue<127>
-  | connection_rssi_tValue<-128>
+export type connection_rssi_t = connection_rssi_tValue<127> | connection_rssi_tValue<-128>
 
 export interface Connection {
   connector_type: connector_type_t
   connection_rssi: connection_rssi_t
-  address_string:
-    | ArrayBuffer
-    | Uint8Array
-    | Uint8ClampedArray
-    | Int8Array
-    | string
+  address_string: ArrayBuffer | Uint8Array | Uint8ClampedArray | Int8Array | string
   delete(): void
 }
 
@@ -65,15 +56,9 @@ export interface Value {
   getPixels(): number
   setPercentage(_0: number): void
   getPercentage(): number
-  setLabel(
-    _0: ArrayBuffer | Uint8Array | Uint8ClampedArray | Int8Array | string,
-  ): void
-  setDate(
-    _0: ArrayBuffer | Uint8Array | Uint8ClampedArray | Int8Array | string,
-  ): void
-  setColor(
-    _0: ArrayBuffer | Uint8Array | Uint8ClampedArray | Int8Array | string,
-  ): void
+  setLabel(_0: ArrayBuffer | Uint8Array | Uint8ClampedArray | Int8Array | string): void
+  setDate(_0: ArrayBuffer | Uint8Array | Uint8ClampedArray | Int8Array | string): void
+  setColor(_0: ArrayBuffer | Uint8Array | Uint8ClampedArray | Int8Array | string): void
   getLabel(): string
   getDate(): string
   getColor(): string
@@ -87,12 +72,7 @@ export interface Synchronization {
   timeline_clock_timestamp: number
   tngl_clock_timestamp: number
   fw_compilation_timestamp: number
-  origin_address:
-    | ArrayBuffer
-    | Uint8Array
-    | Uint8ClampedArray
-    | Int8Array
-    | string
+  origin_address: ArrayBuffer | Uint8Array | Uint8ClampedArray | Int8Array | string
   toUint8Array(): any
   delete(): void
 }
@@ -113,22 +93,9 @@ export interface IConnector_WASM {
   _disconnect(_0: Connection): boolean
   init(_0: connector_type_t): boolean
   _sendRequest(_0: number, _1: Uint8Vector, _2: Connection): boolean
-  _sendResponse(
-    _0: number,
-    _1: number,
-    _2: Uint8Vector,
-    _3: Connection,
-  ): boolean
-  _scan(
-    _0: ArrayBuffer | Uint8Array | Uint8ClampedArray | Int8Array | string,
-    _1: number,
-    _2: any,
-  ): boolean
-  _userConnect(
-    _0: ArrayBuffer | Uint8Array | Uint8ClampedArray | Int8Array | string,
-    _1: number,
-    _2: any,
-  ): boolean
+  _sendResponse(_0: number, _1: number, _2: Uint8Vector, _3: Connection): boolean
+  _scan(_0: ArrayBuffer | Uint8Array | Uint8ClampedArray | Int8Array | string, _1: number, _2: any): boolean
+  _userConnect(_0: ArrayBuffer | Uint8Array | Uint8ClampedArray | Int8Array | string, _1: number, _2: any): boolean
   _autoConnect(
     _0: ArrayBuffer | Uint8Array | Uint8ClampedArray | Int8Array | string,
     _1: number,
@@ -163,12 +130,8 @@ export interface Spectoda_WASM {
   getIdentifier(): number
   setClockTimestamp(_0: number): void
   getClockTimestamp(): number
-  _handlePeerConnected(
-    _0: ArrayBuffer | Uint8Array | Uint8ClampedArray | Int8Array | string,
-  ): interface_error_t
-  _handlePeerDisconnected(
-    _0: ArrayBuffer | Uint8Array | Uint8ClampedArray | Int8Array | string,
-  ): interface_error_t
+  _handlePeerConnected(_0: ArrayBuffer | Uint8Array | Uint8ClampedArray | Int8Array | string): interface_error_t
+  _handlePeerDisconnected(_0: ArrayBuffer | Uint8Array | Uint8ClampedArray | Int8Array | string): interface_error_t
   _handleTimelineManipulation(
     _0: number,
     _1: boolean,
@@ -188,16 +151,8 @@ export interface Spectoda_WASM {
     _1: ArrayBuffer | Uint8Array | Uint8ClampedArray | Int8Array | string,
   ): void
   getLabel(): string
-  writeIO(
-    _0: ArrayBuffer | Uint8Array | Uint8ClampedArray | Int8Array | string,
-    _1: number,
-    _2: Value,
-  ): boolean
-  readIO(
-    _0: ArrayBuffer | Uint8Array | Uint8ClampedArray | Int8Array | string,
-    _1: number,
-    _2: Value,
-  ): boolean
+  writeIO(_0: ArrayBuffer | Uint8Array | Uint8ClampedArray | Int8Array | string, _1: number, _2: Value): boolean
+  readIO(_0: ArrayBuffer | Uint8Array | Uint8ClampedArray | Int8Array | string, _1: number, _2: Value): boolean
   emitValue(
     _0: ArrayBuffer | Uint8Array | Uint8ClampedArray | Int8Array | string,
     _1: Value,
@@ -206,13 +161,8 @@ export interface Spectoda_WASM {
   ): boolean
   getTnglFingerprint(): string
   getEventStoreFingerprint(): string
-  requestReloadTngl(
-    _0: ArrayBuffer | Uint8Array | Uint8ClampedArray | Int8Array | string,
-  ): boolean
-  requestEmitTnglBytecode(
-    _0: ArrayBuffer | Uint8Array | Uint8ClampedArray | Int8Array | string,
-    _1: number,
-  ): boolean
+  requestReloadTngl(_0: ArrayBuffer | Uint8Array | Uint8ClampedArray | Int8Array | string): boolean
+  requestEmitTnglBytecode(_0: ArrayBuffer | Uint8Array | Uint8ClampedArray | Int8Array | string, _1: number): boolean
   requestWriteIoVariant(
     _0: ArrayBuffer | Uint8Array | Uint8ClampedArray | Int8Array | string,
     _1: ArrayBuffer | Uint8Array | Uint8ClampedArray | Int8Array | string,
@@ -233,10 +183,7 @@ export interface Spectoda_WASM {
     _1: ArrayBuffer | Uint8Array | Uint8ClampedArray | Int8Array | string,
   ): any
   readVariableAddress(_0: number, _1: number): any
-  getEventState(
-    _0: ArrayBuffer | Uint8Array | Uint8ClampedArray | Int8Array | string,
-    _1: number,
-  ): any
+  getEventState(_0: ArrayBuffer | Uint8Array | Uint8ClampedArray | Int8Array | string, _1: number): any
   getDateTime(): any
   delete(): void
 }
@@ -274,17 +221,11 @@ export interface MainModule {
   }
   Value: {
     makeNumber(_0: number): any
-    makeLabel(
-      _0: ArrayBuffer | Uint8Array | Uint8ClampedArray | Int8Array | string,
-    ): any
+    makeLabel(_0: ArrayBuffer | Uint8Array | Uint8ClampedArray | Int8Array | string): any
     makeTimestamp(_0: number): any
     makePercentage(_0: number): any
-    makeDate(
-      _0: ArrayBuffer | Uint8Array | Uint8ClampedArray | Int8Array | string,
-    ): any
-    makeColor(
-      _0: ArrayBuffer | Uint8Array | Uint8ClampedArray | Int8Array | string,
-    ): any
+    makeDate(_0: ArrayBuffer | Uint8Array | Uint8ClampedArray | Int8Array | string): any
+    makeColor(_0: ArrayBuffer | Uint8Array | Uint8ClampedArray | Int8Array | string): any
     makePixels(_0: number): any
     makeBoolean(_0: boolean): any
     makeNull(): any
@@ -305,18 +246,12 @@ export interface MainModule {
   Uint8Vector: { new (): Uint8Vector }
   IConnector_WASM: {
     implement(_0: any): ImplementedIConnector_WASM
-    extend(
-      _0: ArrayBuffer | Uint8Array | Uint8ClampedArray | Int8Array | string,
-      _1: any,
-    ): any
+    extend(_0: ArrayBuffer | Uint8Array | Uint8ClampedArray | Int8Array | string, _1: any): any
   }
   ImplementedIConnector_WASM: {}
   Spectoda_WASM: {
     implement(_0: any): ImplementedSpectoda_WASM
-    extend(
-      _0: ArrayBuffer | Uint8Array | Uint8ClampedArray | Int8Array | string,
-      _1: any,
-    ): any
+    extend(_0: ArrayBuffer | Uint8Array | Uint8ClampedArray | Int8Array | string, _1: any): any
   }
   ImplementedSpectoda_WASM: {}
 }
@@ -498,27 +433,11 @@ export interface IConnector_WASMImplementation {
 
   // // __construct: function () {}
   // // __destruct: function () {}
-  _scan: (
-    criteria_json: string,
-    scan_period: number,
-    result_out: any,
-  ) => boolean
-  _autoConnect: (
-    criteria_json: string,
-    scan_period: number,
-    timeout: number,
-    result_out: any,
-  ) => boolean
-  _userConnect: (
-    criteria_json: string,
-    timeout: number,
-    result_out: any,
-  ) => boolean
+  _scan: (criteria_json: string, scan_period: number, result_out: any) => boolean
+  _autoConnect: (criteria_json: string, scan_period: number, timeout: number, result_out: any) => boolean
+  _userConnect: (criteria_json: string, timeout: number, result_out: any) => boolean
   _disconnect: (connection: Connection) => boolean
-  _sendExecute: (
-    command_bytes: Uint8Vector,
-    source_connection: Connection,
-  ) => void
+  _sendExecute: (command_bytes: Uint8Vector, source_connection: Connection) => void
   _sendRequest: (
     request_ticket_number: number,
     request_bytecode: Uint8Vector,
@@ -530,10 +449,7 @@ export interface IConnector_WASMImplementation {
     response_bytecode: Uint8Vector,
     destination_connection: Connection,
   ) => boolean
-  _sendSynchronize: (
-    synchronization: Synchronization,
-    source_connection: Connection,
-  ) => void
+  _sendSynchronize: (synchronization: Synchronization, source_connection: Connection) => void
   _process: () => void
 }
 

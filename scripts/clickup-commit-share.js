@@ -26,9 +26,7 @@ const TEAM_ID = '4663973'
 
 async function postCommitToClickup() {
   try {
-    const branchName = execSync('git rev-parse --abbrev-ref HEAD')
-      .toString()
-      .trim()
+    const branchName = execSync('git rev-parse --abbrev-ref HEAD').toString().trim()
     const match = branchName.match(/DEV-(\d+)/)
     const taskIdNumeric = match ? match[1] : null
 
@@ -76,9 +74,7 @@ async function postCommitToClickup() {
       return
     }
 
-    const commitAuthor = execSync('git log -1 --pretty=format:%an')
-      .toString()
-      .trim()
+    const commitAuthor = execSync('git log -1 --pretty=format:%an').toString().trim()
 
     const response = await clickupApi.post(
       `/task/DEV-${taskIdNumeric}/comment`,

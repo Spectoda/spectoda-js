@@ -74,11 +74,7 @@ declare class SerialPort extends EventTarget {
   close(): Promise<void>
   forget(): Promise<void>
 
-  addEventListener(
-    type: 'connect' | 'disconnect',
-    listener: (this: this, ev: Event) => any,
-    useCapture?: boolean,
-  ): void
+  addEventListener(type: 'connect' | 'disconnect', listener: (this: this, ev: Event) => any, useCapture?: boolean): void
   addEventListener(
     type: string,
     listener: EventListenerOrEventListenerObject | null,
@@ -121,11 +117,7 @@ declare class Serial extends EventTarget {
 
   getPorts(): Promise<SerialPort[]>
   requestPort(options?: SerialPortRequestOptions): Promise<SerialPort>
-  addEventListener(
-    type: 'connect' | 'disconnect',
-    listener: (this: this, ev: Event) => any,
-    useCapture?: boolean,
-  ): void
+  addEventListener(type: 'connect' | 'disconnect', listener: (this: this, ev: Event) => any, useCapture?: boolean): void
   addEventListener(
     type: string,
     listener: EventListenerOrEventListenerObject | null,
@@ -190,11 +182,7 @@ const NETWORK_READ_DATA = CODE_READ + CHANNEL_NETWORK + DATA
 const DEVICE_READ_DATA = CODE_READ + CHANNEL_DEVICE + DATA
 const CLOCK_READ_DATA = CODE_READ + CHANNEL_CLOCK + DATA
 
-const starts_with = function (
-  buffer: number[],
-  string: string,
-  start_offset = 0,
-) {
+const starts_with = function (buffer: number[], string: string, start_offset = 0) {
   for (let index = 0; index < string.length; index++) {
     if (buffer[index + start_offset] !== string.charCodeAt(index)) {
       return false
@@ -204,16 +192,9 @@ const starts_with = function (
   return true
 }
 
-const ends_with = function (
-  buffer: number[],
-  string: string,
-  start_offset = 0,
-) {
+const ends_with = function (buffer: number[], string: string, start_offset = 0) {
   for (let index = 0; index < string.length; index++) {
-    if (
-      buffer[buffer.length - start_offset - string.length + index] !==
-      string.charCodeAt(index)
-    ) {
+    if (buffer[buffer.length - start_offset - string.length + index] !== string.charCodeAt(index)) {
       return false
     }
   }
@@ -269,13 +250,7 @@ export class SpectodaWebSerialConnector {
     criterium_array: SpectodaTypes.Criterium[],
     timeout_number: number | typeof DEFAULT_TIMEOUT = DEFAULT_TIMEOUT,
   ): Promise<SpectodaTypes.Criterium | null> {
-    logging.debug(
-      'userSelect(criteria=' +
-        JSON.stringify(criterium_array) +
-        ', timeout=' +
-        timeout_number +
-        ')',
-    )
+    logging.debug('userSelect(criteria=' + JSON.stringify(criterium_array) + ', timeout=' + timeout_number + ')')
 
     if (timeout_number === DEFAULT_TIMEOUT) {
       timeout_number = 60000
@@ -355,33 +330,29 @@ export class SpectodaWebSerialConnector {
         ')',
     )
 
-    return new Promise<SpectodaTypes.Criterium | null>(
-      async (resolve, reject) => {
-        try {
-          const ports = await navigator.serial.getPorts()
+    return new Promise<SpectodaTypes.Criterium | null>(async (resolve, reject) => {
+      try {
+        const ports = await navigator.serial.getPorts()
 
-          logging.debug('Available ports:', ports)
+        logging.debug('Available ports:', ports)
 
-          if (ports.length === 0) {
-            logging.warn('No previously selected ports available')
-            reject('NoDeviceFound')
-            return
-          }
-
-          this.#serialPort = ports[0]
-          this.#criteria = criterium_array
-          resolve({ connector: this.type })
-        } catch (error) {
-          logging.error('autoSelect failed:', error)
-          reject(error)
+        if (ports.length === 0) {
+          logging.warn('No previously selected ports available')
+          reject('NoDeviceFound')
+          return
         }
-      },
-    ).catch((error) => {
+
+        this.#serialPort = ports[0]
+        this.#criteria = criterium_array
+        resolve({ connector: this.type })
+      } catch (error) {
+        logging.error('autoSelect failed:', error)
+        reject(error)
+      }
+    }).catch((error) => {
       // TODO remove this once we have a proper auto-select mechanism
       // TODO it is not desirable to call userSelect() if you want to auto-select
-      logging.warn(
-        'SpectodaWebSerialConnector: autoSelect() failed. Calling userSelect() instead.',
-      )
+      logging.warn('SpectodaWebSerialConnector: autoSelect() failed. Calling userSelect() instead.')
       return this.userSelect(criterium_array, timeout_number)
     })
   }
@@ -442,9 +413,7 @@ export class SpectodaWebSerialConnector {
     })
   }
 
-  async connect(
-    timeout_number: number | typeof DEFAULT_TIMEOUT = DEFAULT_TIMEOUT,
-  ): Promise<SpectodaTypes.Criterium> {
+  async connect(timeout_number: number | typeof DEFAULT_TIMEOUT = DEFAULT_TIMEOUT): Promise<SpectodaTypes.Criterium> {
     if (timeout_number === DEFAULT_TIMEOUT) {
       timeout_number = 2500
     }
@@ -516,9 +485,7 @@ export class SpectodaWebSerialConnector {
           }
         }
 
-        logging.info(
-          '> Opening Serial at baudrate ' + this.#portOptions.baudRate + '...',
-        )
+        logging.info('> Opening Serial at baudrate ' + this.#portOptions.baudRate + '...')
         await port.open(this.#portOptions)
         logging.debug('serial port opened')
 
@@ -538,9 +505,7 @@ export class SpectodaWebSerialConnector {
             // Add timeout to the read operation
             await Promise.race([
               tempReader.read(),
-              new Promise((_, reject) =>
-                setTimeout(() => reject(new Error('FlushTimeout')), 1000),
-              ),
+              new Promise((_, reject) => setTimeout(() => reject(new Error('FlushTimeout')), 1000)),
             ])
           } catch (error) {
             logging.warn('Flush timeout or error:', error)
@@ -629,48 +594,40 @@ export class SpectodaWebSerialConnector {
                           } else if (starts_with(command_bytes, 'END', 3)) {
                             logging.warn('SERIAL >>>END<<<')
                             this.#beginCallback && this.#beginCallback(false)
-                            this.#feedbackCallback &&
-                              this.#feedbackCallback(false)
+                            this.#feedbackCallback && this.#feedbackCallback(false)
                             command_bytes.length = 0
                             this.#disconnect()
                           } else if (starts_with(command_bytes, 'READY', 3)) {
                             logging.warn('SERIAL >>>READY<<<')
                             this.#beginCallback && this.#beginCallback(false)
-                            this.#feedbackCallback &&
-                              this.#feedbackCallback(false)
+                            this.#feedbackCallback && this.#feedbackCallback(false)
                             command_bytes.length = 0
                             this.#disconnect()
                           } else if (starts_with(command_bytes, 'SUCCESS', 3)) {
                             logging.debug('SERIAL >>>SUCCESS<<<')
-                            this.#feedbackCallback &&
-                              this.#feedbackCallback(true)
+                            this.#feedbackCallback && this.#feedbackCallback(true)
                             command_bytes.length = 0
                           } else if (starts_with(command_bytes, 'FAIL', 3)) {
                             logging.info('SERIAL >>>FAIL<<<')
-                            this.#feedbackCallback &&
-                              this.#feedbackCallback(false)
+                            this.#feedbackCallback && this.#feedbackCallback(false)
                             command_bytes.length = 0
                           } else if (starts_with(command_bytes, 'ERROR', 3)) {
                             logging.error('SERIAL >>>ERROR<<<')
-                            this.#feedbackCallback &&
-                              this.#feedbackCallback(false)
+                            this.#feedbackCallback && this.#feedbackCallback(false)
                             command_bytes.length = 0
                           } else if (starts_with(command_bytes, 'DATA', 3)) {
                             logging.debug('SERIAL >>>DATA<<<')
-                            this.#dataCallback &&
-                              this.#dataCallback(new Uint8Array(data_bytes))
+                            this.#dataCallback && this.#dataCallback(new Uint8Array(data_bytes))
 
                             switch (data_header.data_type) {
                               case NETWORK_WRITE: {
                                 logging.debug('SERIAL >>>NETWORK_WRITE<<<')
 
-                                const DUMMY_NODESERIAL_CONNECTION =
-                                  SpectodaWasm.Connection.make(
-                                    '11:11:11:11:11:11',
-                                    SpectodaWasm.connector_type_t
-                                      .CONNECTOR_SERIAL,
-                                    SpectodaWasm.connection_rssi_t.RSSI_MAX,
-                                  )
+                                const DUMMY_NODESERIAL_CONNECTION = SpectodaWasm.Connection.make(
+                                  '11:11:11:11:11:11',
+                                  SpectodaWasm.connector_type_t.CONNECTOR_SERIAL,
+                                  SpectodaWasm.connection_rssi_t.RSSI_MAX,
+                                )
 
                                 this.#runtimeReference.spectoda_js.execute(
                                   new Uint8Array(data_bytes),
@@ -683,16 +640,12 @@ export class SpectodaWebSerialConnector {
                                 logging.debug('SERIAL >>>CLOCK_WRITE<<<')
 
                                 const synchronization: Synchronization =
-                                  SpectodaWasm.Synchronization.makeFromUint8Array(
-                                    new Uint8Array(data_bytes),
-                                  )
-                                const DUMMY_NODESERIAL_CONNECTION =
-                                  SpectodaWasm.Connection.make(
-                                    '11:11:11:11:11:11',
-                                    SpectodaWasm.connector_type_t
-                                      .CONNECTOR_SERIAL,
-                                    SpectodaWasm.connection_rssi_t.RSSI_MAX,
-                                  )
+                                  SpectodaWasm.Synchronization.makeFromUint8Array(new Uint8Array(data_bytes))
+                                const DUMMY_NODESERIAL_CONNECTION = SpectodaWasm.Connection.make(
+                                  '11:11:11:11:11:11',
+                                  SpectodaWasm.connector_type_t.CONNECTOR_SERIAL,
+                                  SpectodaWasm.connection_rssi_t.RSSI_MAX,
+                                )
 
                                 this.#runtimeReference.spectoda_js.synchronize(
                                   synchronization,
@@ -704,13 +657,11 @@ export class SpectodaWebSerialConnector {
                               case DEVICE_WRITE: {
                                 logging.debug('SERIAL >>>DEVICE_WRITE<<<')
 
-                                const DUMMY_NODESERIAL_CONNECTION =
-                                  SpectodaWasm.Connection.make(
-                                    '11:11:11:11:11:11',
-                                    SpectodaWasm.connector_type_t
-                                      .CONNECTOR_SERIAL,
-                                    SpectodaWasm.connection_rssi_t.RSSI_MAX,
-                                  )
+                                const DUMMY_NODESERIAL_CONNECTION = SpectodaWasm.Connection.make(
+                                  '11:11:11:11:11:11',
+                                  SpectodaWasm.connector_type_t.CONNECTOR_SERIAL,
+                                  SpectodaWasm.connection_rssi_t.RSSI_MAX,
+                                )
 
                                 this.#runtimeReference.spectoda_js.request(
                                   new Uint8Array(data_bytes),
@@ -742,24 +693,15 @@ export class SpectodaWebSerialConnector {
 
                           header_bytes.length = 0
                           data_bytes.length = 0
-                        } else if (
-                          command_bytes.length > '>>>SUCCESS<<<\n'.length
-                        ) {
-                          logging.error(
-                            'ERROR 342897cs: command_bytes',
-                            command_bytes,
-                            'data_header',
-                            data_header,
-                          )
+                        } else if (command_bytes.length > '>>>SUCCESS<<<\n'.length) {
+                          logging.error('ERROR 342897cs: command_bytes', command_bytes, 'data_header', data_header)
                           command_bytes.length = 0
                         }
                       } else {
                         const character = command_bytes.shift() as number
 
                         if (character === NEWLINE_ASCII_CODE) {
-                          const line = decoder.decode(
-                            new Uint8Array(line_bytes),
-                          )
+                          const line = decoder.decode(new Uint8Array(line_bytes))
 
                           logging.info(line)
                           line_bytes.length = 0
@@ -773,14 +715,11 @@ export class SpectodaWebSerialConnector {
                       header_bytes.push(byte)
 
                       if (header_bytes.length >= HEADER_BYTES_SIZE) {
-                        const tnglReader = new TnglReader(
-                          new Uint8Array(header_bytes),
-                        )
+                        const tnglReader = new TnglReader(new Uint8Array(header_bytes))
 
                         data_header.data_type = tnglReader.readUint32()
                         data_header.data_size = tnglReader.readUint32()
-                        data_header.data_receive_timeout =
-                          tnglReader.readUint32()
+                        data_header.data_receive_timeout = tnglReader.readUint32()
                         data_header.data_crc32 = tnglReader.readUint32()
                         data_header.header_crc32 = tnglReader.readUint32()
 
@@ -806,8 +745,7 @@ export class SpectodaWebSerialConnector {
 
             if (
               error instanceof Error &&
-              (error.message.includes('device has been lost') ||
-                error.message.includes('device was disconnected'))
+              (error.message.includes('device has been lost') || error.message.includes('device was disconnected'))
             ) {
               logging.warn('Device disconnected unexpectedly')
             }
@@ -860,11 +798,7 @@ export class SpectodaWebSerialConnector {
 
   connected(): Promise<SpectodaTypes.Criterium | null> {
     logging.debug('connected()')
-    return Promise.resolve(
-      this.#serialPort && this.#interfaceConnected
-        ? { connector: this.type }
-        : null,
-    )
+    return Promise.resolve(this.#serialPort && this.#interfaceConnected ? { connector: this.type } : null)
   }
 
   disconnect(): Promise<unknown> {
@@ -992,15 +926,8 @@ export class SpectodaWebSerialConnector {
     return this.#writer?.write(encodedData) || Promise.resolve()
   }
 
-  #initiate(
-    initiate_code: number,
-    payload: Uint8Array,
-    tries: number,
-    timeout: number,
-  ): Promise<unknown> {
-    logging.debug(
-      `initiate(initiate_code=${initiate_code}, payload=${payload}, tries=${tries}, timeout=${timeout})`,
-    )
+  #initiate(initiate_code: number, payload: Uint8Array, tries: number, timeout: number): Promise<unknown> {
+    logging.debug(`initiate(initiate_code=${initiate_code}, payload=${payload}, tries=${tries}, timeout=${timeout})`)
 
     if (tries <= 0) {
       logging.error('ERROR nhkw45390')
@@ -1024,8 +951,7 @@ export class SpectodaWebSerialConnector {
     }
 
     const packet_timeout_min = 50
-    let packet_timeout =
-      payload.length * this.#timeoutMultiplier + packet_timeout_min
+    let packet_timeout = payload.length * this.#timeoutMultiplier + packet_timeout_min
 
     if (!packet_timeout || packet_timeout < packet_timeout_min) {
       logging.warn('Packet Timeout is too small:', packet_timeout)
@@ -1075,13 +1001,11 @@ export class SpectodaWebSerialConnector {
         }
 
         try {
-          await this.#writer
-            .write(new Uint8Array(header_writer.bytes.buffer))
-            .catch((e) => {
-              logging.error('SERIAL_ERROR 65239083', e)
-              reject(e)
-              return
-            })
+          await this.#writer.write(new Uint8Array(header_writer.bytes.buffer)).catch((e) => {
+            logging.error('SERIAL_ERROR 65239083', e)
+            reject(e)
+            return
+          })
           await this.#writer.write(payload).catch((e) => {
             logging.error('SERIAL_ERROR 23074934', e)
             reject(e)
@@ -1125,11 +1049,7 @@ export class SpectodaWebSerialConnector {
     })
   }
 
-  #write(
-    channel_type: number,
-    payload: Uint8Array,
-    timeout: number,
-  ): Promise<unknown> {
+  #write(channel_type: number, payload: Uint8Array, timeout: number): Promise<unknown> {
     return this.#initiate(CODE_WRITE + channel_type, payload, 10, timeout)
   }
 
@@ -1141,12 +1061,7 @@ export class SpectodaWebSerialConnector {
       this.#dataCallback = undefined
     }
 
-    return this.#initiate(
-      CODE_READ + channel_type,
-      new Uint8Array(),
-      10,
-      timeout,
-    ).then(() => {
+    return this.#initiate(CODE_READ + channel_type, new Uint8Array(), 10, timeout).then(() => {
       return response
     })
   }
@@ -1224,12 +1139,7 @@ export class SpectodaWebSerialConnector {
       return Promise.reject('InvalidPayload')
     }
 
-    return this.#request(
-      CHANNEL_DEVICE,
-      payload_bytes,
-      read_response,
-      timeout_number,
-    )
+    return this.#request(CHANNEL_DEVICE, payload_bytes, read_response, timeout_number)
   }
 
   setClock(clock: TimeTrack): Promise<unknown> {
@@ -1242,11 +1152,7 @@ export class SpectodaWebSerialConnector {
     return new Promise(async (resolve, reject) => {
       for (let index = 0; index < 3; index++) {
         try {
-          await this.#write(
-            CHANNEL_CLOCK,
-            new Uint8Array(toBytes(clock.millis(), 8)),
-            100,
-          )
+          await this.#write(CHANNEL_CLOCK, new Uint8Array(toBytes(clock.millis(), 8)), 100)
           logging.debug('Clock write success')
           resolve(null)
           return
@@ -1326,11 +1232,7 @@ export class SpectodaWebSerialConnector {
         {
           logging.info('OTA RESET')
 
-          const bytes = new Uint8Array([
-            COMMAND_FLAGS.FLAG_OTA_RESET,
-            0x00,
-            ...numberToBytes(0x00000000, 4),
-          ])
+          const bytes = new Uint8Array([COMMAND_FLAGS.FLAG_OTA_RESET, 0x00, ...numberToBytes(0x00000000, 4)])
 
           await this.#write(CHANNEL_DEVICE, bytes, 10000)
         }
@@ -1340,11 +1242,7 @@ export class SpectodaWebSerialConnector {
         {
           logging.info('OTA BEGIN')
 
-          const bytes = new Uint8Array([
-            COMMAND_FLAGS.FLAG_OTA_BEGIN,
-            0x00,
-            ...numberToBytes(firmware_bytes.length, 4),
-          ])
+          const bytes = new Uint8Array([COMMAND_FLAGS.FLAG_OTA_BEGIN, 0x00, ...numberToBytes(firmware_bytes.length, 4)])
 
           await this.#write(CHANNEL_DEVICE, bytes, 10000)
         }
@@ -1369,15 +1267,11 @@ export class SpectodaWebSerialConnector {
             await this.#write(CHANNEL_DEVICE, bytes, 10000)
             written += index_to - index_from
 
-            const percentage =
-              Math.floor((written * 10000) / firmware_bytes.length) / 100
+            const percentage = Math.floor((written * 10000) / firmware_bytes.length) / 100
 
             logging.info(percentage + '%')
 
-            this.#runtimeReference.emit(
-              SpectodaAppEvents.OTA_PROGRESS,
-              percentage,
-            )
+            this.#runtimeReference.emit(SpectodaAppEvents.OTA_PROGRESS, percentage)
 
             index_from += chunk_size
             index_to = index_from + chunk_size
@@ -1389,20 +1283,12 @@ export class SpectodaWebSerialConnector {
         {
           logging.info('OTA END')
 
-          const bytes = new Uint8Array([
-            COMMAND_FLAGS.FLAG_OTA_END,
-            0x00,
-            ...numberToBytes(written, 4),
-          ])
+          const bytes = new Uint8Array([COMMAND_FLAGS.FLAG_OTA_END, 0x00, ...numberToBytes(written, 4)])
 
           await this.#write(CHANNEL_DEVICE, bytes, 10000)
         }
 
-        logging.info(
-          'Firmware written in ' +
-            (Date.now() - start_timestamp) / 1000 +
-            ' seconds',
-        )
+        logging.info('Firmware written in ' + (Date.now() - start_timestamp) / 1000 + ' seconds')
 
         await sleep(2000)
 
@@ -1441,10 +1327,7 @@ export class SpectodaWebSerialConnector {
       `SpectodaWebSerialConnector::sendExecute(command_bytes=${command_bytes}, source_connection=${source_connection})`,
     )
 
-    if (
-      source_connection.connector_type ==
-      SpectodaWasm.connector_type_t.CONNECTOR_SERIAL
-    ) {
+    if (source_connection.connector_type == SpectodaWasm.connector_type_t.CONNECTOR_SERIAL) {
       return Promise.resolve()
     }
 
@@ -1455,19 +1338,12 @@ export class SpectodaWebSerialConnector {
     return this.#write(CHANNEL_NETWORK, command_bytes, 1000)
   }
 
-  sendRequest(
-    request_ticket_number: number,
-    request_bytecode: Uint8Array,
-    destination_connection: Connection,
-  ) {
+  sendRequest(request_ticket_number: number, request_bytecode: Uint8Array, destination_connection: Connection) {
     logging.debug(
       `SpectodaWebSerialConnector::sendRequest(request_ticket_number=${request_ticket_number}, request_bytecode=${request_bytecode}, destination_connection=${destination_connection})`,
     )
 
-    if (
-      destination_connection.connector_type !=
-      SpectodaWasm.connector_type_t.CONNECTOR_SERIAL
-    ) {
+    if (destination_connection.connector_type != SpectodaWasm.connector_type_t.CONNECTOR_SERIAL) {
       return Promise.resolve()
     }
 
@@ -1491,18 +1367,12 @@ export class SpectodaWebSerialConnector {
     return Promise.reject('NotImplemented')
   }
 
-  sendSynchronize(
-    synchronization: Synchronization,
-    source_connection: Connection,
-  ) {
+  sendSynchronize(synchronization: Synchronization, source_connection: Connection) {
     logging.debug(
       `SpectodaWebSerialConnector::sendSynchronize(synchronization=${synchronization}, source_connection=${source_connection})`,
     )
 
-    if (
-      source_connection.connector_type ==
-      SpectodaWasm.connector_type_t.CONNECTOR_SERIAL
-    ) {
+    if (source_connection.connector_type == SpectodaWasm.connector_type_t.CONNECTOR_SERIAL) {
       return Promise.resolve()
     }
 

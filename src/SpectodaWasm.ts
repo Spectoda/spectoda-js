@@ -33,9 +33,7 @@ export class SpectodaWasm {
   //
   // TODO! disallow creating instances of this class
   constructor() {
-    console.error(
-      'SpectodaWasm is a singleton class, please do not create instances of it',
-    )
+    console.error('SpectodaWasm is a singleton class, please do not create instances of it')
   }
 
   // ? from MainModule:
@@ -219,11 +217,7 @@ function onWasmLoad() {
       // @ts-ignore - FS is a global object of Emscripten
       Module.FS.mkdir('/littlefs')
       // @ts-ignore - FS is a global object of Emscripten
-      Module.FS.mount(
-        Module.FS.filesystems.NODEFS,
-        { root: './filesystem' },
-        '/littlefs',
-      )
+      Module.FS.mount(Module.FS.filesystems.NODEFS, { root: './filesystem' }, '/littlefs')
     }
 
     // ? Load WASM filesystem from mounted system filesystem
@@ -260,9 +254,7 @@ function loadWasm(wasmVersion: string) {
       .catch((error) => {
         // logging.error(error);
         // if local version fails, load public file
-        injectScript(
-          `https://updates.spectoda.com/subdom/updates/webassembly/daily/${wasmVersion}.js`,
-        )
+        injectScript(`https://updates.spectoda.com/subdom/updates/webassembly/daily/${wasmVersion}.js`)
           .then(onWasmLoad)
           .catch((error) => {
             logging.error('Failed to fetch WASM', error)

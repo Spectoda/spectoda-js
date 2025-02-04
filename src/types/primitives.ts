@@ -32,11 +32,7 @@ export namespace SpectodaTypes {
 
   type criteria_simulated = criteria_generic
 
-  type criteria =
-    | criteria_ble
-    | criteria_serial
-    | criteria_dummy
-    | criteria_simulated
+  type criteria = criteria_ble | criteria_serial | criteria_dummy | criteria_simulated
 
   export type TnglBytes = Uint8Array
 
