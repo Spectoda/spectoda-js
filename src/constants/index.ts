@@ -1,5 +1,6 @@
 import { SpectodaTypes } from '../types/primitives'
 
+/** @deprecated use `VALUE_TYPE` from `spectoda-js/constants/values` instead. */
 export const VALUE_TYPE = Object.freeze({
   NUMBER: 29,
   LABEL: 31,
@@ -13,6 +14,7 @@ export const VALUE_TYPE = Object.freeze({
   UNDEFINED: 0,
 })
 
+/** @deprecated Use `VALUE_LIMITS` from `spectoda-js/constants/values` instead. */
 export const VALUE_LIMITS = Object.freeze({
   NUMBER_MAX: 1000000000,
   NUMBER_MIN: -100000000000,
@@ -195,4 +197,8 @@ export const COMMAND_FLAGS = Object.freeze({
   FLAG_ADOPT_RESPONSE: 241,
 })
 
-export { STANDARD_EVENT_LABELS } from './standard-events'
+export {
+  JS_EVENT_VALUE_LIMITS as JS_VALUE_LIMITS,
+  VALUE_TYPES,
+  CPP_EVENT_VALUE_LIMITS as CPP_VALUE_LIMITS,
+} from './values'
