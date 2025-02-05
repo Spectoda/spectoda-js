@@ -48,7 +48,6 @@ import { SpectodaEvent } from './src/types/event'
 import { SpectodaTypes } from './src/types/primitives'
 import { SpectodaClass } from './src/types/spectodaClass'
 import { fetchTnglFromApiById, sendTnglToApi } from './tnglapi'
-import { DESTINATION_CONNECTION_THIS_CONTROLLER } from './src/Spectoda_JS'
 
 const MIN_FIRMWARE_LENGTH = 10000
 const DEFAULT_RECONNECTION_TIME = 2500

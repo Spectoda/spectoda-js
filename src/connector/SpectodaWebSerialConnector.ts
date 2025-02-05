@@ -2,8 +2,6 @@
 
 // npm install --save @types/w3c-web-serial
 
-import { randInt } from 'three/src/math/MathUtils'
-
 import { TimeTrack } from '../../TimeTrack'
 import { TnglReader } from '../../TnglReader'
 import { TnglWriter } from '../../TnglWriter'

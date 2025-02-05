@@ -3,14 +3,7 @@
 // npm install --save-dev @types/web-bluetooth
 /// <reference types="web-bluetooth" />
 
-import {
-  detectAndroid,
-  hexStringToUint8Array,
-  numberToBytes,
-  sleep,
-  toBytes,
-  uint8ArrayToHexString,
-} from '../../functions'
+import { detectAndroid, hexStringToUint8Array, numberToBytes, sleep, toBytes } from '../../functions'
 import { logging } from '../../logging'
 import { TimeTrack } from '../../TimeTrack.js'
 import { TnglReader } from '../../TnglReader'
