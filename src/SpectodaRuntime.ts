@@ -339,61 +339,8 @@ export class SpectodaRuntime {
     })
 
     this.#eventEmitter.on(SpectodaAppEvents.PRIVATE_DISCONNECTED, (e: any) => {
-      this.#onDisconnected(e)
-    })
-
-    // open external links in Flutter SC
-    if (detectSpectodaConnect()) {
-      // target="_blank" global handler
-      // @ts-ignore
-      /** @type {HTMLBodyElement} */ document.querySelector('body').addEventListener('click', function (e) {
-        e.preventDefault()
-
-        // ! @sirluky Please add types or explanation what this does
-        ;(function (e, d, w) {
-          if (!e.composedPath) {
-            e.composedPath = function () {
-              // @ts-ignore
-              if (this.path) {
-                // @ts-ignore
-                return this.path
-              }
-              let target = this.target
-
-              // @ts-ignore
-              this.path = []
-              // @ts-ignore
-              while (target.parentNode !== null) {
-                // @ts-ignore
-                this.path.push(target)
-                // @ts-ignore
-                target = target.parentNode
-              }
-              // @ts-ignore
-              this.path.push(d, w)
-              // @ts-ignore
-              return this.path
-            }
-          }
-        })(Event.prototype, document, window)
-        // @ts-ignore
-        const path = e.path || (e.composedPath && e.composedPath())
-
-        // @ts-ignore
-        for (const el of path) {
-          if (el.tagName === 'A' && el.getAttribute('target') === '_blank') {
-            e.preventDefault()
-            const url = el.getAttribute('href')
-
-            logging.verbose(url)
-            // @ts-ignore
-            logging.debug('Openning external url', url)
-            window.flutter_inappwebview.callHandler('openExternalUrl', url)
-            break
-          }
-        }
-      })
-    }
+      this.#onDisconnected(e);
+    });
 
     if (typeof window !== 'undefined') {
       window.addEventListener('beforeunload', (e) => {
