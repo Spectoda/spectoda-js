@@ -1096,7 +1096,7 @@ export class TnglCompiler {
   compileId(id) {
     // Check if the string starts with "ID" or "id" (case-insensitive)
     if (typeof id !== 'string' || !id.startsWith('ID')) {
-      logging.error('Invalid ID format! Expected \'ID0\' to \'ID255\'. Received:', id)
+      logging.error("Invalid ID format! Expected 'ID0' to 'ID255'. Received:", id)
       this.#tnglWriter.writeFlag(TNGL_FLAGS.ID)
       this.#tnglWriter.writeUint16(0)
       return
