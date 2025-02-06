@@ -1,11 +1,11 @@
 /** @deprecated TODO REMOVE THIS FILE */
 
-import { z } from 'zod';
-import { devtools, subscribeWithSelector } from 'zustand/middleware';
-import { createStore } from 'zustand/vanilla';
-import { safeJSONParse, spectoda } from '@spectoda/spectoda-utils';
+import { z } from 'zod'
+import { devtools, subscribeWithSelector } from 'zustand/middleware'
+import { createStore } from 'zustand/vanilla'
+import { safeJSONParse, spectoda } from '@spectoda/spectoda-utils'
 
-import { MacObjectSchema, TMacObject, TStringSchema } from './types';
+import { MacObjectSchema, TMacObject, TStringSchema } from './types'
 
 // type SpectodaStore = SpectodaStoreState & SpectodaConnectionMethods;
 // type MethodsFunction = (...params: Parameters<StateCreator<SpectodaStore>>) => SpectodaConnectionMethods;
@@ -48,57 +48,57 @@ import { MacObjectSchema, TMacObject, TStringSchema } from './types';
 //   network: Network | null | undefined;
 // };
 
-const SHOW_LOGS = false;
+const SHOW_LOGS = false
 
 const log = (...args: any[]) => {
   if (SHOW_LOGS) {
-    console.log(...args);
+    console.log(...args)
   }
-};
+}
 
 type Query<T extends any = string, HasSet extends boolean = true> = {
-  data: T | null;
-  isStale: boolean;
-  get: () => Promise<T | null>;
-  invalidate: () => void;
-} & (HasSet extends true ? { set: (newData: T) => Promise<void> } : {});
+  data: T | null
+  isStale: boolean
+  get: () => Promise<T | null>
+  invalidate: () => void
+} & (HasSet extends true ? { set: (newData: T) => Promise<void> } : {})
 
 type Queries = {
-  name: Query<string, true>;
-  fwVersion: Query<string, true>;
-  signature: Query<string, true>;
+  name: Query<string, true>
+  fwVersion: Query<string, true>
+  signature: Query<string, true>
 
   codes: Query<
     {
-      pcbCode: number | null;
-      productCode: number | null;
+      pcbCode: number | null
+      productCode: number | null
     },
     false
-  >;
+  >
 
   config: Query<
     {
-      string: string | null;
-      object: Record<string, any>;
-      lastReadTime: Date | null;
+      string: string | null
+      object: Record<string, any>
+      lastReadTime: Date | null
     },
     false
-  >;
+  >
 
   macs: Query<
     {
-      this: string | null;
-      connected: TMacObject[];
+      this: string | null
+      connected: TMacObject[]
     },
     false
-  >;
-};
+  >
+}
 
-type SpectodaStore = Queries & CustomMethods & Record<'data', SpectodaDataObject>;
+type SpectodaStore = Queries & CustomMethods & Record<'data', SpectodaDataObject>
 
 export type SpectodaDataObject = {
-  [key in keyof Queries]: Queries[key]['data'] | null;
-};
+  [key in keyof Queries]: Queries[key]['data'] | null
+}
 
 const spectodaStore = createStore<SpectodaStore>()(
   devtools(
@@ -110,8 +110,8 @@ const spectodaStore = createStore<SpectodaStore>()(
             ...state[key],
             isStale: true,
           },
-        }));
-      };
+        }))
+      }
 
       const setQueryItem = (key: keyof Queries, value: any) => {
         set((state) => ({
@@ -125,8 +125,8 @@ const spectodaStore = createStore<SpectodaStore>()(
             ...state.data,
             [key]: value,
           },
-        }));
-      };
+        }))
+      }
 
       const createQuery = <Key extends keyof Queries, FetchedType, DataType extends Queries[Key]['data']>({
         key,
@@ -137,76 +137,76 @@ const spectodaStore = createStore<SpectodaStore>()(
         setFunction,
         defaultReturn = null as DataType,
       }: {
-        key: Key;
-        defaultReturn?: DataType;
-        fetchFunction: () => Promise<FetchedType>;
-        FetchedDataSchema: z.ZodType<FetchedType>;
-        dataTransform?: (fetchedData: FetchedType) => DataType | null;
-        DataSchema?: z.ZodType<DataType>;
-        setFunction?: (newData: DataType) => Promise<void>;
+        key: Key
+        defaultReturn?: DataType
+        fetchFunction: () => Promise<FetchedType>
+        FetchedDataSchema: z.ZodType<FetchedType>
+        dataTransform?: (fetchedData: FetchedType) => DataType | null
+        DataSchema?: z.ZodType<DataType>
+        setFunction?: (newData: DataType) => Promise<void>
       }): Record<Key, Query<DataType, typeof setFunction extends undefined ? false : true>> => {
         const storeItem: Query<DataType, typeof setFunction extends undefined ? false : true> = {
           data: defaultReturn,
           isStale: true,
           get: async () => {
-            const state = get();
+            const state = get()
 
             if (!state[key].isStale) {
-              log(`✅ Got ${key} from cache`);
-              return state[key].data as DataType;
+              log(`✅ Got ${key} from cache`)
+              return state[key].data as DataType
             }
 
-            log(`👀 Reading ${key}...`);
+            log(`👀 Reading ${key}...`)
 
-            const fetchedData = await fetchFunction();
-            const fetchedDataValidation = FetchedDataSchema.safeParse(fetchedData);
+            const fetchedData = await fetchFunction()
+            const fetchedDataValidation = FetchedDataSchema.safeParse(fetchedData)
 
             if (!fetchedDataValidation.success) {
-              console.error(`Validating ${key} failed:`, fetchedDataValidation.error.errors[0]);
-              return defaultReturn as DataType;
+              console.error(`Validating ${key} failed:`, fetchedDataValidation.error.errors[0])
+              return defaultReturn as DataType
             }
 
-            let output: DataType;
+            let output: DataType
 
             if (typeof dataTransform === 'function' && DataSchema) {
-              const transformed = dataTransform(fetchedDataValidation.data);
-              const transformedDataValidation = DataSchema.safeParse(transformed);
+              const transformed = dataTransform(fetchedDataValidation.data)
+              const transformedDataValidation = DataSchema.safeParse(transformed)
 
               if (!transformedDataValidation.success) {
-                console.error(`Validating ${key} failed:`, transformedDataValidation.error.errors[0]);
-                return defaultReturn as DataType;
+                console.error(`Validating ${key} failed:`, transformedDataValidation.error.errors[0])
+                return defaultReturn as DataType
               }
 
-              output = transformedDataValidation.data;
+              output = transformedDataValidation.data
             } else {
-              output = fetchedDataValidation.data as unknown as DataType;
+              output = fetchedDataValidation.data as unknown as DataType
             }
 
-            log(`✅ Got valid ${key} from controller + value set`, output);
+            log(`✅ Got valid ${key} from controller + value set`, output)
 
-            setQueryItem(key, output);
+            setQueryItem(key, output)
 
-            return output as DataType;
+            return output as DataType
           },
           invalidate: invalidateItem(key),
           set: async (newData: DataType) => {
             if (typeof setFunction === 'function') {
-              await setFunction(newData);
-              log(`📝 Writing new ${key} to controller...`);
+              await setFunction(newData)
+              log(`📝 Writing new ${key} to controller...`)
             }
 
-            log(`📝 Setting ${key}`);
+            log(`📝 Setting ${key}`)
 
-            setQueryItem(key, newData);
+            setQueryItem(key, newData)
           },
-        };
+        }
 
-        return { [key]: storeItem } as Record<Key, typeof storeItem>;
-      };
+        return { [key]: storeItem } as Record<Key, typeof storeItem>
+      }
 
       const loadData = {
         loadData: async () => {
-          get().startBatching();
+          get().startBatching()
 
           const results: SpectodaDataObject = {
             fwVersion: null,
@@ -215,42 +215,42 @@ const spectodaStore = createStore<SpectodaStore>()(
             config: null,
             signature: null,
             codes: null,
-          };
+          }
 
-          let resource;
+          let resource
 
           try {
-            resource = 'fwVersion';
-            results.fwVersion = await get().fwVersion.get();
+            resource = 'fwVersion'
+            results.fwVersion = await get().fwVersion.get()
 
-            resource = 'macs';
-            results.macs = await get().macs.get();
+            resource = 'macs'
+            results.macs = await get().macs.get()
 
-            resource = 'name';
-            results.name = await get().name.get();
+            resource = 'name'
+            results.name = await get().name.get()
 
-            resource = 'config';
-            results.config = await get().config.get();
+            resource = 'config'
+            results.config = await get().config.get()
 
-            resource = 'signature';
-            results.signature = await get().signature.get();
+            resource = 'signature'
+            results.signature = await get().signature.get()
 
-            resource = 'codes';
-            results.codes = await get().codes.get();
+            resource = 'codes'
+            results.codes = await get().codes.get()
           } catch (error) {
             if (error instanceof Error) {
-              console.error(`Load data failed while getting ${resource} due. Reason:`, error.message);
+              console.error(`Load data failed while getting ${resource} due. Reason:`, error.message)
             } else if (typeof error === 'string') {
-              console.error(`Load data failed while getting ${resource}. Reason: ${error}`);
+              console.error(`Load data failed while getting ${resource}. Reason: ${error}`)
             } else {
-              console.error(`Load data failed while getting ${resource} for unknown reason.`, error);
+              console.error(`Load data failed while getting ${resource} for unknown reason.`, error)
             }
           } finally {
-            get().endBatching();
-            return results;
+            get().endBatching()
+            return results
           }
         },
-      };
+      }
 
       const queries = {
         ...createQuery({
@@ -285,7 +285,7 @@ const spectodaStore = createStore<SpectodaStore>()(
             return {
               productCode: data.product_code,
               pcbCode: data.pcb_code,
-            };
+            }
           },
         }),
 
@@ -310,7 +310,7 @@ const spectodaStore = createStore<SpectodaStore>()(
               string: input,
               lastReadTime: new Date(),
               object: z.object({}).safeParse(safeJSONParse(input)).data ?? {},
-            };
+            }
           },
         }),
 
@@ -327,29 +327,26 @@ const spectodaStore = createStore<SpectodaStore>()(
             connected: z.array(MacObjectSchema),
           }),
           dataTransform: (input: TMacObject[]) => {
-            log(input);
-            const thisMac = input[0]?.mac ?? null;
+            log(input)
+            const thisMac = input[0]?.mac ?? null
             const payload = {
               this: thisMac,
               connected: input,
-            };
+            }
 
-            return payload;
+            return payload
           },
         }),
-      };
+      }
 
       const defaultQueryValues = {
-        data: Object.keys(queries).reduce(
-          (acc, key) => {
-            return {
-              ...acc,
-              [key]: queries[key as keyof typeof queries].data,
-            };
-          },
-          {} as SpectodaStore['data'],
-        ),
-      };
+        data: Object.keys(queries).reduce((acc, key) => {
+          return {
+            ...acc,
+            [key]: queries[key as keyof typeof queries].data,
+          }
+        }, {} as SpectodaStore['data']),
+      }
 
       // ! TODO when Spectoda Runtime will have a way to cleanup listeners
       // const initializeSpectoda = (spectodaObject)=>{
@@ -362,9 +359,9 @@ const spectodaStore = createStore<SpectodaStore>()(
 
       const invalidateAll = () => {
         for (const key of Object.keys(queries)) {
-          queries[key as keyof typeof queries].invalidate();
+          queries[key as keyof typeof queries].invalidate()
         }
-      };
+      }
 
       return {
         invalidateAll,
@@ -375,23 +372,23 @@ const spectodaStore = createStore<SpectodaStore>()(
         isBatching: false,
         startBatching: () => set({ isBatching: true }),
         endBatching: () => set({ isBatching: false }),
-      } satisfies SpectodaStore;
+      } satisfies SpectodaStore
     }),
     {
       name: 'Spectoda object store v1',
     },
   ),
-);
+)
 
 type CustomMethods = {
-  invalidateAll: () => void;
-  loadData: () => Promise<SpectodaDataObject>;
+  invalidateAll: () => void
+  loadData: () => Promise<SpectodaDataObject>
   // initializeSpectoda: ()=>void;
   // cleanupSpectoda: ()=>void;
 
-  isBatching: boolean;
-  startBatching: () => void;
-  endBatching: () => void;
-};
+  isBatching: boolean
+  startBatching: () => void
+  endBatching: () => void
+}
 
-export { spectodaStore };
+export { spectodaStore }

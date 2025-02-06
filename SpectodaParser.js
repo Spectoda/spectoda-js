@@ -1,17 +1,17 @@
 // TODO @immakermatty convert to typescript
 // TODO @immakermatty move compilation to WASM
 
-import { TnglWriter } from './TnglWriter';
-import { VALUE_LIMITS } from './src/constants';
-import { mapValue, uint8ArrayToHexString } from './functions';
-import { logging } from './logging';
+import { TnglWriter } from './TnglWriter'
+import { VALUE_LIMITS } from './src/constants'
+import { mapValue, uint8ArrayToHexString } from './functions'
+import { logging } from './logging'
 
 const CONSTANTS = Object.freeze({
   MODIFIER_SWITCH_NONE: 0,
   MODIFIER_SWITCH_RG: 1,
   MODIFIER_SWITCH_GB: 2,
   MODIFIER_SWITCH_BR: 3,
-});
+})
 
 const TNGL_FLAGS = Object.freeze({
   /* no code or command used by decoder as a validation */
@@ -181,220 +181,220 @@ const TNGL_FLAGS = Object.freeze({
   /* command ends */
   END_OF_SCOPE: 254,
   END_OF_TNGL_BYTES: 255,
-});
+})
 
 export class TnglCompiler {
-  #tnglWriter;
-  #const_declarations_stack;
-  #const_scope_depth_stack;
-  #let_declarations_stack; // TODO @immakermatty convert let to var?
-  #let_scope_depth_stack;
-  #var_declarations; //  TODO @immakermatty remove var functionality and use let renamed to var instead
+  #tnglWriter
+  #const_declarations_stack
+  #const_scope_depth_stack
+  #let_declarations_stack // TODO @immakermatty convert let to var?
+  #let_scope_depth_stack
+  #var_declarations //  TODO @immakermatty remove var functionality and use let renamed to var instead
 
-  #memory_stack;
+  #memory_stack
 
   constructor() {
-    this.#tnglWriter = new TnglWriter(65535);
+    this.#tnglWriter = new TnglWriter(65535)
 
     // @type array of {name: "variable", address: 0x0001};
-    this.#const_declarations_stack = []; // stack of variable name-address pairs
+    this.#const_declarations_stack = [] // stack of variable name-address pairs
     // @type array of numers
-    this.#const_scope_depth_stack = []; // stack of variable depths in scopes
+    this.#const_scope_depth_stack = [] // stack of variable depths in scopes
     // @type array of {name: "variable", address: 0x0001};
-    this.#let_declarations_stack = []; // stack of variable name-address pairs
+    this.#let_declarations_stack = [] // stack of variable name-address pairs
     // @type array of numers
-    this.#let_scope_depth_stack = []; // stack of variable depths in scopes
+    this.#let_scope_depth_stack = [] // stack of variable depths in scopes
     // @type array of {name: "variable", address: 0x0001};
-    this.#var_declarations = []; // addresses starts from 0x0001 to 0xfffe. 0x0000 is a "reserved", 0xffff is unknown address
+    this.#var_declarations = [] // addresses starts from 0x0001 to 0xfffe. 0x0000 is a "reserved", 0xffff is unknown address
 
-    this.#memory_stack = [];
-    this.#reserveAddress('reserved');
+    this.#memory_stack = []
+    this.#reserveAddress('reserved')
   }
 
   // Add new method to handle parsing
   parseAndCompileCode(tngl_code) {
-    logging.verbose(tngl_code);
+    logging.verbose(tngl_code)
 
     // 1st stage: tokenize the code
-    const tokens = this.#tokenize(tngl_code, TnglCompiler.#parses);
+    const tokens = this.#tokenize(tngl_code, TnglCompiler.#parses)
 
-    logging.verbose(tokens);
+    logging.verbose(tokens)
 
     // 2nd stage: compile the code
     for (let index = 0; index < tokens.length; index++) {
-      this.compileToken(tokens[index]);
+      this.compileToken(tokens[index])
     }
   }
 
   compileToken(element) {
     switch (element.type) {
       case TnglCompiler.PARSES.BERRY_A:
-        this.compileBerryScript(element.token);
-        break;
+        this.compileBerryScript(element.token)
+        break
 
       case TnglCompiler.PARSES.VAR_B:
-        this.compileVarDeclaration(element.token);
-        break;
+        this.compileVarDeclaration(element.token)
+        break
 
       case TnglCompiler.PARSES.CONST_C:
-        this.compileConstDeclaration(element.token);
-        break;
+        this.compileConstDeclaration(element.token)
+        break
 
       case TnglCompiler.PARSES.COMMENT_D:
         // skip
-        break;
+        break
 
       case TnglCompiler.PARSES.COLOR_E:
-        this.compileColor(element.token);
-        break;
+        this.compileColor(element.token)
+        break
 
       case TnglCompiler.PARSES.INFINITY_F:
-        this.compileInfinity(element.token);
-        break;
+        this.compileInfinity(element.token)
+        break
 
       // case TnglCompiler.PARSES.STRING_G:
       //   this.compileString(element.token);
       //   break;
 
       case TnglCompiler.PARSES.ADDRESS_H:
-        this.compileValueAddress(element.token);
-        break;
+        this.compileValueAddress(element.token)
+        break
 
       case TnglCompiler.PARSES.TIME_I:
-        this.compileTimestamp(element.token);
-        break;
+        this.compileTimestamp(element.token)
+        break
 
       case TnglCompiler.PARSES.LABEL_J:
-        this.compileLabel(element.token);
-        break;
+        this.compileLabel(element.token)
+        break
 
       case TnglCompiler.PARSES.BYTE_K:
-        this.compileByte(element.token);
-        break;
+        this.compileByte(element.token)
+        break
 
       case TnglCompiler.PARSES.PIXELS_L:
-        this.compilePixels(element.token);
-        break;
+        this.compilePixels(element.token)
+        break
 
       case TnglCompiler.PARSES.ID_M:
-        this.compileId(element.token);
-        break;
+        this.compileId(element.token)
+        break
 
       case TnglCompiler.PARSES.PERCENTAGE_N:
-        this.compilePercentage(element.token);
-        break;
+        this.compilePercentage(element.token)
+        break
 
       case TnglCompiler.PARSES.FLOAT_O:
-        logging.error('"Naked" float numbers are not permitted.');
-        break;
+        logging.error('"Naked" float numbers are not permitted.')
+        break
 
       case TnglCompiler.PARSES.NUMBER_P:
-        this.compileNumber(element.token);
-        break;
+        this.compileNumber(element.token)
+        break
 
       case TnglCompiler.PARSES.WORD_Q:
-        this.compileWord(element.token);
-        break;
+        this.compileWord(element.token)
+        break
 
       case TnglCompiler.PARSES.BYTE_R:
-        this.compileByte(element.token);
-        break;
+        this.compileByte(element.token)
+        break
 
       case TnglCompiler.PARSES.WHITESPACE_S:
         // skip
-        break;
+        break
 
       case TnglCompiler.PARSES.PUNCTUATION_T:
-        this.compilePunctuation(element.token);
-        break;
+        this.compilePunctuation(element.token)
+        break
 
       case TnglCompiler.PARSES.MACADDRESS_U:
-        this.compileMacAddress(element.token);
-        break;
+        this.compileMacAddress(element.token)
+        break
 
       case TnglCompiler.PARSES.LET_V:
-        this.compileLetDeclaration(element.token);
-        break;
+        this.compileLetDeclaration(element.token)
+        break
 
       case TnglCompiler.PARSES.PARAMETER_V:
-        this.compileParametersMap(element.token);
-        break;
+        this.compileParametersMap(element.token)
+        break
 
       default:
-        logging.warn('Unknown token type >', element.type, '<', typeof element.type);
-        break;
+        logging.warn('Unknown token type >', element.type, '<', typeof element.type)
+        break
     }
   }
 
   getVariableDeclarations() {
-    return this.#var_declarations;
+    return this.#var_declarations
   }
 
   getMemoryStack() {
-    return this.#memory_stack;
+    return this.#memory_stack
   }
 
   reset() {
-    this.#tnglWriter.reset();
+    this.#tnglWriter.reset()
 
-    this.#const_declarations_stack.length = 0;
-    this.#const_scope_depth_stack.length = 0;
-    this.#let_declarations_stack.length = 0;
-    this.#let_scope_depth_stack.length = 0;
-    this.#var_declarations.length = 0;
+    this.#const_declarations_stack.length = 0
+    this.#const_scope_depth_stack.length = 0
+    this.#let_declarations_stack.length = 0
+    this.#let_scope_depth_stack.length = 0
+    this.#var_declarations.length = 0
 
-    this.#memory_stack.length = 0;
-    this.#reserveAddress('reserved');
+    this.#memory_stack.length = 0
+    this.#reserveAddress('reserved')
   }
 
   compileUndefined() {
-    this.#tnglWriter.writeUint8(TNGL_FLAGS.NONE);
+    this.#tnglWriter.writeUint8(TNGL_FLAGS.NONE)
   }
 
   compileFlag(flag) {
-    this.#tnglWriter.writeUint8(flag);
+    this.#tnglWriter.writeUint8(flag)
   }
 
   compileByte(byte) {
-    let reg = byte.match(/0x([0-9a-f][0-9a-f])(?![0-9a-f])/i);
+    let reg = byte.match(/0x([0-9a-f][0-9a-f])(?![0-9a-f])/i)
 
     if (!reg) {
-      logging.error('Failed to compile a byte');
-      return;
+      logging.error('Failed to compile a byte')
+      return
     }
-    this.#tnglWriter.writeUint8(parseInt(reg[1], 16));
+    this.#tnglWriter.writeUint8(parseInt(reg[1], 16))
   }
 
   compileChar(char) {
-    let reg = char.match(/(-?)'([\W\w])'/);
+    let reg = char.match(/(-?)'([\W\w])'/)
 
     if (!reg) {
-      logging.error('Failed to compile char');
-      return;
+      logging.error('Failed to compile char')
+      return
     }
     // TODO deprecate negative char
     if (reg[1] === '-') {
-      console.warn('Negative char is deprecated');
-      this.#tnglWriter.writeUint8(-reg[2].charCodeAt(0));
+      console.warn('Negative char is deprecated')
+      this.#tnglWriter.writeUint8(-reg[2].charCodeAt(0))
     } else {
-      this.#tnglWriter.writeUint8(reg[2].charCodeAt(0));
+      this.#tnglWriter.writeUint8(reg[2].charCodeAt(0))
     }
   }
 
   // takes string string as '"this is a string"'
   compileString(string) {
-    let reg = string.match(/"([\w ]*)"/);
+    let reg = string.match(/"([\w ]*)"/)
 
     if (!reg) {
-      logging.error('Failed to compile a string');
-      return;
+      logging.error('Failed to compile a string')
+      return
     }
 
     for (let i = 0; i < string.length; i++) {
-      this.#tnglWriter.writeUint8(string.charCodeAt(i));
+      this.#tnglWriter.writeUint8(string.charCodeAt(i))
     }
 
-    this.#tnglWriter.writeFlag(TNGL_FLAGS.NONE);
+    this.#tnglWriter.writeFlag(TNGL_FLAGS.NONE)
   }
 
   // // takes template literal string as '`this is a template literal`'
@@ -403,34 +403,34 @@ export class TnglCompiler {
   // }
 
   compileInfinity(infinity) {
-    let reg = infinity.match(/([+-]?Infinity)/);
+    let reg = infinity.match(/([+-]?Infinity)/)
 
     if (!reg) {
-      logging.error('Failed to compile a infinity');
-      return;
+      logging.error('Failed to compile a infinity')
+      return
     }
 
     if (reg[1] === 'Infinity' || reg[1] === '+Infinity') {
-      this.#tnglWriter.writeFlag(TNGL_FLAGS.CONST_TIMESTAMP_INFINITY);
+      this.#tnglWriter.writeFlag(TNGL_FLAGS.CONST_TIMESTAMP_INFINITY)
     } else if (reg[1] === '-Infinity') {
-      this.#tnglWriter.writeFlag(TNGL_FLAGS.CONST_TIMESTAMP_MINUS_INFINITY);
+      this.#tnglWriter.writeFlag(TNGL_FLAGS.CONST_TIMESTAMP_MINUS_INFINITY)
     } else {
-      logging.error('Error while compiling infinity');
+      logging.error('Error while compiling infinity')
     }
   }
 
   compileValueAddress(variable_reference) {
-    logging.verbose(`compileValueAddress(${variable_reference})`);
+    logging.verbose(`compileValueAddress(${variable_reference})`)
 
-    let reg = variable_reference.match(/&([a-z_][\w]*)/i);
+    let reg = variable_reference.match(/&([a-z_][\w]*)/i)
 
     if (!reg) {
-      logging.error('Failed to compile variable address');
-      return;
+      logging.error('Failed to compile variable address')
+      return
     }
 
-    const variable_name = reg[1];
-    let valueadr = undefined;
+    const variable_name = reg[1]
+    let valueadr = undefined
 
     // TODO @immakermatty figure out how to handle const, let and var variables
     // // check if the variable is already declared
@@ -459,397 +459,397 @@ export class TnglCompiler {
     // check if the variable is already declared
     // look for the latest variable address on the stack
     for (let i = this.#var_declarations.length - 1; i >= 0; i--) {
-      const declaration = this.#var_declarations[i];
+      const declaration = this.#var_declarations[i]
 
       if (declaration.name === variable_name) {
-        valueadr = declaration.address;
-        break;
+        valueadr = declaration.address
+        break
       }
     }
 
     if (valueadr === undefined) {
-      logging.error(`Variable ${variable_name} is not declated`);
-      throw 'CompilationError';
+      logging.error(`Variable ${variable_name} is not declated`)
+      throw 'CompilationError'
     }
 
-    logging.verbose(`VALUE_ADDRESS name=${variable_name}, address=${valueadr}`);
-    this.#tnglWriter.writeFlag(TNGL_FLAGS.VALUE_ADDRESS);
-    this.#tnglWriter.writeUint16(valueadr);
+    logging.verbose(`VALUE_ADDRESS name=${variable_name}, address=${valueadr}`)
+    this.#tnglWriter.writeFlag(TNGL_FLAGS.VALUE_ADDRESS)
+    this.#tnglWriter.writeUint16(valueadr)
   }
 
   // takes in time string token like "1.2d+9h2m7.2s-123t" and appeds to payload the total time in ms (tics) as a int32_t: [FLAG.VALUE_TIMESTAMP, BYTE4, BYTE2, BYTE1, BYTE0]
   compileTimestamp(value) {
     if (!value) {
-      this.#tnglWriter.writeFlag(TNGL_FLAGS.CONST_TIMESTAMP_0);
-      return;
+      this.#tnglWriter.writeFlag(TNGL_FLAGS.CONST_TIMESTAMP_0)
+      return
     }
 
-    value = value.trim();
+    value = value.trim()
 
-    const timestampRegex = /([+-]?(\d+\.\d+|\d+|\.\d+))\s*(d|h|m(?!s)|s|ms|t)/gi;
-    let match;
-    let total = 0;
+    const timestampRegex = /([+-]?(\d+\.\d+|\d+|\.\d+))\s*(d|h|m(?!s)|s|ms|t)/gi
+    let match
+    let total = 0
 
     while ((match = timestampRegex.exec(value)) !== null) {
-      const number = parseFloat(match[1]);
-      const unit = match[3].toLowerCase();
+      const number = parseFloat(match[1])
+      const unit = match[3].toLowerCase()
 
       switch (unit) {
         case 'd':
-          total += number * 86400000;
-          break;
+          total += number * 86400000
+          break
         case 'h':
-          total += number * 3600000;
-          break;
+          total += number * 3600000
+          break
         case 'm':
-          total += number * 60000;
-          break;
+          total += number * 60000
+          break
         case 's':
-          total += number * 1000;
-          break;
+          total += number * 1000
+          break
         case 'ms':
         case 't':
-          total += number;
-          break;
+          total += number
+          break
         default:
-          logging.error('Error while parsing timestamp: Unknown unit', unit);
-          break;
+          logging.error('Error while parsing timestamp: Unknown unit', unit)
+          break
       }
     }
 
     if (total >= VALUE_LIMITS.TIMESTAMP_MAX) {
-      this.#tnglWriter.writeFlag(TNGL_FLAGS.CONST_TIMESTAMP_INFINITY);
-      return;
+      this.#tnglWriter.writeFlag(TNGL_FLAGS.CONST_TIMESTAMP_INFINITY)
+      return
     } else if (total <= VALUE_LIMITS.TIMESTAMP_MIN) {
-      this.#tnglWriter.writeFlag(TNGL_FLAGS.CONST_TIMESTAMP_MINUS_INFINITY);
-      return;
+      this.#tnglWriter.writeFlag(TNGL_FLAGS.CONST_TIMESTAMP_MINUS_INFINITY)
+      return
     } else if (total === 0) {
-      this.#tnglWriter.writeFlag(TNGL_FLAGS.CONST_TIMESTAMP_0);
-      return;
+      this.#tnglWriter.writeFlag(TNGL_FLAGS.CONST_TIMESTAMP_0)
+      return
     } else {
-      this.#tnglWriter.writeFlag(TNGL_FLAGS.VALUE_TIMESTAMP);
-      this.#tnglWriter.writeInt32(total);
-      return;
+      this.#tnglWriter.writeFlag(TNGL_FLAGS.VALUE_TIMESTAMP)
+      this.#tnglWriter.writeInt32(total)
+      return
     }
   }
 
   // takes in html color string "#abcdef" and encodes it into 24 bits [FLAG.VALUE_COLOR, R, G, B]
   compileColor(color) {
-    let reg = color.match(/#([0-9a-f][0-9a-f])([0-9a-f][0-9a-f])([0-9a-f][0-9a-f])/i);
+    let reg = color.match(/#([0-9a-f][0-9a-f])([0-9a-f][0-9a-f])([0-9a-f][0-9a-f])/i)
 
     if (!reg) {
-      logging.error('Failed to compile color');
-      return;
+      logging.error('Failed to compile color')
+      return
     }
 
-    let r = parseInt(reg[1], 16);
-    let g = parseInt(reg[2], 16);
-    let b = parseInt(reg[3], 16);
+    let r = parseInt(reg[1], 16)
+    let g = parseInt(reg[2], 16)
+    let b = parseInt(reg[3], 16)
 
     if (r === 255 && g === 255 && b === 255) {
-      this.#tnglWriter.writeFlag(TNGL_FLAGS.CONST_COLOR_WHITE);
+      this.#tnglWriter.writeFlag(TNGL_FLAGS.CONST_COLOR_WHITE)
     } else if (r === 0 && g === 0 && b === 0) {
-      this.#tnglWriter.writeFlag(TNGL_FLAGS.CONST_COLOR_BLACK);
+      this.#tnglWriter.writeFlag(TNGL_FLAGS.CONST_COLOR_BLACK)
     } else {
-      this.#tnglWriter.writeFlag(TNGL_FLAGS.VALUE_COLOR);
-      this.#tnglWriter.writeUint8(r);
-      this.#tnglWriter.writeUint8(g);
-      this.#tnglWriter.writeUint8(b);
+      this.#tnglWriter.writeFlag(TNGL_FLAGS.VALUE_COLOR)
+      this.#tnglWriter.writeUint8(r)
+      this.#tnglWriter.writeUint8(g)
+      this.#tnglWriter.writeUint8(b)
     }
   }
 
   // takes in percentage string "83.234%" and encodes it into 24 bits
   compilePercentage(percentage) {
-    let reg = percentage.match(/([+-]?[\d.]+)%/);
+    let reg = percentage.match(/([+-]?[\d.]+)%/)
 
     if (!reg) {
-      logging.error('Failed to compile percentage');
-      return;
+      logging.error('Failed to compile percentage')
+      return
     }
 
-    let val = parseFloat(reg[1]);
+    let val = parseFloat(reg[1])
 
     if (val > 100.0) {
-      val = 100.0;
+      val = 100.0
     }
     if (val < -100.0) {
-      val = -100.0;
+      val = -100.0
     }
 
-    const UNIT_ERROR = 0.000001;
+    const UNIT_ERROR = 0.000001
 
     if (val > -UNIT_ERROR && val < UNIT_ERROR) {
-      this.#tnglWriter.writeFlag(TNGL_FLAGS.CONST_PERCENTAGE_0);
+      this.#tnglWriter.writeFlag(TNGL_FLAGS.CONST_PERCENTAGE_0)
     } else if (val > 100.0 - UNIT_ERROR) {
-      this.#tnglWriter.writeFlag(TNGL_FLAGS.CONST_PERCENTAGE_100);
+      this.#tnglWriter.writeFlag(TNGL_FLAGS.CONST_PERCENTAGE_100)
     } else if (val < -100.0 + UNIT_ERROR) {
-      this.#tnglWriter.writeFlag(TNGL_FLAGS.CONST_PERCENTAGE_MINUS_100);
+      this.#tnglWriter.writeFlag(TNGL_FLAGS.CONST_PERCENTAGE_MINUS_100)
     } else {
-      const remapped = mapValue(val, -100.0, 100.0, -VALUE_LIMITS.PERCENTAGE_100, VALUE_LIMITS.PERCENTAGE_100);
+      const remapped = mapValue(val, -100.0, 100.0, -VALUE_LIMITS.PERCENTAGE_100, VALUE_LIMITS.PERCENTAGE_100)
 
-      this.#tnglWriter.writeFlag(TNGL_FLAGS.VALUE_PERCENTAGE);
-      this.#tnglWriter.writeInt32(parseInt(remapped));
+      this.#tnglWriter.writeFlag(TNGL_FLAGS.VALUE_PERCENTAGE)
+      this.#tnglWriter.writeInt32(parseInt(remapped))
     }
   }
 
   // takes label string as "$label" and encodes it into 32 bits
   compileLabel(label) {
-    let reg = label.match(/\$([\w]*)/);
+    let reg = label.match(/\$([\w]*)/)
 
     if (!reg) {
-      logging.error('Failed to compile a label');
-      return;
+      logging.error('Failed to compile a label')
+      return
     }
 
-    this.#tnglWriter.writeFlag(TNGL_FLAGS.VALUE_LABEL);
+    this.#tnglWriter.writeFlag(TNGL_FLAGS.VALUE_LABEL)
     for (let index = 0; index < 5; index++) {
-      this.#tnglWriter.writeUint8(reg[1].charCodeAt(index));
+      this.#tnglWriter.writeUint8(reg[1].charCodeAt(index))
     }
   }
 
   // takes pixels string "12px" and encodes it into 16 bits
   compilePixels(pixels) {
-    let reg = pixels.match(/(-?[\d]+)px/);
+    let reg = pixels.match(/(-?[\d]+)px/)
 
     if (!reg) {
-      logging.error('Failed to compile pixels');
-      return;
+      logging.error('Failed to compile pixels')
+      return
     }
 
-    let count = parseInt(reg[1]);
+    let count = parseInt(reg[1])
 
-    this.#tnglWriter.writeFlag(TNGL_FLAGS.VALUE_PIXELS);
-    this.#tnglWriter.writeInt16(count);
+    this.#tnglWriter.writeFlag(TNGL_FLAGS.VALUE_PIXELS)
+    this.#tnglWriter.writeInt16(count)
   }
 
   ///////////////////////////////////////////////////////////
 
   #reserveAddress(description) {
-    logging.verbose(`#reserveAddress(${description})`);
-    const address = this.#memory_stack.length;
+    logging.verbose(`#reserveAddress(${description})`)
+    const address = this.#memory_stack.length
 
-    logging.debug(`Reserving address ${address} for '${description}'`);
-    this.#memory_stack.push(description);
-    return address;
+    logging.debug(`Reserving address ${address} for '${description}'`)
+    this.#memory_stack.push(description)
+    return address
   }
 
   #declareConst(name) {
-    logging.verbose(`#declareConst(${name})`);
+    logging.verbose(`#declareConst(${name})`)
     // TODO @immakermatty #const_declarations_stack is not used anymore? So rename #var_declarations to something else?
-    const address = this.#reserveAddress(`const ${name}`);
+    const address = this.#reserveAddress(`const ${name}`)
 
-    logging.debug(`Declared const ${name} at address ${address}`);
-    this.#const_declarations_stack.push({ name: name, address: address });
-    return address;
+    logging.debug(`Declared const ${name} at address ${address}`)
+    this.#const_declarations_stack.push({ name: name, address: address })
+    return address
   }
 
   // TODO @immakermatty deprecate let keyword and use var keyword for let functionality instead
   #declareLet(name) {
-    logging.verbose(`#declareLet(${name})`);
-    const address = this.#reserveAddress(`let ${name}`);
+    logging.verbose(`#declareLet(${name})`)
+    const address = this.#reserveAddress(`let ${name}`)
 
-    logging.debug(`Declared let ${name} at address ${address}`);
-    this.#let_declarations_stack.push({ name: name, address: address });
-    return address;
+    logging.debug(`Declared let ${name} at address ${address}`)
+    this.#let_declarations_stack.push({ name: name, address: address })
+    return address
   }
 
   #declareVar(name) {
-    logging.verbose(`#declareVar(${name})`);
-    const address = this.#reserveAddress(`var ${name}`);
+    logging.verbose(`#declareVar(${name})`)
+    const address = this.#reserveAddress(`var ${name}`)
 
-    logging.debug(`Declared var ${name} at address ${address}`);
-    this.#var_declarations.push({ name: name, address: address });
-    return address;
+    logging.debug(`Declared var ${name} at address ${address}`)
+    this.#var_declarations.push({ name: name, address: address })
+    return address
   }
 
   compileConstDeclaration(variable_declaration) {
-    logging.verbose(`compileConstDeclaration("${variable_declaration}")`);
+    logging.verbose(`compileConstDeclaration("${variable_declaration}")`)
 
     // TODO @immakermatty implement const declaration
-    logging.error('const declaration is not supported in TNGL in this version of the compiler');
-    throw 'ConstDeclarationNotSupported';
+    logging.error('const declaration is not supported in TNGL in this version of the compiler')
+    throw 'ConstDeclarationNotSupported'
 
-    let reg = variable_declaration.match(/const +([A-Za-z_][\w]*) *=/);
+    let reg = variable_declaration.match(/const +([A-Za-z_][\w]*) *=/)
 
     if (!reg) {
-      logging.error('Failed to compile const declaration');
-      return;
+      logging.error('Failed to compile const declaration')
+      return
     }
 
-    const const_name = reg[1];
-    const const_address = this.#declareConst(const_name);
+    const const_name = reg[1]
+    const const_address = this.#declareConst(const_name)
 
     // retrieve the const_address and write the TNGL_FLAGS with uint16_t variable address value.
-    this.#tnglWriter.writeFlag(TNGL_FLAGS.DECLARE_VARIABLE);
-    this.#tnglWriter.writeUint16(const_address);
+    this.#tnglWriter.writeFlag(TNGL_FLAGS.DECLARE_VARIABLE)
+    this.#tnglWriter.writeUint16(const_address)
   }
 
   compileLetDeclaration(variable_declaration) {
-    logging.verbose(`compileLetDeclaration(${variable_declaration})`);
+    logging.verbose(`compileLetDeclaration(${variable_declaration})`)
 
     // TODO @immakermatty implement let declaration
-    logging.error('let declaration is not supported in TNGL in this version of the compiler');
-    throw 'LetDeclarationNotSupported';
+    logging.error('let declaration is not supported in TNGL in this version of the compiler')
+    throw 'LetDeclarationNotSupported'
 
-    let reg = variable_declaration.match(/let +([A-Za-z_][\w]*) *=/);
+    let reg = variable_declaration.match(/let +([A-Za-z_][\w]*) *=/)
 
     if (!reg) {
-      logging.error('Failed to compile let declaration');
-      return;
+      logging.error('Failed to compile let declaration')
+      return
     }
 
-    const let_name = reg[1];
-    const let_address = this.#declareLet(let_name);
+    const let_name = reg[1]
+    const let_address = this.#declareLet(let_name)
 
     // retrieve the let_address and write the TNGL_FLAGS with uint16_t variable address value.
-    this.#tnglWriter.writeFlag(TNGL_FLAGS.DECLARE_VARIABLE);
-    this.#tnglWriter.writeUint16(let_address);
+    this.#tnglWriter.writeFlag(TNGL_FLAGS.DECLARE_VARIABLE)
+    this.#tnglWriter.writeUint16(let_address)
   }
 
   compileVarDeclaration(variable_declaration) {
-    logging.verbose(`compileVarDeclaration(${variable_declaration})`);
+    logging.verbose(`compileVarDeclaration(${variable_declaration})`)
 
-    let reg = variable_declaration.match(/var +([A-Za-z_][\w]*) *=/);
+    let reg = variable_declaration.match(/var +([A-Za-z_][\w]*) *=/)
 
     if (!reg) {
-      logging.error('Failed to compile var declaration');
-      return;
+      logging.error('Failed to compile var declaration')
+      return
     }
 
-    const var_name = reg[1];
-    const var_address = this.#declareVar(var_name);
+    const var_name = reg[1]
+    const var_address = this.#declareVar(var_name)
 
     // retrieve the var_address and write the TNGL_FLAGS with uint16_t variable address value.
-    this.#tnglWriter.writeFlag(TNGL_FLAGS.DECLARE_VARIABLE);
-    this.#tnglWriter.writeUint16(var_address);
+    this.#tnglWriter.writeFlag(TNGL_FLAGS.DECLARE_VARIABLE)
+    this.#tnglWriter.writeUint16(var_address)
   }
 
   compileWord(word) {
     switch (word) {
       // === canvas operations ===
       case 'setDrawing':
-        this.#tnglWriter.writeFlag(TNGL_FLAGS.DRAWING_SET);
-        break;
+        this.#tnglWriter.writeFlag(TNGL_FLAGS.DRAWING_SET)
+        break
       case 'addDrawing':
-        this.#tnglWriter.writeFlag(TNGL_FLAGS.DRAWING_ADD);
-        break;
+        this.#tnglWriter.writeFlag(TNGL_FLAGS.DRAWING_ADD)
+        break
       case 'subDrawing':
-        this.#tnglWriter.writeFlag(TNGL_FLAGS.DRAWING_SUB);
-        break;
+        this.#tnglWriter.writeFlag(TNGL_FLAGS.DRAWING_SUB)
+        break
       case 'scaDrawing':
-        this.#tnglWriter.writeFlag(TNGL_FLAGS.DRAWING_SCALE);
-        break;
+        this.#tnglWriter.writeFlag(TNGL_FLAGS.DRAWING_SCALE)
+        break
       case 'filDrawing':
-        this.#tnglWriter.writeFlag(TNGL_FLAGS.DRAWING_FILTER);
-        break;
+        this.#tnglWriter.writeFlag(TNGL_FLAGS.DRAWING_FILTER)
+        break
       case 'setLayer':
-        this.#tnglWriter.writeFlag(TNGL_FLAGS.LAYER_SET);
-        break;
+        this.#tnglWriter.writeFlag(TNGL_FLAGS.LAYER_SET)
+        break
       case 'addLayer':
-        this.#tnglWriter.writeFlag(TNGL_FLAGS.LAYER_ADD);
-        break;
+        this.#tnglWriter.writeFlag(TNGL_FLAGS.LAYER_ADD)
+        break
       case 'subLayer':
-        this.#tnglWriter.writeFlag(TNGL_FLAGS.LAYER_SUB);
-        break;
+        this.#tnglWriter.writeFlag(TNGL_FLAGS.LAYER_SUB)
+        break
       case 'scaLayer':
-        this.#tnglWriter.writeFlag(TNGL_FLAGS.LAYER_SCALE);
-        break;
+        this.#tnglWriter.writeFlag(TNGL_FLAGS.LAYER_SCALE)
+        break
       case 'filLayer':
-        this.#tnglWriter.writeFlag(TNGL_FLAGS.LAYER_FILTER);
-        break;
+        this.#tnglWriter.writeFlag(TNGL_FLAGS.LAYER_FILTER)
+        break
 
       // === scopes ===
       case 'scope':
-        this.#tnglWriter.writeFlag(TNGL_FLAGS.SCOPE);
-        break;
+        this.#tnglWriter.writeFlag(TNGL_FLAGS.SCOPE)
+        break
 
       // === animations ===
       case 'animation':
-        this.#tnglWriter.writeFlag(TNGL_FLAGS.ANIMATION_DEFINED);
-        break;
+        this.#tnglWriter.writeFlag(TNGL_FLAGS.ANIMATION_DEFINED)
+        break
       case 'animNone':
-        this.#tnglWriter.writeFlag(TNGL_FLAGS.ANIMATION_NONE);
-        break;
+        this.#tnglWriter.writeFlag(TNGL_FLAGS.ANIMATION_NONE)
+        break
       case 'animFill':
-        this.#tnglWriter.writeFlag(TNGL_FLAGS.ANIMATION_FILL);
-        break;
+        this.#tnglWriter.writeFlag(TNGL_FLAGS.ANIMATION_FILL)
+        break
       case 'animRainbow':
-        this.#tnglWriter.writeFlag(TNGL_FLAGS.ANIMATION_RAINBOW);
-        break;
+        this.#tnglWriter.writeFlag(TNGL_FLAGS.ANIMATION_RAINBOW)
+        break
       case 'animPlasmaShot':
-        this.#tnglWriter.writeFlag(TNGL_FLAGS.ANIMATION_PROJECTILE);
-        break;
+        this.#tnglWriter.writeFlag(TNGL_FLAGS.ANIMATION_PROJECTILE)
+        break
       case 'animLoadingBar':
-        this.#tnglWriter.writeFlag(TNGL_FLAGS.ANIMATION_LOADING);
-        break;
+        this.#tnglWriter.writeFlag(TNGL_FLAGS.ANIMATION_LOADING)
+        break
       case 'animFade':
-        this.#tnglWriter.writeFlag(TNGL_FLAGS.ANIMATION_FADE);
-        break;
+        this.#tnglWriter.writeFlag(TNGL_FLAGS.ANIMATION_FADE)
+        break
       case 'animColorRoll':
-        this.#tnglWriter.writeFlag(TNGL_FLAGS.ANIMATION_COLOR_ROLL);
-        break;
+        this.#tnglWriter.writeFlag(TNGL_FLAGS.ANIMATION_COLOR_ROLL)
+        break
       // case "animPaletteRoll":
       //   this.#tnglWriter.writeFlag(TNGL_FLAGS.ANIMATION_PALLETTE_ROLL);
       //   break;
       case 'animColorGradient2':
-        this.#tnglWriter.writeFlag(TNGL_FLAGS.ANIMATION_COLOR_GRADIENT2);
-        break;
+        this.#tnglWriter.writeFlag(TNGL_FLAGS.ANIMATION_COLOR_GRADIENT2)
+        break
       case 'animColorGradient3':
-        this.#tnglWriter.writeFlag(TNGL_FLAGS.ANIMATION_COLOR_GRADIENT3);
-        break;
+        this.#tnglWriter.writeFlag(TNGL_FLAGS.ANIMATION_COLOR_GRADIENT3)
+        break
       case 'animColorGradient4':
-        this.#tnglWriter.writeFlag(TNGL_FLAGS.ANIMATION_COLOR_GRADIENT4);
-        break;
+        this.#tnglWriter.writeFlag(TNGL_FLAGS.ANIMATION_COLOR_GRADIENT4)
+        break
       case 'animColorGradient5':
-        this.#tnglWriter.writeFlag(TNGL_FLAGS.ANIMATION_COLOR_GRADIENT5);
-        break;
+        this.#tnglWriter.writeFlag(TNGL_FLAGS.ANIMATION_COLOR_GRADIENT5)
+        break
 
       case 'applyReorder':
-        this.#tnglWriter.writeFlag(TNGL_FLAGS.MUTATOR_REORDER);
-        break;
+        this.#tnglWriter.writeFlag(TNGL_FLAGS.MUTATOR_REORDER)
+        break
       case 'applyCorrection':
-        this.#tnglWriter.writeFlag(TNGL_FLAGS.MUTATOR_CORRECTION);
-        break;
+        this.#tnglWriter.writeFlag(TNGL_FLAGS.MUTATOR_CORRECTION)
+        break
       case 'applyBrightness':
-        this.#tnglWriter.writeFlag(TNGL_FLAGS.MUTATOR_BRIGHTNESS);
-        break;
+        this.#tnglWriter.writeFlag(TNGL_FLAGS.MUTATOR_BRIGHTNESS)
+        break
       case 'applyTranslation':
-        this.#tnglWriter.writeFlag(TNGL_FLAGS.MUTATOR_TRANSLATION);
-        break;
+        this.#tnglWriter.writeFlag(TNGL_FLAGS.MUTATOR_TRANSLATION)
+        break
       case 'applyMask':
-        this.#tnglWriter.writeFlag(TNGL_FLAGS.MUTATOR_MASK);
-        break;
+        this.#tnglWriter.writeFlag(TNGL_FLAGS.MUTATOR_MASK)
+        break
       case 'applyRemap':
-        this.#tnglWriter.writeFlag(TNGL_FLAGS.MUTATOR_REMAP);
-        break;
+        this.#tnglWriter.writeFlag(TNGL_FLAGS.MUTATOR_REMAP)
+        break
 
       // === handlers ===
       case 'interactive':
-        this.#tnglWriter.writeFlag(TNGL_FLAGS.INTERACTIVE);
-        break;
+        this.#tnglWriter.writeFlag(TNGL_FLAGS.INTERACTIVE)
+        break
 
       // === clip ===
       case 'clip':
-        this.#tnglWriter.writeFlag(TNGL_FLAGS.CLIP);
-        break;
+        this.#tnglWriter.writeFlag(TNGL_FLAGS.CLIP)
+        break
 
       // === definitions ===
 
       case 'defController':
-        this.#tnglWriter.writeFlag(TNGL_FLAGS.DEFINE_CONTROLLER);
-        break;
+        this.#tnglWriter.writeFlag(TNGL_FLAGS.DEFINE_CONTROLLER)
+        break
       case 'defSegment':
-        this.#tnglWriter.writeFlag(TNGL_FLAGS.DEFINE_SEGMENT);
-        break;
+        this.#tnglWriter.writeFlag(TNGL_FLAGS.DEFINE_SEGMENT)
+        break
       case 'defCanvas':
-        this.#tnglWriter.writeFlag(TNGL_FLAGS.DEFINE_CANVAS);
-        break;
+        this.#tnglWriter.writeFlag(TNGL_FLAGS.DEFINE_CANVAS)
+        break
       case 'defMarks':
-        this.#tnglWriter.writeFlag(TNGL_FLAGS.DEFINE_MARKS);
-        break;
+        this.#tnglWriter.writeFlag(TNGL_FLAGS.DEFINE_MARKS)
+        break
       case 'defAnimation':
-        this.#tnglWriter.writeFlag(TNGL_FLAGS.DEFINE_ANIMATION);
-        break;
+        this.#tnglWriter.writeFlag(TNGL_FLAGS.DEFINE_ANIMATION)
+        break
       // case "defVariable":
       //   this.#tnglWriter.writeFlag(TNGL_FLAGS.DECLARE_VARIABLE);
       //   break;
@@ -859,132 +859,132 @@ export class TnglCompiler {
       //   this.#tnglWriter.writeFlag(TNGL_FLAGS.SIFTER_CONTROLLER);
       //   break;
       case 'siftControllers':
-        this.#tnglWriter.writeFlag(TNGL_FLAGS.SIFTER_CONTROLLER);
-        break;
+        this.#tnglWriter.writeFlag(TNGL_FLAGS.SIFTER_CONTROLLER)
+        break
       case 'siftSegments':
-        this.#tnglWriter.writeFlag(TNGL_FLAGS.SIFTER_SEGMENT);
-        break;
+        this.#tnglWriter.writeFlag(TNGL_FLAGS.SIFTER_SEGMENT)
+        break
       case 'siftCanvases':
-        this.#tnglWriter.writeFlag(TNGL_FLAGS.SIFTER_CANVAS);
-        break;
+        this.#tnglWriter.writeFlag(TNGL_FLAGS.SIFTER_CANVAS)
+        break
 
       // === objects ===
       case 'controller':
-        this.#tnglWriter.writeFlag(TNGL_FLAGS.CONTROLLER);
-        break;
+        this.#tnglWriter.writeFlag(TNGL_FLAGS.CONTROLLER)
+        break
       case 'segment':
-        this.#tnglWriter.writeFlag(TNGL_FLAGS.SEGMENT);
-        break;
+        this.#tnglWriter.writeFlag(TNGL_FLAGS.SEGMENT)
+        break
       case 'io':
-        this.#tnglWriter.writeFlag(TNGL_FLAGS.IO);
-        break;
+        this.#tnglWriter.writeFlag(TNGL_FLAGS.IO)
+        break
       case 'canvas':
-        this.#tnglWriter.writeFlag(TNGL_FLAGS.CANVAS);
-        break;
+        this.#tnglWriter.writeFlag(TNGL_FLAGS.CANVAS)
+        break
       case 'marks':
-        this.#tnglWriter.writeFlag(TNGL_FLAGS.MARKS);
-        break;
+        this.#tnglWriter.writeFlag(TNGL_FLAGS.MARKS)
+        break
 
       // === modifiers ===
       case 'modifyBrightness':
-        this.#tnglWriter.writeFlag(TNGL_FLAGS.MODIFIER_BRIGHTNESS);
-        break;
+        this.#tnglWriter.writeFlag(TNGL_FLAGS.MODIFIER_BRIGHTNESS)
+        break
       case 'modifyTimeline':
-        this.#tnglWriter.writeFlag(TNGL_FLAGS.MODIFIER_TIMELINE);
-        break;
+        this.#tnglWriter.writeFlag(TNGL_FLAGS.MODIFIER_TIMELINE)
+        break
       case 'modifyFadeIn':
-        this.#tnglWriter.writeFlag(TNGL_FLAGS.MODIFIER_FADE_IN);
-        break;
+        this.#tnglWriter.writeFlag(TNGL_FLAGS.MODIFIER_FADE_IN)
+        break
       case 'modifyFadeOut':
-        this.#tnglWriter.writeFlag(TNGL_FLAGS.MODIFIER_FADE_OUT);
-        break;
+        this.#tnglWriter.writeFlag(TNGL_FLAGS.MODIFIER_FADE_OUT)
+        break
       case 'modifyColorSwitch':
-        this.#tnglWriter.writeFlag(TNGL_FLAGS.MODIFIER_SWITCH_COLORS);
-        break;
+        this.#tnglWriter.writeFlag(TNGL_FLAGS.MODIFIER_SWITCH_COLORS)
+        break
       case 'modifyTimeLoop':
-        this.#tnglWriter.writeFlag(TNGL_FLAGS.MODIFIER_TIME_LOOP);
-        break;
+        this.#tnglWriter.writeFlag(TNGL_FLAGS.MODIFIER_TIME_LOOP)
+        break
       case 'modifyTimeScale':
-        this.#tnglWriter.writeFlag(TNGL_FLAGS.MODIFIER_TIME_SCALE);
-        break;
+        this.#tnglWriter.writeFlag(TNGL_FLAGS.MODIFIER_TIME_SCALE)
+        break
       case 'modifyTimeScaleSmoothed':
-        this.#tnglWriter.writeFlag(TNGL_FLAGS.MODIFIER_TIME_SCALE_SMOOTHED);
-        break;
+        this.#tnglWriter.writeFlag(TNGL_FLAGS.MODIFIER_TIME_SCALE_SMOOTHED)
+        break
       case 'modifyTimeChange':
-        this.#tnglWriter.writeFlag(TNGL_FLAGS.MODIFIER_TIME_CHANGE);
-        break;
+        this.#tnglWriter.writeFlag(TNGL_FLAGS.MODIFIER_TIME_CHANGE)
+        break
       case 'modifyTimeSet':
-        this.#tnglWriter.writeFlag(TNGL_FLAGS.MODIFIER_TIME_SET);
-        break;
+        this.#tnglWriter.writeFlag(TNGL_FLAGS.MODIFIER_TIME_SET)
+        break
 
       // === events ===
       case 'catchEvent':
-        this.#tnglWriter.writeFlag(TNGL_FLAGS.EVENT_CATCHER);
-        break;
+        this.#tnglWriter.writeFlag(TNGL_FLAGS.EVENT_CATCHER)
+        break
       case 'setValue':
-        this.#tnglWriter.writeFlag(TNGL_FLAGS.EVENT_SET_VALUE);
-        break;
+        this.#tnglWriter.writeFlag(TNGL_FLAGS.EVENT_SET_VALUE)
+        break
       case 'emitAs':
-        this.#tnglWriter.writeFlag(TNGL_FLAGS.EVENT_EMIT_LOCAL);
-        break;
+        this.#tnglWriter.writeFlag(TNGL_FLAGS.EVENT_EMIT_LOCAL)
+        break
       case 'randomChoice':
-        this.#tnglWriter.writeFlag(TNGL_FLAGS.EVENT_RANDOM_CHOICE);
-        break;
+        this.#tnglWriter.writeFlag(TNGL_FLAGS.EVENT_RANDOM_CHOICE)
+        break
       case 'overloadEventState':
-        this.#tnglWriter.writeFlag(TNGL_FLAGS.EVENTSTATE_OVERLOAD);
-        break;
+        this.#tnglWriter.writeFlag(TNGL_FLAGS.EVENTSTATE_OVERLOAD)
+        break
 
       // === event state operations ===
       case 'genLastEventParam':
-        this.#tnglWriter.writeFlag(TNGL_FLAGS.GENERATOR_LAST_EVENT_VALUE);
-        break;
+        this.#tnglWriter.writeFlag(TNGL_FLAGS.GENERATOR_LAST_EVENT_VALUE)
+        break
       case 'genSmoothOut':
-        this.#tnglWriter.writeFlag(TNGL_FLAGS.GENERATOR_SMOOTHOUT);
-        break;
+        this.#tnglWriter.writeFlag(TNGL_FLAGS.GENERATOR_SMOOTHOUT)
+        break
       case 'genLagValue':
-        this.#tnglWriter.writeFlag(TNGL_FLAGS.GENERATOR_LAG_VALUE);
-        break;
+        this.#tnglWriter.writeFlag(TNGL_FLAGS.GENERATOR_LAG_VALUE)
+        break
 
       // === generators ===
       case 'genSine':
-        this.#tnglWriter.writeFlag(TNGL_FLAGS.GENERATOR_SINE);
-        break;
+        this.#tnglWriter.writeFlag(TNGL_FLAGS.GENERATOR_SINE)
+        break
       case 'genSaw':
-        this.#tnglWriter.writeFlag(TNGL_FLAGS.GENERATOR_SAW);
-        break;
+        this.#tnglWriter.writeFlag(TNGL_FLAGS.GENERATOR_SAW)
+        break
       case 'genTriangle':
-        this.#tnglWriter.writeFlag(TNGL_FLAGS.GENERATOR_TRIANGLE);
-        break;
+        this.#tnglWriter.writeFlag(TNGL_FLAGS.GENERATOR_TRIANGLE)
+        break
       case 'genSquare':
-        this.#tnglWriter.writeFlag(TNGL_FLAGS.GENERATOR_SQUARE);
-        break;
+        this.#tnglWriter.writeFlag(TNGL_FLAGS.GENERATOR_SQUARE)
+        break
       case 'genPerlinNoise':
-        this.#tnglWriter.writeFlag(TNGL_FLAGS.GENERATOR_PERLIN_NOISE);
-        break;
+        this.#tnglWriter.writeFlag(TNGL_FLAGS.GENERATOR_PERLIN_NOISE)
+        break
 
       /* === variable operations === */
 
       case 'addValues':
-        this.#tnglWriter.writeFlag(TNGL_FLAGS.OPERATION_ADD);
-        break;
+        this.#tnglWriter.writeFlag(TNGL_FLAGS.OPERATION_ADD)
+        break
       case 'subValues':
-        this.#tnglWriter.writeFlag(TNGL_FLAGS.OPERATION_SUB);
-        break;
+        this.#tnglWriter.writeFlag(TNGL_FLAGS.OPERATION_SUB)
+        break
       case 'mulValues':
-        this.#tnglWriter.writeFlag(TNGL_FLAGS.OPERATION_MUL);
-        break;
+        this.#tnglWriter.writeFlag(TNGL_FLAGS.OPERATION_MUL)
+        break
       case 'divValues':
-        this.#tnglWriter.writeFlag(TNGL_FLAGS.OPERATION_DIV);
-        break;
+        this.#tnglWriter.writeFlag(TNGL_FLAGS.OPERATION_DIV)
+        break
       case 'modValues':
-        this.#tnglWriter.writeFlag(TNGL_FLAGS.OPERATION_MOD);
-        break;
+        this.#tnglWriter.writeFlag(TNGL_FLAGS.OPERATION_MOD)
+        break
       case 'scaValue':
-        this.#tnglWriter.writeFlag(TNGL_FLAGS.OPERATION_SCALE);
-        break;
+        this.#tnglWriter.writeFlag(TNGL_FLAGS.OPERATION_SCALE)
+        break
       case 'mapValue':
-        this.#tnglWriter.writeFlag(TNGL_FLAGS.OPERATION_MAP);
-        break;
+        this.#tnglWriter.writeFlag(TNGL_FLAGS.OPERATION_MAP)
+        break
 
       // === constants ===
       // TODO! implement in FW
@@ -999,45 +999,45 @@ export class TnglCompiler {
 
       // TODO @immakermatty remove these deprecated constants
       case 'MODIFIER_SWITCH_NONE':
-        this.#tnglWriter.writeUint8(CONSTANTS.MODIFIER_SWITCH_NONE);
-        break;
+        this.#tnglWriter.writeUint8(CONSTANTS.MODIFIER_SWITCH_NONE)
+        break
       case 'MODIFIER_SWITCH_RG':
       case 'MODIFIER_SWITCH_GR':
-        this.#tnglWriter.writeUint8(CONSTANTS.MODIFIER_SWITCH_RG);
-        break;
+        this.#tnglWriter.writeUint8(CONSTANTS.MODIFIER_SWITCH_RG)
+        break
       case 'MODIFIER_SWITCH_GB':
       case 'MODIFIER_SWITCH_BG':
-        this.#tnglWriter.writeUint8(CONSTANTS.MODIFIER_SWITCH_GB);
-        break;
+        this.#tnglWriter.writeUint8(CONSTANTS.MODIFIER_SWITCH_GB)
+        break
       case 'MODIFIER_SWITCH_BR':
       case 'MODIFIER_SWITCH_RB':
-        this.#tnglWriter.writeUint8(CONSTANTS.MODIFIER_SWITCH_BR);
-        break;
+        this.#tnglWriter.writeUint8(CONSTANTS.MODIFIER_SWITCH_BR)
+        break
 
       default:
-        let var_address = undefined;
+        let var_address = undefined
 
         // check if the variable is already declared
         // look for the latest variable address on the stack
         for (let i = this.#var_declarations.length - 1; i >= 0; i--) {
-          const declaration = this.#var_declarations[i];
+          const declaration = this.#var_declarations[i]
 
           if (declaration.name === word) {
-            var_address = declaration.address;
-            break;
+            var_address = declaration.address
+            break
           }
         }
 
         if (var_address !== undefined) {
-          logging.verbose(`VALUE_READ_ADDRESS name=${word}, address=${var_address}`);
-          this.#tnglWriter.writeFlag(TNGL_FLAGS.VALUE_READ_ADDRESS);
-          this.#tnglWriter.writeUint16(var_address);
-          break;
+          logging.verbose(`VALUE_READ_ADDRESS name=${word}, address=${var_address}`)
+          this.#tnglWriter.writeFlag(TNGL_FLAGS.VALUE_READ_ADDRESS)
+          this.#tnglWriter.writeUint16(var_address)
+          break
         }
 
         // === unknown ===
-        logging.warn('Unknown word >', word, '<');
-        break;
+        logging.warn('Unknown word >', word, '<')
+        break
     }
   }
 
@@ -1045,48 +1045,48 @@ export class TnglCompiler {
     switch (puctuation) {
       case '{':
         // push the current depth of the variable stack to the depth stack
-        this.#const_scope_depth_stack.push(this.#const_declarations_stack.length);
-        this.#let_scope_depth_stack.push(this.#let_declarations_stack.length);
-        break;
+        this.#const_scope_depth_stack.push(this.#const_declarations_stack.length)
+        this.#let_scope_depth_stack.push(this.#let_declarations_stack.length)
+        break
 
       case '}':
         // pop the scope depth of the depth stack variable stack and set the variable stack to the previous depth
-        const const_depth = this.#const_scope_depth_stack.pop();
+        const const_depth = this.#const_scope_depth_stack.pop()
 
-        this.#const_declarations_stack.length = const_depth;
-        const let_depth = this.#let_scope_depth_stack.pop();
+        this.#const_declarations_stack.length = const_depth
+        const let_depth = this.#let_scope_depth_stack.pop()
 
-        this.#let_declarations_stack.length = let_depth;
+        this.#let_declarations_stack.length = let_depth
 
-        this.#tnglWriter.writeFlag(TNGL_FLAGS.END_OF_SCOPE);
-        break;
+        this.#tnglWriter.writeFlag(TNGL_FLAGS.END_OF_SCOPE)
+        break
 
       default:
-        break;
+        break
     }
   }
 
   compileMacAddress(mac_address) {
-    let reg = mac_address.match(/([0-9a-f][0-9a-f]:){5}[0-9a-f][0-9a-f]/i);
+    let reg = mac_address.match(/([0-9a-f][0-9a-f]:){5}[0-9a-f][0-9a-f]/i)
 
     if (!reg) {
-      logging.error('Failed to compile mac address');
-      return;
+      logging.error('Failed to compile mac address')
+      return
     }
 
-    this.#tnglWriter.writeFlag(TNGL_FLAGS.OBJECT_MAC_ADDRESS);
+    this.#tnglWriter.writeFlag(TNGL_FLAGS.OBJECT_MAC_ADDRESS)
 
-    let mac = reg[0].split(':');
+    let mac = reg[0].split(':')
 
     for (let i = 0; i < 6; i++) {
-      this.#tnglWriter.writeUint8(parseInt(mac[i], 16));
+      this.#tnglWriter.writeUint8(parseInt(mac[i], 16))
     }
   }
 
   // number_t, 4 bytes, min: -1000000000, max: 1000000000
   compileNumber(number) {
-    this.#tnglWriter.writeFlag(TNGL_FLAGS.VALUE_NUMBER);
-    this.#tnglWriter.writeInt32(number);
+    this.#tnglWriter.writeFlag(TNGL_FLAGS.VALUE_NUMBER)
+    this.#tnglWriter.writeInt32(number)
   }
 
   /**
@@ -1096,84 +1096,84 @@ export class TnglCompiler {
   compileId(id) {
     // Check if the string starts with "ID" or "id" (case-insensitive)
     if (typeof id !== 'string' || !id.startsWith('ID')) {
-      logging.error('Invalid ID format! Expected \'ID0\' to \'ID255\'. Received:', id);
-      this.#tnglWriter.writeFlag(TNGL_FLAGS.ID);
-      this.#tnglWriter.writeUint16(0);
-      return;
+      logging.error('Invalid ID format! Expected \'ID0\' to \'ID255\'. Received:', id)
+      this.#tnglWriter.writeFlag(TNGL_FLAGS.ID)
+      this.#tnglWriter.writeUint16(0)
+      return
     }
 
     // Extract the numerical part
-    const idNumberStr = id.slice(2); // Remove 'ID'
+    const idNumberStr = id.slice(2) // Remove 'ID'
 
     // Parse the number
-    const idNumber = parseInt(idNumberStr, 10);
+    const idNumber = parseInt(idNumberStr, 10)
 
     // Write the ID
-    this.#tnglWriter.writeFlag(TNGL_FLAGS.ID);
-    this.#tnglWriter.writeUint8(idNumber);
+    this.#tnglWriter.writeFlag(TNGL_FLAGS.ID)
+    this.#tnglWriter.writeUint8(idNumber)
   }
 
   compileBerryScript(berry) {
     // TODO: Get bytes in WASM and then only send Berry bytecode
 
     // BERRY(`...`)
-    let code = berry.slice(7, -2);
+    let code = berry.slice(7, -2)
 
-    const bytes = new TextEncoder().encode(code);
+    const bytes = new TextEncoder().encode(code)
 
-    this.#tnglWriter.writeFlag(TNGL_FLAGS.BERRY_SCRIPT);
-    this.#tnglWriter.writeUint16(bytes.length);
-    this.#tnglWriter.writeBytes(bytes, bytes.length);
+    this.#tnglWriter.writeFlag(TNGL_FLAGS.BERRY_SCRIPT)
+    this.#tnglWriter.writeUint16(bytes.length)
+    this.#tnglWriter.writeBytes(bytes, bytes.length)
   }
 
   compileParametersMap(parameter) {
     // Check if parameter is a string and matches parameter map format
     if (typeof parameter !== 'string') {
-      logging.error('Invalid parameter format! Expected parameter map string. Received:', parameter);
-      return;
+      logging.error('Invalid parameter format! Expected parameter map string. Received:', parameter)
+      return
     }
 
     // Write flag for parameters map
-    this.#tnglWriter.writeFlag(TNGL_FLAGS.PARAMETERS_MAP);
+    this.#tnglWriter.writeFlag(TNGL_FLAGS.PARAMETERS_MAP)
 
     // Find all ID:value pairs using regex
-    const regex = /ID\d+\s*:\s*[^,{}]+/g;
-    let matches = [...parameter.matchAll(regex)];
+    const regex = /ID\d+\s*:\s*[^,{}]+/g
+    let matches = [...parameter.matchAll(regex)]
 
-    const parameter_description = `parameter ${parameter}`;
+    const parameter_description = `parameter ${parameter}`
 
-    let address = 0;
+    let address = 0
 
     for (const description of this.#memory_stack) {
       if (description === parameter_description) {
-        address = this.#memory_stack.indexOf(description);
-        break;
+        address = this.#memory_stack.indexOf(description)
+        break
       }
     }
 
     if (address === 0) {
-      address = this.#reserveAddress(parameter_description);
+      address = this.#reserveAddress(parameter_description)
     }
 
     // Write the variable address that the parameters map is stored in
-    this.#tnglWriter.writeUint16(address);
+    this.#tnglWriter.writeUint16(address)
 
     // Process each ID:value pair
     for (const match of matches) {
       if (!match[0]) {
-        logging.error('Invalid parameter map format! Expected ID:value pairs. Received:', parameter);
-        continue;
+        logging.error('Invalid parameter map format! Expected ID:value pairs. Received:', parameter)
+        continue
       }
 
       // Use the new parsing method instead of calling back to TnglCodeParser
-      this.parseAndCompileCode(match[0]);
+      this.parseAndCompileCode(match[0])
     }
 
-    this.#tnglWriter.writeFlag(TNGL_FLAGS.END_OF_SCOPE);
+    this.#tnglWriter.writeFlag(TNGL_FLAGS.END_OF_SCOPE)
   }
 
   get tnglBytes() {
-    return new Uint8Array(this.#tnglWriter.bytes.buffer, 0, this.#tnglWriter.written);
+    return new Uint8Array(this.#tnglWriter.bytes.buffer, 0, this.#tnglWriter.written)
   }
 
   static PARSES = Object.freeze({
@@ -1199,7 +1199,7 @@ export class TnglCompiler {
     PUNCTUATION_T: 'T',
     MACADDRESS_U: 'U',
     PARAMETER_V: 'V',
-  });
+  })
 
   static #parses = {
     D: /\/\/[^\n]*/, // comment: //...
@@ -1224,7 +1224,7 @@ export class TnglCompiler {
     R: /0x[0-9a-f][0-9a-f](?![0-9a-f])/i,
     S: /\s+/,
     T: /[^\w\s]/,
-  };
+  }
 
   /*
    * Tiny tokenizer https://gist.github.com/borgar/451393
@@ -1243,13 +1243,13 @@ export class TnglCompiler {
       l,
       cnt,
       t,
-      tokens = [];
+      tokens = []
 
     while (s) {
-      t = null;
-      m = s.length;
+      t = null
+      m = s.length
       for (var key in parsers) {
-        r = parsers[key].exec(s);
+        r = parsers[key].exec(s)
         // try to choose the best match if there are several
         // where "best" is the closest to the current starting point
         if (r && r.index < m) {
@@ -1257,8 +1257,8 @@ export class TnglCompiler {
             token: r[0],
             type: key,
             matches: r.slice(1),
-          };
-          m = r.index;
+          }
+          m = r.index
         }
       }
       if (m) {
@@ -1267,46 +1267,46 @@ export class TnglCompiler {
         tokens.push({
           token: s.substr(0, m),
           type: deftok || 'unknown',
-        });
+        })
       }
       if (t) {
         // push current token onto sequence
-        tokens.push(t);
+        tokens.push(t)
       }
-      s = s.substr(m + (t ? t.token.length : 0));
+      s = s.substr(m + (t ? t.token.length : 0))
     }
-    return tokens;
+    return tokens
   }
 }
 
 export class TnglCodeParser {
-  #compiler;
+  #compiler
   constructor() {
-    this.#compiler = new TnglCompiler();
+    this.#compiler = new TnglCompiler()
   }
 
   parseTnglCode(tngl_code) {
-    logging.verbose(tngl_code);
+    logging.verbose(tngl_code)
 
-    this.#compiler.reset();
-    this.#compiler.parseAndCompileCode(tngl_code);
-    this.#compiler.compileFlag(TNGL_FLAGS.END_OF_TNGL_BYTES);
+    this.#compiler.reset()
+    this.#compiler.parseAndCompileCode(tngl_code)
+    this.#compiler.compileFlag(TNGL_FLAGS.END_OF_TNGL_BYTES)
 
-    let tnglBytes = this.#compiler.tnglBytes;
+    let tnglBytes = this.#compiler.tnglBytes
 
-    logging.verbose(tnglBytes);
-    logging.debug('TNGL_BYTECODE:');
-    logging.debug(uint8ArrayToHexString(tnglBytes));
-    logging.info('Compiled tnglbytes length:', tnglBytes.length);
+    logging.verbose(tnglBytes)
+    logging.debug('TNGL_BYTECODE:')
+    logging.debug(uint8ArrayToHexString(tnglBytes))
+    logging.info('Compiled tnglbytes length:', tnglBytes.length)
 
-    return tnglBytes;
+    return tnglBytes
   }
 
   getVariableDeclarations() {
-    return this.#compiler.getVariableDeclarations();
+    return this.#compiler.getVariableDeclarations()
   }
 
   getMemoryStack() {
-    return this.#compiler.getMemoryStack();
+    return this.#compiler.getMemoryStack()
   }
 }
