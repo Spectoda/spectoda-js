@@ -1007,7 +1007,7 @@ export class SpectodaNodeBluetoothConnector {
 
         if (!criteria || criteria.length === 0 || typeof criteria[0]?.mac !== 'string') {
           logging.error(
-            'Criteria must be an array of at least 1 object with specified MAC address: [{mac:\'AA:BB:CC:DD:EE:FF\'}]',
+            "Criteria must be an array of at least 1 object with specified MAC address: [{mac:'AA:BB:CC:DD:EE:FF'}]",
           )
           throw 'CriteriaNotSupported'
         }

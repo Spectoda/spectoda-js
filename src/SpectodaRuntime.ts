@@ -339,8 +339,8 @@ export class SpectodaRuntime {
     })
 
     this.#eventEmitter.on(SpectodaAppEvents.PRIVATE_DISCONNECTED, (e: any) => {
-      this.#onDisconnected(e);
-    });
+      this.#onDisconnected(e)
+    })
 
     if (typeof window !== 'undefined') {
       window.addEventListener('beforeunload', (e) => {

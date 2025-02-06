@@ -129,7 +129,7 @@ ${commitMessage}`,
           },
         },
       )
-      console.log('> Task status changed to \'in progress\'')
+      console.log("> Task status changed to 'in progress'")
     }
   } catch (error) {
     console.error(`Error: ${error}`)
