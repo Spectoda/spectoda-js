@@ -16,4 +16,3 @@ export type ControllerWarning = {
   controller: { mac: string; label: string }
   warnings: SpectodaWarning[]
 }
-

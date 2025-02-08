@@ -1,9 +1,4 @@
-import {
-  CONNECTION_STATUS,
-  ConnectionStatus,
-  REMOTECONTROL_STATUS,
-  RemoteControlConnectionStatus,
-} from './connect'
+import { CONNECTION_STATUS, ConnectionStatus, REMOTECONTROL_STATUS, RemoteControlConnectionStatus } from './connect'
 import { ControllerError, ControllerWarning } from './messages'
 import { SpectodaEvent } from './event'
 import { SpectodaTypes } from './primitives'
@@ -51,12 +46,10 @@ export const SpectodaAppEvents = {
   PRIVATE_WASM_REQUEST: '#wasm_request',
   /** @private for spectoda-js internal use only */
   PRIVATE_WASM_EXECUTE: '#wasm_execute',
-  
 } as const satisfies SpectodaAppEventType
 
 type PropsMap = RemoteControlConnectionStatusProps &
   ConnectionStatusProps & {
-
     // TODO for future payload key: `json`
     [SpectodaAppEvents.SCAN_RESULTS]: string
 
@@ -105,8 +98,7 @@ type PropsMap = RemoteControlConnectionStatusProps &
     [SpectodaAppEvents.PRIVATE_WASM_EXECUTE]: Uint8Array
   }
 
-export type SpectodaAppEventName =
-  (typeof SpectodaAppEvents)[keyof typeof SpectodaAppEvents]
+export type SpectodaAppEventName = (typeof SpectodaAppEvents)[keyof typeof SpectodaAppEvents]
 
 export type SpectodaAppEventMap = {
   [K in SpectodaAppEventName]: PropsMap[K]

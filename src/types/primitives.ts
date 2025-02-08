@@ -4,13 +4,13 @@ import { VALUE_TYPE } from '../constants'
 export namespace SpectodaTypes {
   type criteria_generic = Partial<{
     connector: string
-    mac: string
-    name: string
+    mac: ControllerInfo['macAddress']
+    name: ControllerInfo['controllerLabel']
     nameprefix: string
-    network: string
-    fw: string
-    product: number
-    commisionable: boolean
+    network: ControllerInfo['networkSignature']
+    fw: ControllerInfo['fwVersion']
+    product: ControllerInfo['productCode']
+    commisionable: ControllerInfo['commissionable']
   }>
 
   type criteria_ble = criteria_generic
@@ -18,25 +18,14 @@ export namespace SpectodaTypes {
   type criteria_serial = criteria_generic &
     Partial<{
       path: string
-      manufacturer: string
-      serialNumber: string
-      pnpId: string
-      locationId: string
-      productId: string
-      vendorId: string
       baudrate: number
-      baudRate: number
     }>
 
   type criteria_dummy = criteria_generic
 
   type criteria_simulated = criteria_generic
 
-  type criteria =
-    | criteria_ble
-    | criteria_serial
-    | criteria_dummy
-    | criteria_simulated
+  type criteria = criteria_ble | criteria_serial | criteria_dummy | criteria_simulated
 
   export type TnglBytes = Uint8Array
 
@@ -181,7 +170,7 @@ export namespace SpectodaTypes {
   export type ControllerInfo = {
     /**
      * @group ConnectionCriteria
-     * @description A human-readable label identifying the controller.
+     * @description A human-readable 5 character label identifying the controller.
      */
     controllerLabel: string
 
@@ -193,13 +182,13 @@ export namespace SpectodaTypes {
 
     /**
      * @group ConnectionCriteria
-     * @description The MAC address associated with the controller.
+     * @description The MAC address associated with the controller. E.g. "12:43:ab:8d:ff:04"
      */
     macAddress: string
 
     /**
      * @group ConnectionCriteria
-     * @description Firmware version currently installed on the controller.
+     * @description Firmware version currently installed on the controller. E.g. "0.12.2"
      */
     fwVersion: string
 
@@ -226,17 +215,17 @@ export namespace SpectodaTypes {
     pcbCode: number
 
     /**
-     * Full version information of the firmware.
+     * Full version information of the firmware. E.g. "UNIVERSAL_0.12.2_20250208"
      */
     fwVersionFull: string
 
     /**
-     * Numeric representation of the firmware version.
+     * Numeric representation of the firmware version. E.g. 1202 for 0.12.2
      */
     fwVersionCode: number
 
     /**
-     * Unix timestamp indicating the firmware compilation date and time.
+     * Unix timestamp indicating the firmware compilation date and time in seconds since epoch.
      */
     fwCompilationUnixTimestamp: number
 

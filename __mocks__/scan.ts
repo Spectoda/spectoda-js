@@ -36,4 +36,4 @@ export const mockScanResult = [
     product: 25,
     rssi: -61,
   },
-];
+]
