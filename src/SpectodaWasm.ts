@@ -76,7 +76,7 @@ export class SpectodaWasm {
   }
 
   // wasmVersion might be DEBUG_0.9.2_20230814
-  static initilize(wasmVersion = WASM_VERSION) {
+  static initialize(wasmVersion = WASM_VERSION) {
     if (moduleInitilizing || moduleInitilized) {
       return
     }

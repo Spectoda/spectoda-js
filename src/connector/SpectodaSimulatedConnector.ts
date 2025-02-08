@@ -55,7 +55,7 @@ export class SpectodaSimulatedConnector {
 
   // declare TS type
 
-  initilize(networkDefinition: any) {
+  initialize(networkDefinition: any) {
     logging.verbose(`construct(networkDefinition=${networkDefinition})`)
 
     // let networkDefinition = JSON.parse(networkJsonDefinition);

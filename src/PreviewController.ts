@@ -66,7 +66,7 @@ export class PreviewController {
 
     this.#config = config
 
-    SpectodaWasm.initilize()
+    SpectodaWasm.initialize()
 
     return SpectodaWasm.waitForInitilize().then(() => {
       //

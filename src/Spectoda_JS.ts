@@ -65,7 +65,7 @@ export class Spectoda_JS {
 
   inicilize() {
     // TODO pass WASM version to load
-    SpectodaWasm.initilize()
+    SpectodaWasm.initialize()
     return SpectodaWasm.waitForInitilize()
   }
 

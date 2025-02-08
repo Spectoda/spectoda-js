@@ -3390,7 +3390,7 @@ export class Spectoda implements SpectodaClass {
   }
 
   /**
-   * Erase current TNGL on the whole network
+   * Erase current TNGL of the whole network
    */
   eraseTngl() {
     logging.debug('> Erasing TNGL...')
