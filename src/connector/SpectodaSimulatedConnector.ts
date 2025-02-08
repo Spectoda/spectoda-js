@@ -55,7 +55,7 @@ export class SpectodaSimulatedConnector {
 
   // declare TS type
 
-  initilize(networkDefinition: any) {
+  async initilize(networkDefinition: any) {
     logging.verbose(`construct(networkDefinition=${networkDefinition})`);
 
     // let networkDefinition = JSON.parse(networkJsonDefinition);
@@ -191,12 +191,11 @@ export class SpectodaSimulatedConnector {
 
       const connector = new IConnector_JS();
 
-      return connector.construct(SimulatedConnectorImplementation, SpectodaWasm.connector_type_t.CONNECTOR_SIMULATED).then(() => {
-        const controller = new PreviewController(SimulatedControllerMacAddress);
-        return controller.construct(SimulatedControllerConfig, connector).then(() => {
-          this.controllers.push(controller);
-        });
-      });
+      await connector.construct(SimulatedConnectorImplementation, SpectodaWasm.connector_type_t.CONNECTOR_SIMULATED);
+      const controller = new PreviewController(SimulatedControllerMacAddress);
+      await controller.construct(SimulatedControllerConfig, connector);
+
+      this.controllers.push(controller);
     }
 
     // TODO! be able to create whole simulated network
