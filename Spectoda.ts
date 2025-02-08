@@ -1066,11 +1066,18 @@ export class Spectoda implements SpectodaClass {
       // Step 0: Determine flags
 
       let flag_no_minify = false
+      let flag_minify = false
 
       if (minified.includes('@no-minify')) {
         minified = minified.replace('@no-minify', '')
         flag_no_minify = true
       }
+
+      if (minified.includes('@minify')) {
+        minified = minified.replace('@minify', '')
+        flag_minify = true
+      }
+    
 
       // Step 1: Replace specific patterns A, B, C, D
 
@@ -1135,6 +1142,59 @@ export class Spectoda implements SpectodaClass {
         .filter((line) => line.length > 0) // Remove empty lines
         .join('\n') // Preserve line breaks
 
+      // Step 5: Minify variable names if @minify flag is present
+      if (flag_minify && !flag_no_minify) {
+        // Set to store all local variable names found
+        const localVars = new Set<string>()
+
+        // Extract variable declarations with "var"
+        const varRegex = /var\s+([A-Za-z_][A-Za-z0-9_]*)/g
+        let match
+        while ((match = varRegex.exec(minified)) !== null) {
+          localVars.add(match[1])
+        }
+
+        // Extract loop variables from "for" loops
+        const forRegex = /for\s+([A-Za-z_][A-Za-z0-9_]*)\s*:/g
+        while ((match = forRegex.exec(minified)) !== null) {
+          localVars.add(match[1])
+        }
+
+        // Create short name generator
+        function* shortNameGenerator() {
+          const letters = 'abcdefghijklmnopqrstuvwxyz'
+          let length = 1
+          while (true) {
+            const max = Math.pow(letters.length, length)
+            for (let i = 0; i < max; i++) {
+              let name = ''
+              let num = i
+              for (let j = 0; j < length; j++) {
+                name = letters[num % letters.length] + name
+                num = Math.floor(num / letters.length)
+              }
+              yield name
+            }
+            length++
+          }
+        }
+
+        // Build mapping of original names to minified names
+        const gen = shortNameGenerator()
+        const mapping: { [key: string]: string } = {}
+        for (const origVar of localVars) {
+          mapping[origVar] = gen.next().value as string
+        }
+
+        // Replace all occurrences of the variables, but not within strings
+        for (const [orig, min] of Object.entries(mapping)) {
+          // This regex matches the variable name only when it's not inside quotes
+          const idRegex = new RegExp(`\\b${orig}\\b(?=(?:[^"']*["'][^"']*["'])*[^"']*$)`, 'g')
+          minified = minified.replace(idRegex, min)
+        }
+      }
+
+      // Step 6: Remove spaces around specific characters (if not @no-minify)
       if (!flag_no_minify) {
         // Step 6: Remove spaces before and after specific characters
         const charsToRemoveSpaceAround = [
