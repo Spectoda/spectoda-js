@@ -25,11 +25,7 @@ export namespace SpectodaTypes {
 
   type criteria_simulated = criteria_generic
 
-  type criteria =
-    | criteria_ble
-    | criteria_serial
-    | criteria_dummy
-    | criteria_simulated
+  type criteria = criteria_ble | criteria_serial | criteria_dummy | criteria_simulated
 
   export type TnglBytes = Uint8Array
 
@@ -48,6 +44,8 @@ export namespace SpectodaTypes {
    * Unique network identifier as a 32-character lowercase hexadecimal string.
    *
    * Format: `"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"` (characters: `a-f`, `0-9`)
+   *
+   * @example "34567890123456789012345678901234"
    */
   export type NetworkSignature = string
 
@@ -55,6 +53,8 @@ export namespace SpectodaTypes {
    * Secure 32-character hexadecimal key for network access.
    *
    * Format: `"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"` (characters: `a-f`, `0-9`)
+   *
+   * @example "34567890123456789012345678901234"
    */
   export type NetworkKey = string
 
@@ -62,6 +62,8 @@ export namespace SpectodaTypes {
    * PCB (Printed Circuit Board) code.
    *
    * Range: 0 - 16535
+   *
+   * @example 32
    */
   export type PcbCode = number
 
@@ -69,6 +71,8 @@ export namespace SpectodaTypes {
    * Product code for specific models.
    *
    * Range: 0 - 16535
+   *
+   * @example 24
    */
   export type ProductCode = number
 
@@ -81,29 +85,74 @@ export namespace SpectodaTypes {
 
   export type ValueType = (typeof VALUE_TYPE)[keyof typeof VALUE_TYPE]
 
+  /**
+   * Whole integer number value. Range: -1000000000 to 1000000000
+   *
+   * @example 10000
+   */
   export type Number = number
 
   /**
-   * Short label prefixed with `$`, max 5 alphanumeric chars (`[a-zA-Z0-9_]`).
+   * String of max 5 alphanumeric chars (`[a-zA-Z0-9_]`).
    *
-   * @example $color
+   * @example "toggl", "brigh", "color", "P_ena", "LIGHT"
    */
   export type Label = string
 
+  /**
+   * Timestamp in milliseconds. Range: -86400000 to 86400000
+   *
+   * @example 86400000
+   */
   export type Timestamp = number
 
+  /**
+   * Percentage value with 6 decimal places. Range: -100.000000 to 100.000000
+   *
+   * @example 99.234567
+   */
   export type Percentage = number
 
+  /**
+   * Date string in ISO 8601 format.
+   *
+   * @example "2024-01-01"
+   */
   export type Date = string
 
+  /**
+   * Color string in hexadecimal format, where the `#` is optional.
+   *
+   * @example "FF0000", "#FF0000"
+   */
   export type Color = string
 
+  /**
+   * Pixels value. Range: -32768 to 32767
+   *
+   * @example 100
+   */
   export type Pixels = number
 
+  /**
+   * Boolean value.
+   *
+   * @example true, false
+   */
   export type Boolean = boolean
 
+  /**
+   * Null value.
+   *
+   * @example null
+   */
   export type Null = null
 
+  /**
+   * Undefined value.
+   *
+   * @example undefined
+   */
   export type Undefined = undefined
 
   /**

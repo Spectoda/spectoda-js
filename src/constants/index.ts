@@ -1,5 +1,6 @@
 import { SpectodaTypes } from '../types/primitives'
 
+/** @deprecated use `VALUE_TYPE` from `spectoda-js/constants/values` instead. */
 export const VALUE_TYPE = Object.freeze({
   NUMBER: 29,
   LABEL: 31,
@@ -13,6 +14,7 @@ export const VALUE_TYPE = Object.freeze({
   UNDEFINED: 0,
 })
 
+/** @deprecated Use `VALUE_LIMITS` from `spectoda-js/constants/values` instead. */
 export const VALUE_LIMITS = Object.freeze({
   NUMBER_MAX: 1000000000,
   NUMBER_MIN: -100000000000,
@@ -41,12 +43,10 @@ export const CONNECTORS = Object.freeze({
 export const DEFAULT_CONNECTOR = CONNECTORS.DEFAULT
 
 /** No Network Signature */
-export const NO_NETWORK_SIGNATURE: SpectodaTypes.NetworkSignature =
-  '00000000000000000000000000000000'
+export const NO_NETWORK_SIGNATURE: SpectodaTypes.NetworkSignature = '00000000000000000000000000000000'
 
 /** No Network Key */
-export const NO_NETWORK_KEY: SpectodaTypes.NetworkKey =
-  '00000000000000000000000000000000'
+export const NO_NETWORK_KEY: SpectodaTypes.NetworkKey = '00000000000000000000000000000000'
 
 /** Default MAC address for the app */
 export const APP_MAC_ADDRESS = '00:00:12:34:56:78'
@@ -99,6 +99,10 @@ export const COMMAND_FLAGS = Object.freeze({
   // Former CommandFlag end
 
   // 0.12.4
+  FLAG_WRITE_IO_MAPPING_REQUEST: 170,
+  FLAG_WRITE_IO_MAPPING_RESPONSE: 171,
+  FLAG_READ_IO_MAPPING_REQUEST: 172,
+  FLAG_READ_IO_MAPPING_RESPONSE: 173,
   FLAG_WRITE_IO_VARIANT_REQUEST: 174,
   FLAG_WRITE_IO_VARIANT_RESPONSE: 175,
   FLAG_READ_IO_VARIANT_REQUEST: 176,
@@ -193,4 +197,8 @@ export const COMMAND_FLAGS = Object.freeze({
   FLAG_ADOPT_RESPONSE: 241,
 })
 
-export { STANDARD_EVENT_LABELS } from './standard-events'
+export {
+  JS_EVENT_VALUE_LIMITS as JS_VALUE_LIMITS,
+  VALUE_TYPES,
+  CPP_EVENT_VALUE_LIMITS as CPP_VALUE_LIMITS,
+} from './values'

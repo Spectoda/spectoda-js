@@ -28,12 +28,12 @@
  */
 
 export interface ErrorFormat {
-  title: string;
-  message: string;
-  url?: string;
+  title: string
+  message: string
+  url?: string
 }
 interface ErrorList {
-  [key: string]: ErrorFormat;
+  [key: string]: ErrorFormat
 }
 
 // Errors specific for NARA
@@ -46,15 +46,16 @@ export const app: ErrorList = {
     title: 'Spárování nové lampy se nezdařilo',
     message: 'Pro připojení již spárované lampy prosím stiskněte jakýkoli symbol' + ' "🛑"',
   },
-} as const;
+} as const
 
 // Errors specific for STUDIO
 export const studio = {
   MicAccessDenied: {
     title: 'Microphone access denied',
-    message: 'Make sure you\'ve enabled microphone access in Settings. If so, refresh the current page, delete cookies and try again.',
+    message:
+      'Make sure you\'ve enabled microphone access in Settings. If so, refresh the current page, delete cookies and try again.',
   },
-} as const;
+} as const
 
 // General error messages
 export const general = {
@@ -72,15 +73,18 @@ export const general = {
   },
   UserCanceledSelection: {
     title: 'Connection canceled',
-    message: 'Device selection has been canceled. To complete connection, select a device from the dropdown list and select "Pair".',
+    message:
+      'Device selection has been canceled. To complete connection, select a device from the dropdown list and select "Pair".',
   },
   ReadOutOfRange: {
     title: 'Internal Processing Error',
-    message: 'Something went wrong while processing your request. Please try again later or contact support for assistance.',
+    message:
+      'Something went wrong while processing your request. Please try again later or contact support for assistance.',
   },
   WriteOutOfRange: {
     title: 'Internal Processing Error',
-    message: 'Something went wrong while processing your request. Please try again later or contact support for assistance.',
+    message:
+      'Something went wrong while processing your request. Please try again later or contact support for assistance.',
   },
   UserNotLoggedInSwitchToIntegratedNetwork: {
     title: 'You are not logged in',
@@ -100,11 +104,13 @@ export const general = {
   },
   ActiveNetworkNotFoundAddController: {
     title: 'Could not add controller',
-    message: 'We could not find the network you are trying to add a controller to due to a technical issue on our end. Please contact support for assistance.',
+    message:
+      'We could not find the network you are trying to add a controller to due to a technical issue on our end. Please contact support for assistance.',
   },
   ActiveNetworkNotFoundEditDevice: {
     title: 'Could not edit device',
-    message: 'We could not find the network you are trying to edit a device on due to a technical issue on our end. Please contact support for assistance.',
+    message:
+      'We could not find the network you are trying to edit a device on due to a technical issue on our end. Please contact support for assistance.',
   },
   ControllerNameAlreadyExists: {
     title: 'Controller name already exists',
@@ -114,12 +120,12 @@ export const general = {
     title: 'Device already disconnected',
     message: 'The device you are trying to disconnect is already disconnected.',
   },
-} as const;
+} as const
 
 // Appears when error is not defined above
 export const unknownError = {
   title: 'Unknown Error',
   message: 'An unknown error has occurred. Please contact us for support.',
-};
+}
 
-export type ErrorCode = keyof typeof general;
+export type ErrorCode = keyof typeof general

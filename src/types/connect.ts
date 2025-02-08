@@ -13,8 +13,7 @@ export const CONNECTION_STATUS = Object.freeze({
   DISCONNECTING: 'disconnecting',
 })
 
-export type ConnectionStatus =
-  (typeof CONNECTION_STATUS)[keyof typeof CONNECTION_STATUS]
+export type ConnectionStatus = (typeof CONNECTION_STATUS)[keyof typeof CONNECTION_STATUS]
 
 export const REMOTECONTROL_STATUS = Object.freeze({
   REMOTECONTROL_CONNECTED: 'connected-websockets',
@@ -23,11 +22,10 @@ export const REMOTECONTROL_STATUS = Object.freeze({
   REMOTECONTROL_DISCONNECTING: 'disconnecting-websockets',
 })
 
-export type RemoteControlConnectionStatus =
-  (typeof REMOTECONTROL_STATUS)[keyof typeof REMOTECONTROL_STATUS]
+export type RemoteControlConnectionStatus = (typeof REMOTECONTROL_STATUS)[keyof typeof REMOTECONTROL_STATUS]
 
 /** @deprecated Use REMOTECONTROL_STATUS instead */
-export const WEBSOCKET_CONNECTION_STATE = REMOTECONTROL_STATUS;
+export const WEBSOCKET_CONNECTION_STATE = REMOTECONTROL_STATUS
 
 /** @deprecated Use RemoteControlConnectionStatus instead */
-export type WebsocketConnectionState = RemoteControlConnectionStatus;
+export type WebsocketConnectionState = RemoteControlConnectionStatus

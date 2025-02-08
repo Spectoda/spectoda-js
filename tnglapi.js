@@ -1,22 +1,22 @@
 const LocalStorageManager = {
   set: function (key, value) {
     if (typeof localStorage === 'undefined') {
-      return;
+      return
     }
 
-    localStorage.setItem(key, JSON.stringify(value));
+    localStorage.setItem(key, JSON.stringify(value))
   },
 
   get: function (key) {
     if (typeof localStorage === 'undefined') {
-      return;
+      return
     }
 
-    const value = localStorage.getItem(key);
+    const value = localStorage.getItem(key)
 
-    return value ? JSON.parse(value) : null;
+    return value ? JSON.parse(value) : null
   },
-};
+}
 
 /**
  * Represents the API response.
@@ -37,24 +37,27 @@ const LocalStorageManager = {
  */
 
 async function fetchTnglFromApiById(id) {
-  const url = typeof window !== 'undefined' && location.href.match(/studio|localhost/) ? `/api/tnglcode?id=${id}` : `https://studio.spectoda.com/api/tnglcode?id=${id}`;
+  const url =
+    typeof window !== 'undefined' && location.href.match(/studio|localhost/)
+      ? `/api/tnglcode?id=${id}`
+      : `https://studio.spectoda.com/api/tnglcode?id=${id}`
 
   try {
-    const response = await fetch(url);
-    const data = await response.json();
+    const response = await fetch(url)
+    const data = await response.json()
 
-    LocalStorageManager.set(`tnglapidata_${id}`, data);
-    return data;
+    LocalStorageManager.set(`tnglapidata_${id}`, data)
+    return data
   } catch (error) {
     // Handle error case (e.g., network error, API error)
-    const data = LocalStorageManager.get(`tnglapidata_${id}`);
+    const data = LocalStorageManager.get(`tnglapidata_${id}`)
 
     if (data) {
-      console.warn('Warning:', 'You are offline. Using offline emulation.');
-      return data;
+      console.warn('Warning:', 'You are offline. Using offline emulation.')
+      return data
     }
 
-    console.error('Error:', error);
+    console.error('Error:', error)
   }
 }
 
@@ -69,34 +72,41 @@ async function fetchTnglFromApiById(id) {
  */
 
 async function sendTnglToApi({ tngl, name, id }) {
-  const url = typeof window !== 'undefined' && location.href.match(/studio|localhost/) ? `/api/tnglcode?id=${id}` : `https://studio.spectoda.com/api/tnglcode?id=${id}`;
+  const url =
+    typeof window !== 'undefined' && location.href.match(/studio|localhost/)
+      ? `/api/tnglcode?id=${id}`
+      : `https://studio.spectoda.com/api/tnglcode?id=${id}`
 
   const options = {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
     body: JSON.stringify({ tngl, name, id }),
-  };
+  }
 
   try {
-    const response = await fetch(url, options);
-    const responseData = await response.json();
+    const response = await fetch(url, options)
+    const responseData = await response.json()
 
-    LocalStorageManager.set(`tnglapidata_${id}`, responseData); // save successful response to local storage
-    return responseData;
+    LocalStorageManager.set(`tnglapidata_${id}`, responseData) // save successful response to local storage
+    return responseData
   } catch (error) {
-    const data = LocalStorageManager.set(`tnglapidata_${id}`, { tngl, name, id });
+    const data = LocalStorageManager.set(`tnglapidata_${id}`, {
+      tngl,
+      name,
+      id,
+    })
 
     if (data) {
-      console.warn('Warning:', 'You are offline. Using offline emulation.');
-      return data;
+      console.warn('Warning:', 'You are offline. Using offline emulation.')
+      return data
     }
-    console.error('Error:', error);
+    console.error('Error:', error)
   }
 }
 
 if (typeof window !== 'undefined') {
-  window.fetchTnglFromApiById = fetchTnglFromApiById;
-  window.sendTnglToApi = sendTnglToApi;
+  window.fetchTnglFromApiById = fetchTnglFromApiById
+  window.sendTnglToApi = sendTnglToApi
 }
 
-export { fetchTnglFromApiById, sendTnglToApi };
+export { fetchTnglFromApiById, sendTnglToApi }
