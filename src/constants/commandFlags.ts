@@ -1,16 +1,21 @@
-export const COMMAND_FLAGS = Object.freeze({
-  UNSUPPORTED_COMMND_RESPONSE: 255, // TODO change OTA_BEGIN to not be 255.
+/**
+ * Command flags used for communication with Spectoda devices.
+ * For more detailed information about command flags and their usage,
+ * see Spectoda_Firmware components/spectoda-library/src/encoding.h
+ * 
+ * This file will be removed in the future as TNGL parsing is being moved to C++ in WASM
+ * 
+ * @see https://github.com/spectoda/Spectoda_Firmware/blob/main/components/spectoda-library/src/encoding.h
+ */
 
-  /** @deprecated FW update flags - use newer alternatives */
+export const COMMAND_FLAGS = Object.freeze({
+  UNSUPPORTED_COMMND_RESPONSE: 255,
+
   OTA_BEGIN: 255,
-  /** @deprecated FW update flags - use newer alternatives */
-  OTA_WRITE: 0, // TODO change OTA_WRITE to not be 0.
-  /** @deprecated FW update flags - use newer alternatives */
+  OTA_WRITE: 0, 
   OTA_END: 254,
-  /** @deprecated FW update flags - use newer alternatives */
   OTA_RESET: 253,
 
-  /** @deprecated */
   DEVICE_REBOOT_REQUEST: 5,
   DEVICE_DISCONNECT_REQUEST: 6,
 
@@ -18,11 +23,10 @@ export const COMMAND_FLAGS = Object.freeze({
   CONFIG_UPDATE_RESPONSE: 11,
 
   // Former CommandFlag begin
-  // RSSI_DATA:  100,
+
   PEER_CONNECTED: 101,
   PEER_DISCONNECTED: 102,
 
-  // CONF_BYTES:  103,
   LOAD_TNGL: 104,
   TIMELINE_WRITE: 105,
 
@@ -136,4 +140,5 @@ export const COMMAND_FLAGS = Object.freeze({
   CONNECT_RESPONSE: 239,
   ADOPT_REQUEST: 240,
   ADOPT_RESPONSE: 241,
+
 } as const)
