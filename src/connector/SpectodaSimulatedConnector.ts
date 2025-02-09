@@ -55,7 +55,7 @@ export class SpectodaSimulatedConnector {
 
   // declare TS type
 
-  async initilize(networkDefinition: any) {
+  async initialize(networkDefinition: any) {
     logging.verbose(`construct(networkDefinition=${networkDefinition})`);
 
     // let networkDefinition = JSON.parse(networkJsonDefinition);
@@ -202,11 +202,6 @@ export class SpectodaSimulatedConnector {
       }
 
       const connector = new IConnector_JS()
-
-      return connector
-        .construct(SimulatedConnectorImplementation, SpectodaWasm.connector_type_t.CONNECTOR_SIMULATED)
-        .then(() => {
-          const controller = new PreviewController(SimulatedControllerMacAddress)
 
       await connector.construct(SimulatedConnectorImplementation, SpectodaWasm.connector_type_t.CONNECTOR_SIMULATED);
       const controller = new PreviewController(SimulatedControllerMacAddress);
