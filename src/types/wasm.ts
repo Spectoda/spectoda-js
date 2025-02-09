@@ -1,7 +1,7 @@
 import { SpectodaEvent } from './event'
 
 /// === auto-generated from Emscripten build process === ///
-/// ========== DEBUG_DEV_0.12.5_20250201.d.ts ========== ///
+/// ========== DEBUG_DEV_0.12.5_20250209.d.ts ========== ///
 
 export interface interface_error_tValue<T extends number> {
   value: T
@@ -118,7 +118,7 @@ export interface Spectoda_WASM {
   eraseTimeline(): void
   eraseTngl(): void
   registerConnector(_0: IConnector_WASM): void
-  _onTnglUpdate(_0: Uint8Vector, _1: Uint8Vector): boolean
+  _onTnglLoad(_0: Uint8Vector, _1: Uint8Vector): boolean
   _onExecute(_0: Uint8Vector): boolean
   _onSynchronize(_0: Synchronization): boolean
   process(_0: boolean, _1: boolean, _2: boolean, _3: boolean): void
@@ -194,10 +194,7 @@ export interface ImplementedSpectoda_WASM extends Spectoda_WASM {
 }
 
 export interface MainModule {
-  interface_error_t: {
-    SUCCESS: interface_error_tValue<0>
-    FAIL: interface_error_tValue<255>
-  }
+  interface_error_t: { SUCCESS: interface_error_tValue<0>; FAIL: interface_error_tValue<255> }
   connector_type_t: {
     CONNECTOR_UNDEFINED: connector_type_tValue<0>
     CONNECTOR_ESPNOW: connector_type_tValue<1>
@@ -208,10 +205,7 @@ export interface MainModule {
     CONNECTOR_SIMULATED: connector_type_tValue<6>
     CONNECTOR_MAX: connector_type_tValue<7>
   }
-  connection_rssi_t: {
-    RSSI_MAX: connection_rssi_tValue<127>
-    RSSI_MIN: connection_rssi_tValue<-128>
-  }
+  connection_rssi_t: { RSSI_MAX: connection_rssi_tValue<127>; RSSI_MIN: connection_rssi_tValue<-128> }
   Connection: {
     make(
       _0: ArrayBuffer | Uint8Array | Uint8ClampedArray | Int8Array | string,
@@ -256,7 +250,7 @@ export interface MainModule {
   ImplementedSpectoda_WASM: {}
 }
 
-/// ========== DEBUG_DEV_0.12.5_20250201.d.ts ========== ///
+/// ========== DEBUG_DEV_0.12.5_20250209.d.ts ========== ///
 
 /// =================== MANUALLY DEFINED INTERFACES ================= ///
 
@@ -297,9 +291,9 @@ export interface Spectoda_WASMImplementation {
   // ! please keep it here as it is used for determining if there are some changes in C++ vs this file. For more info contact @immakermatty
   // ? class ImplementedSpectoda_WASM : public wrapper<Spectoda_WASM>
 
-  // bool _onTnglUpdate(const std::vector<uint8_t>& tngl_bytes, const std::vector<uint8_t>& used_ids) override
+  // bool _onTnglLoad(const std::vector<uint8_t>& tngl_bytes, const std::vector<uint8_t>& used_ids) override
   // {
-  //     return call<bool>("_onTnglUpdate", tngl_bytes, used_ids);
+  //     return call<bool>("_onTnglLoad", tngl_bytes, used_ids);
   // }
 
   // bool _onEvents(val&& event_array) override
@@ -359,7 +353,7 @@ export interface Spectoda_WASMImplementation {
 
   // // __construct: function () {}
   // // __destruct: function () {}
-  _onTnglUpdate(tngl_bytes: Uint8Vector, used_ids: Uint8Vector): boolean
+  _onTnglLoad(tngl_bytes: Uint8Vector, used_ids: Uint8Vector): boolean
   _onEvents(event_array: SpectodaEvent[]): boolean
   _onEventStateUpdates(event_array: SpectodaEvent[]): boolean
   _onExecute(execute_bytecode: Uint8Vector): boolean

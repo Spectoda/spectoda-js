@@ -96,13 +96,13 @@ export class Spectoda_JS {
         //   this.__parent.__destruct.call(this);
         // },
 
-        _onTnglUpdate: (tngl_bytes_vector, used_ids_vector) => {
-          logging.verbose('Spectoda_JS::_onTnglUpdate', tngl_bytes_vector, used_ids_vector)
+        _onTnglLoad: (tngl_bytes_vector, used_ids_vector) => {
+          logging.verbose('Spectoda_JS::_onTnglLoad', tngl_bytes_vector, used_ids_vector)
 
           {
             // Save FS after TNGL upload
             SpectodaWasm.saveFS().catch((e) => {
-              logging.error('SpectodaWasm::_onTnglUpdate():', e)
+              logging.error('SpectodaWasm::_onTnglLoad():', e)
             })
           }
 
