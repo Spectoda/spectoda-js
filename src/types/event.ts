@@ -36,7 +36,7 @@ export type SpectodaPercentageEvent = SpectodaEventBase & {
 }
 
 export type SpectodaTimestampEvent = SpectodaEventBase & {
-  type: typeof VALUE_TYPE.TIME
+  type: typeof VALUE_TYPE.TIMESTAMP
   value: SpectodaTypes.Timestamp
 }
 

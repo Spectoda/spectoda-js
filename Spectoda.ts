@@ -3700,7 +3700,7 @@ export class Spectoda implements SpectodaClass {
         }
         case 'timestamp':
         case 'time':
-        case VALUE_TYPE.TIME: {
+        case VALUE_TYPE.TIMESTAMP: {
           this.emitTimestamp(event.label, event.value as number, event.id)
           break
         }

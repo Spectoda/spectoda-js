@@ -37,7 +37,7 @@ export const JS_EVENT_VALUE_LIMITS = Object.freeze({
 export const VALUE_TYPES = Object.freeze({
   NUMBER: 29,
   LABEL: 31,
-  TIME: 32,
+  TIMESTAMP: 32,
   PERCENTAGE: 30,
   DATE: 28,
   COLOR: 26,
