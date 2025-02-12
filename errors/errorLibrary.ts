@@ -53,7 +53,7 @@ export const studio = {
   MicAccessDenied: {
     title: 'Microphone access denied',
     message:
-      'Make sure you\'ve enabled microphone access in Settings. If so, refresh the current page, delete cookies and try again.',
+      "Make sure you've enabled microphone access in Settings. If so, refresh the current page, delete cookies and try again.",
   },
 } as const
 
