@@ -1072,6 +1072,13 @@ export class Spectoda implements SpectodaClass {
         return `${p1}`
       })
 
+      // Pattern F: null value
+      const nullRegex = /\bnull\b/g
+
+      minified = minified.replace(nullRegex, () => {
+        return 'Value.Null()'
+      })
+
       // Step 2: Remove BERRY-specific comments
       // First remove multiline comments (#- ... -#)
       // Match #- followed by any characters (including newlines) until -#
