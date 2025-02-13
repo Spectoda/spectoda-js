@@ -438,6 +438,7 @@ export class Spectoda implements SpectodaClass {
   }) {
     logging.debug('> Connecting to Remote Control')
 
+    // TODO refactor to async/await for less nesting
     //* Added by @immakermatty to automatically connect the sender app if the receiver is connected
     const postJoinActions = () => {
       {
@@ -481,7 +482,7 @@ export class Spectoda implements SpectodaClass {
     this.socket.connect()
     this.requestWakeLock(true)
 
-    // TODO! remove this
+    // TODO [DEV-3521] Remote control refactor: Remove this function
     const setConnectionSocketData = async () => {
       // const peers = await this.getConnectedPeersInfo();
       // logging.debug("peers", peers);
@@ -491,11 +492,11 @@ export class Spectoda implements SpectodaClass {
 
     // @ts-ignore
     this.socket.___SpectodaListeners = [
-      // TODO! remove this
+      // TODO [DEV-3521] Remote control refactor: Remove this function
       this.on(SpectodaAppEvents.CONNECTED, async () => {
         setConnectionSocketData()
       }),
-      // TODO! remove this
+      // TODO [DEV-3521] Remote control refactor: Remove this function
       this.on(SpectodaAppEvents.DISCONNECTED, () => {
         this.socket.emit('set-connection-data', null)
       }),
@@ -541,10 +542,7 @@ export class Spectoda implements SpectodaClass {
         }
 
         // TODO rename to updateControllerFirmware
-        if (
-          functionName === 'updateDeviceFirmware' ||
-          functionName === 'updateNetworkFirmware'
-        ) {
+        if (functionName === 'updateDeviceFirmware' || functionName === 'updateNetworkFirmware') {
           if (Array.isArray(args?.[0])) {
             args[0] = new Uint8Array(args[0])
           } else if (typeof args?.[0] === 'object') {
@@ -596,6 +594,8 @@ export class Spectoda implements SpectodaClass {
 
           if (response?.status === 'success') {
             this.#setRemoteControlConnectionState(REMOTECONTROL_STATUS.REMOTECONTROL_CONNECTED)
+
+            // TODO refactor when refactoring Remote Control. Needs to be rethought and reimplemented
             setConnectionSocketData()
 
             logging.debug('Remote control session joined successfully', roomNumber)
@@ -616,7 +616,7 @@ export class Spectoda implements SpectodaClass {
               this.#setRemoteControlConnectionState(REMOTECONTROL_STATUS.REMOTECONTROL_CONNECTED)
               postJoinActions()
 
-              // TODO! remove this
+              // TODO [DEV-3521] Remote control refactor: Remove this function
               setConnectionSocketData()
 
               resolve({ status: 'success' })
@@ -1031,7 +1031,6 @@ export class Spectoda implements SpectodaClass {
         minified = minified.replace('@minify', '')
         flag_minify = true
       }
-    
 
       // Step 1: Replace specific patterns A, B, C, D
 
@@ -1103,12 +1102,14 @@ export class Spectoda implements SpectodaClass {
         // Extract variable declarations with "var"
         const varRegex = /var\s+([A-Za-z_][A-Za-z0-9_]*)/g
         let match
+
         while ((match = varRegex.exec(minified)) !== null) {
           localVars.add(match[1])
         }
 
         // Extract loop variables from "for" loops
         const forRegex = /for\s+([A-Za-z_][A-Za-z0-9_]*)\s*:/g
+
         while ((match = forRegex.exec(minified)) !== null) {
           localVars.add(match[1])
         }
@@ -1117,11 +1118,14 @@ export class Spectoda implements SpectodaClass {
         function* shortNameGenerator() {
           const letters = 'abcdefghijklmnopqrstuvwxyz'
           let length = 1
+
           while (true) {
             const max = Math.pow(letters.length, length)
+
             for (let i = 0; i < max; i++) {
               let name = ''
               let num = i
+
               for (let j = 0; j < length; j++) {
                 name = letters[num % letters.length] + name
                 num = Math.floor(num / letters.length)
@@ -1135,6 +1139,7 @@ export class Spectoda implements SpectodaClass {
         // Build mapping of original names to minified names
         const gen = shortNameGenerator()
         const mapping: { [key: string]: string } = {}
+
         for (const origVar of localVars) {
           mapping[origVar] = gen.next().value as string
         }
@@ -1143,6 +1148,7 @@ export class Spectoda implements SpectodaClass {
         for (const [orig, min] of Object.entries(mapping)) {
           // This regex matches the variable name only when it's not inside quotes
           const idRegex = new RegExp(`\\b${orig}\\b(?=(?:[^"']*["'][^"']*["'])*[^"']*$)`, 'g')
+
           minified = minified.replace(idRegex, min)
         }
       }
@@ -1478,9 +1484,7 @@ export class Spectoda implements SpectodaClass {
     device_ids: SpectodaTypes.IDs = 255,
     force_delivery = true,
   ) {
-    logging.verbose(
-      `emitEvent(event_label=${event_label},device_ids=${device_ids},force_delivery=${force_delivery})`,
-    )
+    logging.verbose(`emitEvent(event_label=${event_label},device_ids=${device_ids},force_delivery=${force_delivery})`)
 
     const func = (id: SpectodaTypes.ID) => {
       if (!this.runtime.spectoda_js.emitNull(event_label, id)) {
@@ -2100,7 +2104,7 @@ export class Spectoda implements SpectodaClass {
 
       if (error_code === 0) {
         logging.info('Write Config Success')
-        
+
         // todo rename to rebootController
         // reboot device
         const payload = [COMMAND_FLAGS.FLAG_DEVICE_REBOOT_REQUEST]
@@ -2659,7 +2663,9 @@ export class Spectoda implements SpectodaClass {
 
   /**
    * ! Useful
-   * Erases the event state history of ALL CONTROLLERS in the network Spectoda.js is `connect`ed to.
+   * ! TODO REFACTOR to eraseEventStore
+   * ! TODO currently erases event history but does not interact with event states
+   * Erases the event state history of ALL CONTROLLERS in the Spectoda network
    * TODO This should be called `eraseEventStates`
    */
   eraseEventHistory() {
@@ -3466,6 +3472,8 @@ export class Spectoda implements SpectodaClass {
 
   /**
    * Reloads the TNGL in this APP Controller
+   * Can be used to reset EventStateStore
+   * ! TODO refator: Does not work correctly for now because it cannot edit eventStateStore in core. Implementation needs to be fixed by @immakermatty
    */
   reloadTngl() {
     logging.debug('> Reloading TNGL...')
@@ -3654,7 +3662,7 @@ export class Spectoda implements SpectodaClass {
     events:
       | SpectodaEvent[]
       | {
-        // TODO @immakermatty remove this generic event type, use only SpectodaEvent 
+          // TODO @immakermatty remove this generic event type, use only SpectodaEvent
           label: SpectodaTypes.Label
           type: string | SpectodaTypes.ValueType
           value: null | string | number | boolean
