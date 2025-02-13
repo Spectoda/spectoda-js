@@ -1190,21 +1190,6 @@ export class SpectodaConnectConnector extends FlutterConnection {
   updateFW(firmware_bytes: Uint8Array): Promise<unknown> {
     logging.debug(`updateFW(firmware_bytes.length=${firmware_bytes.length})`)
 
-    // this.#promise = new Promise((resolve, reject) => {
-    //   // @ts-ignore
-    //   window.flutterConnection.resolve = resolve;
-    //   // @ts-ignore
-    //   window.flutterConnection.reject = reject;
-    // });
-
-    // // @ts-ignore
-    // window.flutter_inappwebview.callHandler("updateFW", firmware_bytes);
-
-    // return this.#applyTimeout(this.#promise, 600000, "updateFW");
-
-    // logging.error("Device update is not yet implemented.");
-    // return Promise.reject("NotImplemented");
-
     this.#runtimeReference.spectodaReference.requestWakeLock()
 
     return new Promise(async (resolve, reject) => {
@@ -1353,7 +1338,7 @@ export class SpectodaConnectConnector extends FlutterConnection {
       `SpectodaConnectConnector::sendRequest(request_ticket_number=${request_ticket_number}, request_bytecode=${request_bytecode}, destination_connection=${destination_connection})`,
     )
 
-    return Promise.reject('NotImplemented')
+    return this.request(request_bytecode, false, 10000)
   }
   // bool _sendResponse(const int32_t request_ticket_number, const int32_t request_result, std::vector<uint8_t>& response_bytecode, const Connection& destination_connection) = 0;
 
