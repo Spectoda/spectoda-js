@@ -1,3 +1,6 @@
+import { io } from 'socket.io-client'
+import customParser from 'socket.io-msgpack-parser'
+
 import { TnglCodeParser } from './SpectodaParser'
 import { TimeTrack } from './TimeTrack'
 import './TnglReader'
@@ -27,10 +30,6 @@ import {
   NO_NETWORK_SIGNATURE,
   TNGL_SIZE_CONSIDERED_BIG,
 } from './src/constants'
-
-import { io } from 'socket.io-client'
-import customParser from 'socket.io-msgpack-parser'
-
 import { WEBSOCKET_URL } from './SpectodaWebSocketsConnector'
 import './TnglReader'
 import './TnglWriter'
@@ -116,13 +115,13 @@ export class Spectoda implements SpectodaClass {
     this.#criteria = []
     this.#__events = undefined
 
-    this.runtime.onConnected = (event) => {
+    this.runtime.onConnected = () => {
       logging.debug('> Runtime connected')
 
       this.#resetReconnectionInterval()
     }
 
-    this.runtime.onDisconnected = (event) => {
+    this.runtime.onDisconnected = () => {
       logging.debug('> Runtime disconnected')
 
       this.#resetReconnectionInterval()
@@ -468,13 +467,11 @@ export class Spectoda implements SpectodaClass {
       this.socket.removeAllListeners() // Removes all listeners attached to the socket
       this.socket.disconnect()
 
-      // @ts-ignore
       for (const listener of this.socket?.___SpectodaListeners) {
         listener()
       }
     }
 
-    // @ts-ignore
     this.socket = io(WEBSOCKET_URL, {
       parser: customParser,
     })
@@ -490,7 +487,6 @@ export class Spectoda implements SpectodaClass {
       this.socket.emit('set-meta-data', meta)
     }
 
-    // @ts-ignore
     this.socket.___SpectodaListeners = [
       // TODO [DEV-3521] Remote control refactor: Remove this function
       this.on(SpectodaAppEvents.CONNECTED, async () => {
@@ -511,7 +507,9 @@ export class Spectoda implements SpectodaClass {
       }),
     ]
 
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore
+    // eslint-disable-next-line no-undef
     globalThis.allEventsEmitter = allEventsEmitter
 
     this.socket.on('func', async (payload: any, callback: any) => {
@@ -552,6 +550,8 @@ export class Spectoda implements SpectodaClass {
             args[0] = uint8Array
           }
         }
+
+        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
         // @ts-ignore
         const result = await this[functionName](...args)
 
@@ -611,7 +611,7 @@ export class Spectoda implements SpectodaClass {
 
           await this.socket
             .emitWithAck('join', { signature, key })
-            .then((e: any) => {
+            .then(() => {
               logging.log('> RC Receiver joined')
               this.#setRemoteControlConnectionState(REMOTECONTROL_STATUS.REMOTECONTROL_CONNECTED)
               postJoinActions()
@@ -912,7 +912,7 @@ export class Spectoda implements SpectodaClass {
 
     this.#setConnectionState(CONNECTION_STATUS.DISCONNECTING)
 
-    return this.runtime.disconnect().finally(() => {})
+    return this.runtime.disconnect()
   }
 
   /**
@@ -1044,7 +1044,7 @@ export class Spectoda implements SpectodaClass {
       // Pattern B: Timestamps - /([+-]?(\d+\.\d+|\d+|\.\d+))(d|h|m(?!s)|s|ms|t)\b/gi
       const timestampRegex = /([+-]?(\d+\.\d+|\d+|\.\d+))(d|h|m(?!s)|s|ms|t)\b/gi
 
-      minified = minified.replace(timestampRegex, (match, p1, p2, unit) => {
+      minified = minified.replace(timestampRegex, (match) => {
         const miliseconds = computeTimestamp(match)
 
         return `Value.Timestamp(${miliseconds})`
@@ -2295,20 +2295,18 @@ export class Spectoda implements SpectodaClass {
 
       const removed_device_mac_bytes = reader.readBytes(6)
 
-      return this.rebootDevice()
-        .catch(() => {})
-        .then(() => {
-          let removed_device_mac = '00:00:00:00:00:00'
+      return this.rebootDevice().then(() => {
+        let removed_device_mac = '00:00:00:00:00:00'
 
-          if (removed_device_mac_bytes.length >= 6) {
-            removed_device_mac = Array.from(removed_device_mac_bytes, function (byte) {
-              return ('0' + (byte & 0xff).toString(16)).slice(-2)
-            }).join(':')
-          }
-          return {
-            mac: removed_device_mac === '00:00:00:00:00:00' ? null : removed_device_mac,
-          }
-        })
+        if (removed_device_mac_bytes.length >= 6) {
+          removed_device_mac = Array.from(removed_device_mac_bytes, function (byte) {
+            return ('0' + (byte & 0xff).toString(16)).slice(-2)
+          }).join(':')
+        }
+        return {
+          mac: removed_device_mac === '00:00:00:00:00:00' ? null : removed_device_mac,
+        }
+      })
     })
   }
 
@@ -2536,13 +2534,6 @@ export class Spectoda implements SpectodaClass {
   }
 
   /**
-   * @deprecated This is app-level functionality
-   */
-  setLanguage(lng: string) {
-    logging.info('setLanguage is deprecated')
-  }
-
-  /**
    * Set the debug level of the Spectoda.js library
    */
   setDebugLevel(level: number) {
@@ -2551,6 +2542,7 @@ export class Spectoda implements SpectodaClass {
 
   /**
    * ! Useful
+   * TODO: Rename to readConnectedPeersInfo()
    * Returns the MAC addresses of all nodes connected in the current network in real-time
    */
   getConnectedPeersInfo() {
@@ -3449,35 +3441,6 @@ export class Spectoda implements SpectodaClass {
   }
 
   /**
-   * @deprecated
-   * @todo @immakermatty remove this function
-   */
-  update() {
-    // if (detectNode()) {
-    //   // run git pull and git submodule update
-    //   const { exec } = require("child_process");
-    //   exec("git pull && git submodule update --init --recursive", (error, stdout, stderr) => {
-    //     if (error) {
-    //       console.error(`exec error: ${error}`);
-    //       return;
-    //     }
-    //     console.log(`stdout: ${stdout}`);
-    //     console.error(`stderr: ${stderr}`);
-    //   });
-    //   // run npm install
-    //   exec("npm install", (error, stdout, stderr) => {
-    //     if (error) {
-    //       console.error(`exec error: ${error}`);
-    //       return;
-    //     }
-    //     console.log(`stdout: ${stdout}`);
-    //     console.error(`stderr: ${stderr}`);
-    //   });
-    //   process.exit(1);
-    // }
-  }
-
-  /**
    * Reloads the TNGL in this APP Controller
    * Can be used to reset EventStateStore
    * ! TODO refator: Does not work correctly for now because it cannot edit eventStateStore in core. Implementation needs to be fixed by @immakermatty
@@ -3689,17 +3652,6 @@ export class Spectoda implements SpectodaClass {
     if (!Array.isArray(events)) {
       events = [events]
     }
-
-    // NUMBER: 29,
-    // LABEL: 31,
-    // TIME: 32,
-    // PERCENTAGE: 30,
-    // DATE: 28,
-    // COLOR: 26,
-    // PIXELS: 19,
-    // BOOLEAN: 2,
-    // NULL: 1,
-    // UNDEFINED: 0,
 
     for (const event of events) {
       switch (event.type) {
