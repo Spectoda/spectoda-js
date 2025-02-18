@@ -43,12 +43,10 @@ export const CONNECTORS = Object.freeze({
 export const DEFAULT_CONNECTOR = CONNECTORS.DEFAULT
 
 /** No Network Signature */
-export const NO_NETWORK_SIGNATURE: SpectodaTypes.NetworkSignature =
-  '00000000000000000000000000000000'
+export const NO_NETWORK_SIGNATURE: SpectodaTypes.NetworkSignature = '00000000000000000000000000000000'
 
 /** No Network Key */
-export const NO_NETWORK_KEY: SpectodaTypes.NetworkKey =
-  '00000000000000000000000000000000'
+export const NO_NETWORK_KEY: SpectodaTypes.NetworkKey = '00000000000000000000000000000000'
 
 /** Default MAC address for the app */
 export const APP_MAC_ADDRESS = '00:00:12:34:56:78'
