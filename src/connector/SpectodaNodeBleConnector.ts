@@ -22,42 +22,99 @@ const NodeBle = detectGW() ? requireBundlerWorkeround('../../../node-ble/src/ind
 const { createBluetooth } = NodeBle
 
 // Add these type definitions at the top of the file
+
+// TODO: Refactor this section by replacing these manually added NodeBle type definitions
+// TODO: with a proper import from the NodeBle TypeScript file from the node-ble package that will work also in the browser.
+
 declare namespace NodeBle {
+  interface GattCharacteristic /* extends events.EventEmitter */ {
+      getUUID(): Promise<string>;
+      getFlags(): Promise<string[]>;
+      isNotifying(): Promise<boolean>;
+      readValue(offset?: number): Promise<Buffer>;
+      writeValue(buffer: Buffer, optionsOrOffset?: number | WriteValueOptions): Promise<void>;
+      writeValueWithoutResponse(buffer: Buffer, offset?: number): Promise<void>;
+      writeValueWithResponse(buffer: Buffer, offset?: number): Promise<void>;
+      startNotifications(): Promise<void>;
+      stopNotifications(): Promise<void>;
+      toString(): Promise<string>;
+
+      // on(event: 'valuechanged', listener: (buffer: Buffer) => void): this;
+      on(event: string, callback: (data: any) => void): void
+      removeAllListeners(event: string): void
+  }
+
   interface GattService {
-    getCharacteristic(uuid: string): Promise<GattCharacteristic>
+      isPrimary(): Promise<Boolean>;
+      getUUID(): Promise<string>;
+      characteristics(): Promise<string[]>;
+      toString(): Promise<string>;
+      getCharacteristic(uuid: string): Promise<GattCharacteristic>;
   }
 
-  interface GattCharacteristic {
-    writeValue(value: Buffer, options: { offset: number; type: string }): Promise<unknown>
-    readValue(): Promise<DataView>
-    startNotifications(): Promise<unknown>
-    stopNotifications(): Promise<unknown>
-    on(event: string, callback: (data: any) => void): void
-    removeAllListeners(event: string): void
+  interface GattServer {
+      services(): Promise<string[]>;
+      getPrimaryService(uuid: string): Promise<GattService>;
   }
 
-  interface Bluetooth {
-    defaultAdapter(): Promise<Adapter>
+  interface ConnectionState {
+      connected: boolean;
+  }
+
+  interface Device /* extends events.EventEmitter */ {
+      getName(): Promise<string>;
+      getAddress(): Promise<string>;
+      getAddressType(): Promise<string>;
+      getAlias(): Promise<string>;
+      getRSSI(): Promise<string>;
+      getManufacturerData(): Promise<{[key:string]:any}>;
+      getAdvertisingData(): Promise<{[key:string]:any}>;
+      getServiceData(): Promise<{[key:string]:any}>;
+      isPaired(): Promise<string>;
+      isConnected(): Promise<string>;
+      pair(): Promise<void>;
+      cancelPair(): Promise<void>;
+      connect(): Promise<void>;
+      disconnect(): Promise<void>;
+      gatt(): Promise<GattServer>;
+      toString(): Promise<string>;
+
+      // on(event: 'connect', listener: (state: ConnectionState) => void): this;
+      // on(event: 'disconnect', listener: (state: ConnectionState) => void): this;
+      on(event: string, callback: (data: any) => void): void
+      removeAllListeners(event: string): void
   }
 
   interface Adapter {
-    startDiscovery(): Promise<unknown>
-    stopDiscovery(): Promise<unknown>
-    isDiscovering(): Promise<boolean>
-    waitDevice(address: string, timeout: number, scanPeriod: number): Promise<Device>
-    devices(): Promise<string[]>
-    getDevice(address: string): Promise<Device>
+      getAddress(): Promise<string>;
+      getAddressType(): Promise<string>;
+      getName(): Promise<string>;
+      getAlias(): Promise<string>;
+      isPowered(): Promise<boolean>;
+      isDiscovering(): Promise<boolean>;
+      startDiscovery(): Promise<void>;
+      stopDiscovery(): Promise<void>;
+      devices(): Promise<string[]>;
+      getDevice(uuid: string): Promise<Device>;
+      waitDevice(uuid: string, timeout?: number, discoveryInterval?: number): Promise<Device>;
+      toString(): Promise<string>;
   }
 
-  interface Device {
-    connect(): Promise<unknown>
-    disconnect(): Promise<unknown>
-    gatt(): Promise<{ getPrimaryService(uuid: string): Promise<GattService> }>
-    getAddress(): Promise<string>
-    getName(): Promise<string>
-    isConnected(): Promise<boolean>
-    on(event: string, callback: () => void): void
-    removeAllListeners(event: string): void
+  interface Bluetooth {
+      adapters(): Promise<string[]>;
+      defaultAdapter(): Promise<Adapter>;
+      getAdapter(adapter: string): Promise<Adapter>;
+  }
+
+  /*
+  function createBluetooth(): {
+      destroy(): void;
+      bluetooth: Bluetooth;
+  };*/
+
+  interface WriteValueOptions {
+      offset?: number;
+      type?: 'reliable' | 'request' | 'command';
   }
 }
 
@@ -349,10 +406,7 @@ export class NodeBLEConnection {
         ...bytes.slice(0, bytes.length),
       ]
 
-      return characteristic.writeValue(Buffer.from(payload), {
-        offset: 0,
-        type: 'command',
-      })
+      return characteristic.writeValueWithoutResponse(Buffer.from(payload), 0)
     }
 
     return new Promise(async (resolve, reject) => {
@@ -372,10 +426,7 @@ export class NodeBLEConnection {
         ]
 
         try {
-          await characteristic.writeValue(Buffer.from(payload), {
-            offset: 0,
-            type: 'request',
-          })
+          await characteristic.writeValueWithResponse(Buffer.from(payload), 0)
         } catch (e) {
           logging.warn(e)
 
@@ -517,7 +568,7 @@ export class NodeBLEConnection {
     this.#service = service
 
     logging.info('> Getting Network Characteristics...')
-    return this.#service
+    return service
       .getCharacteristic(networkUUID)
       .then((characteristic) => {
         logging.verbose('#networkChar', characteristic)
@@ -542,14 +593,14 @@ export class NodeBLEConnection {
       })
       .then(() => {
         logging.info('> Getting Clock Characteristics...')
-        return this.#service?.getCharacteristic(clockUUID)
+        return service.getCharacteristic(clockUUID)
       })
       .then((characteristic) => {
         logging.verbose('#clockChar', characteristic)
         this.#clockChar = characteristic
 
         return this.#clockChar
-          ?.startNotifications()
+          .startNotifications()
           .then(() => {
             logging.info('> Clock notifications started')
             this.#clockChar?.on('valuechanged', (event) => {
@@ -567,7 +618,7 @@ export class NodeBLEConnection {
       })
       .then(() => {
         logging.info('> Getting Device Characteristics...')
-        return this.#service?.getCharacteristic(deviceUUID)
+        return service.getCharacteristic(deviceUUID)
       })
       .then((characteristic) => {
         logging.verbose('#deviceChar', characteristic)
@@ -849,12 +900,10 @@ export class NodeBLEConnection {
   reset(): void {
     logging.verbose('reset()')
 
-    this.#networkChar?.stopNotifications()
+    this.#networkChar?.stopNotifications().catch((e) => logging.error(e))
     this.#networkChar?.removeAllListeners('valuechanged')
-    this.#clockChar?.stopNotifications()
+    this.#clockChar?.stopNotifications().catch((e) => logging.error(e))
     this.#clockChar?.removeAllListeners('valuechanged')
-    this.#deviceChar?.stopNotifications()
-    this.#deviceChar?.removeAllListeners('valuechanged')
 
     this.#service = undefined
     this.#networkChar = undefined
@@ -920,8 +969,8 @@ export class SpectodaNodeBluetoothConnector {
 
   #bluetooth: NodeBle.Bluetooth
   #bluetoothDestroy: () => void
-  #bluetoothAdapter: NodeBle.Adapter | undefined
-  #bluetoothDevice: NodeBle.Device | undefined
+  #bluetoothAdapter: NodeBle.Adapter | null
+  #bluetoothDevice: NodeBle.Device | null
 
   #connection
   #reconection
@@ -935,8 +984,8 @@ export class SpectodaNodeBluetoothConnector {
 
     this.#bluetooth = bluetoothDevice
     this.#bluetoothDestroy = bluetoothDestroy
-    this.#bluetoothAdapter = undefined
-    this.#bluetoothDevice = undefined
+    this.#bluetoothAdapter = null
+    this.#bluetoothDevice = null
 
     this.#connection = new NodeBLEConnection(runtimeReference)
     this.#reconection = false
@@ -959,19 +1008,18 @@ export class SpectodaNodeBluetoothConnector {
   // if no criteria are set, then show all Spectoda devices visible.
   // first bonds the BLE device with the PC/Phone/Tablet if it is needed.
   // Then selects the device
-  userSelect(
+  async userSelect(
     criterium_array: SpectodaTypes.Criterium[],
     timeout_number: number | typeof DEFAULT_TIMEOUT = DEFAULT_TIMEOUT,
   ): Promise<SpectodaTypes.Criterium | null> {
     if (timeout_number === DEFAULT_TIMEOUT) {
-      timeout_number = 60000
+      timeout_number = 60000;
     }
-
-    const criteria_json = JSON.stringify(criterium_array)
-
-    logging.verbose('userSelect()', criteria_json, timeout_number)
-
-    throw 'NotImplemented'
+  
+    logging.verbose('userSelect()', JSON.stringify(criterium_array), timeout_number);
+  
+    // For now, simply delegate to autoSelect unless you have a UI.
+    return this.autoSelect(criterium_array, 1500, timeout_number);
   }
 
   // takes the criteria, scans for scanPeriod and automatically selects the device,
@@ -983,7 +1031,7 @@ export class SpectodaNodeBluetoothConnector {
   // if no criteria are provided, all Spectoda enabled devices (with all different FWs and Owners and such)
   // are eligible.
 
-  autoSelect(
+  async autoSelect(
     criterium_array: SpectodaTypes.Criterium[],
     scan_duration_number: number | typeof DEFAULT_TIMEOUT = DEFAULT_TIMEOUT,
     timeout_number: number | typeof DEFAULT_TIMEOUT = DEFAULT_TIMEOUT,
@@ -998,33 +1046,25 @@ export class SpectodaNodeBluetoothConnector {
 
     const criteria = criterium_array
 
-    return new Promise(async (resolve, reject) => {
+    try {
+      // Validate that there is at least one criterion with a specified "mac" or "name"
+      if (criteria.some(c => c.network || c.fw || c.commisionable || c.product || c.nameprefix)) {
+        logging.error(
+          "criteria.network, criteria.fw, criteria.commisionable, criteria.product and criteria.nameprefix are not supported yet. Use criteria.name or criteria.mac. Passed criteria:",
+          criteria
+        )
+        throw 'CriteriaNotSupported'
+      }
+
+      this.#criteria = criteria
+
+      if (!this.#bluetoothAdapter) {
+        logging.verbose('> Requesting default bluetooth adapter')
+        this.#bluetoothAdapter = await this.#bluetooth.defaultAdapter()
+      }
+
       try {
-        // step 1. for the scanPeriod scan the surroundings for BLE devices.
-        // step 2. if some devices matching the criteria are found, then select the one with
-        //         the greatest signal strength. If no device is found until the timeout,
-        //         then return error
-
-        if (!criteria || criteria.length === 0 || typeof criteria[0]?.mac !== 'string') {
-          logging.error(
-            "Criteria must be an array of at least 1 object with specified MAC address: [{mac:'AA:BB:CC:DD:EE:FF'}]",
-          )
-          throw 'CriteriaNotSupported'
-        }
-
-        this.#criteria = criteria
-
-        if (await this.connected()) {
-          logging.verbose('> Disconnecting device')
-          await this.disconnect().catch((e) => logging.error(e))
-          await sleep(1000)
-        }
-
-        if (!this.#bluetoothAdapter) {
-          logging.verbose('> Requesting default bluetooth adapter')
-          this.#bluetoothAdapter = await this.#bluetooth.defaultAdapter()
-        }
-
+        logging.info('> Checking if BLE scanner is discovering')
         if (await this.#bluetoothAdapter.isDiscovering()) {
           logging.info('> Restarting BLE scanner')
           await this.#bluetoothAdapter.stopDiscovery()
@@ -1033,61 +1073,104 @@ export class SpectodaNodeBluetoothConnector {
           logging.info('> Starting BLE scanner')
           await this.#bluetoothAdapter.startDiscovery()
         }
-
-        // Device UUID === Device MAC address
-        const deviceMacAddress = criteria[0].mac.toUpperCase()
-
-        this.#bluetoothDevice?.removeAllListeners('connect')
-        this.#bluetoothDevice?.removeAllListeners('disconnect')
-
-        logging.debug(`> Waiting for the device ${deviceMacAddress} to show up`)
-        this.#bluetoothDevice = await this.#bluetoothAdapter.waitDevice(
-          deviceMacAddress,
-          timeout_number,
-          scan_duration_number,
-        )
-
-        await sleep(100)
-
-        logging.info('> Getting BLE device mac address')
-        const mac = await this.#bluetoothDevice.getAddress().catch((e) => logging.error(e))
-
-        logging.info('> Getting BLE device name')
-        const name = await this.#bluetoothDevice.getName().catch((e) => logging.error(e))
-
-        // logging.verbose("stopping scanner");
-        // await this.#bluetoothAdapter.stopDiscovery();
-        this.#bluetoothDevice.on('connect', this.#onConnected)
-        this.#bluetoothDevice.on('disconnect', this.#onDisconnected)
-
-        resolve({ connector: this.type })
       } catch (e) {
-        logging.warn(e)
-        reject('SelectionFailed')
+        logging.error(e)
       }
-    })
+
+      // // if (await this.connected()) {
+      // //   logging.verbose('> Disconnecting device')
+        // // await this.disconnect().catch((e) => logging.error(e))
+      // //   await sleep(100)
+      // // }
+    
+      // // if (await this.selected()) {
+      // //   logging.verbose('> Unselecting currently selected device')
+      await this.unselect().catch((e) => logging.error(e))
+      // //   await sleep(100)
+      // // }
+  
+
+      let deviceMacAddress: string
+
+      // If any criteria has a "name" property or if there are multiple criteria,
+      // perform a scan and match the scanned devices against the provided criteria.
+      if (criteria.length == 1 && criteria[0].mac) {
+        // If a single criterion with a MAC is provided, use it directly.
+        deviceMacAddress = criteria[0].mac.toUpperCase()
+      } else {
+        logging.info('> Scanning for devices based on provided criteria')
+        const scannedDevices = await this.scan(criteria, scan_duration_number)
+        const matchingDevice = scannedDevices.find(device => {
+          // Check if any of the criteria matches the scanned device by "mac" or "name"
+          return criteria.some(criterion => {
+            let macMatch = true
+            let nameMatch = true
+            if (criterion.mac) {
+              macMatch = criterion.mac.toUpperCase() === device.mac?.toUpperCase()
+            }
+            if (criterion.name) {
+              nameMatch = criterion.name === device.name
+            }
+            return macMatch && nameMatch
+          })
+        })
+        if (!matchingDevice || !matchingDevice.mac) {
+          logging.error('No matching device found for provided criteria')
+          throw 'SelectionFailed'
+        }
+        deviceMacAddress = matchingDevice.mac.toUpperCase()
+      }
+
+      logging.debug(`> Waiting for the device ${deviceMacAddress} to show up`)
+      this.#bluetoothDevice = await this.#bluetoothAdapter.waitDevice(
+        deviceMacAddress,
+        timeout_number,
+        scan_duration_number,
+      )
+
+      await sleep(100)
+
+      logging.info('> Getting BLE device mac address')
+      const mac = await this.#bluetoothDevice.getAddress().catch((e) => logging.error(e))
+
+      logging.info('> Getting BLE device name')
+      const name = await this.#bluetoothDevice.getName().catch((e) => logging.error(e))
+
+      // Attach event listeners for connect/disconnect
+      this.#bluetoothDevice.on('connect', this.#onConnected)
+      this.#bluetoothDevice.on('disconnect', this.#onDisconnected)
+
+      return { connector: this.type }
+    } catch (e) {
+      logging.warn(e)
+      throw 'SelectionFailed'
+    }
   }
 
   // if device is conneced, then disconnect it
-  unselect(): Promise<null> {
+  async unselect(): Promise<null> {
     logging.debug('unselect()')
 
-    return new Promise(async (resolve, reject) => {
-      try {
-        if (await this.connected()) {
-          await this.disconnect()
-        }
+    try {
+      // // if (await this.connected()) {
+      await this.disconnect()
+      // // }
 
-        this.#bluetoothDevice?.removeAllListeners('connect')
-        this.#bluetoothDevice?.removeAllListeners('disconnect')
-        this.#bluetoothDevice = undefined
-        this.#connection.reset()
-
-        resolve(null)
-      } catch (e) {
-        reject(e)
+      if (this.#bluetoothDevice) {
+        // Remove all event listeners
+        this.#bluetoothDevice.removeAllListeners('connect')
+        this.#bluetoothDevice.removeAllListeners('disconnect')
+        this.#bluetoothDevice.removeAllListeners('valuechanged')
+        this.#bluetoothDevice = null
       }
-    })
+
+      this.#connection.reset()
+
+      return null
+    } catch (e) {
+      logging.error('Error in unselect:', e)
+      return null
+    }
   }
 
   // // #selected returns boolean if a device is selected
@@ -1095,33 +1178,41 @@ export class SpectodaNodeBluetoothConnector {
   //   return Promise.resolve(this.#bluetoothDevice ? true : false);
   // }
 
-  selected(): Promise<SpectodaTypes.Criterium | null> {
+  async selected(): Promise<SpectodaTypes.Criterium | null> {
     logging.debug('selected()')
 
-    return new Promise(async (resolve, reject) => {
-      try {
-        if (!this.#bluetoothDevice) {
-          resolve(null)
-          return
-        }
+    if (!this.#bluetoothDevice) {
+      return null
+    }
 
-        logging.info('> Getting BLE device mac address')
-        const mac = await this.#bluetoothDevice.getAddress().catch((e) => logging.error(e))
+    logging.info('> Getting BLE device mac address')
+    const mac = await this.#bluetoothDevice.getAddress().catch((e) => logging.error(e))
 
-        logging.info('> Getting BLE device name')
-        const name = await this.#bluetoothDevice.getName().catch((e) => logging.error(e))
-
-        resolve({
-          connector: this.type,
-        })
-      } catch (e) {
-        reject(e)
+    if (!mac) {
+      return {
+        connector: this.type,
       }
-    })
+    }
+
+    logging.info('> Getting BLE device name')
+    const name = await this.#bluetoothDevice.getName().catch((e) => logging.error(e))
+
+    if (!name) {
+      return {
+        connector: this.type,
+        mac: mac,
+      }
+    }
+    
+    return {
+      connector: this.type,
+      mac: mac,
+      name: name,
+    }
   }
 
   //
-  scan(
+  async scan(
     criterium_array: SpectodaTypes.Criterium[],
     scan_duration_number: number | typeof DEFAULT_TIMEOUT = DEFAULT_TIMEOUT,
   ): Promise<SpectodaTypes.Criterium[]> {
@@ -1129,15 +1220,7 @@ export class SpectodaNodeBluetoothConnector {
       scan_duration_number = 7000
     }
 
-    return new Promise(async (resolve, reject) => {
-      try {
-        // if (!criteria || criteria.length != 1 || typeof criteria[0]?.mac !== "string") {
-        //   logging.error("Criteria must be an array of 1 object with specified MAC address: [{mac:'AA:BB:CC:DD:EE:FF'}]");
-        //   throw "CriteriaNotSupported";
-        // }
-
-        // this.#criteria = criteria;
-
+    try {
         if (await this.connected()) {
           logging.info('> Disconnecting device')
           await this.disconnect().catch((e) => logging.error(e))
@@ -1174,10 +1257,14 @@ export class SpectodaNodeBluetoothConnector {
           try {
             const device = await this.#bluetoothAdapter.getDevice(mac)
             const name = await device.getName()
-            // const rssi = await device.getRSSI(); // Seems like RSSI is not available in dbus
-            // const gatt = await device.gatt(); // Seems like this function freezes
+            const rssi = await device.getRSSI()
 
-            const found_in_criteria = criterium_array.some((criterium) => criterium.name === name)
+            // TODO add manufacturer data filtering to include scanning based on the network signature
+
+            // Check if the scanned device fulfills the criteria
+            const found_in_criteria = criterium_array.some(
+              (criterium) => criterium.name === name || (criterium.mac && criterium.mac.toUpperCase() === mac.toUpperCase()),
+            )
             const found_empty_criteria = criterium_array.some((criterium) => Object.keys(criterium).length === 0)
 
             if (found_in_criteria || found_empty_criteria) {
@@ -1185,7 +1272,7 @@ export class SpectodaNodeBluetoothConnector {
                 connector: this.type,
                 mac: mac,
                 name: name,
-                // rssi: rssi
+                rssi: Number(rssi)
               })
             }
           } catch (e) {
@@ -1193,19 +1280,16 @@ export class SpectodaNodeBluetoothConnector {
           }
         }
 
-        // eligibleControllersFound.sort((a, b) => a.rssi - b.rssi);
-        logging.info('> Controlles Found:', eligibleControllersFound)
-        resolve(eligibleControllersFound)
-      } catch (e) {
-        logging.error(e)
-        reject('ScanFailed')
-      }
-    })
+      eligibleControllersFound.sort((a, b) => b.rssi - a.rssi);
+      logging.info('> Controllers Found:', eligibleControllersFound)
+      return eligibleControllersFound
+    } catch (e) {
+      logging.error(e)
+      throw 'ScanFailed'
+    }
   }
 
-  // connect Connector to the selected Spectoda Device. Also can be used to reconnect.
-  // Fails if no device is selected
-  connect(timeout_number: number | typeof DEFAULT_TIMEOUT = DEFAULT_TIMEOUT): Promise<SpectodaTypes.Criterium> {
+  async connect(timeout_number: number | typeof DEFAULT_TIMEOUT = DEFAULT_TIMEOUT): Promise<SpectodaTypes.Criterium> {
     if (timeout_number === DEFAULT_TIMEOUT) {
       timeout_number = 60000
     }
@@ -1220,57 +1304,72 @@ export class SpectodaNodeBluetoothConnector {
 
     this.#reconection = true
 
-    return new Promise(async (resolve, reject) => {
-      if (!this.#bluetoothDevice) {
-        reject('DeviceNotSelected')
-        return
-      }
+    if (!this.#bluetoothDevice) {
+      throw 'DeviceNotSelected'
+    }
 
-      await this.#bluetoothDevice.disconnect().catch((e) => logging.error(e))
+    // Attempt to disconnect first log error if any, but do not fail the connection process.
+    try {
+      await this.#bluetoothDevice.disconnect()
+    } catch (e) {
+      logging.error(e)
+    }
 
-      logging.info('> Connecting to Bluetooth device...')
-      await this.#bluetoothDevice.connect().catch((e) => {
-        logging.error(e)
-        reject('ConnectionFailed')
-        return
-      })
+    logging.info('> Connecting to Bluetooth device...')
+    try {
+      await this.#bluetoothDevice.connect()
+    } catch (e) {
+      logging.error(e)
+      throw 'ConnectionFailed'
+    }
 
-      logging.info('> Getting the GATT server...')
+    logging.info('> Getting the GATT server...')
+    let server
+    try {
+      server = await this.#bluetoothDevice.gatt()
+    } catch (e) {
+      logging.error(e)
+      throw 'ConnectionFailed'
+    }
 
-      return this.#bluetoothDevice
-        .gatt()
-        .then((server) => {
-          this.#connection.reset()
+    this.#connection.reset()
 
-          if (!server) {
-            reject('ConnectionFailed')
-            return
-          }
+    if (!server) {
+      throw 'ConnectionFailed'
+    }
 
-          logging.info('> Getting the Bluetooth Service...')
-          return server.getPrimaryService(this.SPECTODA_SERVICE_UUID)
-        })
-        .then((service) => {
-          if (!service) {
-            reject('ConnectionFailed')
-            return
-          }
+    logging.info('> Getting the Bluetooth Service...')
+    let service
+    try {
+      service = await server.getPrimaryService(this.SPECTODA_SERVICE_UUID)
+    } catch (e) {
+      logging.error(e)
+      throw 'ConnectionFailed'
+    }
 
-          logging.info('> Getting the Service Characteristic...')
-          return this.#connection.attach(service, this.TERMINAL_CHAR_UUID, this.CLOCK_CHAR_UUID, this.DEVICE_CHAR_UUID)
-        })
-        .then(() => {
-          logging.info('> Bluetooth Device Connected')
-          if (!this.#connectedGuard) {
-            this.#runtimeReference.emit(SpectodaAppEvents.PRIVATE_CONNECTED)
-          }
-          return { connector: this.type }
-        })
-        .catch((error) => {
-          logging.error(error)
-          reject('ConnectionFailed')
-        })
-    })
+    if (!service) {
+      throw 'ConnectionFailed'
+    }
+
+    logging.info('> Getting the Service Characteristic...')
+    try {
+      await this.#connection.attach(
+        service,
+        this.TERMINAL_CHAR_UUID,
+        this.CLOCK_CHAR_UUID,
+        this.DEVICE_CHAR_UUID
+      )
+    } catch (e) {
+      logging.error(e)
+      throw 'ConnectionFailed'
+    }
+
+    logging.info('> Bluetooth Device Connected')
+    if (!this.#connectedGuard) {
+      this.#runtimeReference.emit(SpectodaAppEvents.PRIVATE_CONNECTED)
+    }
+
+    return { connector: this.type }
   }
 
   // there #connected returns boolean true if connected, false if not connected
@@ -1281,14 +1380,15 @@ export class SpectodaNodeBluetoothConnector {
   }
 
   // connected() is an runtime function that needs to return a Promise
-  connected(): Promise<SpectodaTypes.Criterium | null> {
+  async connected(): Promise<SpectodaTypes.Criterium | null> {
     logging.verbose('connected()')
 
     if (!this.#bluetoothDevice) {
-      return Promise.resolve(null)
+      return null
     }
 
-    return this.#bluetoothDevice.isConnected().then((connected) => (connected ? { connector: this.type } : null))
+    const connected = await this.#bluetoothDevice.isConnected().catch((e) => logging.error(e))
+    return connected ? { connector: this.type, mac: connected } : null
   }
 
   #disconnect() {
@@ -1472,7 +1572,6 @@ export class SpectodaNodeBluetoothConnector {
   destroy(): Promise<unknown> {
     logging.debug('destroy()')
 
-    //this.#runtimeReference = null; // dont know if I need to destroy this reference.. But I guess I dont need to?
     return this.disconnect()
       .catch(() => {})
       .then(() => {
@@ -1480,6 +1579,10 @@ export class SpectodaNodeBluetoothConnector {
       })
       .catch(() => {})
       .finally(() => {
+        // Clean up bluetooth resources
+        if (this.#bluetoothAdapter) {
+          this.#bluetoothAdapter.stopDiscovery().catch((e) => logging.error(e))
+        }
         this.#bluetoothDestroy()
       })
   }
@@ -1511,16 +1614,15 @@ export class SpectodaNodeBluetoothConnector {
 
     return this.request(request_bytecode, false, 10000)
   }
-  // bool _sendResponse(const int32_t request_ticket_number, const int32_t request_result, std::vector<uint8_t>& response_bytecode, const Connection& destination_connection) = 0;
 
   sendResponse(
     request_ticket_number: number,
     request_result: number,
     response_bytecode: Uint8Array,
     destination_connection: Connection,
-  ) {
+  ): Promise<unknown> {
     logging.verbose(
-      `SpectodaWebBluetoothConnector::sendResponse(request_ticket_number=${request_ticket_number}, request_result=${request_result}, response_bytecode=${response_bytecode}, destination_connection=${destination_connection})`,
+      `SpectodaNodeBluetoothConnector::sendResponse(request_ticket_number=${request_ticket_number}, request_result=${request_result}, response_bytecode=${response_bytecode}, destination_connection=${destination_connection})`,
     )
 
     return Promise.reject('NotImplemented')
