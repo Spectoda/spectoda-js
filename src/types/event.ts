@@ -1,84 +1,21 @@
-import { VALUE_TYPE } from '../constants'
+import { z } from 'zod'
 
-import { SpectodaTypes } from './primitives'
+import { EventSchema } from '../schemas/event'
+import { VALUE_TYPES } from '../constants'
 
-type Keys = keyof typeof VALUE_TYPE
-type Values = (typeof VALUE_TYPE)[Keys]
+export type SpectodaEvent = z.infer<typeof EventSchema>
 
-type SpectodaEventBase = {
-  /** Readonly string with more information about the event value */
-  debug: string
-
-  label: SpectodaTypes.Label
-
-  type: Values
-  value: unknown
-
-  /** When was event emitted */
-  timestamp: SpectodaTypes.Timestamp
-
-  id: SpectodaTypes.ID
-}
-
-export type SpectodaNumberEvent = SpectodaEventBase & {
-  type: typeof VALUE_TYPE.NUMBER
-  value: SpectodaTypes.Number
-}
-
-export type SpectodaLabelEvent = SpectodaEventBase & {
-  type: typeof VALUE_TYPE.LABEL
-  value: SpectodaTypes.Label
-}
-
-export type SpectodaPercentageEvent = SpectodaEventBase & {
-  type: typeof VALUE_TYPE.PERCENTAGE
-  value: SpectodaTypes.Percentage
-}
-
-export type SpectodaTimestampEvent = SpectodaEventBase & {
-  type: typeof VALUE_TYPE.TIMESTAMP
-  value: SpectodaTypes.Timestamp
-}
-
-export type SpectodaColorEvent = SpectodaEventBase & {
-  type: typeof VALUE_TYPE.COLOR
-  value: SpectodaTypes.Color
-}
-
-export type SpectodaPixelsEvent = SpectodaEventBase & {
-  type: typeof VALUE_TYPE.PIXELS
-  value: SpectodaTypes.Pixels
-}
-
-export type SpectodaBooleanEvent = SpectodaEventBase & {
-  type: typeof VALUE_TYPE.BOOLEAN
-  value: SpectodaTypes.Boolean
-}
-
-export type SpectodaNullEvent = SpectodaEventBase & {
-  type: typeof VALUE_TYPE.NULL
-  value: SpectodaTypes.Null
-}
-
-export type SpectodaUndefinedEvent = SpectodaEventBase & {
-  type: typeof VALUE_TYPE.UNDEFINED
-  value: SpectodaTypes.Undefined
-}
-
-export type SpectodaEvent =
-  | SpectodaNumberEvent
-  | SpectodaLabelEvent
-  | SpectodaPercentageEvent
-  | SpectodaTimestampEvent
-  | SpectodaColorEvent
-  | SpectodaPixelsEvent
-  | SpectodaBooleanEvent
-  | SpectodaNullEvent
-  | SpectodaUndefinedEvent
+export type SpectodaNumberEvent = Extract<SpectodaEvent, { type: typeof VALUE_TYPES.NUMBER }>
+export type SpectodaLabelEvent = Extract<SpectodaEvent, { type: typeof VALUE_TYPES.LABEL }>
+export type SpectodaPercentageEvent = Extract<SpectodaEvent, { type: typeof VALUE_TYPES.PERCENTAGE }>
+export type SpectodaTimestampEvent = Extract<SpectodaEvent, { type: typeof VALUE_TYPES.TIMESTAMP }>
+export type SpectodaColorEvent = Extract<SpectodaEvent, { type: typeof VALUE_TYPES.COLOR }>
+export type SpectodaPixelsEvent = Extract<SpectodaEvent, { type: typeof VALUE_TYPES.PIXELS }>
+export type SpectodaBooleanEvent = Extract<SpectodaEvent, { type: typeof VALUE_TYPES.BOOLEAN }>
+export type SpectodaNullEvent = Extract<SpectodaEvent, { type: typeof VALUE_TYPES.NULL }>
+export type SpectodaUndefinedEvent = Extract<SpectodaEvent, { type: typeof VALUE_TYPES.UNDEFINED }>
 
 /**
- * SpectodaEventStateValue type is equivalent to SpectodaEvent
- *
  * @alias SpectodaEvent
  */
 export type SpectodaEventStateValue = SpectodaEvent

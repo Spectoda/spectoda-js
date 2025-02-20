@@ -1,5 +1,20 @@
 /* eslint-disable @typescript-eslint/no-namespace */
+import { z } from 'zod'
+
 import { VALUE_TYPE } from '../constants'
+import {
+  NumberSchema,
+  LabelSchema,
+  TimestampSchema,
+  PercentageSchema,
+  DateSchema,
+  ColorSchema,
+  PixelsSchema,
+  BooleanSchema,
+  NullSchema,
+  UndefinedSchema,
+  IDSchema,
+} from '../schemas/primitives'
 
 export namespace SpectodaTypes {
   type criteria_generic = Partial<{
@@ -85,82 +100,17 @@ export namespace SpectodaTypes {
 
   export type ValueType = (typeof VALUE_TYPE)[keyof typeof VALUE_TYPE]
 
-  /**
-   * Whole integer number value. Range: -1000000000 to 1000000000
-   *
-   * @example 10000
-   */
-  export type Number = number
-
-  /**
-   * String of max 5 alphanumeric chars (`[a-zA-Z0-9_]`).
-   *
-   * @example "toggl", "brigh", "color", "P_ena", "LIGHT"
-   */
-  export type Label = string
-
-  /**
-   * Timestamp in milliseconds. Range: -86400000 to 86400000
-   *
-   * @example 86400000
-   */
-  export type Timestamp = number
-
-  /**
-   * Percentage value with 6 decimal places. Range: -100.000000 to 100.000000
-   *
-   * @example 99.234567
-   */
-  export type Percentage = number
-
-  /**
-   * Date string in ISO 8601 format.
-   *
-   * @example "2024-01-01"
-   */
-  export type Date = string
-
-  /**
-   * Color string in hexadecimal format, where the `#` is optional.
-   *
-   * @example "FF0000", "#FF0000"
-   */
-  export type Color = string
-
-  /**
-   * Pixels value. Range: -32768 to 32767
-   *
-   * @example 100
-   */
-  export type Pixels = number
-
-  /**
-   * Boolean value.
-   *
-   * @example true, false
-   */
-  export type Boolean = boolean
-
-  /**
-   * Null value.
-   *
-   * @example null
-   */
-  export type Null = null
-
-  /**
-   * Undefined value.
-   *
-   * @example undefined
-   */
-  export type Undefined = undefined
-
-  /**
-   * ID of an event or segment.
-   *
-   * Range: 0 - 255
-   */
-  export type ID = number
+  export type Number = z.infer<typeof NumberSchema>
+  export type Label = z.infer<typeof LabelSchema>
+  export type Timestamp = z.infer<typeof TimestampSchema>
+  export type Percentage = z.infer<typeof PercentageSchema>
+  export type Date = z.infer<typeof DateSchema>
+  export type Color = z.infer<typeof ColorSchema>
+  export type Pixels = z.infer<typeof PixelsSchema>
+  export type Boolean = z.infer<typeof BooleanSchema>
+  export type Null = z.infer<typeof NullSchema>
+  export type Undefined = z.infer<typeof UndefinedSchema>
+  export type ID = z.infer<typeof IDSchema>
   export type IDs = ID | ID[]
 
   /**
