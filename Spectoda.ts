@@ -48,7 +48,6 @@ import { SpectodaTypes } from './src/types/primitives'
 import { SpectodaClass } from './src/types/spectodaClass'
 import { fetchTnglFromApiById, sendTnglToApi } from './tnglapi'
 import { EventSchema } from './src/schemas/event'
-import { CriteriaSchema } from './src/schemas/criteria'
 
 const MIN_FIRMWARE_LENGTH = 10000
 const DEFAULT_RECONNECTION_TIME = 2500
@@ -863,17 +862,6 @@ export class Spectoda implements SpectodaClass {
 
     if (ownerKey) {
       this.#setOwnerKey(ownerKey)
-    }
-
-    if (typeof criteria === 'string') {
-      const parsed = JSON.parse(criteria)
-      const validation = CriteriaSchema.array().safeParse(parsed)
-
-      if (validation.success) {
-        criteria = validation.data
-      } else {
-        // TODO Handle validation error
-      }
     }
 
     // if criteria is object or array of obects
