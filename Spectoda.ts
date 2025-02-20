@@ -544,7 +544,8 @@ export class Spectoda implements SpectodaClass {
         // TODO rename to updateControllerFirmware
         if (functionName === 'updateDeviceFirmware' || functionName === 'updateNetworkFirmware') {
           if (Array.isArray(args?.[0])) {
-            args[0] = new Uint8Array(args[0])
+            // TODO Add types
+            args[0] = new Uint8Array(args[0] as any)
           } else if (typeof args?.[0] === 'object') {
             const arr: any = Object.values(args[0])
             const uint8Array = new Uint8Array(arr)

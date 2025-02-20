@@ -1347,7 +1347,8 @@ export class SpectodaRuntime {
     logging.debug(`> Making PreviewController ${controller_mac_address}...`)
 
     if (typeof controller_config === 'string') {
-      controller_config = JSON.parse(controller_config)
+      // TODO Add data validation
+      controller_config = JSON.parse(controller_config) as any
     }
 
     logging.verbose('controller_config=', controller_config)
@@ -1501,7 +1502,8 @@ export class SpectodaRuntime {
       "sections": []
     }`
 
-    const segment = JSON.parse(segmnet_template)
+    // TODO Add data validation
+    const segment = JSON.parse(segmnet_template) as any
 
     const A_ASCII_CODE = 'A'.charCodeAt(0)
     const D_ASCII_CODE = 'D'.charCodeAt(0)
@@ -1581,7 +1583,8 @@ export class SpectodaRuntime {
             "reversed": false
           }`
 
-          let section = JSON.parse(section_template)
+          // TODO Add data validation
+          let section = JSON.parse(section_template) as any
 
           section.controller = previewController.label
           section.port = String.fromCharCode(portTag)
@@ -1599,7 +1602,8 @@ export class SpectodaRuntime {
                 segment.sections.push(section)
               }
 
-              section = JSON.parse(section_template)
+              // TODO Add data validation
+              section = JSON.parse(section_template) as any
               section.controller = previewController.label
               section.port = String.fromCharCode(portTag)
               section.from = undefined

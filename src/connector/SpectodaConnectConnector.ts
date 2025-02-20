@@ -789,20 +789,24 @@ export class SpectodaConnectConnector extends FlutterConnection {
         window.flutterConnection.reject = reject
 
         console.warn('autoSelect() with minimal timeout timeouted, trying it again with the full timeout...')
+        // TODO Fix types
+        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
         // @ts-ignore
         window.flutter_inappwebview.callHandler(
           'autoSelect',
-          criteria_json,
+          criteria_json as any,
           Math.max(MINIMAL_AUTOSELECT_SCAN_DURATION, scan_duration_number),
           Math.max(MINIMAL_AUTOSELECT_TIMEOUT, timeout_number),
         )
       }
     })
 
+    // TODO Fix types
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore
     window.flutter_inappwebview.callHandler(
       'autoSelect',
-      criteria_json,
+      criteria_json as any,
       Math.max(MINIMAL_AUTOSELECT_SCAN_DURATION, scan_duration_number),
       Math.max(MINIMAL_AUTOSELECT_TIMEOUT, scan_duration_number),
     )

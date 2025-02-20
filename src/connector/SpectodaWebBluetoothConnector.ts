@@ -841,7 +841,8 @@ export class SpectodaWebBluetoothConnector {
                   prefix[fw_version_byte_offset + i] = ~(version_bytes[i] & (1 << j))
                   mask[fw_version_byte_offset + i] = 1 << j
 
-                  const filter_clone = JSON.parse(JSON.stringify(filter))
+                  // TODO Add data validation
+                  const filter_clone = JSON.parse(JSON.stringify(filter)) as any
 
                   filter_clone.manufacturerData = [
                     {
