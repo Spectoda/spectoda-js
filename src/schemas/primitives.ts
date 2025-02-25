@@ -175,6 +175,12 @@ export const FirmwareVersionSchema = z.string().regex(/^!?\d+\.\d+\.\d+$/)
 export const FirmwareVersionFullSchema = z.string().regex(/^[A-Z_]+\d+\.\d+\.\d+_\d{8}$/)
 
 /**
+ * Firmware version code.
+ *
+ * @example 1201
+ */
+export const FirmwareVersionCodeSchema = z.number().int().min(0)
+/**
  * Fingerprint as 32-character hexadecimal string.
  * Used for TNGL, event store, and config fingerprints.
  *

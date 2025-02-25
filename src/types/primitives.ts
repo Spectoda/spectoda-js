@@ -23,14 +23,16 @@ import {
   FingerprintSchema,
   TnglBankSchema,
   ControllerNameSchema as ControllerNameSchema,
+  FirmwareVersionCodeSchema,
 } from '../schemas/primitives'
-import { BaseCriteriaSchema, SerialCriteriaSchema, BleCriteriaSchema } from '../schemas/criteria'
+import { BaseCriteriaSchema, SerialCriteriaSchema, BleCriteriaSchema, DummyCriteriaSchema } from '../schemas/criteria'
 import { VALUE_TYPES } from '../constants/values'
 
 export namespace SpectodaTypes {
   export type BaseCriteria = z.infer<typeof BaseCriteriaSchema>
   export type SerialCriteria = z.infer<typeof SerialCriteriaSchema>
   export type BleCriteria = z.infer<typeof BleCriteriaSchema>
+  export type DummyCriteria = z.infer<typeof DummyCriteriaSchema>
 
   type criteria_generic = BaseCriteria
   type criteria_ble = BleCriteria
@@ -70,11 +72,11 @@ export namespace SpectodaTypes {
   export type ProductCode = z.infer<typeof ProductCodeSchema>
   export type FirmwareVersion = z.infer<typeof FirmwareVersionSchema>
   export type FirmwareVersionFull = z.infer<typeof FirmwareVersionFullSchema>
+  export type FirmwareVersionCode = z.infer<typeof FirmwareVersionCodeSchema>
   export type Fingerprint = z.infer<typeof FingerprintSchema>
   export type TnglBank = z.infer<typeof TnglBankSchema>
   export type ControllerName = z.infer<typeof ControllerNameSchema>
 
-  // Controller info type
   export type ControllerInfo = {
     // Connection criteria
     controllerLabel: Label
@@ -88,7 +90,7 @@ export namespace SpectodaTypes {
     fullName: ControllerName
     pcbCode: PcbCode
     fwVersionFull: FirmwareVersionFull
-    fwVersionCode: FirmwareVersion
+    fwVersionCode: FirmwareVersionCode
     fwCompilationUnixTimestamp: Timestamp
     tnglFingerprint: Fingerprint
     eventStoreFingerprint: Fingerprint
