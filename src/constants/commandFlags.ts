@@ -2,9 +2,9 @@
  * Command flags used for communication with Spectoda devices.
  * For more detailed information about command flags and their usage,
  * see Spectoda_Firmware components/spectoda-library/src/encoding.h
- * 
+ *
  * This file will be removed in the future as TNGL parsing is being moved to C++ in WASM
- * 
+ *
  * @see https://github.com/spectoda/Spectoda_Firmware/blob/main/components/spectoda-library/src/encoding.h
  */
 
@@ -12,7 +12,7 @@ export const COMMAND_FLAGS = Object.freeze({
   UNSUPPORTED_COMMND_RESPONSE: 255,
 
   OTA_BEGIN: 255,
-  OTA_WRITE: 0, 
+  OTA_WRITE: 0,
   OTA_END: 254,
   OTA_RESET: 253,
 
@@ -140,5 +140,4 @@ export const COMMAND_FLAGS = Object.freeze({
   CONNECT_RESPONSE: 239,
   ADOPT_REQUEST: 240,
   ADOPT_RESPONSE: 241,
-
 } as const)
