@@ -12,10 +12,10 @@ const MAX_ID = 255
  * @example -1000
  * @example 999999999
  */
-export const NumberSchema = z.number().min(JS_EVENT_VALUE_LIMITS.NUMBER_MIN).max(JS_EVENT_VALUE_LIMITS.NUMBER_MAX)
+export const NumberSchema = z.number().int().min(JS_EVENT_VALUE_LIMITS.NUMBER_MIN).max(JS_EVENT_VALUE_LIMITS.NUMBER_MAX)
 
 /**
- * String of max 5 alphanumeric chars ([a-zA-Z0-9_]).
+ * String of max 5 alphanumeric chars and underscores ([a-zA-Z0-9_]).
  *
  * @example "toggl"
  * @example "brigh"
@@ -23,7 +23,10 @@ export const NumberSchema = z.number().min(JS_EVENT_VALUE_LIMITS.NUMBER_MIN).max
  * @example "P_ena"
  * @example "LIGHT"
  */
-export const LabelSchema = z.string().max(LABEL_MAX_LENGTH)
+export const LabelSchema = z
+  .string()
+  .regex(/^[a-zA-Z0-9_]*$/)
+  .max(LABEL_MAX_LENGTH)
 
 /**
  * Timestamp in milliseconds. Range: -86400000 to 86400000
@@ -75,7 +78,7 @@ export const ColorSchema = z.string().regex(/#?[\dA-Fa-f]{6}/g)
  * @example -100
  * @example 32767
  */
-export const PixelsSchema = z.number().int()
+export const PixelsSchema = z.number().int().min(JS_EVENT_VALUE_LIMITS.PIXELS_MIN).max(JS_EVENT_VALUE_LIMITS.PIXELS_MAX)
 
 /**
  * Boolean value.

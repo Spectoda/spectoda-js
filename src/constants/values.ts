@@ -32,6 +32,9 @@ export const JS_EVENT_VALUE_LIMITS = Object.freeze({
   PERCENTAGE_MAX: 100,
   PERCENTAGE_MIN: 0,
   PERCENTAGE_MINUS_MAX: -100,
+
+  PIXELS_MAX: 32767,
+  PIXELS_MIN: -32768,
 } as const) satisfies ValueLimits
 
 export const VALUE_TYPES = Object.freeze({
