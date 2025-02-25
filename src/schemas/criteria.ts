@@ -1,40 +1,31 @@
 import { z } from 'zod'
 
-// TODO: Add all primitives to the criteria schema and use them here
+import {
+  MacAddressSchema,
+  NetworkSignatureSchema,
+  FirmwareVersionSchema,
+  ProductCodeSchema,
+  PathSchema,
+  BaudrateSchema,
+  ControllerNameSchema,
+} from './primitives'
 
 /**
  * Base criteria for connecting to a Spectoda device
  */
-const BaseCriteriaSchema = z
+export const BaseCriteriaSchema = z
   .object({
-    /** Device name */
-    name: z.string().optional(),
+    name: ControllerNameSchema.optional(),
 
-    /** Name prefix for filtering devices */
+    // todo @immakermatty add definition for nameprefix
     nameprefix: z.string().optional(),
-
-    /** MAC address in format "XX:XX:XX:XX:XX:XX" */
-    mac: z
-      .string()
-      .regex(/^([0-9A-Fa-f]{2}:){5}[0-9A-Fa-f]{2}$/)
-      .optional(),
-
-    /** Network signature as 32-char hex string */
-    network: z.string().length(32).optional(),
-
-    /** Firmware version in format "X.Y.Z" or "!X.Y.Z" */
-    fw: z
-      .string()
-      .regex(/^!?\d+\.\d+\.\d+$/)
-      .optional(),
-
-    /** Product code number */
-    product: z.number().int().min(0).max(0xffff).optional(),
-
-    /** Whether device is commissionable */
+    mac: MacAddressSchema.optional(),
+    network: NetworkSignatureSchema.optional(),
+    fw: FirmwareVersionSchema.optional(),
+    product: ProductCodeSchema.optional(),
     commisionable: z.boolean().optional(),
 
-    /** Type of connector */
+    // todo @immakermatty add definition for connector
     connector: z.string().optional(),
   })
   .strict()
@@ -43,10 +34,8 @@ const BaseCriteriaSchema = z
  * Serial-specific connection criteria
  */
 export const SerialCriteriaSchema = BaseCriteriaSchema.extend({
-  /** Serial port path */
-  path: z.string().optional(),
-  /** Baud rate */
-  baudrate: z.number().int().positive().optional(),
+  path: PathSchema.optional(),
+  baudrate: BaudrateSchema.optional(),
 })
 
 /**
