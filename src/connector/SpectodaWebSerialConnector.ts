@@ -475,10 +475,22 @@ export class SpectodaWebSerialConnector {
 
         // TODO properly handle the criteria
         if (this.#criteria && this.#criteria.length > 0) {
+          // TODO Fix types
+          // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+          // @ts-ignore
           if (this.#criteria[0].baudrate) {
+            // TODO Fix types
+            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+            // @ts-ignore
             this.#portOptions.baudRate = this.#criteria[0].baudrate
           }
+          // TODO Fix types
+          // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+          // @ts-ignore
           if (this.#criteria[0].baudRate) {
+            // TODO Fix types
+            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+            // @ts-ignore
             this.#portOptions.baudRate = this.#criteria[0].baudRate
           }
         }

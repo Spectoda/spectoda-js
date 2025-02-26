@@ -448,7 +448,7 @@ export class PreviewController {
     this.#eventEmitter.emit('clear_logs')
   }
 
-  on(event: string, callback: Function) {
+  on(event: string, callback: (...args: any[]) => void) {
     return this.#eventEmitter.on(event, callback)
   }
 

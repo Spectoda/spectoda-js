@@ -47,6 +47,7 @@ import { SpectodaEvent } from './src/types/event'
 import { SpectodaTypes } from './src/types/primitives'
 import { SpectodaClass } from './src/types/spectodaClass'
 import { fetchTnglFromApiById, sendTnglToApi } from './tnglapi'
+import { EventSchema } from './src/schemas/event'
 
 const MIN_FIRMWARE_LENGTH = 10000
 const DEFAULT_RECONNECTION_TIME = 2500
@@ -542,7 +543,8 @@ export class Spectoda implements SpectodaClass {
         // TODO rename to updateControllerFirmware
         if (functionName === 'updateDeviceFirmware' || functionName === 'updateNetworkFirmware') {
           if (Array.isArray(args?.[0])) {
-            args[0] = new Uint8Array(args[0])
+            // TODO Add types
+            args[0] = new Uint8Array(args[0] as any)
           } else if (typeof args?.[0] === 'object') {
             const arr: any = Object.values(args[0])
             const uint8Array = new Uint8Array(arr)
@@ -860,10 +862,6 @@ export class Spectoda implements SpectodaClass {
 
     if (ownerKey) {
       this.#setOwnerKey(ownerKey)
-    }
-
-    if (typeof criteria === 'string') {
-      criteria = JSON.parse(criteria)
     }
 
     // if criteria is object or array of obects
@@ -3252,7 +3250,8 @@ export class Spectoda implements SpectodaClass {
       return Promise.reject('InvalidOption')
     }
 
-    return window.flutter_inappwebview.callHandler('setOrientation', option)
+    // TODO remove any and replace flutter calling with SCF Bridge
+    return window.flutter_inappwebview.callHandler('setOrientation', option as any)
   }
 
   // 0.9.4
@@ -3645,7 +3644,14 @@ export class Spectoda implements SpectodaClass {
     logging.info('> Emitting events...')
 
     if (typeof events === 'string') {
-      events = JSON.parse(events)
+      const parsed = JSON.parse(events)
+      const validated = EventSchema.array().safeParse(parsed)
+
+      if (validated.success) {
+        events = validated.data
+      } else {
+        // TODO Handle validation error
+      }
     }
 
     // Check if events is not an array and make it an array if necessary
