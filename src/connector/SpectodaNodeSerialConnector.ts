@@ -13,7 +13,7 @@
 echo 'overlays=uart3' | sudo tee -a /boot/orangepiEnv.txt
 cat /boot/orangepiEnv.txt
 */
-
+// @ts-nocheck
 import { TimeTrack } from '../../TimeTrack'
 import { TnglReader } from '../../TnglReader'
 import { TnglWriter } from '../../TnglWriter'

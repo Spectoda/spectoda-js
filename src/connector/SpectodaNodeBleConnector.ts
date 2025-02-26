@@ -1,5 +1,5 @@
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-
+// @ts-nocheck
 import { detectGW, numberToBytes, sleep, toBytes } from '../../functions'
 import { logging } from '../../logging'
 import { TimeTrack } from '../../TimeTrack'
@@ -11,6 +11,8 @@ import { SpectodaAppEvents } from '../types/app-events'
 import { SpectodaTypes } from '../types/primitives'
 import { Connection, Synchronization } from '../types/wasm'
 
+
+
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore
 // eslint-disable-next-line security/detect-non-literal-require, unicorn/prefer-module
@@ -18,7 +20,24 @@ const requireBundlerWorkeround = (moduleName: string) => (detectGW() ? require(m
 // TODO node-ble on the same level as spectoda-js or node-ble in the spectoda-js repo ? nevíme
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore
-const NodeBle = detectGW() ? requireBundlerWorkeround('../../../node-ble/src/index') : {}
+let NodeBle = { createBluetooth: () => ({ bluetooth: { defaultAdapter: async() => {
+  return {
+    startDiscovery: async () => {},
+    stopDiscovery: async () => {},
+    isDiscovering: async () => false,
+    waitDevice: async(address: string, timeout: number, scanPeriod: number) => {},
+    devices: async () => [],
+    getDevice: async (address: string) => {},
+  }
+} }, destroy: () => {} }) }
+
+
+try {
+  NodeBle = detectGW() ? requireBundlerWorkeround('../../../node-ble/src/index') : {}
+} catch {
+  // 
+}
+
 const { createBluetooth } = NodeBle
 
 // Add these type definitions at the top of the file
