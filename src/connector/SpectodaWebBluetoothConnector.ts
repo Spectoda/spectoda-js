@@ -1,5 +1,5 @@
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-
+// @ts-nocheck
 // npm install --save-dev @types/web-bluetooth
 /// <reference types="web-bluetooth" />
 
