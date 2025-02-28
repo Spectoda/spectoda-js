@@ -1,4 +1,5 @@
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// TODO Fix eslint + typescript [DEV-4737]
+/* eslint-disable */
 // @ts-nocheck
 // npm install --save @types/w3c-web-serial
 

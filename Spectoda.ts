@@ -33,12 +33,12 @@ import {
 import { WEBSOCKET_URL } from './SpectodaWebSocketsConnector'
 import './TnglReader'
 import './TnglWriter'
-import { ConnectionStatus } from './deprecated_store/types'
 import { SpectodaRuntime, allEventsEmitter } from './src/SpectodaRuntime'
 import { VALUE_LIMITS, VALUE_TYPE } from './src/constants'
 import { SpectodaAppEventMap, SpectodaAppEventName, SpectodaAppEvents } from './src/types/app-events'
 import {
   CONNECTION_STATUS,
+  ConnectionStatus,
   ConnectorType,
   REMOTECONTROL_STATUS,
   RemoteControlConnectionStatus,

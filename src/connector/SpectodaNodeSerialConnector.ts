@@ -1,4 +1,6 @@
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// TODO Fix eslint + typescript [DEV-4738]
+/* eslint-disable */
+// @ts-nocheck
 
 // npm install @types/serialport --save-dev
 
