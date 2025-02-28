@@ -7,7 +7,6 @@ type ValueLimits = Readonly<{
 
   PERCENTAGE_MAX: number
   PERCENTAGE_MIN: number
-  PERCENTAGE_MINUS_MAX: number
 }>
 
 export const CPP_EVENT_VALUE_LIMITS = Object.freeze({
@@ -18,11 +17,10 @@ export const CPP_EVENT_VALUE_LIMITS = Object.freeze({
   TIMESTAMP_MIN: -86400000,
 
   PERCENTAGE_MAX: 100000000,
-  PERCENTAGE_MIN: 0,
-  PERCENTAGE_MINUS_MAX: -100000000,
+  PERCENTAGE_MIN: -100000000,
 
-  //pixels_max?
-  //pixels_min?
+  PIXELS_MAX: 32767,
+  PIXELS_MIN: -32768,
 } as const) satisfies ValueLimits
 
 export const JS_EVENT_VALUE_LIMITS = Object.freeze({
@@ -33,8 +31,7 @@ export const JS_EVENT_VALUE_LIMITS = Object.freeze({
   TIMESTAMP_MIN: -86400000,
 
   PERCENTAGE_MAX: 100,
-  PERCENTAGE_MIN: 0,
-  PERCENTAGE_MINUS_MAX: -100,
+  PERCENTAGE_MIN: -100,
 
   PIXELS_MAX: 32767,
   PIXELS_MIN: -32768,

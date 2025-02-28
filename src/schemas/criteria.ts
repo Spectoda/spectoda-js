@@ -20,7 +20,7 @@ export const BaseCriteriaSchema = z
     name: ControllerNameSchema.optional(),
 
     // todo @immakermatty add definition for nameprefix
-    nameprefix: z.string().optional(),
+    nameprefix: ControllerNameSchema.optional(),
     mac: MacAddressSchema.optional(),
     network: NetworkSignatureSchema.optional(),
     fw: FirmwareVersionSchema.optional(),
