@@ -7,6 +7,7 @@ export const VALUE_TYPE = Object.freeze({
   TIMESTAMP: 32,
   PERCENTAGE: 30,
   DATE: 28,
+  REAL: 27,
   COLOR: 26,
   PIXELS: 19,
   BOOLEAN: 2,
@@ -95,6 +96,7 @@ export const COMMAND_FLAGS = Object.freeze({
   FLAG_EMIT_TIMESTAMP_EVENT: 124,
   FLAG_EMIT_LABEL_EVENT: 125,
   FLAG_EMIT_NUMBER_EVENT: 126,
+  FLAG_EMIT_NORMALIZED_EVENT: 127,
 
   // Former CommandFlag end
 

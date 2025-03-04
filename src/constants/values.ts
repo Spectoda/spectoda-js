@@ -43,6 +43,7 @@ export const VALUE_TYPES = Object.freeze({
   TIMESTAMP: 32,
   PERCENTAGE: 30,
   DATE: 28,
+  REAL: 27,
   COLOR: 26,
   PIXELS: 19,
   BOOLEAN: 2,
