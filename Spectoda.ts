@@ -29,6 +29,7 @@ import {
   NO_NETWORK_KEY,
   NO_NETWORK_SIGNATURE,
   TNGL_SIZE_CONSIDERED_BIG,
+  VALUE_TYPES,
 } from './src/constants'
 import { WEBSOCKET_URL } from './SpectodaWebSocketsConnector'
 import './TnglReader'
@@ -1012,11 +1013,10 @@ export class Spectoda implements SpectodaClass {
      * @param {string} berryCode - The BERRY code to minify.
      * @returns {string} - The minified BERRY code.
      */
-    function minifyBerryCode(berryCode: string): string {
+    function preprocessBerry(berryCode: string): string {
       let minified = berryCode
 
       // Step 0: Determine flags
-
       let flag_no_minify = false
       let flag_minify = false
 
@@ -1030,30 +1030,156 @@ export class Spectoda implements SpectodaClass {
         flag_minify = true
       }
 
-      // Step 1: Replace specific patterns A, B, C, D
+      /**
+       * Step 1: Define the enum constants to replace in Berry code
+       * 
+       * This creates a mapping of constant names to their numeric values
+       * that will be used to replace occurrences in the Berry code during minification.
+       * 
+       * Two types of constants are defined:
+       * 
+       * a. Value type constants from VALUE_TYPES:
+       *    - 'NUMBER' will be replaced with '29'
+       *    - 'PERCENTAGE' will be replaced with '30'
+       *    - 'LABEL' will be replaced with '31'
+       *    - 'TIMESTAMP' will be replaced with '32'
+       *    - 'BOOLEAN' will be replaced with '2'
+       *    - etc.
+       * 
+       * b. Device ID constants (ID0-ID255):
+       *    - 'ID0' will be replaced with '0' 
+       *    - 'ID1' will be replaced with '1' 
+       *    - 'ID2' will be replaced with '2'
+       *    - And so on up to ID255
+       * 
+       * This allows Berry scripts to use readable constant names while
+       * the minified version uses the actual numeric values for better performance.
+       */
+      const berryDefines: { [key: string]: string } = {};
+      
+      // a. Keys of VALUE_TYPES as string keys in berryDefines are being replaced with their numeric values
+      Object.keys(VALUE_TYPES).forEach(key => {
+        berryDefines[key] = VALUE_TYPES[key as keyof typeof VALUE_TYPES].toString();
+      });
 
-      // Pattern A: Hex Color Codes - /#[0-9a-f]{6}/i
-      const colorRegex = /#([\da-f]{6})/gi
+      // b. ID0-ID255 constants are being replaced with their numeric values
+      for (let i = 0; i <= 255; i++) {
+        berryDefines[`ID${i}`] = i.toString()
+      }
 
-      minified = minified.replace(colorRegex, (match, p1) => {
-        return `Value.Color("${p1.toLowerCase()}")`
-      })
+      // Step 2: First pass - Remove comments while preserving string literals
+      let result = ''
+      let i = 0
+      let inSingleQuoteString = false
+      let inDoubleQuoteString = false
+      let inLineComment = false
+      let inMultilineComment = false
+      let escaped = false
+
+      while (i < minified.length) {
+        const char = minified[i]
+        const nextChar = i + 1 < minified.length ? minified[i + 1] : ''
+        
+        // Handle escape sequences in strings
+        if (escaped) {
+          if (inSingleQuoteString || inDoubleQuoteString) {
+            result += char
+          }
+          escaped = false
+          i++
+          continue
+        }
+        
+        if (char === '\\' && (inSingleQuoteString || inDoubleQuoteString)) {
+          result += char
+          escaped = true
+          i++
+          continue
+        }
+        
+        // Handle string boundaries
+        if (char === '"' && !inSingleQuoteString && !inMultilineComment && !inLineComment) {
+          inDoubleQuoteString = !inDoubleQuoteString
+          result += char
+          i++
+          continue
+        }
+        
+        if (char === "'" && !inDoubleQuoteString && !inMultilineComment && !inLineComment) {
+          inSingleQuoteString = !inSingleQuoteString
+          result += char
+          i++
+          continue
+        }
+        
+        // Inside strings, just copy characters
+        if (inSingleQuoteString || inDoubleQuoteString) {
+          result += char
+          i++
+          continue
+        }
+        
+        // Handle comments
+        if (char === '#' && nextChar === '-' && !inLineComment && !inMultilineComment) {
+          inMultilineComment = true
+          i += 2  // Skip '#-'
+          continue
+        }
+        
+        if (char === '-' && nextChar === '#' && inMultilineComment) {
+          inMultilineComment = false
+          i += 2  // Skip '-#'
+          continue
+        }
+        
+        if (char === '#' && !inMultilineComment && !inLineComment) {
+          inLineComment = true
+          i++
+          continue
+        }
+        
+        if ((char === '\n' || char === '\r') && inLineComment) {
+          inLineComment = false
+          result += char  // Keep the newline
+          i++
+          continue
+        }
+        
+        // Skip characters in comments
+        if (inLineComment || inMultilineComment) {
+          i++
+          continue
+        }
+        
+        // Add non-comment characters
+        result += char
+        i++
+      }
+      
+      minified = result
+
+      // Step 3: Now apply the pattern replacements (after comments are removed)
+      // // // Pattern A: Hex Color Codes - /#[0-9a-f]{6}/i
+      // // const colorRegex = /#([\da-f]{6})/gi
+
+      // // minified = minified.replace(colorRegex, (match, p1) => {
+      // //   return `Value.Color("${p1.toLowerCase()}")`
+      // // })
 
       // Pattern B: Timestamps - /([+-]?(\d+\.\d+|\d+|\.\d+))(d|h|m(?!s)|s|ms|t)\b/gi
       const timestampRegex = /([+-]?(\d+\.\d+|\d+|\.\d+))(d|h|m(?!s)|s|ms|t)\b/gi
 
       minified = minified.replace(timestampRegex, (match) => {
         const miliseconds = computeTimestamp(match)
-
         return `Value.Timestamp(${miliseconds})`
       })
 
-      // Pattern C: Labels - /\$[\w]+/
-      const labelRegex = /\$(\w+)/g
+      // // // Pattern C: Labels - /\$[\w]+/
+      // // const labelRegex = /\$(\w+)/g
 
-      minified = minified.replace(labelRegex, (match, p1) => {
-        return `Value.Label("${p1}")`
-      })
+      // // minified = minified.replace(labelRegex, (match, p1) => {
+      // //   return `Value.Label("${p1}")`
+      // // })
 
       // Pattern D: Percentages - /[+-]?\d+(\.\d+)?%/
       const percentageRegex = /([+-]?\d+(\.\d+)?)%/g
@@ -1062,44 +1188,97 @@ export class Spectoda implements SpectodaClass {
         return `Value.Percentage(${parseFloat(p1)})`
       })
 
-      // Pattern E: IDs (0 to 255)
-      const idRegex = /\bID(0|[1-9]\d?|1\d\d|2[0-4]\d|25[0-5])\b/g
+      // // // Pattern F: null value
+      // // const nullRegex = /\bnull\b/g
 
-      minified = minified.replace(idRegex, (match, p1) => {
-        return `${p1}`
-      })
+      // // minified = minified.replace(nullRegex, () => {
+      // //   return 'Value.Null()'
+      // // })
 
-      // Pattern F: null value
-      const nullRegex = /\bnull\b/g
+      // Step 4: Third pass - Replace enum constants with their values (only outside strings)
+      result = ''
+      i = 0
+      inSingleQuoteString = false
+      inDoubleQuoteString = false
+      escaped = false
+      let token = ''
 
-      minified = minified.replace(nullRegex, () => {
-        return 'Value.Null()'
-      })
+      while (i < minified.length) {
+        const char = minified[i]
+        
+        // Handle escape sequences in strings
+        if (escaped) {
+          result += char
+          escaped = false
+          i++
+          continue
+        }
+        
+        if (char === '\\' && (inSingleQuoteString || inDoubleQuoteString)) {
+          result += char
+          escaped = true
+          i++
+          continue
+        }
+        
+        // Handle string boundaries
+        if (char === '"' && !inSingleQuoteString) {
+          inDoubleQuoteString = !inDoubleQuoteString
+          result += char
+          i++
+          continue
+        }
+        
+        if (char === "'" && !inDoubleQuoteString) {
+          inSingleQuoteString = !inSingleQuoteString
+          result += char
+          i++
+          continue
+        }
+        
+        // Inside strings, just copy characters
+        if (inSingleQuoteString || inDoubleQuoteString) {
+          result += char
+          i++
+          continue
+        }
+        
+        // If the character is alphanumeric or underscore, it could be part of an identifier
+        if (/[A-Za-z0-9_]/.test(char)) {
+          token += char
+          i++
+        } else {
+          // Check if the token is a defined constant
+          if (token && token in berryDefines) {
+            result += berryDefines[token]
+          } else if (token) {
+            result += token
+          }
+          
+          // Add the current character
+          result += char
+          token = ''
+          i++
+        }
+      }
+      
+      // Handle any remaining token
+      if (token && token in berryDefines) {
+        result += berryDefines[token]
+      } else if (token) {
+        result += token
+      }
+      
+      minified = result
 
-      // Step 2: Remove BERRY-specific comments
-      // First remove multiline comments (#- ... -#)
-      // Match #- followed by any characters (including newlines) until -#
-      // Ignore lines starting with dash/hyphen within the comment
-      const berryMultilineCommentRegex = /#-[\s\S]*?-#/g
+      // Step 5: Fix any remaining ID references in strings
+      // This ensures that "ID1" in string literals like "<EventState $test[ID1]: <Value 42>>" is preserved
+      minified = minified.replace(/(\[)ID(\d+)(\])/g, '$1ID$2$3');
 
-      minified = minified.replace(berryMultilineCommentRegex, '')
-
-      // Then remove single line comments (# ...)
-      const berryCommentRegex = /#.*$/gm
-
-      minified = minified.replace(berryCommentRegex, '')
-
-      // Step 3: Remove unnecessary semicolons (if BerryLang allows)
+      // Step 6: Remove unnecessary semicolons
       minified = minified.replace(/;+/g, ' ')
 
-      // Step 4: Remove leading and trailing whitespace from each line
-      minified = minified
-        .split('\n')
-        .map((line) => line.trim())
-        .filter((line) => line.length > 0) // Remove empty lines
-        .join('\n') // Preserve line breaks
-
-      // Step 5: Minify variable names if @minify flag is present
+      // Step 7: Minify variable names if @minify flag is present
       if (flag_minify && !flag_no_minify) {
         // Set to store all local variable names found
         const localVars = new Set<string>()
@@ -1158,9 +1337,9 @@ export class Spectoda implements SpectodaClass {
         }
       }
 
-      // Step 6: Remove spaces around specific characters (if not @no-minify)
+      // Step 8: Remove spaces around specific characters (if not @no-minify)
       if (!flag_no_minify) {
-        // Step 6: Remove spaces before and after specific characters
+        // Remove spaces before and after specific characters
         const charsToRemoveSpaceAround = [
           ';',
           ',',
@@ -1186,12 +1365,10 @@ export class Spectoda implements SpectodaClass {
         for (const char of charsToRemoveSpaceAround) {
           // Remove space before the character
           const beforeRegex = new RegExp(`\\s+\\${char}`, 'g')
-
           minified = minified.replace(beforeRegex, char)
 
           // Remove space after the character
           const afterRegex = new RegExp(`\\${char}\\s+`, 'g')
-
           minified = minified.replace(afterRegex, char)
         }
       }
@@ -1315,9 +1492,9 @@ export class Spectoda implements SpectodaClass {
         processedCode += cleanedNonBerry
 
         // Process the BERRY segment
-        const minifiedBerry = minifyBerryCode(berryCode)
+        const processedBerry = preprocessBerry(berryCode)
 
-        processedCode += `BERRY(\`${minifiedBerry}\`)`
+        processedCode += `BERRY(\`${processedBerry}\`)`
 
         // Update lastIndex to the end of the current BERRY segment
         lastIndex = end
