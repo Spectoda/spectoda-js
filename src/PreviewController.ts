@@ -1,4 +1,3 @@
-import { SpectodaJsEventMap } from './../../../build/packages/spectoda-js/src/types/js-events.d';
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-nocheck
 import { createNanoEvents, sleep } from '../functions'
