@@ -17,17 +17,30 @@ import {
  */
 export const BaseCriteriaSchema = z
   .object({
+    /** Exact controller name match */
     name: ControllerNameSchema.optional(),
 
-    // todo @immakermatty add definition for nameprefix
+    /** Matches controllers with names starting with this prefix
+     * @example "SCI_" will match "SCI_1", "SCI_2", "SCI_3", etc.
+     */
     nameprefix: ControllerNameSchema.optional(),
+
+    /** Exact MAC address match */
     mac: MacAddressSchema.optional(),
+
+    /** Exact network signature match */
     network: NetworkSignatureSchema.optional(),
+
+    /** Exact firmware version match */
     fw: FirmwareVersionSchema.optional(),
+
+    /** Exact product code match */
     product: ProductCodeSchema.optional(),
+
+    /** Whether device is commissionable */
     commisionable: z.boolean().optional(),
 
-    // todo @immakermatty add definition for connector
+    // TODO @immakermatty Add connector type definition
     connector: z.string().optional(),
   })
   .strict()
