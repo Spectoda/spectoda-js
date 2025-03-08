@@ -2896,8 +2896,8 @@ export class Spectoda implements SpectodaClass {
    * Changes the network of the controller Spectoda.js is `connect`ed to.
    */
   writeOwner(
-    ownerSignature: SpectodaTypes.NetworkSignature = '00000000000000000000000000000000',
-    ownerKey: SpectodaTypes.NetworkKey = '00000000000000000000000000000000',
+    ownerSignature: SpectodaTypes.NetworkSignature = NO_NETWORK_SIGNATURE,
+    ownerKey: SpectodaTypes.NetworkKey = NO_NETWORK_KEY,
   ) {
     logging.debug(`writeOwner(ownerSignature=${ownerSignature}, ownerKey=${ownerKey})`)
 
@@ -2907,7 +2907,7 @@ export class Spectoda implements SpectodaClass {
       throw 'InvalidParameters'
     }
 
-    if (ownerSignature == '00000000000000000000000000000000' && ownerKey == '00000000000000000000000000000000') {
+    if (ownerSignature == NO_NETWORK_SIGNATURE && ownerKey == NO_NETWORK_KEY) {
       logging.warn('> Removing owner instead of writing all zero owner')
       return this.removeOwner()
     }
@@ -2966,11 +2966,13 @@ export class Spectoda implements SpectodaClass {
         logging.verbose(`error_code=${error_code}, device_mac=${device_mac}`)
 
         if (error_code === 0) {
+          // TODO Remove word adopted
           logging.info(`Adopted ${device_mac} successfully`)
           return {
             mac: device_mac,
             ownerSignature: this.#ownerSignature,
             ownerKey: this.#ownerKey,
+            // Todo remove commented out code
             // name: newDeviceName,
             // id: newDeviceId,
           }
