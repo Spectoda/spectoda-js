@@ -1497,17 +1497,82 @@ export class Spectoda implements SpectodaClass {
     }
 
     /**
-     * Helper function to remove single-line (// ...) and multi-line () comments
-     * from non-BERRY code segments.
-     * TODO move this function to some kind of utils?
-     *
-     * @param code The code segment to clean.
-     * @returns The code without // and  comments.
+     * Helper function to remove comments from TNGL code while preserving string literals
+     * @param code The TNGL code with comments
+     * @returns The TNGL code with comments removed
      */
     function removeNonBerryComments(code: string): string {
-      const commentRegex = /\/\/.*|\/\*[\S\s]*?\*\//g
-
-      return code.replace(commentRegex, '')
+      let result = '';
+      let i = 0;
+      let inSingleQuoteString = false;
+      let inDoubleQuoteString = false;
+      let inSingleLineComment = false;
+      let inMultiLineComment = false;
+      
+      while (i < code.length) {
+        const char = code[i];
+        const nextChar = i + 1 < code.length ? code[i + 1] : '';
+        
+        // Handle string boundaries
+        if (char === '"' && !inSingleQuoteString && !inSingleLineComment && !inMultiLineComment) {
+          inDoubleQuoteString = !inDoubleQuoteString;
+          result += char;
+          i++;
+          continue;
+        }
+        
+        if (char === "'" && !inDoubleQuoteString && !inSingleLineComment && !inMultiLineComment) {
+          inSingleQuoteString = !inSingleQuoteString;
+          result += char;
+          i++;
+          continue;
+        }
+        
+        // Inside strings, just copy characters
+        if (inSingleQuoteString || inDoubleQuoteString) {
+          result += char;
+          i++;
+          continue;
+        }
+        
+        // Handle comments
+        if (char === '/' && nextChar === '*' && !inSingleLineComment && !inMultiLineComment) {
+          inMultiLineComment = true;
+          i += 2;
+          continue;
+        }
+        
+        if (char === '*' && nextChar === '/' && inMultiLineComment) {
+          inMultiLineComment = false;
+          i += 2;
+          continue;
+        }
+        
+        if (char === '/' && nextChar === '/' && !inSingleLineComment && !inMultiLineComment) {
+          inSingleLineComment = true;
+          i += 2;
+          continue;
+        }
+        
+        if ((char === '\n' || char === '\r') && inSingleLineComment) {
+          inSingleLineComment = false;
+          result += char; // Keep the newline
+          i++;
+          continue;
+        }
+        
+        // Skip characters in comments
+        if (inSingleLineComment || inMultiLineComment) {
+          i++;
+          continue;
+        }
+        
+        // Add non-comment characters
+        result += char;
+        i++;
+      }
+      
+      return result;
     }
 
     // Regular expressions for API handling
@@ -1562,72 +1627,187 @@ export class Spectoda implements SpectodaClass {
       }
     }
 
-    // Handle #define replacing
+    // Handle #define, #ifdef, #ifndef, #endif, #warning, #error directives
     {
-      const regexDEFINE = /#define\s+(\w+)(?:\s+(.*))?/g
+      // First remove comments from the TNGL code
+      tngl_code = removeNonBerryComments(tngl_code);
+      
+      // Now gather all defines and process conditionals
+      const defines = new Map<string, string>();
+      const lines = tngl_code.split('\n');
+      const resultLines: string[] = [];
+      
+      // Stack to track conditional compilation state
+      // Each entry is {symbol: string, include: boolean, wasTrue: boolean}
+      const conditionalStack: Array<{symbol: string, include: boolean, wasTrue: boolean}> = [];
+      
+      // Should we include the current section?
+      let includeSection = true;
+      
+      for (const line of lines) {
+        // Extract directive if present
+        const defineMatch = line.match(/^\s*#define\s+(\w+)(?:\s+(.*))?/);
+        const undefMatch = line.match(/^\s*#undef\s+(\w+)/);
+        const ifdefMatch = line.match(/^\s*#ifdef\s+(\w+)/);
+        const ifndefMatch = line.match(/^\s*#ifndef\s+(\w+)/);
+        const endifMatch = line.match(/^\s*#endif/);
+        const warningMatch = line.match(/^\s*#warning\s+(.*)/);
+        const errorMatch = line.match(/^\s*#error\s+(.*)/);
+        
+        if (defineMatch) {
+          // Process #define, but only if we're in an included section
+          if (includeSection) {
+            const name = defineMatch[1];
+            const value = defineMatch[2] || ''; // Default to empty string if no value
+            defines.set(name, value);
+          }
+          // Don't include the #define line in output
+          continue;
+        } 
+        else if (undefMatch) {
+          // Process #undef, but only if we're in an included section
+          if (includeSection) {
+            const name = undefMatch[1];
+            defines.delete(name);
+          }
+          // Don't include the #undef line in output
+          continue;
+        } 
+        else if (ifdefMatch) {
+          // Process #ifdef
+          const symbol = ifdefMatch[1];
+          const symbolDefined = defines.has(symbol);
+          
+          // This section is included if the parent section is included AND the condition is true
+          const newInclude: boolean = includeSection && symbolDefined;
+          
+          // Push state onto stack
+          conditionalStack.push({
+            symbol,
+            include: newInclude,
+            wasTrue: symbolDefined
+          });
+          
+          // Update current include state
+          includeSection = newInclude;
+          
+          // Don't include the #ifdef line in output
+          continue;
+        } 
+        else if (ifndefMatch) {
+          // Process #ifndef (same as #ifdef but condition is inverted)
+          const symbol = ifndefMatch[1];
+          const symbolDefined = defines.has(symbol);
+          
+          // This section is included if the parent section is included AND the condition is true
+          const newInclude: boolean = includeSection && !symbolDefined;
+          
+          // Push state onto stack
+          conditionalStack.push({
+            symbol,
+            include: newInclude,
+            wasTrue: !symbolDefined
+          });
+          
+          // Update current include state
+          includeSection = newInclude;
+          
+          // Don't include the #ifndef line in output
+          continue;
+        } 
+        else if (endifMatch) {
+          // Process #endif - pop the last conditional state
+          if (conditionalStack.length === 0) {
+            logging.error('Error: #endif without matching #ifdef or #ifndef');
+            throw 'InvalidPreprocessorDirective';
+          }
+          
+          const lastState = conditionalStack.pop();
+          
+          // Restore include state from parent conditional (or true if we're at root level)
+          includeSection = conditionalStack.length > 0 
+            ? conditionalStack[conditionalStack.length - 1].include 
+            : true;
+          
+          // Don't include the #endif line in output
+          continue;
+        }
+        else if (warningMatch && includeSection) {
+          // Process #warning - only if in an included section
+          const warningMessage = `TNGL Warning: ${warningMatch[1]}`;
+          logging.warn(warningMessage);
 
-      // List all defines [{name: "NAME", value: "VALUE"}, ...]
-      let match
-      const defines = []
+          // TODO: Process the warning in studio
+          
+          // Don't include the #warning line in output
+          continue;
+        }
+        else if (errorMatch && includeSection) {
+          // Process #error - only if in an included section
+          const errorMessage = `TNGL Error: ${errorMatch[1]}`;
+          logging.error(errorMessage);
 
-      while ((match = regexDEFINE.exec(tngl_code)) !== null) {
-        defines.push({ name: match[1], value: match[2] })
+          // TODO: Process the error in studio
+        
+          // Abort processing when an error directive is encountered
+          throw 'TnglPreprocessorError: ' + errorMessage;
+        }
+        
+        // Include the line only if we're in an included section
+        if (includeSection) {
+          // Apply symbol replacements to each included line immediately
+          let processedLine = line;
+          for (const [name, value] of defines.entries()) {
+            if (value === null || value === undefined) {
+              continue;
+            }
+            
+            // Create a regex that matches the symbol name with word boundaries
+            // The symbol name must not be preceded or followed by a word character
+            const defineRegex = new RegExp(`\\b${name}\\b`, 'g');
+            processedLine = processedLine.replace(defineRegex, value);
+          }
+          resultLines.push(processedLine);
+        }
       }
-
-      // Remove all #define statements from the code
-      tngl_code = tngl_code.replace(regexDEFINE, '')
-
-      // Replace all defined names with their corresponding values
-      for (const define of defines) {
-        if (define.value === null || define.value === undefined) {
-          continue
-        } // Skip if no value is provided
-        // Use word boundaries to avoid partial replacements
-        const defineRegex = new RegExp(`\\b${define.name}\\b`, 'g')
-
-        tngl_code = tngl_code.replace(defineRegex, define.value)
+      
+      // Check if all #ifdef/#ifndef have matching #endif
+      if (conditionalStack.length > 0) {
+        logging.error('Error: Unclosed #ifdef or #ifndef directives');
+        throw 'UnclosedPreprocessorDirective';
       }
-    }
-
-    // Handle BERRY code minification and syntax sugar
-    {
-      // Regular expression to find all BERRY(``) segments
-      const regexBERRY = /BERRY\(`([\S\s]*?)`\)/g
-      let match
-
-      // Initialize variables to reconstruct the processed code
-      let processedCode = ''
-      let lastIndex = 0
-
-      while ((match = regexBERRY.exec(tngl_code)) !== null) {
-        const fullMatch = match[0] // e.g., BERRY(`...`)
-        const berryCode = match[1] // The code inside the backticks
-
-        const start = match.index
-        const end = regexBERRY.lastIndex
-
-        // Process the non-BERRY segment before the current BERRY segment
-        const nonBerrySegment = tngl_code.slice(lastIndex, start)
-        const cleanedNonBerry = removeNonBerryComments(nonBerrySegment)
-
-        processedCode += cleanedNonBerry
-
-        // Process the BERRY segment
-        const processedBerry = preprocessBerry(berryCode)
-
-        processedCode += `BERRY(\`${processedBerry}\`)`
-
-        // Update lastIndex to the end of the current BERRY segment
-        lastIndex = end
+      
+      // Reassemble the code
+      tngl_code = resultLines.join('\n');
+      
+      // We need a special handling for BERRY code where symbols might appear
+      // Extract BERRY code segments and apply replacements
+      const berryRegex = /BERRY\(`([\S\s]*?)`\)/g;
+      let berryMatch;
+      
+      while ((berryMatch = berryRegex.exec(tngl_code)) !== null) {
+        const fullMatch = berryMatch[0];
+        let berryCode = berryMatch[1];
+        
+        // Apply symbol replacements within BERRY code
+        for (const [name, value] of defines.entries()) {
+          if (value === null || value === undefined) {
+            continue;
+          }
+          
+          const defineRegex = new RegExp(`\\b${name}\\b`, 'g');
+          berryCode = berryCode.replace(defineRegex, value);
+        }
+        
+        // Replace the original BERRY segment with the processed one
+        const newBerrySegment = `BERRY(\`${berryCode}\`)`;
+        tngl_code = tngl_code.substring(0, berryMatch.index) + 
+                    newBerrySegment + 
+                    tngl_code.substring(berryMatch.index + fullMatch.length);
+        
+        // Reset lastIndex to account for potential length changes
+        berryRegex.lastIndex = berryMatch.index + newBerrySegment.length;
       }
-
-      // Process any remaining non-BERRY segment after the last BERRY segment
-      const remainingNonBerry = tngl_code.slice(lastIndex)
-      const cleanedRemainingNonBerry = removeNonBerryComments(remainingNonBerry)
-
-      processedCode += cleanedRemainingNonBerry
-
-      tngl_code = processedCode
     }
 
     // Clean up the whitespaces in TNGL code
