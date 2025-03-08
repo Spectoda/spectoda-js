@@ -75,10 +75,14 @@ export class SpectodaSound {
       if (navigator.mediaDevices) {
         const constraints = (window.constraints = {
           audio: {
-            echoCancellation: false,
             autoGainControl: false,
+            echoCancellation: false,
             noiseSuppression: false,
-            sampleRate: 48000,
+            deviceId: undefined,
+            channelCount: 1,
+            sampleRate: 44100,
+            sampleSize: 64,
+            volume: 1,
           },
           video: false,
         })
