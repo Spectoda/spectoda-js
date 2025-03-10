@@ -1,7 +1,7 @@
 import { z } from 'zod'
 
 import { EventSchema } from '../schemas/event'
-import { VALUE_TYPES } from '../constants'
+import { VALUE_TYPES } from '../constants/values'
 
 export type SpectodaEvent = z.infer<typeof EventSchema>
 

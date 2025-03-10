@@ -1,41 +1,44 @@
 import { z } from 'zod'
 
-// TODO: Add all primitives to the criteria schema and use them here
+import { SpectodaTypes } from '../types/primitives'
+
+import {
+  MacAddressSchema,
+  NetworkSignatureSchema,
+  FirmwareVersionSchema,
+  ProductCodeSchema,
+  PathSchema,
+  BaudrateSchema,
+  ControllerNameSchema,
+} from './primitives'
 
 /**
  * Base criteria for connecting to a Spectoda device
  */
-const BaseCriteriaSchema = z
+export const BaseCriteriaSchema = z
   .object({
-    /** Device name */
-    name: z.string().optional(),
+    /** Exact controller name match */
+    name: ControllerNameSchema.optional(),
 
-    /** Name prefix for filtering devices */
-    nameprefix: z.string().optional(),
+    /** Matches controllers with names starting with this prefix
+     * @example "SCI_" will match "SCI_1", "SCI_2", "SCI_3", etc.
+     */
+    nameprefix: ControllerNameSchema.optional(),
 
-    /** MAC address in format "XX:XX:XX:XX:XX:XX" */
-    mac: z
-      .string()
-      .regex(/^([0-9A-Fa-f]{2}:){5}[0-9A-Fa-f]{2}$/)
-      .optional(),
+    /** Exact MAC address match */
+    mac: MacAddressSchema.optional(),
 
-    /** Network signature as 32-char hex string */
-    network: z.string().length(32).optional(),
+    /** Exact network signature match */
+    network: NetworkSignatureSchema.optional(),
 
-    /** Firmware version in format "X.Y.Z" or "!X.Y.Z" */
-    fw: z
-      .string()
-      .regex(/^!?\d+\.\d+\.\d+$/)
-      .optional(),
+    /** Exact firmware version match */
+    fw: FirmwareVersionSchema.optional(),
 
-    /** Product code number */
-    product: z.number().int().min(0).max(0xffff).optional(),
+    /** Exact product code match */
+    product: ProductCodeSchema.optional(),
 
     /** Whether device is commissionable */
     commisionable: z.boolean().optional(),
-
-    /** Type of connector */
-    connector: z.string().optional(),
   })
   .strict()
 
@@ -43,10 +46,8 @@ const BaseCriteriaSchema = z
  * Serial-specific connection criteria
  */
 export const SerialCriteriaSchema = BaseCriteriaSchema.extend({
-  /** Serial port path */
-  path: z.string().optional(),
-  /** Baud rate */
-  baudrate: z.number().int().positive().optional(),
+  path: PathSchema.optional(),
+  baudrate: BaudrateSchema.optional(),
 })
 
 /**
@@ -68,3 +69,19 @@ export const CriteriaSchema = z.union([SerialCriteriaSchema, BleCriteriaSchema, 
  * Single criterion or array of criteria
  */
 export const CriteriaArraySchema = z.union([CriteriaSchema, z.array(CriteriaSchema)])
+
+export const isSerialCriteria = (criteria: unknown): criteria is SpectodaTypes.SerialCriteria => {
+  return SerialCriteriaSchema.safeParse(criteria).success
+}
+
+export const isBleCriteria = (criteria: unknown): criteria is SpectodaTypes.BleCriteria => {
+  return BleCriteriaSchema.safeParse(criteria).success
+}
+
+export const isDummyCriteria = (criteria: unknown): criteria is SpectodaTypes.DummyCriteria => {
+  return DummyCriteriaSchema.safeParse(criteria).success
+}
+
+export const isCriteriaArray = (value: unknown): value is SpectodaTypes.Criteria[] => {
+  return Array.isArray(value) && value.every((item) => CriteriaSchema.safeParse(item).success)
+}

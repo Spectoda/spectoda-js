@@ -15,7 +15,7 @@ export const VALUE_TYPE = Object.freeze({
   UNDEFINED: 0,
 })
 
-/** @deprecated Use `VALUE_LIMITS` from `spectoda-js/constants/values` instead. */
+/** @deprecated Use `VALUE_LIMITS` from `spectoda-js/constants/valueLimits` instead. */
 export const VALUE_LIMITS = Object.freeze({
   NUMBER_MAX: 1000000000,
   NUMBER_MIN: -100000000000,
@@ -28,6 +28,11 @@ export const VALUE_LIMITS = Object.freeze({
 })
 
 export const BROADCAST_ID = 255
+export const LABEL_MAX_LENGTH = 5
+export const MAX_ID = 255
+export const MAX_PRODUCT_CODE = 0xffff
+export const MAX_PCB_CODE = 0xffff
+export const MAX_TNGL_BANK = 255
 
 export const CONNECTORS = Object.freeze({
   NONE: 'none',
@@ -50,7 +55,7 @@ export const NO_NETWORK_SIGNATURE: SpectodaTypes.NetworkSignature = '00000000000
 export const NO_NETWORK_KEY: SpectodaTypes.NetworkKey = '00000000000000000000000000000000'
 
 /** Default MAC address for the app */
-export const APP_MAC_ADDRESS = '00:00:12:34:56:78'
+export const APP_MAC_ADDRESS: SpectodaTypes.MacAddress = '00:00:12:34:56:78'
 
 /** TODO: ADD description */
 export const USE_ALL_CONNECTIONS = ['*/ff:ff:ff:ff:ff:ff']
@@ -199,8 +204,4 @@ export const COMMAND_FLAGS = Object.freeze({
   FLAG_ADOPT_RESPONSE: 241,
 })
 
-export {
-  JS_EVENT_VALUE_LIMITS as JS_VALUE_LIMITS,
-  VALUE_TYPES,
-  CPP_EVENT_VALUE_LIMITS as CPP_VALUE_LIMITS,
-} from './values'
+export { JS_EVENT_VALUE_LIMITS as JS_VALUE_LIMITS, CPP_EVENT_VALUE_LIMITS as CPP_VALUE_LIMITS } from './limits'

@@ -1,7 +1,6 @@
 /* eslint-disable @typescript-eslint/no-namespace */
 import { z } from 'zod'
 
-import { VALUE_TYPE } from '../constants'
 import {
   NumberSchema,
   LabelSchema,
@@ -14,92 +13,44 @@ import {
   NullSchema,
   UndefinedSchema,
   IDSchema,
+  NetworkSignatureSchema,
+  NetworkKeySchema,
+  MacAddressSchema,
+  PcbCodeSchema,
+  ProductCodeSchema,
+  FirmwareVersionSchema,
+  FirmwareVersionFullSchema,
+  FingerprintSchema,
+  TnglBankSchema,
+  ControllerNameSchema as ControllerNameSchema,
+  FirmwareVersionCodeSchema,
 } from '../schemas/primitives'
+import { BaseCriteriaSchema, SerialCriteriaSchema, BleCriteriaSchema, DummyCriteriaSchema } from '../schemas/criteria'
+import { VALUE_TYPES } from '../constants/values'
 
 export namespace SpectodaTypes {
-  type criteria_generic = Partial<{
-    connector: string
-    mac: ControllerInfo['macAddress']
-    name: ControllerInfo['controllerLabel']
-    nameprefix: string
-    network: ControllerInfo['networkSignature']
-    fw: ControllerInfo['fwVersion']
-    product: ControllerInfo['productCode']
-    commisionable: ControllerInfo['commissionable']
-  }>
+  export type BaseCriteria = z.infer<typeof BaseCriteriaSchema>
+  export type SerialCriteria = z.infer<typeof SerialCriteriaSchema>
+  export type BleCriteria = z.infer<typeof BleCriteriaSchema>
+  export type DummyCriteria = z.infer<typeof DummyCriteriaSchema>
 
-  type criteria_ble = criteria_generic
-
-  type criteria_serial = criteria_generic &
-    Partial<{
-      path: string
-      baudrate: number
-    }>
-
+  type criteria_generic = BaseCriteria
+  type criteria_ble = BleCriteria
+  type criteria_serial = SerialCriteria
   type criteria_dummy = criteria_generic
-
   type criteria_simulated = criteria_generic
-
   type criteria = criteria_ble | criteria_serial | criteria_dummy | criteria_simulated
 
   export type TnglBytes = Uint8Array
-
   export type UsedIds = Uint8Array
-
   export type Criterium = criteria
-
   export type Criteria = criteria | criteria[]
-
   export type Tngl = {
     code: string | undefined
     bytecode: Uint8Array | undefined
   }
 
-  /**
-   * Unique network identifier as a 32-character lowercase hexadecimal string.
-   *
-   * Format: `"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"` (characters: `a-f`, `0-9`)
-   *
-   * @example "34567890123456789012345678901234"
-   */
-  export type NetworkSignature = string
-
-  /**
-   * Secure 32-character hexadecimal key for network access.
-   *
-   * Format: `"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"` (characters: `a-f`, `0-9`)
-   *
-   * @example "34567890123456789012345678901234"
-   */
-  export type NetworkKey = string
-
-  /**
-   * PCB (Printed Circuit Board) code.
-   *
-   * Range: 0 - 16535
-   *
-   * @example 32
-   */
-  export type PcbCode = number
-
-  /**
-   * Product code for specific models.
-   *
-   * Range: 0 - 16535
-   *
-   * @example 24
-   */
-  export type ProductCode = number
-
-  /**
-   * TNGL bank identifier.
-   *
-   * Range: 0 - 255
-   */
-  export type TnglBank = number
-
-  export type ValueType = (typeof VALUE_TYPE)[keyof typeof VALUE_TYPE]
-
+  export type ValueType = (typeof VALUE_TYPES)[keyof typeof VALUE_TYPES]
   export type Number = z.infer<typeof NumberSchema>
   export type Label = z.infer<typeof LabelSchema>
   export type Timestamp = z.infer<typeof TimestampSchema>
@@ -113,85 +64,36 @@ export namespace SpectodaTypes {
   export type ID = z.infer<typeof IDSchema>
   export type IDs = ID | ID[]
 
-  /**
-   * Represents detailed information about a controller, including both
-   * connection criteria and additional metadata.
-   */
+  // Network and device types
+  export type NetworkSignature = z.infer<typeof NetworkSignatureSchema>
+  export type NetworkKey = z.infer<typeof NetworkKeySchema>
+  export type MacAddress = z.infer<typeof MacAddressSchema>
+  export type PcbCode = z.infer<typeof PcbCodeSchema>
+  export type ProductCode = z.infer<typeof ProductCodeSchema>
+  export type FirmwareVersion = z.infer<typeof FirmwareVersionSchema>
+  export type FirmwareVersionFull = z.infer<typeof FirmwareVersionFullSchema>
+  export type FirmwareVersionCode = z.infer<typeof FirmwareVersionCodeSchema>
+  export type Fingerprint = z.infer<typeof FingerprintSchema>
+  export type TnglBank = z.infer<typeof TnglBankSchema>
+  export type ControllerName = z.infer<typeof ControllerNameSchema>
+
   export type ControllerInfo = {
-    /**
-     * @group ConnectionCriteria
-     * @description A human-readable 5 character label identifying the controller.
-     */
-    controllerLabel: string
-
-    /**
-     * @group ConnectionCriteria
-     * @description Numeric code representing the product type or model.
-     */
-    productCode: number
-
-    /**
-     * @group ConnectionCriteria
-     * @description The MAC address associated with the controller. E.g. "12:43:ab:8d:ff:04"
-     */
-    macAddress: string
-
-    /**
-     * @group ConnectionCriteria
-     * @description Firmware version currently installed on the controller. E.g. "0.12.2"
-     */
-    fwVersion: string
-
-    /**
-     * @group ConnectionCriteria
-     * @description Unique signature identifying the network configuration. Provided as a hexstring.
-     */
-    networkSignature: string
-
-    /**
-     * @group ConnectionCriteria
-     * @description Indicates if the controller is commissionable.
-     */
+    // Connection criteria
+    controllerLabel: Label
+    productCode: ProductCode
+    macAddress: MacAddress
+    fwVersion: FirmwareVersion
+    networkSignature: NetworkSignature
     commissionable: boolean
 
-    /**
-     * The full name or identifier of the controller.
-     */
-    fullName: string
-
-    /**
-     * Code representing the PCB (Printed Circuit Board) version.
-     */
-    pcbCode: number
-
-    /**
-     * Full version information of the firmware. E.g. "UNIVERSAL_0.12.2_20250208"
-     */
-    fwVersionFull: string
-
-    /**
-     * Numeric representation of the firmware version. E.g. 1202 for 0.12.2
-     */
-    fwVersionCode: number
-
-    /**
-     * Unix timestamp indicating the firmware compilation date and time in seconds since epoch.
-     */
-    fwCompilationUnixTimestamp: number
-
-    /**
-     * SHA256 hash of uploaded tnglBytes stored inside the Controller. Provided as a hexstring.
-     */
-    tnglFingerprint: string
-
-    /**
-     * Fingerprint identifying the event store state or version. Provided as a hexstring.
-     */
-    eventStoreFingerprint: string
-
-    /**
-     * Fingerprint identifying the configuration state or version. Provided as a hexstring.
-     */
-    configFingerprint: string
+    // Additional metadata
+    fullName: ControllerName
+    pcbCode: PcbCode
+    fwVersionFull: FirmwareVersionFull
+    fwVersionCode: FirmwareVersionCode
+    fwCompilationUnixTimestamp: Timestamp
+    tnglFingerprint: Fingerprint
+    eventStoreFingerprint: Fingerprint
+    configFingerprint: Fingerprint
   }
 }

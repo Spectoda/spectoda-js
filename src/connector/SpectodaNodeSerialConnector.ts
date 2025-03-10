@@ -244,15 +244,23 @@ export class SpectodaNodeSerialConnector {
     if (criterium_array && Array.isArray(criterium_array) && criterium_array.length > 0) {
       const port_options = PORT_OPTIONS
 
+      // TODO @immakermatty add type guard for SerialCriteria
+      // @ts-expect-error TODO: fix this
       if (criterium_array[0].baudrate) {
+        // TODO @immakermatty add type guard for SerialCriteria
+        // @ts-expect-error TODO: fix this
         port_options.baudRate = criterium_array[0].baudrate || 1500000
       }
-
+      // TODO @immakermatty add type guard for SerialCriteria
+      // @ts-expect-error TODO: fix this
       if (criterium_array[0].path) {
+        // TODO @immakermatty add type guard for SerialCriteria
+        // @ts-expect-error TODO: fix this
         port_options.path = criterium_array[0].path
       }
 
       // TODO! fix TSC
+      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
       // @ts-ignore
       this.#serialPort = new NodeSerialPort(port_options)
       this.#criteria = criterium_array
@@ -273,6 +281,8 @@ export class SpectodaNodeSerialConnector {
 
         const port_options = PORT_OPTIONS
 
+        // TODO @immakermatty add type guard for SerialCriteria
+        // @ts-expect-error TODO: fix this
         port_options.path = ports.at(-1)?.path || ''
 
         logging.verbose('port_options=', port_options)
