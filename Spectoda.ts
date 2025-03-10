@@ -29,7 +29,6 @@ import {
   NO_NETWORK_KEY,
   NO_NETWORK_SIGNATURE,
   TNGL_SIZE_CONSIDERED_BIG,
-  VALUE_TYPES,
 } from './src/constants'
 import { WEBSOCKET_URL } from './SpectodaWebSocketsConnector'
 import './TnglReader'
@@ -49,6 +48,7 @@ import { SpectodaTypes } from './src/types/primitives'
 import { SpectodaClass } from './src/types/spectodaClass'
 import { fetchTnglFromApiById, sendTnglToApi } from './tnglapi'
 import { EventSchema } from './src/schemas/event'
+import { VALUE_TYPES } from './src/constants/values'
 
 const MIN_FIRMWARE_LENGTH = 10000
 const DEFAULT_RECONNECTION_TIME = 2500
@@ -1032,12 +1032,12 @@ export class Spectoda implements SpectodaClass {
 
       /**
        * Step 1: Define the enum constants to replace in Berry code
-       * 
+       *
        * This creates a mapping of constant names to their numeric values
        * that will be used to replace occurrences in the Berry code during minification.
-       * 
+       *
        * Two types of constants are defined:
-       * 
+       *
        * a. Value type constants from VALUE_TYPES:
        *    - 'NUMBER' will be replaced with '29'
        *    - 'PERCENTAGE' will be replaced with '30'
@@ -1045,22 +1045,22 @@ export class Spectoda implements SpectodaClass {
        *    - 'TIMESTAMP' will be replaced with '32'
        *    - 'BOOLEAN' will be replaced with '2'
        *    - etc.
-       * 
+       *
        * b. Device ID constants (ID0-ID255):
-       *    - 'ID0' will be replaced with '0' 
-       *    - 'ID1' will be replaced with '1' 
+       *    - 'ID0' will be replaced with '0'
+       *    - 'ID1' will be replaced with '1'
        *    - 'ID2' will be replaced with '2'
        *    - And so on up to ID255
-       * 
+       *
        * This allows Berry scripts to use readable constant names while
        * the minified version uses the actual numeric values for better performance.
        */
-      const berryDefines: { [key: string]: string } = {};
-      
+      const berryDefines: { [key: string]: string } = {}
+
       // a. Keys of VALUE_TYPES as string keys in berryDefines are being replaced with their numeric values
-      Object.keys(VALUE_TYPES).forEach(key => {
-        berryDefines[key] = VALUE_TYPES[key as keyof typeof VALUE_TYPES].toString();
-      });
+      Object.keys(VALUE_TYPES).forEach((key) => {
+        berryDefines[key] = VALUE_TYPES[key as keyof typeof VALUE_TYPES].toString()
+      })
 
       // b. ID0-ID255 constants are being replaced with their numeric values
       for (let i = 0; i <= 255; i++) {
@@ -1079,7 +1079,7 @@ export class Spectoda implements SpectodaClass {
       while (i < minified.length) {
         const char = minified[i]
         const nextChar = i + 1 < minified.length ? minified[i + 1] : ''
-        
+
         // Handle escape sequences in strings
         if (escaped) {
           if (inSingleQuoteString || inDoubleQuoteString) {
@@ -1089,14 +1089,14 @@ export class Spectoda implements SpectodaClass {
           i++
           continue
         }
-        
+
         if (char === '\\' && (inSingleQuoteString || inDoubleQuoteString)) {
           result += char
           escaped = true
           i++
           continue
         }
-        
+
         // Handle string boundaries
         if (char === '"' && !inSingleQuoteString && !inMultilineComment && !inLineComment) {
           inDoubleQuoteString = !inDoubleQuoteString
@@ -1104,58 +1104,58 @@ export class Spectoda implements SpectodaClass {
           i++
           continue
         }
-        
+
         if (char === "'" && !inDoubleQuoteString && !inMultilineComment && !inLineComment) {
           inSingleQuoteString = !inSingleQuoteString
           result += char
           i++
           continue
         }
-        
+
         // Inside strings, just copy characters
         if (inSingleQuoteString || inDoubleQuoteString) {
           result += char
           i++
           continue
         }
-        
+
         // Handle comments
         if (char === '#' && nextChar === '-' && !inLineComment && !inMultilineComment) {
           inMultilineComment = true
-          i += 2  // Skip '#-'
+          i += 2 // Skip '#-'
           continue
         }
-        
+
         if (char === '-' && nextChar === '#' && inMultilineComment) {
           inMultilineComment = false
-          i += 2  // Skip '-#'
+          i += 2 // Skip '-#'
           continue
         }
-        
+
         if (char === '#' && !inMultilineComment && !inLineComment) {
           inLineComment = true
           i++
           continue
         }
-        
+
         if ((char === '\n' || char === '\r') && inLineComment) {
           inLineComment = false
-          result += char  // Keep the newline
+          result += char // Keep the newline
           i++
           continue
         }
-        
+
         // Skip characters in comments
         if (inLineComment || inMultilineComment) {
           i++
           continue
         }
-        
+
         // Add non-comment characters
         result += char
         i++
       }
-      
+
       minified = result
 
       // Step 3: Now apply the pattern replacements (after comments are removed)
@@ -1171,6 +1171,7 @@ export class Spectoda implements SpectodaClass {
 
       minified = minified.replace(timestampRegex, (match) => {
         const miliseconds = computeTimestamp(match)
+
         return `Value.Timestamp(${miliseconds})`
       })
 
@@ -1205,7 +1206,7 @@ export class Spectoda implements SpectodaClass {
 
       while (i < minified.length) {
         const char = minified[i]
-        
+
         // Handle escape sequences in strings
         if (escaped) {
           result += char
@@ -1213,14 +1214,14 @@ export class Spectoda implements SpectodaClass {
           i++
           continue
         }
-        
+
         if (char === '\\' && (inSingleQuoteString || inDoubleQuoteString)) {
           result += char
           escaped = true
           i++
           continue
         }
-        
+
         // Handle string boundaries
         if (char === '"' && !inSingleQuoteString) {
           inDoubleQuoteString = !inDoubleQuoteString
@@ -1228,21 +1229,21 @@ export class Spectoda implements SpectodaClass {
           i++
           continue
         }
-        
+
         if (char === "'" && !inDoubleQuoteString) {
           inSingleQuoteString = !inSingleQuoteString
           result += char
           i++
           continue
         }
-        
+
         // Inside strings, just copy characters
         if (inSingleQuoteString || inDoubleQuoteString) {
           result += char
           i++
           continue
         }
-        
+
         // If the character is alphanumeric or underscore, it could be part of an identifier
         if (/[A-Za-z0-9_]/.test(char)) {
           token += char
@@ -1254,26 +1255,26 @@ export class Spectoda implements SpectodaClass {
           } else if (token) {
             result += token
           }
-          
+
           // Add the current character
           result += char
           token = ''
           i++
         }
       }
-      
+
       // Handle any remaining token
       if (token && token in berryDefines) {
         result += berryDefines[token]
       } else if (token) {
         result += token
       }
-      
+
       minified = result
 
       // Step 5: Fix any remaining ID references in strings
       // This ensures that "ID1" in string literals like "<EventState $test[ID1]: <Value 42>>" is preserved
-      minified = minified.replace(/(\[)ID(\d+)(\])/g, '$1ID$2$3');
+      minified = minified.replace(/(\[)ID(\d+)(\])/g, '$1ID$2$3')
 
       // Step 6: Remove unnecessary semicolons
       minified = minified.replace(/;+/g, ' ')
@@ -1365,10 +1366,12 @@ export class Spectoda implements SpectodaClass {
         for (const char of charsToRemoveSpaceAround) {
           // Remove space before the character
           const beforeRegex = new RegExp(`\\s+\\${char}`, 'g')
+
           minified = minified.replace(beforeRegex, char)
 
           // Remove space after the character
           const afterRegex = new RegExp(`\\${char}\\s+`, 'g')
+
           minified = minified.replace(afterRegex, char)
         }
       }
