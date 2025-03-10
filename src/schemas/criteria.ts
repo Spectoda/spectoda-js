@@ -39,9 +39,6 @@ export const BaseCriteriaSchema = z
 
     /** Whether device is commissionable */
     commisionable: z.boolean().optional(),
-
-    // TODO @immakermatty Add connector type definition
-    connector: z.string().optional(),
   })
   .strict()
 
