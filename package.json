@@ -4,7 +4,8 @@
   "types": "types/index.d.ts",
   "devDependencies": {
     "@types/serialport": "^8.0.5",
-    "i18next-parser": "^6.0.0"
+    "i18next-parser": "^6.0.0",
+    "@spectoda/scf-bridge": "*"
   },
   "dependencies": {
     "@spectoda/spectoda-utils": "^1.0.0",

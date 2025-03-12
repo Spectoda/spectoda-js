@@ -1,5 +1,8 @@
+import { SCFBridgeMethods } from '@spectoda/scf-bridge/src/types'
+
 import { validateTimestamp } from './functions'
 import { SpectodaWasm, MainModule } from './src/SpectodaWasm'
+import { logging } from './logging'
 
 declare global {
   interface Window {
@@ -16,7 +19,7 @@ declare global {
     mapValue: (x: any, in_min: any, in_max: any, out_min: any, out_max: any) => any
     eruda: any
 
-    flutter_inappwebview: any
+    flutter_inappwebview: SCFBridgeMethods
 
     SpectodaWasm: typeof SpectodaWasm
     Module: typeof MainModule
