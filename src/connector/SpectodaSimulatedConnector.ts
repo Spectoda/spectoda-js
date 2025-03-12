@@ -338,6 +338,8 @@ export class SpectodaSimulatedConnector {
       await sleep(Math.random() * 1000) // autoSelect logic process delay
 
       this.#selected = true
+
+      // @ts-expect-error TODO: @immakermatty fix missing connector
       resolve({ connector: this.type })
     })
   }
