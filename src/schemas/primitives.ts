@@ -57,7 +57,7 @@ export const TimestampSchema = z
  */
 export const PercentageSchema = z
   .number()
-  .min(JS_EVENT_VALUE_LIMITS.PERCENTAGE_MINUS_MAX)
+  .min(JS_EVENT_VALUE_LIMITS.PERCENTAGE_MIN)
   .max(JS_EVENT_VALUE_LIMITS.PERCENTAGE_MAX)
 
 /**
