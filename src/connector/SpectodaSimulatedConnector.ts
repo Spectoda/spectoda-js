@@ -301,6 +301,7 @@ export class SpectodaSimulatedConnector {
 
       this.#selected = true
 
+      // @ts-expect-error TODO: @immakermatty fix missing connector
       resolve({ connector: this.type })
     })
   }
@@ -346,6 +347,7 @@ export class SpectodaSimulatedConnector {
 
     return new Promise(async (resolve, reject) => {
       if (this.#selected) {
+        // @ts-expect-error TODO: @immakermatty fix missing connector
         resolve({ connector: this.type })
       } else {
         resolve(null)
@@ -403,6 +405,8 @@ export class SpectodaSimulatedConnector {
 
       this.#connected = true
       this.#runtimeReference.emit(SpectodaAppEvents.PRIVATE_CONNECTED)
+
+      // @ts-expect-error TODO: @immakermatty fix missing connector
       resolve({ connector: this.type })
     })
   }
@@ -427,6 +431,7 @@ export class SpectodaSimulatedConnector {
 
     return new Promise(async (resolve, reject) => {
       if (this.#connected) {
+        // @ts-expect-error TODO: @immakermatty fix missing connector
         resolve({ connector: this.type })
       } else {
         resolve(null)
