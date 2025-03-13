@@ -1219,12 +1219,11 @@ export class Spectoda implements SpectodaClass {
       // // })
 
       // Pattern B: Timestamps - /([+-]?(\d+\.\d+|\d+|\.\d+))(d|h|m(?!s)|s|ms|t)\b/gi
-      const timestampRegex = /([+-]?(\d+\.\d+|\d+|\.\d+))(d|h|m(?!s)|s|ms|t)\b/gi
+      const timestampRegex = /([+-]?(?:\d+\.\d+|\d+|\.\d+))(d|h|m(?!s)|s|ms|t)\b/gi
 
       minified = minified.replace(timestampRegex, (match) => {
-        const miliseconds = computeTimestamp(match)
-
-        return `Value.Timestamp(${miliseconds})`
+        const milliseconds = computeTimestamp(match)
+        return `Value.Timestamp(${milliseconds})`
       })
 
       // // // Pattern C: Labels - /\$[\w]+/
