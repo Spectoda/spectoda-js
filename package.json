@@ -4,9 +4,9 @@
   "types": "types/index.d.ts",
   "scripts": {
     "lint": "eslint .",
-    "lint:fix": "eslint . --fix",
+    "lint:fix": "eslint . --fix --quiet",
     "tscheck": "tsc --noEmit",
-    "prepush": "npm run tscheck && npm run lint",
+    "prepush": "npm run tscheck && npm run lint:fix",
     "prepare": "husky"
   },
   "devDependencies": {

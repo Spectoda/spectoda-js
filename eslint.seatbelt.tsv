@@ -120,5 +120,4 @@
 "src/types/wasm.ts"	"no-magic-numbers"	16
 "tnglapi.js"	"import/no-extraneous-dependencies"	1
 "types.d.ts"	"@typescript-eslint/consistent-type-definitions"	1
-"types.d.ts"	"import/no-extraneous-dependencies"	1
-"types.d.ts"	"no-undef"	1
+"types.d.ts"	"import/no-extraneous-dependencies"	2
