@@ -2,10 +2,18 @@
   "name": "@spectoda/spectoda-js",
   "version": "0.9.0",
   "types": "types/index.d.ts",
+  "scripts": {
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix --quiet",
+    "tscheck": "tsc --noEmit",
+    "prepush": "npm run tscheck && npm run lint:fix",
+    "prepare": "husky"
+  },
   "devDependencies": {
     "@types/serialport": "^8.0.5",
     "i18next-parser": "^6.0.0",
-    "@spectoda/scf-bridge": "*"
+    "@spectoda/scf-bridge": "*",
+    "husky": "^9.1.7"
   },
   "dependencies": {
     "@spectoda/spectoda-utils": "^1.0.0",
