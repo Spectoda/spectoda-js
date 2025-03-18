@@ -27,12 +27,12 @@
  * - Generic information, ambiguity (e.g. "Something went wrong", "The item was moved, deleted, removed or archived")
  */
 
-export interface ErrorFormat {
+export type ErrorFormat = {
   title: string
   message: string
   url?: string
 }
-interface ErrorList {
+type ErrorList = {
   [key: string]: ErrorFormat
 }
 

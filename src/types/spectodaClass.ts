@@ -5,7 +5,7 @@ import { SpectodaAppEventMap } from './app-events'
 import { ConnectorType } from './connect'
 import { SpectodaTypes } from './primitives'
 
-export interface SpectodaClass {
+export type SpectodaClass = {
   timeline: TimeTrack
   runtime: SpectodaRuntime
   socket: any

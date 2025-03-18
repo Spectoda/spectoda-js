@@ -3,12 +3,12 @@ import { SpectodaEvent } from './event'
 /// === auto-generated from Emscripten build process === ///
 /// ========== DEBUG_DEV_0.12.5_20250209.d.ts ========== ///
 
-export interface interface_error_tValue<T extends number> {
+export type interface_error_tValue<T extends number> = {
   value: T
 }
 export type interface_error_t = interface_error_tValue<0> | interface_error_tValue<255>
 
-export interface connector_type_tValue<T extends number> {
+export type connector_type_tValue<T extends number> = {
   value: T
 }
 export type connector_type_t =
@@ -21,19 +21,19 @@ export type connector_type_t =
   | connector_type_tValue<6>
   | connector_type_tValue<7>
 
-export interface connection_rssi_tValue<T extends number> {
+export type connection_rssi_tValue<T extends number> = {
   value: T
 }
 export type connection_rssi_t = connection_rssi_tValue<127> | connection_rssi_tValue<-128>
 
-export interface Connection {
+export type Connection = {
   connector_type: connector_type_t
   connection_rssi: connection_rssi_t
   address_string: ArrayBuffer | Uint8Array | Uint8ClampedArray | Int8Array | string
   delete(): void
 }
 
-export interface Value {
+export type Value = {
   setNull(): void
   setUndefined(): void
   isNumber(): boolean
@@ -65,7 +65,7 @@ export interface Value {
   delete(): void
 }
 
-export interface Synchronization {
+export type Synchronization = {
   history_fingerprint: number
   tngl_fingerprint: number
   clock_timestamp: number
@@ -77,7 +77,7 @@ export interface Synchronization {
   delete(): void
 }
 
-export interface Uint8Vector {
+export type Uint8Vector = {
   push_back(_0: number): void
   resize(_0: number, _1: number): void
   size(): number
@@ -86,7 +86,7 @@ export interface Uint8Vector {
   delete(): void
 }
 
-export interface IConnector_WASM {
+export type IConnector_WASM = {
   _process(): void
   _sendExecute(_0: Uint8Vector, _1: Connection): void
   _sendSynchronize(_0: Synchronization, _1: Connection): void
@@ -105,12 +105,12 @@ export interface IConnector_WASM {
   delete(): void
 }
 
-export interface ImplementedIConnector_WASM extends IConnector_WASM {
+export type ImplementedIConnector_WASM = {
   notifyOnDestruction(): void
   delete(): void
-}
+} & IConnector_WASM
 
-export interface Spectoda_WASM {
+export type Spectoda_WASM = {
   _handleReboot(): interface_error_t
   end(): void
   synchronize(_0: Synchronization, _1: Connection): void
@@ -188,12 +188,12 @@ export interface Spectoda_WASM {
   delete(): void
 }
 
-export interface ImplementedSpectoda_WASM extends Spectoda_WASM {
+export type ImplementedSpectoda_WASM = {
   notifyOnDestruction(): void
   delete(): void
-}
+} & Spectoda_WASM
 
-export interface MainModule {
+export type MainModule = {
   interface_error_t: { SUCCESS: interface_error_tValue<0>; FAIL: interface_error_tValue<255> }
   connector_type_t: {
     CONNECTOR_UNDEFINED: connector_type_tValue<0>
@@ -266,7 +266,7 @@ export interface MainModule {
 //   clock_ms __clock_timestamp = clock_ms(0);
 // };
 
-export interface ProcessOptions {
+export type ProcessOptions = {
   skip_berry_plugin_update: boolean
   skip_eventstate_updates: boolean
   force_event_emittion: boolean
@@ -280,13 +280,13 @@ export interface ProcessOptions {
 //   uint8_t power = 255;
 // };
 
-export interface RenderOptions {
+export type RenderOptions = {
   force_clear_ports_flag: boolean
   force_bake_flag: boolean
   power: number
 }
 
-export interface Spectoda_WASMImplementation {
+export type Spectoda_WASMImplementation = {
   // ! C++ Code the Spectoda_WASMImplementation is mapped to and MUST be in sync for WASM binding to work properly
   // ! please keep it here as it is used for determining if there are some changes in C++ vs this file. For more info contact @immakermatty
   // ? class ImplementedSpectoda_WASM : public wrapper<Spectoda_WASM>
@@ -375,7 +375,7 @@ export interface Spectoda_WASMImplementation {
   _onLog(level: number, where: string, message: string): void
 }
 
-export interface IConnector_WASMImplementation {
+export type IConnector_WASMImplementation = {
   // ! C++ Code the IConnector_WASMImplementation is mapped to and MUST be in sync for WASM binding to work properly
   // ! please keep it here as it is used for determining if there are some changes in C++ vs this file. For more info contact @immakermatty
   // ? class ImplementedIConnector_WASM : public wrapper<IConnector_WASM>

@@ -11,8 +11,6 @@ import { SpectodaAppEvents } from '../types/app-events'
 import { SpectodaTypes } from '../types/primitives'
 import { Connection, Synchronization } from '../types/wasm'
 
-
-
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore
 // eslint-disable-next-line security/detect-non-literal-require, unicorn/prefer-module
@@ -20,33 +18,39 @@ const requireBundlerWorkeround = (moduleName: string) => (detectGW() ? require(m
 // TODO node-ble on the same level as spectoda-js or node-ble in the spectoda-js repo ? nevíme
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore
-let NodeBle = { createBluetooth: () => ({ bluetooth: { defaultAdapter: async() => {
-  return {
-    startDiscovery: async () => {},
-    stopDiscovery: async () => {},
-    isDiscovering: async () => false,
-    waitDevice: async(address: string, timeout: number, scanPeriod: number) => {},
-    devices: async () => [],
-    getDevice: async (address: string) => {},
-  }
-} }, destroy: () => {} }) }
-
+let NodeBle = {
+  createBluetooth: () => ({
+    bluetooth: {
+      defaultAdapter: async () => {
+        return {
+          startDiscovery: async () => {},
+          stopDiscovery: async () => {},
+          isDiscovering: async () => false,
+          waitDevice: async (address: string, timeout: number, scanPeriod: number) => {},
+          devices: async () => [],
+          getDevice: async (address: string) => {},
+        }
+      },
+    },
+    destroy: () => {},
+  }),
+}
 
 try {
   NodeBle = detectGW() ? requireBundlerWorkeround('../../../node-ble/src/index') : {}
 } catch {
-  // 
+  //
 }
 
 const { createBluetooth } = NodeBle
 
 // Add these type definitions at the top of the file
 declare namespace NodeBle {
-  interface GattService {
+  type GattService = {
     getCharacteristic(uuid: string): Promise<GattCharacteristic>
   }
 
-  interface GattCharacteristic {
+  type GattCharacteristic = {
     writeValue(value: Buffer, options: { offset: number; type: string }): Promise<unknown>
     readValue(): Promise<DataView>
     startNotifications(): Promise<unknown>
@@ -55,11 +59,11 @@ declare namespace NodeBle {
     removeAllListeners(event: string): void
   }
 
-  interface Bluetooth {
+  type Bluetooth = {
     defaultAdapter(): Promise<Adapter>
   }
 
-  interface Adapter {
+  type Adapter = {
     startDiscovery(): Promise<unknown>
     stopDiscovery(): Promise<unknown>
     isDiscovering(): Promise<boolean>
@@ -68,7 +72,7 @@ declare namespace NodeBle {
     getDevice(address: string): Promise<Device>
   }
 
-  interface Device {
+  type Device = {
     connect(): Promise<unknown>
     disconnect(): Promise<unknown>
     gatt(): Promise<{ getPrimaryService(uuid: string): Promise<GattService> }>
