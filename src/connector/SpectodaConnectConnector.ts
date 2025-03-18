@@ -958,9 +958,11 @@ export class SpectodaConnectConnector extends FlutterConnection {
     // the timeout must be long enough to handle the slowest devices
     const FLUTTER_RESPONSE_TIMEOUT = MINIMAL_CONNECT_TIMEOUT + Math.max(MINIMAL_CONNECT_TIMEOUT, timeout_number) + 5000
 
+    // @ts-expect-error TODO: @immakermatty fix missing connector
     return this.#applyTimeout(this.#promise, FLUTTER_RESPONSE_TIMEOUT, 'connect').then(() => {
       logging.debug('Sleeping for 100ms after connect...')
       return sleep(100).then(() => {
+        // TODO: @immakermatty fix missing connector
         return { connector: 'spectodaconnect' }
       })
     })
