@@ -4,7 +4,7 @@ import { logging } from '../logging'
 
 import { MainModule, Uint8Vector } from './types/wasm'
 
-const WASM_VERSION = 'DEBUG_DEV_0.12.5_20250213'
+const WASM_VERSION = 'DEBUG_DEV_0.12.6_20250326'
 
 let moduleInitilizing = false
 let moduleInitilized = false
