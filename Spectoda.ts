@@ -1778,28 +1778,23 @@ export class Spectoda implements SpectodaClass {
       
       // Reassemble the code
       tngl_code = resultLines.join('\n');
-      
-      // We need a special handling for BERRY code where symbols might appear
-      // Extract BERRY code segments and apply replacements
+    }
+
+    // Process BERRY code blocks after handling preprocessor directives
+    {
+      // Extract and process BERRY code segments
       const berryRegex = /BERRY\(`([\S\s]*?)`\)/g;
       let berryMatch;
       
       while ((berryMatch = berryRegex.exec(tngl_code)) !== null) {
         const fullMatch = berryMatch[0];
-        let berryCode = berryMatch[1];
+        const berryCode = berryMatch[1];
         
-        // Apply symbol replacements within BERRY code
-        for (const [name, value] of defines.entries()) {
-          if (value === null || value === undefined) {
-            continue;
-          }
-          
-          const defineRegex = new RegExp(`\\b${name}\\b`, 'g');
-          berryCode = berryCode.replace(defineRegex, value);
-        }
+        // Process the BERRY code using the preprocessBerry function
+        const processedBerryCode = preprocessBerry(berryCode);
         
         // Replace the original BERRY segment with the processed one
-        const newBerrySegment = `BERRY(\`${berryCode}\`)`;
+        const newBerrySegment = `BERRY(\`${processedBerryCode}\`)`;
         tngl_code = tngl_code.substring(0, berryMatch.index) + 
                     newBerrySegment + 
                     tngl_code.substring(berryMatch.index + fullMatch.length);
