@@ -36,8 +36,8 @@ const TNGL_FLAGS = Object.freeze({
   /* frame */
   SCOPE: 11,
 
-  /* clip */
-  CLIP: 12,
+  /* interface implementation */
+  SCOPE_ID: 12,
 
   /* sifters */
   SIFTER_CONTROLLER: 13,
@@ -47,20 +47,20 @@ const TNGL_FLAGS = Object.freeze({
   /* event handlers */
   INTERACTIVE: 16,
   EVENT_CATCHER: 17,
-
+  
   /* definitions scoped */
   DECLARE_VARIABLE: 18,
-
+  
   /* event state */
   EVENTSTATE_OVERLOAD: 19,
-
+  
   // ======================
 
   /* definitions global */
   DEFINE_CONTROLLER: 24,
   DEFINE_SEGMENT: 25,
   DEFINE_CANVAS: 26,
-  DEFINE_MARKS: 27,
+  DEFINE_INTERFACE: 27,
   DEFINE_ANIMATION: 28,
 
   // ======================
@@ -120,17 +120,19 @@ const TNGL_FLAGS = Object.freeze({
   OPERATION_MUL: 163,
   OPERATION_DIV: 164,
   OPERATION_MOD: 165,
-  OPERATION_SCALE: 166,
+  OPERATION_SCA: 166,
   OPERATION_MAP: 167,
+  OPERATION_NVL: 168,
 
   /* objects */
   CONTROLLER: 176,
   IO: 177,
   SEGMENT: 178,
   CANVAS: 180,
-  MARKS: 181,
+  EVENTSTATE: 181,
   ID: 182,
   OBJECT_MAC_ADDRESS: 183,
+  INTERFACE: 187,
 
   /* events */
   EVENT_SET_VALUE: 184,
@@ -846,11 +848,6 @@ export class TnglCompiler {
         this.#tnglWriter.writeFlag(TNGL_FLAGS.INTERACTIVE)
         break
 
-      // === clip ===
-      case 'clip':
-        this.#tnglWriter.writeFlag(TNGL_FLAGS.CLIP)
-        break
-
       // === definitions ===
 
       case 'defController':
@@ -862,20 +859,14 @@ export class TnglCompiler {
       case 'defCanvas':
         this.#tnglWriter.writeFlag(TNGL_FLAGS.DEFINE_CANVAS)
         break
-      case 'defMarks':
-        this.#tnglWriter.writeFlag(TNGL_FLAGS.DEFINE_MARKS)
-        break
       case 'defAnimation':
         this.#tnglWriter.writeFlag(TNGL_FLAGS.DEFINE_ANIMATION)
         break
-      // case "defVariable":
-      //   this.#tnglWriter.writeFlag(TNGL_FLAGS.DECLARE_VARIABLE);
-      //   break;
+      case 'defInterface':
+        this.#tnglWriter.writeFlag(TNGL_FLAGS.DEFINE_INTERFACE)
+        break
 
       // === sifters ===
-      // case "siftDevices":
-      //   this.#tnglWriter.writeFlag(TNGL_FLAGS.SIFTER_CONTROLLER);
-      //   break;
       case 'siftControllers':
         this.#tnglWriter.writeFlag(TNGL_FLAGS.SIFTER_CONTROLLER)
         break
@@ -884,6 +875,11 @@ export class TnglCompiler {
         break
       case 'siftCanvases':
         this.#tnglWriter.writeFlag(TNGL_FLAGS.SIFTER_CANVAS)
+        break
+
+      // === interface implementation ===
+      case 'idScope':
+        this.#tnglWriter.writeFlag(TNGL_FLAGS.SCOPE_ID)
         break
 
       // === objects ===
@@ -899,8 +895,11 @@ export class TnglCompiler {
       case 'canvas':
         this.#tnglWriter.writeFlag(TNGL_FLAGS.CANVAS)
         break
-      case 'marks':
-        this.#tnglWriter.writeFlag(TNGL_FLAGS.MARKS)
+      case 'interface':
+        this.#tnglWriter.writeFlag(TNGL_FLAGS.INTERFACE)
+        break
+      case 'eventstate':
+        this.#tnglWriter.writeFlag(TNGL_FLAGS.EVENTSTATE)
         break
 
       // === modifiers ===
@@ -996,11 +995,14 @@ export class TnglCompiler {
       case 'divValues':
         this.#tnglWriter.writeFlag(TNGL_FLAGS.OPERATION_DIV)
         break
+      case 'nvlValues':
+        this.#tnglWriter.writeFlag(TNGL_FLAGS.OPERATION_NVL)
+        break
       case 'modValues':
         this.#tnglWriter.writeFlag(TNGL_FLAGS.OPERATION_MOD)
         break
       case 'scaValue':
-        this.#tnglWriter.writeFlag(TNGL_FLAGS.OPERATION_SCALE)
+        this.#tnglWriter.writeFlag(TNGL_FLAGS.OPERATION_SCA)
         break
       case 'mapValue':
         this.#tnglWriter.writeFlag(TNGL_FLAGS.OPERATION_MAP)
