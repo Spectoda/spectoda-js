@@ -4,4 +4,4 @@ export * from './logging'
 export * from './src/types/app-events'
 export type * from './types'
 
-export { mockScanResult } from './__mocks__/scan'
+export { mockScanResult } from '../__mocks__/scan'
