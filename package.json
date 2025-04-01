@@ -1,6 +1,6 @@
 {
-  "name": "@spectoda/spectoda-js/012",
-  "version": "0.9.0",
+  "name": "@spectoda/spectoda-js/",
+  "version": "0.12.6",
   "types": "types/index.d.ts",
   "scripts": {
     "lint": "eslint .",
