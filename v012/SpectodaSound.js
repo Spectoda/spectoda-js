@@ -1,6 +1,6 @@
 import { FFT } from './dsp.js'
-import { createNanoEvents, mapValue, sleep } from './functions.ts'
-import { logging } from './logging.ts'
+import { createNanoEvents, mapValue, sleep } from './functions'
+import { logging } from './logging'
 
 function calculateSensitivityValue(value, sensitivity) {
   return (value * sensitivity) / 100
