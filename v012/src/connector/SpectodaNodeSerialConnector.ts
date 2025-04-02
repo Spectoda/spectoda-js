@@ -33,7 +33,7 @@ import { Connection, Synchronization } from '../types/wasm'
 import type {
   SerialPort as NodeSerialPortType,
   ReadlineParser as NodeReadlineParserType,
-} from '../../../../node_modules/serialport/dist/index'
+} from 'serialport'
 import { SpectodaAppEvents } from '../types/app-events'
 
 let {
