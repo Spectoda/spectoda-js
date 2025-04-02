@@ -47,13 +47,13 @@ const TNGL_FLAGS = Object.freeze({
   /* event handlers */
   INTERACTIVE: 16,
   EVENT_CATCHER: 17,
-  
+
   /* definitions scoped */
   DECLARE_VARIABLE: 18,
-  
+
   /* event state */
   EVENTSTATE_OVERLOAD: 19,
-  
+
   // ======================
 
   /* definitions global */
@@ -251,8 +251,8 @@ export class TnglCompiler {
         break
 
       case TnglCompiler.PARSES.LINERALS_F:
-        this.compileLinerals(element.token);
-        break;
+        this.compileLinerals(element.token)
+        break
 
       // case TnglCompiler.PARSES.STRING_G:
       //   this.compileString(element.token);
@@ -406,33 +406,34 @@ export class TnglCompiler {
    */
   compileLinerals(linerals) {
     // Handle Infinity values
-    let infinityMatch = linerals.match(/([+-]?Infinity)/);
+    let infinityMatch = linerals.match(/([+-]?Infinity)/)
+
     if (infinityMatch) {
       if (infinityMatch[1] === 'Infinity' || infinityMatch[1] === '+Infinity') {
-        this.#tnglWriter.writeFlag(TNGL_FLAGS.CONST_TIMESTAMP_INFINITY);
-        return;
+        this.#tnglWriter.writeFlag(TNGL_FLAGS.CONST_TIMESTAMP_INFINITY)
+        return
       } else if (infinityMatch[1] === '-Infinity') {
-        this.#tnglWriter.writeFlag(TNGL_FLAGS.CONST_TIMESTAMP_MINUS_INFINITY);
-        return;
+        this.#tnglWriter.writeFlag(TNGL_FLAGS.CONST_TIMESTAMP_MINUS_INFINITY)
+        return
       }
     }
 
     // Handle boolean and null values
     switch (linerals) {
       case 'true':
-        this.#tnglWriter.writeFlag(TNGL_FLAGS.CONST_BOOLEAN_TRUE);
-        break;
-      case 'false': 
-        this.#tnglWriter.writeFlag(TNGL_FLAGS.CONST_BOOLEAN_FALSE);
-        break;
+        this.#tnglWriter.writeFlag(TNGL_FLAGS.CONST_BOOLEAN_TRUE)
+        break
+      case 'false':
+        this.#tnglWriter.writeFlag(TNGL_FLAGS.CONST_BOOLEAN_FALSE)
+        break
       case 'null':
-        this.#tnglWriter.writeFlag(TNGL_FLAGS.CONST_NULL);
-        break;
+        this.#tnglWriter.writeFlag(TNGL_FLAGS.CONST_NULL)
+        break
       case 'undefined':
-        this.#tnglWriter.writeFlag(TNGL_FLAGS.CONST_UNDEFINED);
-        break;
+        this.#tnglWriter.writeFlag(TNGL_FLAGS.CONST_UNDEFINED)
+        break
       default:
-        logging.error('Failed to compile literal:', linerals);
+        logging.error('Failed to compile literal:', linerals)
     }
   }
 
@@ -818,11 +819,11 @@ export class TnglCompiler {
         this.#tnglWriter.writeFlag(TNGL_FLAGS.ANIMATION_COLOR_GRADIENT4)
         break
       case 'animColorGradient5':
-        this.#tnglWriter.writeFlag(TNGL_FLAGS.ANIMATION_COLOR_GRADIENT5);
-        break;
+        this.#tnglWriter.writeFlag(TNGL_FLAGS.ANIMATION_COLOR_GRADIENT5)
+        break
       case 'animStream':
-        this.#tnglWriter.writeFlag(TNGL_FLAGS.ANIMATION_STREAM);
-        break;
+        this.#tnglWriter.writeFlag(TNGL_FLAGS.ANIMATION_STREAM)
+        break
 
       case 'applyReorder':
         this.#tnglWriter.writeFlag(TNGL_FLAGS.MUTATOR_REORDER)
@@ -937,15 +938,15 @@ export class TnglCompiler {
       // === events ===
       case 'catchEvent': // ! deprecate in 0.13
       case 'onEventStateSet':
-        this.#tnglWriter.writeFlag(TNGL_FLAGS.EVENT_CATCHER);
-        break;
+        this.#tnglWriter.writeFlag(TNGL_FLAGS.EVENT_CATCHER)
+        break
       case 'setValue':
-        this.#tnglWriter.writeFlag(TNGL_FLAGS.EVENT_SET_VALUE);
-        break;
+        this.#tnglWriter.writeFlag(TNGL_FLAGS.EVENT_SET_VALUE)
+        break
       case 'emitAs': // ! deprecate in 0.13
       case 'setEventState':
-        this.#tnglWriter.writeFlag(TNGL_FLAGS.EVENT_EMIT_LOCAL);
-        break;
+        this.#tnglWriter.writeFlag(TNGL_FLAGS.EVENT_EMIT_LOCAL)
+        break
       case 'randomChoice':
         this.#tnglWriter.writeFlag(TNGL_FLAGS.EVENT_RANDOM_CHOICE)
         break
@@ -1139,16 +1140,19 @@ export class TnglCompiler {
     // TODO: Get bytes in WASM and then only send Berry bytecode
 
     // BERRY(`...`)
-    const berryMatch = berry.match(/^BERRY\s*\(\s*`([\s\S]*)`\s*\)$/);
-    if (!berryMatch) {
-      logging.error('Invalid Berry script format! Expected BERRY(`...`). Received:', berry);
-      return;
-    }
-    const code = berryMatch[1];
-    logging.debug('matched script:', code);
+    const berryMatch = berry.match(/^BERRY\s*\(\s*`([\s\S]*)`\s*\)$/)
 
-    const bytes = new TextEncoder().encode(code);
-    logging.verbose('matched script bytes:', bytes);
+    if (!berryMatch) {
+      logging.error('Invalid Berry script format! Expected BERRY(`...`). Received:', berry)
+      return
+    }
+    const code = berryMatch[1]
+
+    logging.debug('matched script:', code)
+
+    const bytes = new TextEncoder().encode(code)
+
+    logging.verbose('matched script bytes:', bytes)
 
     this.#tnglWriter.writeFlag(TNGL_FLAGS.BERRY_SCRIPT)
     this.#tnglWriter.writeUint16(bytes.length)
