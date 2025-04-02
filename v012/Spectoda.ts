@@ -961,6 +961,7 @@ export class Spectoda implements SpectodaClass {
           // e.g. "bf1d1d" -> "#bf1d1d"
           //      "#00FF0a" -> "#00ff0a"
           const colorStr = String(rawValue).replace(/^#/, '').toLowerCase()
+
           return `#${colorStr}`
         }
         case VALUE_TYPE.LABEL:
@@ -970,14 +971,14 @@ export class Spectoda implements SpectodaClass {
           // Keep floating points, e.g. -20.34 => "-20.34%"
           // parseFloat to ensure a valid numeric string (but keep decimals if present)
           return `${parseFloat(rawValue)}%`
-        case VALUE_TYPE.TIME:
+        case VALUE_TYPE.TIMESTAMP:
           // No floating points; parse as integer, then add "ms"
           // e.g. 1000.123 => "1000ms"
           return `${parseInt(rawValue, 10)}ms`
         case VALUE_TYPE.NULL:
-          return `null`
+          return 'null'
         case VALUE_TYPE.UNDEFINED:
-          return `undefined`
+          return 'undefined'
         case VALUE_TYPE.BOOLEAN:
           // e.g. true => "true", false => "false"
           return String(rawValue)
@@ -1223,6 +1224,7 @@ export class Spectoda implements SpectodaClass {
 
       minified = minified.replace(timestampRegex, (match) => {
         const milliseconds = computeTimestamp(match)
+
         return `Value.Timestamp(${milliseconds})`
       })
 
@@ -1447,12 +1449,10 @@ export class Spectoda implements SpectodaClass {
      *   Each event is an object: { type, value, id, label, timestamp }
      * @returns The joined TNGL output (one chain per line)
      */
-    function convertEventsToTnglChains(
-      sceneName: string,
-      events: SpectodaEvent[],
-    ) {
+    function convertEventsToTnglChains(sceneName: string, events: SpectodaEvent[]) {
       // Group events by ID while preserving their relative order
       const eventsById: Record<number, SpectodaEvent[]> = {}
+
       for (const evt of events) {
         if (!eventsById[evt.id]) {
           eventsById[evt.id] = []
@@ -1487,7 +1487,7 @@ export class Spectoda implements SpectodaClass {
           chain += `.setEventState($${e.label})`
         }
 
-        chain += `;`
+        chain += ';'
         return chain
       })
 
@@ -1501,77 +1501,77 @@ export class Spectoda implements SpectodaClass {
      * @returns The TNGL code with comments removed
      */
     function removeNonBerryComments(code: string): string {
-      let result = '';
-      let i = 0;
-      let inSingleQuoteString = false;
-      let inDoubleQuoteString = false;
-      let inSingleLineComment = false;
-      let inMultiLineComment = false;
-      
+      let result = ''
+      let i = 0
+      let inSingleQuoteString = false
+      let inDoubleQuoteString = false
+      let inSingleLineComment = false
+      let inMultiLineComment = false
+
       while (i < code.length) {
-        const char = code[i];
-        const nextChar = i + 1 < code.length ? code[i + 1] : '';
-        
+        const char = code[i]
+        const nextChar = i + 1 < code.length ? code[i + 1] : ''
+
         // Handle string boundaries
         if (char === '"' && !inSingleQuoteString && !inSingleLineComment && !inMultiLineComment) {
-          inDoubleQuoteString = !inDoubleQuoteString;
-          result += char;
-          i++;
-          continue;
+          inDoubleQuoteString = !inDoubleQuoteString
+          result += char
+          i++
+          continue
         }
-        
+
         if (char === "'" && !inDoubleQuoteString && !inSingleLineComment && !inMultiLineComment) {
-          inSingleQuoteString = !inSingleQuoteString;
-          result += char;
-          i++;
-          continue;
+          inSingleQuoteString = !inSingleQuoteString
+          result += char
+          i++
+          continue
         }
-        
+
         // Inside strings, just copy characters
         if (inSingleQuoteString || inDoubleQuoteString) {
-          result += char;
-          i++;
-          continue;
+          result += char
+          i++
+          continue
         }
-        
+
         // Handle comments
         if (char === '/' && nextChar === '*' && !inSingleLineComment && !inMultiLineComment) {
-          inMultiLineComment = true;
-          i += 2;
-          continue;
+          inMultiLineComment = true
+          i += 2
+          continue
         }
-        
+
         if (char === '*' && nextChar === '/' && inMultiLineComment) {
-          inMultiLineComment = false;
-          i += 2;
-          continue;
+          inMultiLineComment = false
+          i += 2
+          continue
         }
-        
+
         if (char === '/' && nextChar === '/' && !inSingleLineComment && !inMultiLineComment) {
-          inSingleLineComment = true;
-          i += 2;
-          continue;
+          inSingleLineComment = true
+          i += 2
+          continue
         }
-        
+
         if ((char === '\n' || char === '\r') && inSingleLineComment) {
-          inSingleLineComment = false;
-          result += char; // Keep the newline
-          i++;
-          continue;
+          inSingleLineComment = false
+          result += char // Keep the newline
+          i++
+          continue
         }
-        
+
         // Skip characters in comments
         if (inSingleLineComment || inMultiLineComment) {
-          i++;
-          continue;
+          i++
+          continue
         }
-        
+
         // Add non-comment characters
-        result += char;
-        i++;
+        result += char
+        i++
       }
-      
-      return result;
+
+      return result
     }
 
     // Regular expressions for API handling
@@ -1629,178 +1629,178 @@ export class Spectoda implements SpectodaClass {
     // Handle #define, #ifdef, #ifndef, #endif, #warning, #error directives
     {
       // First remove comments from the TNGL code
-      tngl_code = removeNonBerryComments(tngl_code);
-      
+      tngl_code = removeNonBerryComments(tngl_code)
+
       // Now gather all defines and process conditionals
-      const defines = new Map<string, string>();
-      const lines = tngl_code.split('\n');
-      const resultLines: string[] = [];
-      
+      const defines = new Map<string, string>()
+      const lines = tngl_code.split('\n')
+      const resultLines: string[] = []
+
       // Stack to track conditional compilation state
       // Each entry is {symbol: string, include: boolean, wasTrue: boolean}
-      const conditionalStack: Array<{symbol: string, include: boolean, wasTrue: boolean}> = [];
-      
+      const conditionalStack: Array<{ symbol: string; include: boolean; wasTrue: boolean }> = []
+
       // Should we include the current section?
-      let includeSection = true;
-      
+      let includeSection = true
+
       for (const line of lines) {
         // Extract directive if present
-        const defineMatch = line.match(/^\s*#define\s+(\w+)(?:\s+(.*))?/);
-        const undefMatch = line.match(/^\s*#undef\s+(\w+)/);
-        const ifdefMatch = line.match(/^\s*#ifdef\s+(\w+)/);
-        const ifndefMatch = line.match(/^\s*#ifndef\s+(\w+)/);
-        const endifMatch = line.match(/^\s*#endif/);
-        const warningMatch = line.match(/^\s*#warning\s+(.*)/);
-        const errorMatch = line.match(/^\s*#error\s+(.*)/);
-        
+        const defineMatch = line.match(/^\s*#define\s+(\w+)(?:\s+(.*))?/)
+        const undefMatch = line.match(/^\s*#undef\s+(\w+)/)
+        const ifdefMatch = line.match(/^\s*#ifdef\s+(\w+)/)
+        const ifndefMatch = line.match(/^\s*#ifndef\s+(\w+)/)
+        const endifMatch = line.match(/^\s*#endif/)
+        const warningMatch = line.match(/^\s*#warning\s+(.*)/)
+        const errorMatch = line.match(/^\s*#error\s+(.*)/)
+
         if (defineMatch) {
           // Process #define, but only if we're in an included section
           if (includeSection) {
-            const name = defineMatch[1];
-            const value = defineMatch[2] || ''; // Default to empty string if no value
-            defines.set(name, value);
+            const name = defineMatch[1]
+            const value = defineMatch[2] || '' // Default to empty string if no value
+
+            defines.set(name, value)
           }
           // Don't include the #define line in output
-          continue;
-        } 
-        else if (undefMatch) {
+          continue
+        } else if (undefMatch) {
           // Process #undef, but only if we're in an included section
           if (includeSection) {
-            const name = undefMatch[1];
-            defines.delete(name);
+            const name = undefMatch[1]
+
+            defines.delete(name)
           }
           // Don't include the #undef line in output
-          continue;
-        } 
-        else if (ifdefMatch) {
+          continue
+        } else if (ifdefMatch) {
           // Process #ifdef
-          const symbol = ifdefMatch[1];
-          const symbolDefined = defines.has(symbol);
-          
+          const symbol = ifdefMatch[1]
+          const symbolDefined = defines.has(symbol)
+
           // This section is included if the parent section is included AND the condition is true
-          const newInclude: boolean = includeSection && symbolDefined;
-          
+          const newInclude: boolean = includeSection && symbolDefined
+
           // Push state onto stack
           conditionalStack.push({
             symbol,
             include: newInclude,
-            wasTrue: symbolDefined
-          });
-          
+            wasTrue: symbolDefined,
+          })
+
           // Update current include state
-          includeSection = newInclude;
-          
+          includeSection = newInclude
+
           // Don't include the #ifdef line in output
-          continue;
-        } 
-        else if (ifndefMatch) {
+          continue
+        } else if (ifndefMatch) {
           // Process #ifndef (same as #ifdef but condition is inverted)
-          const symbol = ifndefMatch[1];
-          const symbolDefined = defines.has(symbol);
-          
+          const symbol = ifndefMatch[1]
+          const symbolDefined = defines.has(symbol)
+
           // This section is included if the parent section is included AND the condition is true
-          const newInclude: boolean = includeSection && !symbolDefined;
-          
+          const newInclude: boolean = includeSection && !symbolDefined
+
           // Push state onto stack
           conditionalStack.push({
             symbol,
             include: newInclude,
-            wasTrue: !symbolDefined
-          });
-          
+            wasTrue: !symbolDefined,
+          })
+
           // Update current include state
-          includeSection = newInclude;
-          
+          includeSection = newInclude
+
           // Don't include the #ifndef line in output
-          continue;
-        } 
-        else if (endifMatch) {
+          continue
+        } else if (endifMatch) {
           // Process #endif - pop the last conditional state
           if (conditionalStack.length === 0) {
-            logging.error('Error: #endif without matching #ifdef or #ifndef');
-            throw 'InvalidPreprocessorDirective';
+            logging.error('Error: #endif without matching #ifdef or #ifndef')
+            throw 'InvalidPreprocessorDirective'
           }
-          
-          const lastState = conditionalStack.pop();
-          
+
+          const lastState = conditionalStack.pop()
+
           // Restore include state from parent conditional (or true if we're at root level)
-          includeSection = conditionalStack.length > 0 
-            ? conditionalStack[conditionalStack.length - 1].include 
-            : true;
-          
+          includeSection = conditionalStack.length > 0 ? conditionalStack[conditionalStack.length - 1].include : true
+
           // Don't include the #endif line in output
-          continue;
-        }
-        else if (warningMatch && includeSection) {
+          continue
+        } else if (warningMatch && includeSection) {
           // Process #warning - only if in an included section
-          const warningMessage = `TNGL Warning: ${warningMatch[1]}`;
-          logging.warn(warningMessage);
+          const warningMessage = `TNGL Warning: ${warningMatch[1]}`
+
+          logging.warn(warningMessage)
 
           // TODO: Process the warning in studio
-          
+
           // Don't include the #warning line in output
-          continue;
-        }
-        else if (errorMatch && includeSection) {
+          continue
+        } else if (errorMatch && includeSection) {
           // Process #error - only if in an included section
-          const errorMessage = `TNGL Error: ${errorMatch[1]}`;
-          logging.error(errorMessage);
+          const errorMessage = `TNGL Error: ${errorMatch[1]}`
+
+          logging.error(errorMessage)
 
           // TODO: Process the error in studio
-        
+
           // Abort processing when an error directive is encountered
-          throw 'TnglPreprocessorError: ' + errorMessage;
+          throw 'TnglPreprocessorError: ' + errorMessage
         }
-        
+
         // Include the line only if we're in an included section
         if (includeSection) {
           // Apply symbol replacements to each included line immediately
-          let processedLine = line;
+          let processedLine = line
+
           for (const [name, value] of defines.entries()) {
             if (value === null || value === undefined) {
-              continue;
+              continue
             }
-            
+
             // Create a regex that matches the symbol name with word boundaries
             // The symbol name must not be preceded or followed by a word character
-            const defineRegex = new RegExp(`\\b${name}\\b`, 'g');
-            processedLine = processedLine.replace(defineRegex, value);
+            const defineRegex = new RegExp(`\\b${name}\\b`, 'g')
+
+            processedLine = processedLine.replace(defineRegex, value)
           }
-          resultLines.push(processedLine);
+          resultLines.push(processedLine)
         }
       }
-      
+
       // Check if all #ifdef/#ifndef have matching #endif
       if (conditionalStack.length > 0) {
-        logging.error('Error: Unclosed #ifdef or #ifndef directives');
-        throw 'UnclosedPreprocessorDirective';
+        logging.error('Error: Unclosed #ifdef or #ifndef directives')
+        throw 'UnclosedPreprocessorDirective'
       }
-      
+
       // Reassemble the code
-      tngl_code = resultLines.join('\n');
+      tngl_code = resultLines.join('\n')
     }
 
     // Process BERRY code blocks after handling preprocessor directives
     {
       // Extract and process BERRY code segments
-      const berryRegex = /BERRY\(`([\S\s]*?)`\)/g;
-      let berryMatch;
-      
+      const berryRegex = /BERRY\(`([\S\s]*?)`\)/g
+      let berryMatch
+
       while ((berryMatch = berryRegex.exec(tngl_code)) !== null) {
-        const fullMatch = berryMatch[0];
-        const berryCode = berryMatch[1];
-        
+        const fullMatch = berryMatch[0]
+        const berryCode = berryMatch[1]
+
         // Process the BERRY code using the preprocessBerry function
-        const processedBerryCode = preprocessBerry(berryCode);
-        
+        const processedBerryCode = preprocessBerry(berryCode)
+
         // Replace the original BERRY segment with the processed one
-        const newBerrySegment = `BERRY(\`${processedBerryCode}\`)`;
-        tngl_code = tngl_code.substring(0, berryMatch.index) + 
-                    newBerrySegment + 
-                    tngl_code.substring(berryMatch.index + fullMatch.length);
-        
+        const newBerrySegment = `BERRY(\`${processedBerryCode}\`)`
+
+        tngl_code =
+          tngl_code.substring(0, berryMatch.index) +
+          newBerrySegment +
+          tngl_code.substring(berryMatch.index + fullMatch.length)
+
         // Reset lastIndex to account for potential length changes
-        berryRegex.lastIndex = berryMatch.index + newBerrySegment.length;
+        berryRegex.lastIndex = berryMatch.index + newBerrySegment.length
       }
     }
 
@@ -1848,8 +1848,7 @@ export class Spectoda implements SpectodaClass {
     // Handle SCENE declarations
     {
       // Regular expression to find all SCENE("name"|$name, [IDxxx,] `[...]`) segments
-      const regexSCENE =
-        /SCENE\s*\(\s*(?:"([^"]*)"|(\$\w+))\s*(?:,\s*ID(\d+))?\s*,\s*`\[([^]*?)\]`\s*\)\s*;?/g
+      const regexSCENE = /SCENE\s*\(\s*(?:"([^"]*)"|(\$\w+))\s*(?:,\s*ID(\d+))?\s*,\s*`\[([^]*?)\]`\s*\)\s*;?/g
       let match
 
       while ((match = regexSCENE.exec(tngl_code)) !== null) {
@@ -1863,10 +1862,7 @@ export class Spectoda implements SpectodaClass {
           const events = JSON.parse(eventsJson)
 
           // Convert events to TNGL chains using existing function
-          const tnglChains = convertEventsToTnglChains(
-            sceneName.replace(/^\$/, ''),
-            events,
-          )
+          const tnglChains = convertEventsToTnglChains(sceneName.replace(/^\$/, ''), events)
 
           // Replace the SCENE declaration with the generated TNGL chains
           tngl_code = tngl_code.replace(match[0], tnglChains)
@@ -4132,10 +4128,7 @@ export class Spectoda implements SpectodaClass {
         // Step 2: Sort the events by timestamp
         events.sort((a, b) => a.timestamp - b.timestamp)
 
-        const eventsJson =
-          `[\n` +
-          events.map((event) => JSON.stringify(event)).join(`,\n`) +
-          `\n]`
+        const eventsJson = '[\n' + events.map((event) => JSON.stringify(event)).join(',\n') + '\n]'
 
         logging.info('> Events:', eventsJson)
 
