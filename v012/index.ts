@@ -17,7 +17,7 @@ export type {
   SpectodaUndefinedEvent,
 } from './src/types/event'
 
-export { EventSchema } from './src/schemas/event'
+export { EventSchema, EventInputSchema } from './src/schemas/event'
 export {
   FirmwareVersionSchema,
   FirmwareVersionFullSchema,
