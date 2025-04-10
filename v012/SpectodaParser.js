@@ -2,7 +2,7 @@
 // TODO @immakermatty move compilation to WASM
 
 import { TnglWriter } from './TnglWriter'
-import { VALUE_LIMITS } from './src/constants'
+import { CPP_EVENT_VALUE_LIMITS as VALUE_LIMITS } from './src/constants/limits'
 import { mapValue, uint8ArrayToHexString } from './functions'
 import { logging } from './logging'
 
@@ -687,19 +687,6 @@ export class TnglCompiler {
     logging.error('const declaration is not supported in TNGL in this version of the compiler')
     throw 'ConstDeclarationNotSupported'
 
-    let reg = variable_declaration.match(/const +([A-Za-z_][\w]*) *=/)
-
-    if (!reg) {
-      logging.error('Failed to compile const declaration')
-      return
-    }
-
-    const const_name = reg[1]
-    const const_address = this.#declareConst(const_name)
-
-    // retrieve the const_address and write the TNGL_FLAGS with uint16_t variable address value.
-    this.#tnglWriter.writeFlag(TNGL_FLAGS.DECLARE_VARIABLE)
-    this.#tnglWriter.writeUint16(const_address)
   }
 
   compileLetDeclaration(variable_declaration) {
@@ -709,19 +696,6 @@ export class TnglCompiler {
     logging.error('let declaration is not supported in TNGL in this version of the compiler')
     throw 'LetDeclarationNotSupported'
 
-    let reg = variable_declaration.match(/let +([A-Za-z_][\w]*) *=/)
-
-    if (!reg) {
-      logging.error('Failed to compile let declaration')
-      return
-    }
-
-    const let_name = reg[1]
-    const let_address = this.#declareLet(let_name)
-
-    // retrieve the let_address and write the TNGL_FLAGS with uint16_t variable address value.
-    this.#tnglWriter.writeFlag(TNGL_FLAGS.DECLARE_VARIABLE)
-    this.#tnglWriter.writeUint16(let_address)
   }
 
   compileVarDeclaration(variable_declaration) {

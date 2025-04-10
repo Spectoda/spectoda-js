@@ -3,8 +3,9 @@
 // @ts-nocheck
 
 import { TnglCodeParser } from './SpectodaParser'
-import { VALUE_LIMITS } from './src/constants'
+
 import { logging } from './logging'
+import { CPP_VALUE_LIMITS } from './src/constants'
 
 export const createNanoEvents = () => ({
   emit<K extends keyof SpectodaJsEventMap>(event: K, ...args: SpectodaJsEventMap[K]) {
@@ -245,7 +246,7 @@ export function colorToBytes(color_hex_code: string): number[] {
 }
 
 export function percentageToBytes(percentage_float: number): number[] {
-  const value = mapValue(percentage_float, -100, 100, VALUE_LIMITS.PERCENTAGE_MINUS_100, VALUE_LIMITS.PERCENTAGE_100)
+  const value = mapValue(percentage_float, -100, 100, CPP_VALUE_LIMITS.PERCENTAGE_MINUS_100, CPP_VALUE_LIMITS.PERCENTAGE_100)
 
   return numberToBytes(Math.floor(value), 4)
 }
@@ -664,18 +665,6 @@ export function fetchFirmware(url: string): Promise<Uint8Array> {
       logging.error('Failed to fetch firmware', e)
       throw e
     })
-}
-
-if (typeof window !== 'undefined') {
-  window.validateTimestamp = validateTimestamp
-
-  const script = document.createElement('script')
-
-  script.src = '//cdn.jsdelivr.net/npm/eruda'
-  script.setAttribute('defer', true)
-  document.body.append(script)
-
-  window.mapValue = mapValue
 }
 
 //! ==== NODEJS version =====
