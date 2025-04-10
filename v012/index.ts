@@ -27,6 +27,14 @@ export {
   BaudrateSchema,
   ControllerNameSchema,
   PathSchema,
+  IDSchema,
+  FingerprintSchema,
+  FirmwareVersionCodeSchema,
+  NetworkKeySchema,
+  PcbCodeSchema,
+  TnglBankSchema,
+} from './src/schemas/primitives'
+export {
   TimestampSchema,
   PercentageSchema,
   LabelSchema,
@@ -35,7 +43,8 @@ export {
   PixelsSchema,
   BooleanSchema,
   NullSchema,
+  DateSchema,
   UndefinedSchema,
-} from './src/schemas/primitives'
+} from './src/schemas/values'
 
 export { mockScanResult } from './__mocks__/scan'
