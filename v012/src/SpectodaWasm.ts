@@ -268,7 +268,3 @@ function loadWasm(wasmVersion: string) {
     onWasmLoad()
   }
 }
-
-if (typeof window !== 'undefined') {
-  window.SpectodaWasm = SpectodaWasm
-}

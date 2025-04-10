@@ -76,3 +76,8 @@ export const AnyEventValueSchema = z.union([
 export const AnyEventSchema = EventBaseSchema.extend({
   value: AnyEventValueSchema,
 })
+
+export const EventInputSchema = AnyEventSchema.omit({
+  debug: true,
+  timestamp: true,
+})
