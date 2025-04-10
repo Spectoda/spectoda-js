@@ -1,4 +1,4 @@
-import { z } from 'zod/lib/external'
+import { z } from 'zod'
 
 import { JS_EVENT_VALUE_LIMITS } from '../constants/limits'
 import { LABEL_MAX_LENGTH } from '../constants'
