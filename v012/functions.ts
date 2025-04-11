@@ -5,7 +5,7 @@
 import { TnglCodeParser } from './SpectodaParser'
 
 import { logging } from './logging'
-import { PERCENTAGE_SCALE_FACTOR } from './src/constants'
+import { PERCENTAGE_JS_VS_CPP_SCALE_FACTOR } from './src/constants'
 
 export const createNanoEvents = () => ({
   emit<K extends keyof SpectodaJsEventMap>(event: K, ...args: SpectodaJsEventMap[K]) {
@@ -250,7 +250,7 @@ export function colorToBytes(color_hex_code: string): number[] {
  * @deprecated There should be no need to convert percentage values to bytes.
  */
 export function percentageToBytes(percentage_float: number): number[] {
-  return numberToBytes(Math.floor(value * PERCENTAGE_SCALE_FACTOR), 4)
+  return numberToBytes(Math.floor(value * PERCENTAGE_JS_VS_CPP_SCALE_FACTOR), 4)
 }
 
 export function strMacToBytes(mac_str: string): number[] {

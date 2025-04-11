@@ -6,7 +6,12 @@ export const MAX_ID = 255
 export const MAX_PRODUCT_CODE = 0xffff
 export const MAX_PCB_CODE = 0xffff
 export const MAX_TNGL_BANK = 255
-export const PERCENTAGE_SCALE_FACTOR = 1000000
+
+/**
+ * The scale factor for percentage values in JS vs C++. Should be deprecated after the migration
+ * of TNGL parsing to WASM
+ */
+export const PERCENTAGE_JS_VS_CPP_SCALE_FACTOR = 1000000
 
 export const CONNECTORS = Object.freeze({
   NONE: 'none',
