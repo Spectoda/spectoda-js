@@ -32,7 +32,7 @@ import { SpectodaNodeSerialConnector } from './connector/SpectodaNodeSerialConne
 import { SpectodaSimulatedConnector } from './connector/SpectodaSimulatedConnector'
 import { SPECTODA_APP_EVENTS, SpectodaAppEventMap, SpectodaAppEvents } from './types/app-events'
 import { ConnectorType } from './types/connect'
-import { SpectodaEventStateValue } from './types/event'
+import { SpectodaEventState } from './types/event'
 import { SpectodaTypes } from './types/primitives'
 import { Connection, Synchronization } from './types/wasm'
 
@@ -1679,7 +1679,7 @@ export class SpectodaRuntime {
   getEventStates(
     event_state_name: string,
     event_state_ids: SpectodaTypes.IDs,
-  ): (SpectodaEventStateValue | undefined)[] {
+  ): (SpectodaEventState | undefined)[] {
     if (Array.isArray(event_state_ids)) {
       return event_state_ids.map((id) => this.spectoda_js.getEventState(event_state_name, id))
     } else {
@@ -1687,7 +1687,7 @@ export class SpectodaRuntime {
     }
   }
 
-  getEventState(event_state_name: string, event_state_id: SpectodaTypes.ID): SpectodaEventStateValue | undefined {
+  getEventState(event_state_name: string, event_state_id: SpectodaTypes.ID): SpectodaEventState | undefined {
     return this.spectoda_js.getEventState(event_state_name, event_state_id)
   }
 

@@ -6,7 +6,7 @@ import { logging } from '../logging'
 import { SpectodaRuntime } from './SpectodaRuntime'
 import { SpectodaWasm } from './SpectodaWasm'
 import { SpectodaAppEvents } from './types/app-events'
-import { SpectodaEvent, SpectodaEventStateValue } from './types/event'
+import { SpectodaEvent, SpectodaEventState } from './types/event'
 import { SpectodaTypes } from './types/primitives'
 import {
   Connection,
@@ -756,7 +756,7 @@ export class Spectoda_JS {
     this.#spectoda_wasm.eraseTngl()
   }
 
-  getEventState(event_state_name: string, event_state_id: number): SpectodaEventStateValue | undefined {
+  getEventState(event_state_name: string, event_state_id: number): SpectodaEventState | undefined {
     logging.verbose(
       `Spectoda_JS::getEventState(event_state_name=${event_state_name}, event_state_id=${event_state_id})`,
     )
