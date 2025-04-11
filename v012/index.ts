@@ -32,9 +32,9 @@ export { deactivateDebugMode, enableDebugMode, uint8ArrayToHexString } from './f
 
 export { isCurrentSpectodaInstanceLocal, createSpectodaWebsocket } from './SpectodaWebSocketsConnector'
 
-export type { EventSchema, EventInputSchema } from './src/schemas/event'
+export { EventSchema, EventInputSchema } from './src/schemas/event'
 
-export type {
+export {
   FirmwareVersionSchema,
   FirmwareVersionFullSchema,
   ProductCodeSchema,
@@ -51,7 +51,7 @@ export type {
   TnglBankSchema,
 } from './src/schemas/primitives'
 
-export type {
+export {
   TimestampSchema,
   PercentageSchema,
   LabelSchema,
