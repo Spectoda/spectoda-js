@@ -26,7 +26,7 @@ export {
   MacAddressSchema,
   BaudrateSchema,
   ControllerNameSchema,
-  PathSchema,
+  SerialPathSchema,
   IDSchema,
   FingerprintSchema,
   FirmwareVersionCodeSchema,

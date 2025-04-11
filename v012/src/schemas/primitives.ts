@@ -111,9 +111,20 @@ export const TnglBankSchema = z.number().int().min(0).max(MAX_TNGL_BANK)
 export const BaudrateSchema = z.number().int().positive()
 
 /**
- * File system path string.
- * Can be absolute or relative path.
+ * Serial port path string used for device communication.
+ * Format varies by operating system:
  *
- * TODO @immakermatty add example, please
+ * On macOS:
+ * - `/dev/cu.usbserial-00000000`
+ * - `/dev/cu.usbserial-A800H7OY`
+ * - `/dev/cu.usbserial-A50285BI`
+ *
+ * On Windows:
+ * - `COM1`
+ * - `COM23`
+ *
+ * On Linux:
+ * - `/dev/ttyS3`
+ * - `/dev/ttyUSB0`
  */
-export const PathSchema = z.string()
+export const SerialPathSchema = z.string()

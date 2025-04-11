@@ -7,7 +7,7 @@ import {
   NetworkSignatureSchema,
   FirmwareVersionSchema,
   ProductCodeSchema,
-  PathSchema,
+  SerialPathSchema,
   BaudrateSchema,
   ControllerNameSchema,
 } from './primitives'
@@ -46,7 +46,7 @@ export const BaseCriteriaSchema = z
  * Serial-specific connection criteria
  */
 export const SerialCriteriaSchema = BaseCriteriaSchema.extend({
-  path: PathSchema.optional(),
+  path: SerialPathSchema.optional(),
   baudrate: BaudrateSchema.optional(),
 })
 
