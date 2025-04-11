@@ -3,6 +3,7 @@
 
 import { TnglWriter } from './TnglWriter'
 import { CPP_EVENT_VALUE_LIMITS as VALUE_LIMITS } from './src/constants/limits'
+import { PERCENTAGE_SCALE_FACTOR } from './src/constants'
 import { mapValue, uint8ArrayToHexString } from './functions'
 import { logging } from './logging'
 
@@ -603,10 +604,8 @@ export class TnglCompiler {
     } else if (val < -100.0 + UNIT_ERROR) {
       this.#tnglWriter.writeFlag(TNGL_FLAGS.CONST_PERCENTAGE_MINUS_100)
     } else {
-      const remapped = mapValue(val, -100.0, 100.0, -VALUE_LIMITS.PERCENTAGE_100, VALUE_LIMITS.PERCENTAGE_100)
-
       this.#tnglWriter.writeFlag(TNGL_FLAGS.VALUE_PERCENTAGE)
-      this.#tnglWriter.writeInt32(parseInt(remapped))
+      this.#tnglWriter.writeInt32(Math.round(val * PERCENTAGE_SCALE_FACTOR))
     }
   }
 

@@ -6,6 +6,7 @@ export const MAX_ID = 255
 export const MAX_PRODUCT_CODE = 0xffff
 export const MAX_PCB_CODE = 0xffff
 export const MAX_TNGL_BANK = 255
+export const PERCENTAGE_SCALE_FACTOR = 1000000
 
 export const CONNECTORS = Object.freeze({
   NONE: 'none',

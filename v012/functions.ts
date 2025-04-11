@@ -5,7 +5,7 @@
 import { TnglCodeParser } from './SpectodaParser'
 
 import { logging } from './logging'
-import { CPP_VALUE_LIMITS } from './src/constants'
+import { PERCENTAGE_SCALE_FACTOR } from './src/constants'
 
 export const createNanoEvents = () => ({
   emit<K extends keyof SpectodaJsEventMap>(event: K, ...args: SpectodaJsEventMap[K]) {
@@ -245,10 +245,12 @@ export function colorToBytes(color_hex_code: string): number[] {
   return [r, g, b]
 }
 
+/**
+ * Converts a value to a specific type based on the provided type code.
+ * @deprecated There should be no need to convert percentage values to bytes.
+ */
 export function percentageToBytes(percentage_float: number): number[] {
-  const value = mapValue(percentage_float, -100, 100, CPP_VALUE_LIMITS.PERCENTAGE_MINUS_100, CPP_VALUE_LIMITS.PERCENTAGE_100)
-
-  return numberToBytes(Math.floor(value), 4)
+  return numberToBytes(Math.floor(value * PERCENTAGE_SCALE_FACTOR), 4)
 }
 
 export function strMacToBytes(mac_str: string): number[] {
