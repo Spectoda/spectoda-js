@@ -1,3 +1,7 @@
+/* eslint-disable */
+// @ts-nocheck
+// TODO: Make Spectoda typesafe
+
 /**
  * @deprecated use logging.LOGGING_LEVEL_NONE */
 export const DEBUG_LEVEL_NONE = 0

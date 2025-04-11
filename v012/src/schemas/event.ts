@@ -1,11 +1,10 @@
 import { z } from 'zod'
 
-import { VALUE_TYPE } from '../constants'
 import { VALUE_TYPES } from '../constants/values'
 
+import { IDSchema } from './primitives'
+import { NumberSchema, LabelSchema } from './values'
 import {
-  NumberSchema,
-  LabelSchema,
   TimestampSchema,
   PercentageSchema,
   ColorSchema,
@@ -13,14 +12,12 @@ import {
   BooleanSchema,
   NullSchema,
   UndefinedSchema,
-  IDSchema,
-} from './primitives'
+} from './values'
 
 const EventBaseSchema = z.object({
   /** Readonly string with more information about the event value */
   debug: z.string(),
   label: LabelSchema,
-  type: z.nativeEnum(VALUE_TYPE),
   timestamp: z.number(),
   id: IDSchema,
 })
@@ -35,31 +32,52 @@ export const EventSchema = z.discriminatedUnion('type', [
     value: LabelSchema,
   }),
   EventBaseSchema.extend({
-    type: z.literal(VALUE_TYPE.PERCENTAGE),
+    type: z.literal(VALUE_TYPES.PERCENTAGE),
     value: PercentageSchema,
   }),
   EventBaseSchema.extend({
-    type: z.literal(VALUE_TYPE.TIMESTAMP),
+    type: z.literal(VALUE_TYPES.TIMESTAMP),
     value: TimestampSchema,
   }),
   EventBaseSchema.extend({
-    type: z.literal(VALUE_TYPE.COLOR),
+    type: z.literal(VALUE_TYPES.COLOR),
     value: ColorSchema,
   }),
   EventBaseSchema.extend({
-    type: z.literal(VALUE_TYPE.PIXELS),
+    type: z.literal(VALUE_TYPES.PIXELS),
     value: PixelsSchema,
   }),
   EventBaseSchema.extend({
-    type: z.literal(VALUE_TYPE.BOOLEAN),
+    type: z.literal(VALUE_TYPES.BOOLEAN),
     value: BooleanSchema,
   }),
   EventBaseSchema.extend({
-    type: z.literal(VALUE_TYPE.NULL),
+    type: z.literal(VALUE_TYPES.NULL),
     value: NullSchema,
   }),
   EventBaseSchema.extend({
-    type: z.literal(VALUE_TYPE.UNDEFINED),
+    type: z.literal(VALUE_TYPES.UNDEFINED),
     value: UndefinedSchema,
   }),
 ])
+
+export const AnyEventValueSchema = z.union([
+  NumberSchema,
+  LabelSchema,
+  PercentageSchema,
+  TimestampSchema,
+  ColorSchema,
+  PixelsSchema,
+  BooleanSchema,
+  NullSchema,
+  UndefinedSchema,
+])
+
+export const AnyEventSchema = EventBaseSchema.extend({
+  value: AnyEventValueSchema,
+})
+
+export const EventInputSchema = AnyEventSchema.omit({
+  debug: true,
+  timestamp: true,
+})

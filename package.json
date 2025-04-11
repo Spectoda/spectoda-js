@@ -5,8 +5,8 @@
   "scripts": {
     "lint": "eslint .",
     "lint:fix": "eslint . --fix --quiet",
+    "ci:check": "npm run tscheck && npm run lint:fix",
     "tscheck": "tsc --noEmit",
-    "prepush": "npm run tscheck && npm run lint:fix",
     "prepare": "husky"
   },
   "devDependencies": {

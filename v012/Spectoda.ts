@@ -34,7 +34,7 @@ import { WEBSOCKET_URL } from './SpectodaWebSocketsConnector'
 import './TnglReader'
 import './TnglWriter'
 import { SpectodaRuntime, allEventsEmitter } from './src/SpectodaRuntime'
-import { VALUE_LIMITS, VALUE_TYPE } from './src/constants'
+import { CPP_EVENT_VALUE_LIMITS as VALUE_LIMITS } from './src/constants/limits'
 import { SpectodaAppEventMap, SpectodaAppEventName, SpectodaAppEvents } from './src/types/app-events'
 import {
   CONNECTION_STATUS,
@@ -956,7 +956,7 @@ export class Spectoda implements SpectodaClass {
      */
     function formatValue(type: SpectodaTypes.ValueType, rawValue: any) {
       switch (type) {
-        case VALUE_TYPE.COLOR: {
+        case VALUE_TYPES.COLOR: {
           // Ensure a leading "#" and normalize to lowercase
           // e.g. "bf1d1d" -> "#bf1d1d"
           //      "#00FF0a" -> "#00ff0a"
@@ -964,31 +964,31 @@ export class Spectoda implements SpectodaClass {
 
           return `#${colorStr}`
         }
-        case VALUE_TYPE.LABEL:
+        case VALUE_TYPES.LABEL:
           // e.g. "evt" -> "$evt"
           return `$${rawValue}`
-        case VALUE_TYPE.PERCENTAGE:
+        case VALUE_TYPES.PERCENTAGE:
           // Keep floating points, e.g. -20.34 => "-20.34%"
           // parseFloat to ensure a valid numeric string (but keep decimals if present)
           return `${parseFloat(rawValue)}%`
-        case VALUE_TYPE.TIMESTAMP:
+        case VALUE_TYPES.TIMESTAMP:
           // No floating points; parse as integer, then add "ms"
           // e.g. 1000.123 => "1000ms"
           return `${parseInt(rawValue, 10)}ms`
-        case VALUE_TYPE.NULL:
+        case VALUE_TYPES.NULL:
           return 'null'
-        case VALUE_TYPE.UNDEFINED:
+        case VALUE_TYPES.UNDEFINED:
           return 'undefined'
-        case VALUE_TYPE.BOOLEAN:
+        case VALUE_TYPES.BOOLEAN:
           // e.g. true => "true", false => "false"
           return String(rawValue)
-        case VALUE_TYPE.PIXELS:
+        case VALUE_TYPES.PIXELS:
           // No floating points; parse as integer, then add "px"
           return `${parseInt(rawValue, 10)}px`
-        case VALUE_TYPE.NUMBER:
+        case VALUE_TYPES.NUMBER:
           // No floating points; parse as integer
           return String(parseInt(rawValue, 10))
-        case VALUE_TYPE.DATE:
+        case VALUE_TYPES.DATE:
           // Leave the date string as-is, e.g. "2023-09-21"
           return String(rawValue)
         default:
@@ -4147,17 +4147,17 @@ export class Spectoda implements SpectodaClass {
    *
    * @remarks
    * The following event value types are not yet implemented:
-   * - number (VALUE_TYPE.NUMBER)
-   * - date (VALUE_TYPE.DATE)
-   * - pixels (VALUE_TYPE.PIXELS)
-   * - boolean/bool (VALUE_TYPE.BOOLEAN)
+   * - number (VALUE_TYPES.NUMBER)
+   * - date (VALUE_TYPES.DATE)
+   * - pixels (VALUE_TYPES.PIXELS)
+   * - boolean/bool (VALUE_TYPES.BOOLEAN)
    *
    * Currently implemented types:
-   * - label (VALUE_TYPE.LABEL)
-   * - timestamp/time (VALUE_TYPE.TIME)
-   * - percentage (VALUE_TYPE.PERCENTAGE)
-   * - color (VALUE_TYPE.COLOR)
-   * - none/null (VALUE_TYPE.NULL)
+   * - label (VALUE_TYPES.LABEL)
+   * - timestamp/time (VALUE_TYPES.TIME)
+   * - percentage (VALUE_TYPES.PERCENTAGE)
+   * - color (VALUE_TYPES.COLOR)
+   * - none/null (VALUE_TYPES.NULL)
    *
    * @param events - Array of events or single event to emit
    * @param events[].label - Event label/name
@@ -4216,53 +4216,53 @@ export class Spectoda implements SpectodaClass {
       switch (event.type) {
         // TODO
         // case "number":
-        // case VALUE_TYPE.NUMBER: {
+        // case VALUE_TYPES.NUMBER: {
         //   this.emitNumber(event.label, event.value as number, event.id);
         //   break;
         // }
         case 'label':
-        case VALUE_TYPE.LABEL: {
+        case VALUE_TYPES.LABEL: {
           this.emitLabel(event.label, event.value as string, event.id)
           break
         }
         case 'timestamp':
         case 'time':
-        case VALUE_TYPE.TIMESTAMP: {
+        case VALUE_TYPES.TIMESTAMP: {
           this.emitTimestamp(event.label, event.value as number, event.id)
           break
         }
         case 'percentage':
-        case VALUE_TYPE.PERCENTAGE: {
+        case VALUE_TYPES.PERCENTAGE: {
           this.emitPercentage(event.label, event.value as number, event.id)
           break
         }
         // TODO
         // case 'date':
-        // case VALUE_TYPE.DATE: {
+        // case VALUE_TYPES.DATE: {
         //   this.emitDate(event.label, event.value as string, event.id);
         //   break;
         // }
         case 'color':
-        case VALUE_TYPE.COLOR: {
+        case VALUE_TYPES.COLOR: {
           this.emitColor(event.label, event.value as string, event.id)
           break
         }
         // TODO
         // case "pixels":
-        // case VALUE_TYPE.PIXELS: {
+        // case VALUE_TYPES.PIXELS: {
         //   this.emitPixels(event.label, event.value as number, event.id);
         //   break;
         // }
         // TODO
         // case "boolean":
         // case "bool":
-        // case VALUE_TYPE.BOOLEAN: {
+        // case VALUE_TYPES.BOOLEAN: {
         //   this.emitBoolean(event.label, event.value as boolean, event.id);
         //   break;
         // }
         case 'none':
         case 'null':
-        case VALUE_TYPE.NULL: {
+        case VALUE_TYPES.NULL: {
           this.emitEvent(event.label, event.id)
           break
         }

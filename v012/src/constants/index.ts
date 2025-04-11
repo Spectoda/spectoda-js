@@ -1,46 +1,5 @@
 import { SpectodaTypes } from '../types/primitives'
 
-/**
- * Value type constants for reference
- *
- *  0 => UNDEFINED         -> undefined
- *  1 => NULL              -> null
- *  2 => BOOLEAN           -> true / false
- * 19 => PIXELS            -> unit: px, integer only (e.g. 42.2 => 42px)
- * 26 => COLOR             -> "rrggbb" / "#rrggbb" (lowercased, "#" optional)
- * 28 => DATE              -> "YYYY-MM-DD"  (left as-is)
- * 29 => NUMBER            -> generic number, integer only (e.g. 123.45 => 123)
- * 30 => PERCENTAGE        -> unit: %, allows floating points (e.g. -20.34 => -20.34%)
- * 31 => LABEL             -> "label" / TODO "$label" (string only, TODO "$" optional)
- * 32 => TIME              -> unit ms, integer only (e.g. 1234.5 => 1234ms)
- */
-
-export const VALUE_TYPE = Object.freeze({
-  NUMBER: 29,
-  LABEL: 31,
-  TIMESTAMP: 32,
-  PERCENTAGE: 30,
-  DATE: 28,
-  REAL: 27,
-  COLOR: 26,
-  PIXELS: 19,
-  BOOLEAN: 2,
-  NULL: 1,
-  UNDEFINED: 0,
-})
-
-/** @deprecated Use `VALUE_LIMITS` from `spectoda-js/constants/valueLimits` instead. */
-export const VALUE_LIMITS = Object.freeze({
-  NUMBER_MAX: 1000000000,
-  NUMBER_MIN: -100000000000,
-  TIMESTAMP_MAX: 86400000,
-  TIMESTAMP_MIN: -86400000,
-
-  PERCENTAGE_100: 100000000,
-  PERCENTAGE_0: 0,
-  PERCENTAGE_MINUS_100: -100000000,
-})
-
 export const BROADCAST_ID = 255
 export const LABEL_MAX_LENGTH = 5
 export const MAX_ID = 255

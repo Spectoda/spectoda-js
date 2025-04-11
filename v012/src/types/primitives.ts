@@ -2,16 +2,6 @@
 import { z } from 'zod'
 
 import {
-  NumberSchema,
-  LabelSchema,
-  TimestampSchema,
-  PercentageSchema,
-  DateSchema,
-  ColorSchema,
-  PixelsSchema,
-  BooleanSchema,
-  NullSchema,
-  UndefinedSchema,
   IDSchema,
   NetworkSignatureSchema,
   NetworkKeySchema,
@@ -25,6 +15,20 @@ import {
   ControllerNameSchema as ControllerNameSchema,
   FirmwareVersionCodeSchema,
 } from '../schemas/primitives'
+import {
+  NumberSchema,
+  LabelSchema
+} from '../schemas/values'
+import {
+  TimestampSchema,
+  PercentageSchema,
+  DateSchema,
+  ColorSchema,
+  PixelsSchema,
+  BooleanSchema,
+  NullSchema,
+  UndefinedSchema
+} from '../schemas/values'
 import { BaseCriteriaSchema, SerialCriteriaSchema, BleCriteriaSchema, DummyCriteriaSchema } from '../schemas/criteria'
 import { VALUE_TYPES } from '../constants/values'
 
