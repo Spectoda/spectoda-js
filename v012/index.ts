@@ -22,16 +22,19 @@ export { CONNECTORS, BROADCAST_ID, NO_NETWORK_SIGNATURE, JS_VALUE_LIMITS } from 
 
 export { VALUE_TYPES } from './src/constants/values'
 
-export { CONNECTION_STATUS, ConnectorType, ConnectionStatus } from './src/types/connect'
+export { CONNECTION_STATUS } from './src/types/connect'
 
-export { ControllerError, ControllerWarning, SpectodaMessage } from './src/types/messages'
+export type { ConnectorType, ConnectionStatus } from './src/types/connect'
+
+export type { ControllerError, ControllerWarning, SpectodaMessage } from './src/types/messages'
 
 export { deactivateDebugMode, enableDebugMode, uint8ArrayToHexString } from './functions'
 
 export { isCurrentSpectodaInstanceLocal, createSpectodaWebsocket } from './SpectodaWebSocketsConnector'
 
-export { EventSchema, EventInputSchema } from './src/schemas/event'
-export {
+export type { EventSchema, EventInputSchema } from './src/schemas/event'
+
+export type {
   FirmwareVersionSchema,
   FirmwareVersionFullSchema,
   ProductCodeSchema,
@@ -47,7 +50,8 @@ export {
   PcbCodeSchema,
   TnglBankSchema,
 } from './src/schemas/primitives'
-export {
+
+export type {
   TimestampSchema,
   PercentageSchema,
   LabelSchema,
