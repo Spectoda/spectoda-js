@@ -3,7 +3,7 @@
 
 import { TnglWriter } from './TnglWriter'
 import { CPP_EVENT_VALUE_LIMITS as VALUE_LIMITS } from './src/constants/limits'
-import { PERCENTAGE_SCALE_FACTOR } from './src/constants'
+import { PERCENTAGE_JS_VS_CPP_SCALE_FACTOR } from './src/constants'
 import { mapValue, uint8ArrayToHexString } from './functions'
 import { logging } from './logging'
 
@@ -605,7 +605,7 @@ export class TnglCompiler {
       this.#tnglWriter.writeFlag(TNGL_FLAGS.CONST_PERCENTAGE_MINUS_100)
     } else {
       this.#tnglWriter.writeFlag(TNGL_FLAGS.VALUE_PERCENTAGE)
-      this.#tnglWriter.writeInt32(Math.round(val * PERCENTAGE_SCALE_FACTOR))
+      this.#tnglWriter.writeInt32(Math.round(val * PERCENTAGE_JS_VS_CPP_SCALE_FACTOR))
     }
   }
 
