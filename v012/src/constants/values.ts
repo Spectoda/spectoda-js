@@ -64,3 +64,5 @@ export const STRING_VALUE_TYPES = Object.freeze({
   /** see @link [UndefinedSchema](../schemas/values.ts) for more details. */
   UNDEFINED: 'Value.UNDEFINED',
 })
+
+export type StringValueType = (typeof STRING_VALUE_TYPES)[keyof typeof STRING_VALUE_TYPES]

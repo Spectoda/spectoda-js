@@ -63,5 +63,6 @@ export {
   DateSchema,
   UndefinedSchema,
 } from './src/schemas/values'
+export type { StringValueType } from './src/constants/values'
 
 export { mockScanResult } from './__mocks__/scan'
