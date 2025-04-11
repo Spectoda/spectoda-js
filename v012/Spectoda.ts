@@ -1,3 +1,4 @@
+// TODO Figure out how to make interface Window { ... } work without this empty import
 import type {} from './src/types/global'
 import { io } from 'socket.io-client'
 import customParser from 'socket.io-msgpack-parser'
