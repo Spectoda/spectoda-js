@@ -11,3 +11,5 @@ declare global {
     flutter_inappwebview: SCFBridgeMethods
   }
 }
+
+export {}
