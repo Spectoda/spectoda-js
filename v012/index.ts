@@ -6,6 +6,7 @@ export * from './src/types/app-events'
 export type { SpectodaTypes } from './src/types/primitives'
 export type {
   SpectodaEvent,
+  SpectodaEventState,
   SpectodaNumberEvent,
   SpectodaLabelEvent,
   SpectodaPercentageEvent,
@@ -15,22 +16,23 @@ export type {
   SpectodaBooleanEvent,
   SpectodaNullEvent,
   SpectodaUndefinedEvent,
-  SpectodaEventStateValue,
+  
 } from './src/types/event'
 
-export { CONNECTORS, BROADCAST_ID, NO_NETWORK_SIGNATURE, JS_VALUE_LIMITS } from './src/constants'
-
-export { VALUE_TYPES } from './src/constants/values'
-
-export { CONNECTION_STATUS } from './src/types/connect'
-
-export type { ConnectorType, ConnectionStatus } from './src/types/connect'
-
-export type { ControllerError, ControllerWarning, SpectodaMessage } from './src/types/messages'
-
-export { deactivateDebugMode, enableDebugMode, uint8ArrayToHexString } from './functions'
-
-export { isCurrentSpectodaInstanceLocal, createSpectodaWebsocket } from './SpectodaWebSocketsConnector'
+export { CONNECTION_STATUS, REMOTECONTROL_STATUS, WEBSOCKET_CONNECTION_STATE } from './src/types/connect'
+export type {
+  ConnectionStatus,
+  ConnectorType,
+  ConnectorCriteria,
+  RemoteControlConnectionStatus,
+} from './src/types/connect'
+export type {
+  ControllerError,
+  ControllerWarning,
+  SpectodaMessage,
+  SpectodaError,
+  SpectodaWarning,
+} from './src/types/messages'
 
 export { EventSchema, EventInputSchema } from './src/schemas/event'
 
@@ -63,6 +65,11 @@ export {
   DateSchema,
   UndefinedSchema,
 } from './src/schemas/values'
+
+export { CONNECTORS, NO_NETWORK_SIGNATURE, BROADCAST_ID, JS_VALUE_LIMITS } from './src/constants'
+export { VALUE_TYPES } from './src/constants/values'
 export type { StringValueType } from './src/constants/values'
 
 export { mockScanResult } from './__mocks__/scan'
+
+export { isCurrentSpectodaInstanceLocal } from './SpectodaWebSocketsConnector'

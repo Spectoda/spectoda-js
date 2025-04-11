@@ -4,7 +4,7 @@ import { EventSchema } from '../schemas/event'
 import { VALUE_TYPES } from '../constants/values'
 
 /** @alias SpectodaEvent */
-export type SpectodaEventStateValue = SpectodaEvent
+export type SpectodaEventState = SpectodaEvent
 export type SpectodaEvent = z.infer<typeof EventSchema>
 
 export type SpectodaNumberEvent = Extract<SpectodaEvent, { type: typeof VALUE_TYPES.NUMBER }>
