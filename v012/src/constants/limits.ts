@@ -9,6 +9,15 @@ type ValueLimits = Readonly<{
   PERCENTAGE_MIN: number
 }>
 
+/**
+ * @deprecated These value limits are for internal use only and should not be used directly.
+ * They define the boundaries for various value types in the Spectoda system.
+ * 
+ * Use the appropriate functions from the Spectoda API instead of accessing these limits directly.
+ * 
+ * TODO: move all CPP limits into WASM and remove CPP_EVENT_VALUE_LIMITS object
+ */
+
 export const CPP_EVENT_VALUE_LIMITS = Object.freeze({
   NUMBER_MAX: 1000000000,
   NUMBER_MIN: -100000000000,
