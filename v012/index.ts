@@ -16,7 +16,6 @@ export type {
   SpectodaBooleanEvent,
   SpectodaNullEvent,
   SpectodaUndefinedEvent,
-  
 } from './src/types/event'
 
 export { CONNECTION_STATUS, REMOTECONTROL_STATUS, WEBSOCKET_CONNECTION_STATE } from './src/types/connect'
@@ -72,4 +71,4 @@ export type { StringValueType } from './src/constants/values'
 
 export { mockScanResult } from './__mocks__/scan'
 
-export { isCurrentSpectodaInstanceLocal } from './SpectodaWebSocketsConnector'
+export { isCurrentSpectodaInstanceLocal, createSpectodaWebsocket } from './SpectodaWebSocketsConnector'
