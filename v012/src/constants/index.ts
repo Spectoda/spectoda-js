@@ -1,4 +1,4 @@
-import { SpectodaTypes } from '../types/primitives'
+import type { SpectodaTypes } from '../types/primitives'
 
 export const BROADCAST_ID = 255
 export const LABEL_MAX_LENGTH = 5
