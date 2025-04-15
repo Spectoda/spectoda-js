@@ -6,9 +6,9 @@ export * from './src/types/app-events'
 export type { SpectodaTypes } from './src/types/primitives'
 export type {
   SpectodaEvent,
-  /** @deprecated */
-  SpectodaEvent as SpectodaEventValue,
   SpectodaEventState,
+  /** @deprecated */
+  SpectodaEventState as SpectodaEventStateValue,
   SpectodaNumberEvent,
   SpectodaLabelEvent,
   SpectodaPercentageEvent,
