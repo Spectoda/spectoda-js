@@ -14,8 +14,14 @@ import { LABEL_MAX_LENGTH } from '../constants'
 
 export const TimestampSchema = z
   .number()
-  .min(JS_EVENT_VALUE_LIMITS.TIMESTAMP_MIN)
-  .max(JS_EVENT_VALUE_LIMITS.TIMESTAMP_MAX)
+  .min(
+    JS_EVENT_VALUE_LIMITS.TIMESTAMP_MIN,
+    `Timestamp must be between ${JS_EVENT_VALUE_LIMITS.TIMESTAMP_MIN} and ${JS_EVENT_VALUE_LIMITS.TIMESTAMP_MAX} milliseconds`,
+  )
+  .max(
+    JS_EVENT_VALUE_LIMITS.TIMESTAMP_MAX,
+    `Timestamp must be between ${JS_EVENT_VALUE_LIMITS.TIMESTAMP_MIN} and ${JS_EVENT_VALUE_LIMITS.TIMESTAMP_MAX} milliseconds`,
+  )
 
 /**
  * Percentage value with 6 decimal places. Range: -100.000000 to 100.000000
@@ -28,8 +34,14 @@ export const TimestampSchema = z
 
 export const PercentageSchema = z
   .number()
-  .min(JS_EVENT_VALUE_LIMITS.PERCENTAGE_MIN)
-  .max(JS_EVENT_VALUE_LIMITS.PERCENTAGE_MAX)
+  .min(
+    JS_EVENT_VALUE_LIMITS.PERCENTAGE_MIN,
+    `Percentage must be between ${JS_EVENT_VALUE_LIMITS.PERCENTAGE_MIN} and ${JS_EVENT_VALUE_LIMITS.PERCENTAGE_MAX}`,
+  )
+  .max(
+    JS_EVENT_VALUE_LIMITS.PERCENTAGE_MAX,
+    `Percentage must be between ${JS_EVENT_VALUE_LIMITS.PERCENTAGE_MIN} and ${JS_EVENT_VALUE_LIMITS.PERCENTAGE_MAX}`,
+  )
 
 /**
  * Date string in ISO 8601 format.
@@ -38,7 +50,9 @@ export const PercentageSchema = z
  * @example "2023-12-31"
  */
 
-export const DateSchema = z.string().regex(/^\d{4}-\d{2}-\d{2}$/)
+export const DateSchema = z
+  .string()
+  .regex(/^\d{4}-\d{2}-\d{2}$/, "Date must be in format 'YYYY-MM-DD' (e.g. '2024-01-01')")
 
 /**
  * Color string in hexadecimal format, where the # is optional.
@@ -48,7 +62,9 @@ export const DateSchema = z.string().regex(/^\d{4}-\d{2}-\d{2}$/)
  * @example "0000FF"
  */
 
-export const ColorSchema = z.string().regex(/#?[\dA-Fa-f]{6}/g)
+export const ColorSchema = z
+  .string()
+  .regex(/#?[\dA-Fa-f]{6}/g, "Color must be a 6-character hex value with optional # (e.g. 'FF0000' or '#00FF00')")
 
 /**
  * Pixels value. Range: -32768 to 32767
@@ -58,7 +74,17 @@ export const ColorSchema = z.string().regex(/#?[\dA-Fa-f]{6}/g)
  * @example 32767
  */
 
-export const PixelsSchema = z.number().int().min(JS_EVENT_VALUE_LIMITS.PIXELS_MIN).max(JS_EVENT_VALUE_LIMITS.PIXELS_MAX)
+export const PixelsSchema = z
+  .number()
+  .int('Pixels value must be an integer')
+  .min(
+    JS_EVENT_VALUE_LIMITS.PIXELS_MIN,
+    `Pixels value must be between ${JS_EVENT_VALUE_LIMITS.PIXELS_MIN} and ${JS_EVENT_VALUE_LIMITS.PIXELS_MAX}`,
+  )
+  .max(
+    JS_EVENT_VALUE_LIMITS.PIXELS_MAX,
+    `Pixels value must be between ${JS_EVENT_VALUE_LIMITS.PIXELS_MIN} and ${JS_EVENT_VALUE_LIMITS.PIXELS_MAX}`,
+  )
 
 /**
  * Boolean value.
@@ -93,7 +119,17 @@ export const UndefinedSchema = z.undefined()
  * @example 999999999
  */
 
-export const NumberSchema = z.number().int().min(JS_EVENT_VALUE_LIMITS.NUMBER_MIN).max(JS_EVENT_VALUE_LIMITS.NUMBER_MAX)
+export const NumberSchema = z
+  .number()
+  .int('Number must be an integer')
+  .min(
+    JS_EVENT_VALUE_LIMITS.NUMBER_MIN,
+    `Number must be between ${JS_EVENT_VALUE_LIMITS.NUMBER_MIN} and ${JS_EVENT_VALUE_LIMITS.NUMBER_MAX}`,
+  )
+  .max(
+    JS_EVENT_VALUE_LIMITS.NUMBER_MAX,
+    `Number must be between ${JS_EVENT_VALUE_LIMITS.NUMBER_MIN} and ${JS_EVENT_VALUE_LIMITS.NUMBER_MAX}`,
+  )
 
 /**
  * String of max 5 alphanumeric chars and underscores ([a-zA-Z0-9_]).
@@ -107,5 +143,5 @@ export const NumberSchema = z.number().int().min(JS_EVENT_VALUE_LIMITS.NUMBER_MI
 
 export const LabelSchema = z
   .string()
-  .regex(/^[a-zA-Z0-9_]*$/)
-  .max(LABEL_MAX_LENGTH)
+  .regex(/^[a-zA-Z0-9_]*$/, 'Label must contain only letters, numbers, and underscores')
+  .max(LABEL_MAX_LENGTH, `Label must be at most ${LABEL_MAX_LENGTH} characters long`)

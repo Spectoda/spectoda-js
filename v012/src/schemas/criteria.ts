@@ -1,6 +1,6 @@
 import { z } from 'zod'
 
-import { SpectodaTypes } from '../types/primitives'
+import type { SpectodaTypes } from '../types/primitives'
 
 import {
   MacAddressSchema,

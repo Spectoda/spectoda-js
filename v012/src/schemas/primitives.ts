@@ -18,32 +18,44 @@ export const ControllerNameSchema = LabelSchema
  *
  * @example 0
  * @example 42
- * @example 255
  */
-export const IDSchema = z.number().min(0).max(MAX_ID)
+export const IDSchema = z
+  .number()
+  .min(0, `ID must be between 0 and ${MAX_ID}`)
+  .max(MAX_ID, `ID must be between 0 and ${MAX_ID}`)
 
 /**
  * Network signature as 32-character lowercase hexadecimal string.
  *
  * @example "34567890123456789012345678901234"
- * @example "14fe7f8214fe7f8214fe7f8214fe7f82"
  */
-export const NetworkSignatureSchema = z.string().regex(/^[a-f0-9]{32}$/)
+export const NetworkSignatureSchema = z
+  .string()
+  .regex(
+    /^[a-f0-9]{32}$/,
+    "Network signature must be a 32-character hex string (e.g. '34567890123456789012345678901234')",
+  )
 
 /**
  * Network key as 32-character hexadecimal string.
  *
  * @example "34567890123456789012345678901234"
  */
-export const NetworkKeySchema = z.string().regex(/^[a-f0-9]{32}$/)
+export const NetworkKeySchema = z
+  .string()
+  .regex(/^[a-f0-9]{32}$/, "Network key must be a 32-character hex string (e.g. '34567890123456789012345678901234')")
 
 /**
  * MAC address in format "XX:XX:XX:XX:XX:XX".
  *
  * @example "12:43:ab:8d:ff:04"
- * @example "01:23:45:56:ab:cd"
  */
-export const MacAddressSchema = z.string().regex(/^([0-9A-Fa-f]{2}:){5}[0-9A-Fa-f]{2}$/)
+export const MacAddressSchema = z
+  .string()
+  .regex(
+    /^([0-9A-Fa-f]{2}:){5}[0-9A-Fa-f]{2}$/,
+    "MAC address must be in format 'XX:XX:XX:XX:XX:XX' (e.g. '12:43:ab:8d:ff:04')",
+  )
 
 /**
  * PCB (Printed Circuit Board) code.
@@ -51,7 +63,11 @@ export const MacAddressSchema = z.string().regex(/^([0-9A-Fa-f]{2}:){5}[0-9A-Fa-
  *
  * @example 32
  */
-export const PcbCodeSchema = z.number().int().min(0).max(MAX_PCB_CODE)
+export const PcbCodeSchema = z
+  .number()
+  .int('PCB code must be an integer')
+  .min(0, `PCB code must be between 0 and ${MAX_PCB_CODE}`)
+  .max(MAX_PCB_CODE, `PCB code must be between 0 and ${MAX_PCB_CODE}`)
 
 /**
  * Product code for specific models.
@@ -59,39 +75,52 @@ export const PcbCodeSchema = z.number().int().min(0).max(MAX_PCB_CODE)
  *
  * @example 24
  */
-export const ProductCodeSchema = z.number().int().min(0).max(MAX_PRODUCT_CODE)
+export const ProductCodeSchema = z
+  .number()
+  .int('Product code must be an integer')
+  .min(0, `Product code must be between 0 and ${MAX_PRODUCT_CODE}`)
+  .max(MAX_PRODUCT_CODE, `Product code must be between 0 and ${MAX_PRODUCT_CODE}`)
 
 /**
- * Firmware version in format "X.Y.Z" or "!X.Y.Z".
+ * Firmware version in format "X.Y.Z"
  *
  * @example "0.12.2"
- * @example "!1.0.0"
  */
-export const FirmwareVersionSchema = z.string().regex(/^!?\d+\.\d+\.\d+$/)
+export const FirmwareVersionSchema = z
+  .string()
+  .regex(/^!?\d+\.\d+\.\d+$/, "Firmware version must be in format 'X.Y.Z' (e.g. '0.12.2')")
 
 /**
  * Full firmware version string.
  * Format: PREFIX_X.Y.Z_YYYYMMDD
  *
  * @example "UNIVERSAL_0.12.2_20250208"
- * @example "FW_0.12.1_20241117"
  */
-export const FirmwareVersionFullSchema = z.string().regex(/^[A-Z_]+\d+\.\d+\.\d+_\d{8}$/)
+export const FirmwareVersionFullSchema = z
+  .string()
+  .regex(
+    /^[A-Z_]+\d+\.\d+\.\d+_\d{8}$/,
+    "Firmware version must be in format 'PREFIX_X.Y.Z_YYYYMMDD' (e.g. 'UNIVERSAL_0.12.2_20250208') where PREFIX is uppercase",
+  )
 
 /**
  * Firmware version code.
  *
  * @example 1201
  */
-export const FirmwareVersionCodeSchema = z.number().int().min(0)
+export const FirmwareVersionCodeSchema = z
+  .number()
+  .int('Firmware version code must be a positive integer')
+  .min(0, 'Firmware version code must be a positive integer')
+
 /**
  * Fingerprint as 32-character hexadecimal string.
- * Used for TNGL, event store, and config fingerprints.
  *
  * @example "839dfa03839dfa03839dfa03839dfa03"
- * @example "4629fade4629fade4629fade4629fade"
  */
-export const FingerprintSchema = z.string().regex(/^[a-f0-9]{32}$/)
+export const FingerprintSchema = z
+  .string()
+  .regex(/^[a-f0-9]{32}$/, "Fingerprint must be a 32-character hex string (e.g. '839dfa03839dfa03839dfa03839dfa03')")
 
 /**
  * TNGL bank identifier.
@@ -99,16 +128,22 @@ export const FingerprintSchema = z.string().regex(/^[a-f0-9]{32}$/)
  *
  * @example 42
  */
-export const TnglBankSchema = z.number().int().min(0).max(MAX_TNGL_BANK)
+export const TnglBankSchema = z
+  .number()
+  .int('TNGL bank must be an integer')
+  .min(0, `TNGL bank must be between 0 and ${MAX_TNGL_BANK}`)
+  .max(MAX_TNGL_BANK, `TNGL bank must be between 0 and ${MAX_TNGL_BANK}`)
 
 /**
  * Baudrate for serial communication.
- * Common values: 9600, 19200, 38400, 57600, 115200, etc.
+ * Common values: 9600, 19200, 38400, 57600, 115200
  *
- * @example 9600
  * @example 115200
  */
-export const BaudrateSchema = z.number().int().positive()
+export const BaudrateSchema = z
+  .number()
+  .int('Baudrate must be a positive integer')
+  .positive('Baudrate must be a positive integer (e.g. 9600, 115200)')
 
 /**
  * Serial port path string used for device communication.

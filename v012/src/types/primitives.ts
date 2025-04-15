@@ -15,10 +15,7 @@ import {
   ControllerNameSchema as ControllerNameSchema,
   FirmwareVersionCodeSchema,
 } from '../schemas/primitives'
-import {
-  NumberSchema,
-  LabelSchema
-} from '../schemas/values'
+import { NumberSchema, LabelSchema } from '../schemas/values'
 import {
   TimestampSchema,
   PercentageSchema,
@@ -27,7 +24,7 @@ import {
   PixelsSchema,
   BooleanSchema,
   NullSchema,
-  UndefinedSchema
+  UndefinedSchema,
 } from '../schemas/values'
 import { BaseCriteriaSchema, SerialCriteriaSchema, BleCriteriaSchema, DummyCriteriaSchema } from '../schemas/criteria'
 import { VALUE_TYPES } from '../constants/values'
