@@ -6,6 +6,7 @@ export * from './src/types/app-events'
 export type { SpectodaTypes } from './src/types/primitives'
 export type {
   EventState,
+  EventStateInput,
   LabelEvent,
   PercentageEvent,
   TimestampEvent,
@@ -23,9 +24,6 @@ export type {
 
   /** @deprecated Use EventState instead */
   EventState as SpectodaEventState,
-
-  /** @deprecated Use EventStateInput instead */
-  EventStateInput,
 
   /** @deprecated Use EventStateInput instead */
   EventStateInput as SpectodaEventInput,
