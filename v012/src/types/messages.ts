@@ -5,10 +5,10 @@ export type ControllerMessage = {
 
 export type ControllerError = {
   controller: { mac: string; label: string }
-  errors: ControllerError[]
+  errors: ControllerMessage[]
 }
 
 export type ControllerWarning = {
   controller: { mac: string; label: string }
-  warnings: ControllerWarning[]
+  warnings: ControllerMessage[]
 }
