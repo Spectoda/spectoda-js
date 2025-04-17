@@ -1,8 +1,3 @@
-/* eslint-disable @typescript-eslint/ban-types */
-// Because `Number` refers to our `NumberSchema` and
-// `Boolean` refers to our `BooleanSchema`, we need to
-// disable the ban on `Number` and `Boolean` types.
-
 import { z } from 'zod'
 
 import {
@@ -20,7 +15,21 @@ import {
 } from '../schemas/primitives'
 import { BaseCriteriaSchema, SerialCriteriaSchema, BleCriteriaSchema, DummyCriteriaSchema } from '../schemas/criteria'
 
-import { Label, Timestamp, ValueType, Percentage, Date, Color, Pixels, Null, Undefined, ID, IDs } from './values'
+import {
+  ValueType,
+  ValueTypeNumber,
+  ValueTypeLabel,
+  ValueTypePercentage,
+  ValueTypeColor,
+  ValueTypeDate,
+  ValueTypeTimestamp,
+  ValueTypeIDs,
+  ValueTypeID,
+  ValueTypeNull,
+  ValueTypeBoolean,
+  ValueTypePixels,
+  ValueTypeUndefined,
+} from './values'
 
 type BaseCriteria = z.infer<typeof BaseCriteriaSchema>
 type SerialCriteria = z.infer<typeof SerialCriteriaSchema>
@@ -56,7 +65,7 @@ type TnglBank = z.infer<typeof TnglBankSchema>
 
 type ControllerName = z.infer<typeof ControllerNameSchema>
 type ControllerConnectionCriteria = {
-  controllerLabel: Label
+  controllerLabel: ValueTypeLabel
   productCode: ProductCode
   macAddress: MacAddress
   fwVersion: FirmwareVersion
@@ -68,7 +77,7 @@ type ControllerMoreData = {
   pcbCode: PcbCode
   fwVersionFull: FirmwareVersionFull
   fwVersionCode: FirmwareVersionCode
-  fwCompilationUnixTimestamp: Timestamp
+  fwCompilationUnixTimestamp: ValueTypeTimestamp
   tnglFingerprint: Fingerprint
   eventStoreFingerprint: Fingerprint
   configFingerprint: Fingerprint
@@ -108,18 +117,18 @@ export type SpectodaTypes = {
   Criteria: Criteria
   Tngl: Tngl
   ValueType: ValueType
-  Number: Number
-  Label: Label
-  Timestamp: Timestamp
-  Percentage: Percentage
-  Date: Date
-  Color: Color
-  Pixels: Pixels
-  Boolean: Boolean
-  Null: Null
-  Undefined: Undefined
-  ID: ID
-  IDs: IDs
+  Number: ValueTypeNumber
+  Label: ValueTypeLabel
+  Timestamp: ValueTypeTimestamp
+  Percentage: ValueTypePercentage
+  Date: ValueTypeDate
+  Color: ValueTypeColor
+  Pixels: ValueTypePixels
+  Boolean: ValueTypeBoolean
+  Null: ValueTypeNull
+  Undefined: ValueTypeUndefined
+  ID: ValueTypeID
+  IDs: ValueTypeIDs
   NetworkSignature: NetworkSignature
   NetworkKey: NetworkKey
   MacAddress: MacAddress

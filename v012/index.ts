@@ -72,10 +72,21 @@ export {
   type SpectodaAppEventMap,
 } from './src/types/app-events'
 
-/** @deprecated Use individual types instead */
-export type { SpectodaTypes } from './src/types/primitives'
+export type {
+  ValueTypeNumber,
+  ValueTypeLabel,
+  ValueTypeTimestamp,
+  ValueTypePercentage,
+  ValueTypeDate,
+  ValueTypeColor,
+  ValueTypePixels,
+  ValueTypeBoolean,
+  ValueTypeNull,
+  ValueTypeUndefined,
+  ValueTypeID,
+  ValueTypeIDs,
+} from './src/types/values'
 
-export type { ValueType } from './src/types/values'
 export type {
   BaseCriteria,
   BleCriteria,
@@ -108,7 +119,69 @@ export type {
   BooleanEvent,
   NullEvent,
   UndefinedEvent,
+} from './src/types/event'
 
+export { CONNECTION_STATUS, REMOTECONTROL_STATUS, WEBSOCKET_CONNECTION_STATE } from './src/types/connect'
+
+export type {
+  ConnectionStatus,
+  ConnectorType,
+  ConnectorCriteria,
+  RemoteControlConnectionStatus,
+} from './src/types/connect'
+export type { ControllerError, ControllerWarning } from './src/types/messages'
+
+export { EventSchema, EventInputSchema } from './src/schemas/event'
+
+export {
+  FirmwareVersionSchema,
+  FirmwareVersionFullSchema,
+  ProductCodeSchema,
+  NetworkSignatureSchema,
+  MacAddressSchema,
+  BaudrateSchema,
+  ControllerNameSchema,
+  SerialPathSchema,
+  IDSchema,
+  FingerprintSchema,
+  FirmwareVersionCodeSchema,
+  NetworkKeySchema,
+  PcbCodeSchema,
+  TnglBankSchema,
+} from './src/schemas/primitives'
+
+export {
+  TimestampSchema,
+  PercentageSchema,
+  LabelSchema,
+  NumberSchema,
+  ColorSchema,
+  PixelsSchema,
+  BooleanSchema,
+  NullSchema,
+  DateSchema,
+  UndefinedSchema,
+} from './src/schemas/values'
+
+export { CONNECTORS, NO_NETWORK_SIGNATURE, BROADCAST_ID, JS_VALUE_LIMITS } from './src/constants'
+
+export { VALUE_TYPES } from './src/constants/values'
+
+export { mockScanResult } from './__mocks__/scan'
+
+export { isCurrentSpectodaInstanceLocal, createSpectodaWebsocket } from './SpectodaWebSocketsConnector'
+
+/** @deprecated Use individual types instead */
+export type { SpectodaTypes } from './src/types/primitives'
+export type {
+  /** @deprecated Use ControllerMessage instead */
+  ControllerMessage as SpectodaMessage,
+  /** @deprecated Use ControllerError instead */
+  ControllerError as SpectodaError,
+  /** @deprecated Use ControllerWarning instead */
+  ControllerWarning as SpectodaWarning,
+} from './src/types/messages'
+export type {
   /** @deprecated Use EventState instead */
   Event,
 
@@ -149,60 +222,3 @@ export type {
   /** @deprecated Use UndefinedEvent instead */
   UndefinedEvent as SpectodaUndefinedEvent,
 } from './src/types/event'
-
-export { CONNECTION_STATUS, REMOTECONTROL_STATUS, WEBSOCKET_CONNECTION_STATE } from './src/types/connect'
-export type {
-  ConnectionStatus,
-  ConnectorType,
-  ConnectorCriteria,
-  RemoteControlConnectionStatus,
-} from './src/types/connect'
-export type {
-  ControllerError,
-  ControllerWarning,
-  /** @deprecated Use ControllerMessage instead */
-  ControllerMessage as SpectodaMessage,
-  /** @deprecated Use ControllerError instead */
-  ControllerError as SpectodaError,
-  /** @deprecated Use ControllerWarning instead */
-  ControllerWarning as SpectodaWarning,
-} from './src/types/messages'
-
-export { EventSchema, EventInputSchema } from './src/schemas/event'
-
-export {
-  FirmwareVersionSchema,
-  FirmwareVersionFullSchema,
-  ProductCodeSchema,
-  NetworkSignatureSchema,
-  MacAddressSchema,
-  BaudrateSchema,
-  ControllerNameSchema,
-  SerialPathSchema,
-  IDSchema,
-  FingerprintSchema,
-  FirmwareVersionCodeSchema,
-  NetworkKeySchema,
-  PcbCodeSchema,
-  TnglBankSchema,
-} from './src/schemas/primitives'
-
-export {
-  TimestampSchema,
-  PercentageSchema,
-  LabelSchema,
-  NumberSchema,
-  ColorSchema,
-  PixelsSchema,
-  BooleanSchema,
-  NullSchema,
-  DateSchema,
-  UndefinedSchema,
-} from './src/schemas/values'
-
-export { CONNECTORS, NO_NETWORK_SIGNATURE, BROADCAST_ID, JS_VALUE_LIMITS } from './src/constants'
-export { VALUE_TYPES } from './src/constants/values'
-
-export { mockScanResult } from './__mocks__/scan'
-
-export { isCurrentSpectodaInstanceLocal, createSpectodaWebsocket } from './SpectodaWebSocketsConnector'
