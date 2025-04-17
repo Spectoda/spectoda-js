@@ -1,9 +1,79 @@
-export * from './Spectoda'
-export * from './functions'
-export * from './logging'
-export * from './src/types/app-events'
+export { Spectoda } from './Spectoda'
+export { logging } from './logging'
+export {
+  // TODO Move to monorepo/packages/utils/bytes
+  toUint8Array,
+  convertToByteArray,
+  hexStringToArray,
+  hexStringToNumberArray,
+  hexStringToUint8Array,
+  uint8ArrayToHexString,
+  numberToBytes,
+  stringToBytes,
+  toBytes,
+  labelToBytes,
+  strMacToBytes,
+
+  // TODO Move to monorepo/packages/utils/color
+  colorToBytes,
+  cssColorToHex,
+  rgbToHex,
+  getColorString,
+
+  // TODO Move to monorepo/packages/utils/environment
+  detectAndroid,
+  detectBrowser,
+  detectChrome,
+  detectGW,
+  detectIPhone,
+  detectLinux,
+  detectMacintosh,
+  detectNext,
+  detectNode,
+  detectProductionBuild,
+  detectSafari,
+  detectServerEnvironment,
+  detectSpectodaConnect,
+  detectWindows,
+  // TODO Move to spectoda-js/utils/time
+  getClockTimestamp,
+  getSeconds,
+  validateTimestamp,
+  sleep,
+
+  // TODO Move to spectoda-js/utils/crypto
+  crc32,
+  crc8,
+
+  // TODO Move to spectoda-js/utils/nano
+  createNanoEvents,
+  createNanoEventsWithWrappedEmit,
+
+  /** TODO @deprecated deprecate this beauty */
+  czechHackyToEnglish,
+
+  // TODO Move to spectoda-js/tngl.helpers.ts
+  computeTnglCodeFingerprint,
+  computeTnglFingerprint,
+
+  // TODO Move to spectoda-js/utils
+  mapValue,
+  fetchFirmware,
+
+  // TODO Move this out of functions
+  enableDebugMode,
+  deactivateDebugMode,
+} from './functions'
+
+export {
+  SPECTODA_APP_EVENTS,
+  SpectodaAppEvents,
+  type SpectodaAppEventName,
+  type SpectodaAppEventMap,
+} from './src/types/app-events'
 
 export type { SpectodaTypes } from './src/types/primitives'
+
 export type {
   EventState,
   EventStateInput,
