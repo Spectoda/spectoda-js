@@ -70,18 +70,18 @@ export const CriteriaSchema = z.union([SerialCriteriaSchema, BleCriteriaSchema, 
  */
 export const CriteriaArraySchema = z.union([CriteriaSchema, z.array(CriteriaSchema)])
 
-export const isSerialCriteria = (criteria: unknown): criteria is SpectodaTypes.SerialCriteria => {
+export const isSerialCriteria = (criteria: unknown): criteria is SpectodaTypes['SerialCriteria'] => {
   return SerialCriteriaSchema.safeParse(criteria).success
 }
 
-export const isBleCriteria = (criteria: unknown): criteria is SpectodaTypes.BleCriteria => {
+export const isBleCriteria = (criteria: unknown): criteria is SpectodaTypes['BleCriteria'] => {
   return BleCriteriaSchema.safeParse(criteria).success
 }
 
-export const isDummyCriteria = (criteria: unknown): criteria is SpectodaTypes.DummyCriteria => {
+export const isDummyCriteria = (criteria: unknown): criteria is SpectodaTypes['DummyCriteria'] => {
   return DummyCriteriaSchema.safeParse(criteria).success
 }
 
-export const isCriteriaArray = (value: unknown): value is SpectodaTypes.Criteria[] => {
+export const isCriteriaArray = (value: unknown): value is Array<SpectodaTypes['Criteria']> => {
   return Array.isArray(value) && value.every((item) => CriteriaSchema.safeParse(item).success)
 }

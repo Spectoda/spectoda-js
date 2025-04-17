@@ -665,7 +665,7 @@ export class SpectodaWebBluetoothConnector {
   #webBTDevice: BluetoothDevice | null
   #connection: WebBLEConnection
   #reconection: boolean
-  #criteria: SpectodaTypes.Criteria
+  #criteria: SpectodaTypes['Criteria']
   #connectedGuard: boolean
 
   type: string
@@ -710,9 +710,9 @@ export class SpectodaWebBluetoothConnector {
   // first bonds the BLE device with the PC/Phone/Tablet if it is needed.
   // Then selects the device
   userSelect(
-    criterium_array: SpectodaTypes.Criterium[],
+    criterium_array: Array<SpectodaTypes['Criterium']>,
     timeout_number: number | typeof DEFAULT_TIMEOUT = DEFAULT_TIMEOUT,
-  ): Promise<SpectodaTypes.Criterium | null> {
+  ): Promise<SpectodaTypes['Criterium'] | null> {
     if (timeout_number === DEFAULT_TIMEOUT) {
       timeout_number = 60000
     }
@@ -922,10 +922,10 @@ export class SpectodaWebBluetoothConnector {
   // are eligible.
 
   autoSelect(
-    criterium_array: SpectodaTypes.Criterium[],
+    criterium_array: Array<SpectodaTypes['Criterium']>,
     scan_duration_number: number | typeof DEFAULT_TIMEOUT = DEFAULT_TIMEOUT,
     timeout_number: number | typeof DEFAULT_TIMEOUT = DEFAULT_TIMEOUT,
-  ): Promise<SpectodaTypes.Criterium | null> {
+  ): Promise<SpectodaTypes['Criterium'] | null> {
     if (scan_duration_number === DEFAULT_TIMEOUT) {
       // ? 1200ms seems to be the minimum for the scan_duration if the controller is rebooted
       scan_duration_number = 1500
@@ -982,14 +982,14 @@ export class SpectodaWebBluetoothConnector {
     return this.#webBTDevice ? true : false
   }
 
-  selected(): Promise<SpectodaTypes.Criterium | null> {
+  selected(): Promise<SpectodaTypes['Criterium'] | null> {
     return Promise.resolve(this.#selected() ? { connector: this.type } : null)
   }
 
   scan(
-    criterium_array: SpectodaTypes.Criterium[],
+    criterium_array: Array<SpectodaTypes['Criterium']>,
     scan_duration_number: number | typeof DEFAULT_TIMEOUT = DEFAULT_TIMEOUT,
-  ): Promise<SpectodaTypes.Criterium[]> {
+  ): Promise<Array<SpectodaTypes['Criterium']>> {
     if (scan_duration_number === DEFAULT_TIMEOUT) {
       scan_duration_number = 7000
     }
@@ -1008,7 +1008,7 @@ export class SpectodaWebBluetoothConnector {
 
   // connect Connector to the selected Spectoda Device. Also can be used to reconnect.
   // Fails if no device is selected
-  connect(timeout: number | typeof DEFAULT_TIMEOUT = DEFAULT_TIMEOUT): Promise<SpectodaTypes.Criterium | null> {
+  connect(timeout: number | typeof DEFAULT_TIMEOUT = DEFAULT_TIMEOUT): Promise<SpectodaTypes['Criterium'] | null> {
     if (timeout === DEFAULT_TIMEOUT) {
       timeout = 10000
     }
@@ -1093,7 +1093,7 @@ export class SpectodaWebBluetoothConnector {
     return this.#webBTDevice && this.#webBTDevice?.gatt?.connected
   }
 
-  connected(): Promise<SpectodaTypes.Criterium | null> {
+  connected(): Promise<SpectodaTypes['Criterium'] | null> {
     logging.verbose('connected()')
     return Promise.resolve(this.#connected() ? { connector: this.type } : null)
   }
