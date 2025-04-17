@@ -45,7 +45,7 @@ import {
   REMOTECONTROL_STATUS,
   RemoteControlConnectionStatus,
 } from './src/types/connect'
-import { SpectodaEvent } from './src/types/event'
+import { Event } from './src/types/event'
 import { SpectodaTypes } from './src/types/primitives'
 import { SpectodaClass } from './src/types/spectodaClass'
 import { fetchTnglFromApiById, sendTnglToApi } from './tnglapi'
@@ -1451,9 +1451,9 @@ export class Spectoda implements SpectodaClass {
      *   Each event is an object: { type, value, id, label, timestamp }
      * @returns The joined TNGL output (one chain per line)
      */
-    function convertEventsToTnglChains(sceneName: string, events: SpectodaEvent[]) {
+    function convertEventsToTnglChains(sceneName: string, events: Event[]) {
       // Group events by ID while preserving their relative order
-      const eventsById: Record<number, SpectodaEvent[]> = {}
+      const eventsById: Record<number, Event[]> = {}
 
       for (const evt of events) {
         if (!eventsById[evt.id]) {
@@ -4064,52 +4064,49 @@ export class Spectoda implements SpectodaClass {
       this.#__events[id] = {}
     }
 
-    const unregisterListenerEmittedevents = this.runtime.on(
-      SpectodaAppEvents.EMITTED_EVENTS,
-      (events: SpectodaEvent[]) => {
-        for (const event of events) {
-          if (event.id === 255) {
-            for (let id = 0; id < 256; id++) {
-              if (!this.#__events[id][event.label]) {
-                this.#__events[id][event.label] = {}
-              }
-
-              if (
-                !this.#__events[id][event.label] ||
-                !this.#__events[id][event.label].timestamp ||
-                event.timestamp >= this.#__events[id][event.label].timestamp
-              ) {
-                this.#__events[id][event.label].type = event.type
-                this.#__events[id][event.label].value = event.value
-                this.#__events[id][event.label].id = id
-                this.#__events[id][event.label].label = event.label
-                this.#__events[id][event.label].timestamp = event.timestamp
-              }
+    const unregisterListenerEmittedevents = this.runtime.on(SpectodaAppEvents.EMITTED_EVENTS, (events: Event[]) => {
+      for (const event of events) {
+        if (event.id === 255) {
+          for (let id = 0; id < 256; id++) {
+            if (!this.#__events[id][event.label]) {
+              this.#__events[id][event.label] = {}
             }
 
-            continue
+            if (
+              !this.#__events[id][event.label] ||
+              !this.#__events[id][event.label].timestamp ||
+              event.timestamp >= this.#__events[id][event.label].timestamp
+            ) {
+              this.#__events[id][event.label].type = event.type
+              this.#__events[id][event.label].value = event.value
+              this.#__events[id][event.label].id = id
+              this.#__events[id][event.label].label = event.label
+              this.#__events[id][event.label].timestamp = event.timestamp
+            }
           }
 
-          if (!this.#__events[event.id][event.label]) {
-            this.#__events[event.id][event.label] = {}
-          }
-
-          if (
-            !this.#__events[event.id][event.label] ||
-            !this.#__events[event.id][event.label].timestamp ||
-            event.timestamp >= this.#__events[event.id][event.label].timestamp
-          ) {
-            this.#__events[event.id][event.label].type = event.type
-            this.#__events[event.id][event.label].value = event.value
-            this.#__events[event.id][event.label].id = event.id
-            this.#__events[event.id][event.label].label = event.label
-            this.#__events[event.id][event.label].timestamp = event.timestamp
-          }
+          continue
         }
 
-        logging.verbose('#__events', this.#__events)
-      },
-    )
+        if (!this.#__events[event.id][event.label]) {
+          this.#__events[event.id][event.label] = {}
+        }
+
+        if (
+          !this.#__events[event.id][event.label] ||
+          !this.#__events[event.id][event.label].timestamp ||
+          event.timestamp >= this.#__events[event.id][event.label].timestamp
+        ) {
+          this.#__events[event.id][event.label].type = event.type
+          this.#__events[event.id][event.label].value = event.value
+          this.#__events[event.id][event.label].id = event.id
+          this.#__events[event.id][event.label].label = event.label
+          this.#__events[event.id][event.label].timestamp = event.timestamp
+        }
+      }
+
+      logging.verbose('#__events', this.#__events)
+    })
 
     return this.syncEventHistory()
       .catch(() => {
@@ -4171,7 +4168,7 @@ export class Spectoda implements SpectodaClass {
    */
   emitEvents(
     events:
-      | SpectodaEvent[]
+      | Event[]
       | {
           // TODO @immakermatty remove this generic event type, use only SpectodaEvent
           label: SpectodaTypes.Label

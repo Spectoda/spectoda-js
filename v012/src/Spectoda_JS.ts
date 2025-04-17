@@ -6,7 +6,7 @@ import { logging } from '../logging'
 import { SpectodaRuntime } from './SpectodaRuntime'
 import { SpectodaWasm } from './SpectodaWasm'
 import { SpectodaAppEvents } from './types/app-events'
-import { SpectodaEvent, SpectodaEventState } from './types/event'
+import { Event, EventState } from './types/event'
 import { SpectodaTypes } from './types/primitives'
 import {
   Connection,
@@ -122,7 +122,7 @@ export class Spectoda_JS {
           return true
         },
 
-        _onEvents: (event_array: SpectodaEvent[]) => {
+        _onEvents: (event_array: Event[]) => {
           logging.verbose('Spectoda_JS::_onEvents', event_array)
 
           {
@@ -168,7 +168,7 @@ export class Spectoda_JS {
           return true
         },
 
-        _onEventStateUpdates: (event_state_updates_array: SpectodaEvent[]) => {
+        _onEventStateUpdates: (event_state_updates_array: Event[]) => {
           logging.verbose('Spectoda_JS::_onEventStateUpdates', event_state_updates_array)
 
           if (logging.level >= 3 && event_state_updates_array.length > 0) {
@@ -756,7 +756,7 @@ export class Spectoda_JS {
     this.#spectoda_wasm.eraseTngl()
   }
 
-  getEventState(event_state_name: string, event_state_id: number): SpectodaEventState | undefined {
+  getEventState(event_state_name: string, event_state_id: number): EventState | undefined {
     logging.verbose(
       `Spectoda_JS::getEventState(event_state_name=${event_state_name}, event_state_id=${event_state_id})`,
     )
