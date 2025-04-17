@@ -14,7 +14,7 @@ export const VALUE_TYPES = Object.freeze({
   /** see @link [DateSchema](../schemas/values.ts) for more details. */
   DATE: 28,
 
-  // TODO Add schema
+  // TODO Add schema, @immakermatty what is the type, please?
   REAL: 27,
 
   /** see @link [ColorSchema](../schemas/values.ts) for more details. */
@@ -32,37 +32,3 @@ export const VALUE_TYPES = Object.freeze({
   /** see @link [UndefinedSchema](../schemas/values.ts) for more details. */
   UNDEFINED: 0,
 })
-
-export const STRING_VALUE_TYPES = Object.freeze({
-  /** see @link [NumberSchema](../schemas/values.ts) for more details. */
-  NUMBER: 'Value.NUMBER',
-
-  /** see @link [LabelSchema](../schemas/values.ts) for more details. */
-  LABEL: 'Value.LABEL',
-
-  /** see @link [TimestampSchema](../schemas/values.ts) for more details. */
-  TIMESTAMP: 'Value.TIMESTAMP',
-
-  /** see @link [PercentageSchema](../schemas/values.ts) for more details. */
-  PERCENTAGE: 'Value.PERCENTAGE',
-
-  /** see @link [DateSchema](../schemas/values.ts) for more details. */
-  DATE: 'Value.DATE',
-
-  /** see @link [ColorSchema](../schemas/values.ts) for more details. */
-  COLOR: 'Value.COLOR',
-
-  /** see @link [PixelsSchema](../schemas/values.ts) for more details. */
-  PIXELS: 'Value.PIXELS',
-
-  /** see @link [BooleanSchema](../schemas/values.ts) for more details. */
-  BOOLEAN: 'Value.BOOLEAN',
-
-  /** see @link [NullSchema](../schemas/values.ts) for more details. */
-  NULL: 'Value.NULL',
-
-  /** see @link [UndefinedSchema](../schemas/values.ts) for more details. */
-  UNDEFINED: 'Value.UNDEFINED',
-})
-
-export type StringValueType = (typeof STRING_VALUE_TYPES)[keyof typeof STRING_VALUE_TYPES]
