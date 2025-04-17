@@ -649,9 +649,9 @@ export class SpectodaConnectConnector extends FlutterConnection {
   // first bonds the BLE device with the PC/Phone/Tablet if it is needed.
   // Then selects the device
   userSelect(
-    criterium_array: SpectodaTypes.Criterium[],
+    criterium_array: Array<SpectodaTypes['Criterium']>,
     timeout_number: number | typeof DEFAULT_TIMEOUT = DEFAULT_TIMEOUT,
-  ): Promise<SpectodaTypes.Criterium | null> {
+  ): Promise<SpectodaTypes['Criterium'] | null> {
     if (timeout_number === DEFAULT_TIMEOUT) {
       timeout_number = 60000
     }
@@ -743,10 +743,10 @@ export class SpectodaConnectConnector extends FlutterConnection {
   // are eligible.
 
   autoSelect(
-    criterium_array: SpectodaTypes.Criterium[],
+    criterium_array: Array<SpectodaTypes['Criterium']>,
     scan_duration_number: number | typeof DEFAULT_TIMEOUT = DEFAULT_TIMEOUT,
     timeout_number: number | typeof DEFAULT_TIMEOUT = DEFAULT_TIMEOUT,
-  ): Promise<SpectodaTypes.Criterium | null> {
+  ): Promise<SpectodaTypes['Criterium'] | null> {
     if (scan_duration_number === DEFAULT_TIMEOUT) {
       // ? 1200ms seems to be the minimum for the scan_duration if the controller is rebooted
       scan_duration_number = 1500
@@ -819,7 +819,7 @@ export class SpectodaConnectConnector extends FlutterConnection {
     return this.#applyTimeout(this.#promise, FLUTTER_RESPONSE_TIMEOUT, 'autoSelect')
   }
 
-  selected(): Promise<SpectodaTypes.Criterium | null> {
+  selected(): Promise<SpectodaTypes['Criterium'] | null> {
     logging.debug('selected()')
 
     this.#promise = new Promise((resolve, reject) => {
@@ -867,9 +867,9 @@ export class SpectodaConnectConnector extends FlutterConnection {
   // are eligible.
 
   scan(
-    criterium_array: SpectodaTypes.Criterium[],
+    criterium_array: Array<SpectodaTypes['Criterium']>,
     scan_duration_number: number | typeof DEFAULT_TIMEOUT = DEFAULT_TIMEOUT,
-  ): Promise<SpectodaTypes.Criterium[]> {
+  ): Promise<Array<SpectodaTypes['Criterium']>> {
     if (scan_duration_number === DEFAULT_TIMEOUT) {
       scan_duration_number = 7000
     }
@@ -907,7 +907,7 @@ export class SpectodaConnectConnector extends FlutterConnection {
 
   */
   // timeout 20000ms for the old slow devices to be able to connect
-  connect(timeout_number: number | typeof DEFAULT_TIMEOUT = DEFAULT_TIMEOUT): Promise<SpectodaTypes.Criterium> {
+  connect(timeout_number: number | typeof DEFAULT_TIMEOUT = DEFAULT_TIMEOUT): Promise<SpectodaTypes['Criterium']> {
     if (timeout_number === DEFAULT_TIMEOUT) {
       timeout_number = 20000
     }
@@ -987,7 +987,7 @@ export class SpectodaConnectConnector extends FlutterConnection {
     return this.#applyTimeout(this.#promise, FLUTTER_RESPONSE_TIMEOUT, 'disconnect')
   }
 
-  connected(): Promise<SpectodaTypes.Criterium | null> {
+  connected(): Promise<SpectodaTypes['Criterium'] | null> {
     logging.verbose('connected()')
 
     this.#promise = new Promise((resolve, reject) => {

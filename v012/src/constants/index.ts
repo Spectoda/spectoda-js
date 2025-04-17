@@ -31,16 +31,16 @@ export const DEFAULT_CONNECTOR = CONNECTORS.DEFAULT
  * No Network Signature
  * @deprecated Use criteria.commissionable = true instead
  */
-export const NO_NETWORK_SIGNATURE: SpectodaTypes.NetworkSignature = '00000000000000000000000000000000'
+export const NO_NETWORK_SIGNATURE: SpectodaTypes['NetworkSignature'] = '00000000000000000000000000000000'
 
 /**
  * No Network Key
  * @deprecated Use criteria.commissionable = true instead
  */
-export const NO_NETWORK_KEY: SpectodaTypes.NetworkKey = '00000000000000000000000000000000'
+export const NO_NETWORK_KEY: SpectodaTypes['NetworkKey'] = '00000000000000000000000000000000'
 
 /** Default MAC address for the app */
-export const APP_MAC_ADDRESS: SpectodaTypes.MacAddress = '00:00:12:34:56:78'
+export const APP_MAC_ADDRESS: SpectodaTypes['MacAddress'] = '00:00:12:34:56:78'
 
 /** TODO: ADD description */
 export const USE_ALL_CONNECTIONS = ['*/ff:ff:ff:ff:ff:ff']

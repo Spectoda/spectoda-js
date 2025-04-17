@@ -69,8 +69,8 @@ type PropsMap = RemoteControlConnectionStatusProps &
     [SpectodaAppEvents.OTA_TIMELEFT]: number
 
     [SpectodaAppEvents.TNGL_UPDATE]: {
-      tngl_bytes: SpectodaTypes.TnglBytes
-      used_ids: SpectodaTypes.UsedIds
+      tngl_bytes: SpectodaTypes['TnglBytes']
+      used_ids: SpectodaTypes['UsedIds']
     }
 
     // TODO for future payload key: `events`

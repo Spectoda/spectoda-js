@@ -874,7 +874,7 @@ export class Spectoda_JS {
     connection: string,
     request: {
       args: {
-        label: SpectodaTypes.Label
+        label: SpectodaTypes['Label']
         variant: string
         remove_io_variant: boolean
       }
@@ -914,7 +914,7 @@ export class Spectoda_JS {
     connection: string,
     request: {
       args: {
-        label: SpectodaTypes.Label
+        label: SpectodaTypes['Label']
         mapping: Int16Array
         remove_io_mapping: boolean
       }
