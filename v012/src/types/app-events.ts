@@ -1,6 +1,6 @@
 import { CONNECTION_STATUS, ConnectionStatus, REMOTECONTROL_STATUS, RemoteControlConnectionStatus } from './connect'
 import { ControllerError, ControllerWarning } from './messages'
-import { SpectodaEvent } from './event'
+import { Event } from './event'
 import { SpectodaTypes } from './primitives'
 
 type RemoteControlConnectionStatusProps = {
@@ -74,10 +74,10 @@ type PropsMap = RemoteControlConnectionStatusProps &
     }
 
     // TODO for future payload key: `events`
-    [SpectodaAppEvents.EVENT_STATE_UPDATES]: SpectodaEvent[]
+    [SpectodaAppEvents.EVENT_STATE_UPDATES]: Event[]
 
     // TODO for future payload key: `events`
-    [SpectodaAppEvents.EMITTED_EVENTS]: SpectodaEvent[]
+    [SpectodaAppEvents.EMITTED_EVENTS]: Event[]
 
     [SpectodaAppEvents.NETWORK_ERROR]: ControllerError
     [SpectodaAppEvents.NETWORK_WARNING]: ControllerWarning
