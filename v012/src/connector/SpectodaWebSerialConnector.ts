@@ -205,7 +205,7 @@ export class SpectodaWebSerialConnector {
   #runtimeReference
 
   #serialPort: SerialPort | undefined
-  #criteria: SpectodaTypes.Criterium[] | undefined
+  #criteria: Array<SpectodaTypes['Criterium']> | undefined
   #portOptions: SerialOptions
 
   #interfaceConnected: boolean
@@ -246,9 +246,9 @@ export class SpectodaWebSerialConnector {
   }
 
   userSelect(
-    criterium_array: SpectodaTypes.Criterium[],
+    criterium_array: Array<SpectodaTypes['Criterium']>,
     timeout_number: number | typeof DEFAULT_TIMEOUT = DEFAULT_TIMEOUT,
-  ): Promise<SpectodaTypes.Criterium | null> {
+  ): Promise<SpectodaTypes['Criterium'] | null> {
     logging.debug('userSelect(criteria=' + JSON.stringify(criterium_array) + ', timeout=' + timeout_number + ')')
 
     if (timeout_number === DEFAULT_TIMEOUT) {
@@ -298,10 +298,10 @@ export class SpectodaWebSerialConnector {
   }
 
   autoSelect(
-    criterium_array: SpectodaTypes.Criterium[],
+    criterium_array: Array<SpectodaTypes['Criterium']>,
     scan_duration_number: number | typeof DEFAULT_TIMEOUT = DEFAULT_TIMEOUT,
     timeout_number: number | typeof DEFAULT_TIMEOUT = DEFAULT_TIMEOUT,
-  ): Promise<SpectodaTypes.Criterium | null> {
+  ): Promise<SpectodaTypes['Criterium'] | null> {
     logging.debug(
       'autoSelect(criteria=' +
         JSON.stringify(criterium_array) +
@@ -329,7 +329,7 @@ export class SpectodaWebSerialConnector {
         ')',
     )
 
-    return new Promise<SpectodaTypes.Criterium | null>(async (resolve, reject) => {
+    return new Promise<SpectodaTypes['Criterium'] | null>(async (resolve, reject) => {
       try {
         const ports = await navigator.serial.getPorts()
 
@@ -356,7 +356,7 @@ export class SpectodaWebSerialConnector {
     })
   }
 
-  selected(): Promise<SpectodaTypes.Criterium | null> {
+  selected(): Promise<SpectodaTypes['Criterium'] | null> {
     logging.debug('selected()')
 
     return Promise.resolve(this.#serialPort ? { connector: this.type } : null)
@@ -384,9 +384,9 @@ export class SpectodaWebSerialConnector {
   }
 
   scan(
-    criterium_array: SpectodaTypes.Criterium[],
+    criterium_array: Array<SpectodaTypes['Criterium']>,
     scan_duration_number: number | typeof DEFAULT_TIMEOUT = DEFAULT_TIMEOUT,
-  ): Promise<SpectodaTypes.Criterium[]> {
+  ): Promise<Array<SpectodaTypes['Criterium']>> {
     if (scan_duration_number === DEFAULT_TIMEOUT) {
       scan_duration_number = 7000
     }
@@ -412,7 +412,7 @@ export class SpectodaWebSerialConnector {
     })
   }
 
-  async connect(timeout_number: number | typeof DEFAULT_TIMEOUT = DEFAULT_TIMEOUT): Promise<SpectodaTypes.Criterium> {
+  async connect(timeout_number: number | typeof DEFAULT_TIMEOUT = DEFAULT_TIMEOUT): Promise<SpectodaTypes['Criterium']> {
     if (timeout_number === DEFAULT_TIMEOUT) {
       timeout_number = 2500
     }
@@ -443,7 +443,7 @@ export class SpectodaWebSerialConnector {
         await this.#disconnect()
       }
 
-      const resolveOnce = (value: SpectodaTypes.Criterium) => {
+      const resolveOnce = (value: SpectodaTypes['Criterium']) => {
         if (!isResolved) {
           isResolved = true
           resolve(value)
@@ -807,7 +807,7 @@ export class SpectodaWebSerialConnector {
     })
   }
 
-  connected(): Promise<SpectodaTypes.Criterium | null> {
+  connected(): Promise<SpectodaTypes['Criterium'] | null> {
     logging.debug('connected()')
     return Promise.resolve(this.#serialPort && this.#interfaceConnected ? { connector: this.type } : null)
   }

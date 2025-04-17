@@ -119,7 +119,7 @@ export class SpectodaNodeSerialConnector {
   #runtimeReference
 
   #serialPort: NodeSerialPortType | undefined
-  #criteria: SpectodaTypes.Criterium[] | undefined
+  #criteria: Array<SpectodaTypes['Criterium']> | undefined
 
   #interfaceConnected: boolean
   #disconnecting: boolean
@@ -160,9 +160,9 @@ export class SpectodaNodeSerialConnector {
   // first bonds the BLE device with the PC/Phone/Tablet if it is needed.
   // Then selects the device
   userSelect(
-    criterium_array: SpectodaTypes.Criterium[],
+    criterium_array: Array<SpectodaTypes['Criterium']>,
     timeout_number: number | typeof DEFAULT_TIMEOUT = DEFAULT_TIMEOUT,
-  ): Promise<SpectodaTypes.Criterium | null> {
+  ): Promise<SpectodaTypes['Criterium'] | null> {
     if (timeout_number === DEFAULT_TIMEOUT) {
       timeout_number = 60000
     }
@@ -184,10 +184,10 @@ export class SpectodaNodeSerialConnector {
   // are eligible.
 
   autoSelect(
-    criterium_array: SpectodaTypes.Criterium[],
+    criterium_array: Array<SpectodaTypes['Criterium']>,
     scan_duration_number: number | typeof DEFAULT_TIMEOUT = DEFAULT_TIMEOUT,
     timeout_number: number | typeof DEFAULT_TIMEOUT = DEFAULT_TIMEOUT,
-  ): Promise<SpectodaTypes.Criterium | null> {
+  ): Promise<SpectodaTypes['Criterium'] | null> {
     if (scan_duration_number === DEFAULT_TIMEOUT) {
       // ? 1200ms seems to be the minimum for the scan_duration if the controller is rebooted
       scan_duration_number = 1500
@@ -299,7 +299,7 @@ export class SpectodaNodeSerialConnector {
     }
   }
 
-  selected(): Promise<SpectodaTypes.Criterium | null> {
+  selected(): Promise<SpectodaTypes['Criterium'] | null> {
     logging.verbose('selected()')
 
     return Promise.resolve(this.#serialPort ? { connector: this.type } : null)
@@ -328,9 +328,9 @@ export class SpectodaNodeSerialConnector {
   }
 
   scan(
-    criterium_array: SpectodaTypes.Criterium[],
+    criterium_array: Array<SpectodaTypes['Criterium']>,
     scan_duration_number: number | typeof DEFAULT_TIMEOUT = DEFAULT_TIMEOUT,
-  ): Promise<SpectodaTypes.Criterium[]> {
+  ): Promise<Array<SpectodaTypes['Criterium']>> {
     if (scan_duration_number === DEFAULT_TIMEOUT) {
       scan_duration_number = 7000
     }
@@ -364,7 +364,7 @@ export class SpectodaNodeSerialConnector {
 
   // connect Connector to the selected Spectoda Device. Also can be used to reconnect.
   // Fails if no device is selected
-  connect(timeout_number: number | typeof DEFAULT_TIMEOUT = DEFAULT_TIMEOUT): Promise<SpectodaTypes.Criterium> {
+  connect(timeout_number: number | typeof DEFAULT_TIMEOUT = DEFAULT_TIMEOUT): Promise<SpectodaTypes['Criterium']> {
     if (timeout_number === DEFAULT_TIMEOUT) {
       timeout_number = 60000
     }
@@ -629,7 +629,7 @@ export class SpectodaNodeSerialConnector {
           }
         })
 
-        return new Promise((resolve: (result: SpectodaTypes.Criterium) => void, reject: (error: string) => void) => {
+        return new Promise((resolve: (result: SpectodaTypes['Criterium']) => void, reject: (error: string) => void) => {
           const timeout_handle = setTimeout(async () => {
             logging.warn('Connection begin timeouted')
             this.#beginCallback = undefined
@@ -682,7 +682,7 @@ export class SpectodaNodeSerialConnector {
       })
   }
 
-  connected(): Promise<SpectodaTypes.Criterium | null> {
+  connected(): Promise<SpectodaTypes['Criterium'] | null> {
     logging.verbose('connected()')
 
     logging.verbose('this.#serialPort=', this.#serialPort)

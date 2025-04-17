@@ -64,14 +64,14 @@ export class Spectoda implements SpectodaClass {
   #parser: TnglCodeParser
 
   #uuidCounter: number
-  #ownerSignature: SpectodaTypes.NetworkSignature
-  #ownerKey: SpectodaTypes.NetworkKey
+  #ownerSignature: SpectodaTypes['NetworkSignature']
+  #ownerKey: SpectodaTypes['NetworkKey']
   #updating: boolean
 
   #connectionState: ConnectionStatus
   #remoteControlConnectionState: RemoteControlConnectionStatus
 
-  #criteria: SpectodaTypes.Criteria
+  #criteria: SpectodaTypes['Criteria']
   #reconnecting: boolean
   #autonomousReconnection: boolean
   #wakeLock: WakeLockSentinel | null | undefined
@@ -262,7 +262,7 @@ export class Spectoda implements SpectodaClass {
     return this.#connectionState
   }
 
-  #setOwnerSignature(ownerSignature: SpectodaTypes.NetworkSignature) {
+  #setOwnerSignature(ownerSignature: SpectodaTypes['NetworkSignature']) {
     const reg = ownerSignature.match(/([\dA-Fa-f]{32})/g)
 
     if (!reg || reg.length === 0 || !reg[0]) {
@@ -273,7 +273,7 @@ export class Spectoda implements SpectodaClass {
     return true
   }
 
-  #setOwnerKey(ownerKey: SpectodaTypes.NetworkKey) {
+  #setOwnerKey(ownerKey: SpectodaTypes['NetworkKey']) {
     const reg = ownerKey.match(/([\dA-Fa-f]{32})/g)
 
     if (!reg || reg.length === 0 || !reg[0]) {
@@ -376,7 +376,7 @@ export class Spectoda implements SpectodaClass {
   /**
    * @alias this.setConnector
    */
-  assignOwnerSignature(ownerSignature: SpectodaTypes.NetworkSignature) {
+  assignOwnerSignature(ownerSignature: SpectodaTypes['NetworkSignature']) {
     return this.#setOwnerSignature(ownerSignature)
   }
 
@@ -384,7 +384,7 @@ export class Spectoda implements SpectodaClass {
    * @deprecated
    * Set the network `signature` (deprecated terminology "ownerSignature").
    */
-  setOwnerSignature(ownerSignature: SpectodaTypes.NetworkSignature) {
+  setOwnerSignature(ownerSignature: SpectodaTypes['NetworkSignature']) {
     return this.#setOwnerSignature(ownerSignature)
   }
 
@@ -392,28 +392,28 @@ export class Spectoda implements SpectodaClass {
    * @deprecated
    * Get the network `signature` (deprecated terminology "ownerSignature").
    */
-  getOwnerSignature(): SpectodaTypes.NetworkSignature {
+  getOwnerSignature(): SpectodaTypes['NetworkSignature'] {
     return this.#ownerSignature
   }
 
   /**
    * @alias this.setOwnerKey
    */
-  assignOwnerKey(ownerKey: SpectodaTypes.NetworkKey) {
+  assignOwnerKey(ownerKey: SpectodaTypes['NetworkKey']) {
     return this.#setOwnerKey(ownerKey)
   }
 
   /**
    * Sets the network `key` (deprecated terminology "ownerKey").
    */
-  setOwnerKey(ownerKey: SpectodaTypes.NetworkKey) {
+  setOwnerKey(ownerKey: SpectodaTypes['NetworkKey']) {
     return this.#setOwnerKey(ownerKey)
   }
 
   /**
    * Get the network `key` (deprecated terminology "ownerKey").
    */
-  getOwnerKey(): SpectodaTypes.NetworkKey {
+  getOwnerKey(): SpectodaTypes['NetworkKey'] {
     return this.#ownerKey
   }
 
@@ -840,10 +840,10 @@ export class Spectoda implements SpectodaClass {
    * TODO REFACTOR to use only one criteria object instead of this param madness
    */
   connect(
-    criteria: SpectodaTypes.Criteria,
+    criteria: SpectodaTypes['Criteria'],
     autoConnect = true,
-    ownerSignature: SpectodaTypes.NetworkSignature = '',
-    ownerKey: SpectodaTypes.NetworkKey = '',
+    ownerSignature: SpectodaTypes['NetworkSignature'] = '',
+    ownerKey: SpectodaTypes['NetworkKey'] = '',
     connectAny = false,
     fwVersion = '',
     autonomousReconnection = false,
@@ -956,7 +956,7 @@ export class Spectoda implements SpectodaClass {
      * @param rawValue The raw value as given in the event
      * @returns The correctly formatted TNGL-compatible string
      */
-    function formatValue(type: SpectodaTypes.ValueType, rawValue: any) {
+    function formatValue(type: SpectodaTypes['ValueType'], rawValue: any) {
       switch (type) {
         case VALUE_TYPES.COLOR: {
           // Ensure a leading "#" and normalize to lowercase
@@ -1986,14 +1986,14 @@ export class Spectoda implements SpectodaClass {
    * Emits Spectoda Event with null value.
    */
   emitEvent(
-    event_label: SpectodaTypes.Label,
+    event_label: SpectodaTypes['Label'],
     // TODO rename to spectodaIds
-    device_ids: SpectodaTypes.IDs = 255,
+    device_ids: SpectodaTypes['IDs'] = 255,
     force_delivery = true,
   ) {
     logging.verbose(`emitEvent(event_label=${event_label},device_ids=${device_ids},force_delivery=${force_delivery})`)
 
-    const func = (id: SpectodaTypes.ID) => {
+    const func = (id: SpectodaTypes['ID']) => {
       if (!this.runtime.spectoda_js.emitNull(event_label, id)) {
         return Promise.reject('EventEmitFailed')
       }
@@ -2025,9 +2025,9 @@ export class Spectoda implements SpectodaClass {
    * Timestamp value range is (-86400000, 86400000)
    */
   emitTimestamp(
-    event_label: SpectodaTypes.Label,
-    event_value: SpectodaTypes.Timestamp,
-    device_ids: SpectodaTypes.IDs = 255,
+    event_label: SpectodaTypes['Label'],
+    event_value: SpectodaTypes['Timestamp'],
+    device_ids: SpectodaTypes['IDs'] = 255,
   ) {
     logging.verbose(`emitTimestamp(label=${event_label},value=${event_value},id=${device_ids})`)
 
@@ -2041,7 +2041,7 @@ export class Spectoda implements SpectodaClass {
       event_value = -86400000
     }
 
-    const func = (id: SpectodaTypes.ID) => {
+    const func = (id: SpectodaTypes['ID']) => {
       if (!this.runtime.spectoda_js.emitTimestamp(event_label, event_value, id)) {
         return Promise.reject('EventEmitFailed')
       }
@@ -2067,7 +2067,7 @@ export class Spectoda implements SpectodaClass {
    * Emits Spectoda Event with color value.
    * Color value must be a string in hex format with or without "#" prefix.
    */
-  emitColor(event_label: SpectodaTypes.Label, event_value: SpectodaTypes.Color, device_ids: SpectodaTypes.IDs = 255) {
+  emitColor(event_label: SpectodaTypes['Label'], event_value: SpectodaTypes['Color'], device_ids: SpectodaTypes['IDs'] = 255) {
     logging.verbose(`emitColor(label=${event_label},value=${event_value},id=${device_ids})`)
 
     event_value = cssColorToHex(event_value)
@@ -2077,7 +2077,7 @@ export class Spectoda implements SpectodaClass {
       event_value = '#000000'
     }
 
-    const func = (id: SpectodaTypes.ID) => {
+    const func = (id: SpectodaTypes['ID']) => {
       if (!this.runtime.spectoda_js.emitColor(event_label, event_value, id)) {
         return Promise.reject('EventEmitFailed')
       }
@@ -2104,9 +2104,9 @@ export class Spectoda implements SpectodaClass {
    * value range is (-100,100)
    */
   emitPercentage(
-    event_label: SpectodaTypes.Label,
-    event_value: SpectodaTypes.Percentage,
-    device_ids: SpectodaTypes.IDs = 255,
+    event_label: SpectodaTypes['Label'],
+    event_value: SpectodaTypes['Percentage'],
+    device_ids: SpectodaTypes['IDs'] = 255,
   ) {
     logging.verbose(`emitPercentage(label=${event_label},value=${event_value},id=${device_ids})`)
 
@@ -2120,7 +2120,7 @@ export class Spectoda implements SpectodaClass {
       event_value = -100
     }
 
-    const func = (id: SpectodaTypes.ID) => {
+    const func = (id: SpectodaTypes['ID']) => {
       if (!this.runtime.spectoda_js.emitPercentage(event_label, event_value, id)) {
         return Promise.reject('EventEmitFailed')
       }
@@ -2144,7 +2144,7 @@ export class Spectoda implements SpectodaClass {
   /**
    * E.g. event "anima" to value "a_001"
    */
-  emitLabel(event_label: SpectodaTypes.Label, event_value: SpectodaTypes.Label, device_ids: SpectodaTypes.IDs = 255) {
+  emitLabel(event_label: SpectodaTypes['Label'], event_value: SpectodaTypes['Label'], device_ids: SpectodaTypes['IDs'] = 255) {
     logging.verbose(`emitLabel(label=${event_label},value=${event_value},id=${device_ids})`)
 
     if (typeof event_value !== 'string') {
@@ -2157,7 +2157,7 @@ export class Spectoda implements SpectodaClass {
       event_value = event_value.slice(0, 5)
     }
 
-    const func = (id: SpectodaTypes.ID) => {
+    const func = (id: SpectodaTypes['ID']) => {
       if (!this.runtime.spectoda_js.emitLabel(event_label, event_value, id)) {
         return Promise.reject('EventEmitFailed')
       }
@@ -2208,9 +2208,9 @@ export class Spectoda implements SpectodaClass {
    * Synchronizes timeline of the connected controller with the current time of the runtime.
    */
   syncTimeline(
-    timestamp: SpectodaTypes.Timestamp | null = null,
+    timestamp: SpectodaTypes['Timestamp'] | null = null,
     paused: boolean | null = null,
-    date: SpectodaTypes.Date | null = null,
+    date: SpectodaTypes['Date'] | null = null,
   ) {
     logging.verbose(`syncTimeline(timestamp=${timestamp}, paused=${paused})`)
 
@@ -2250,7 +2250,7 @@ export class Spectoda implements SpectodaClass {
   /**
    * Synchronizes TNGL variable state of given ID to all other IDs
    */
-  syncState(deviceId: SpectodaTypes.ID) {
+  syncState(deviceId: SpectodaTypes['ID']) {
     logging.info('> Synchronizing state...')
 
     const request_uuid = this.#getUUID()
@@ -3221,8 +3221,8 @@ export class Spectoda implements SpectodaClass {
    * Changes the network of the controller Spectoda.js is `connect`ed to.
    */
   writeOwner(
-    ownerSignature: SpectodaTypes.NetworkSignature = NO_NETWORK_SIGNATURE,
-    ownerKey: SpectodaTypes.NetworkKey = NO_NETWORK_KEY,
+    ownerSignature: SpectodaTypes['NetworkSignature'] = NO_NETWORK_SIGNATURE,
+    ownerKey: SpectodaTypes['NetworkKey'] = NO_NETWORK_KEY,
   ) {
     logging.debug(`writeOwner(ownerSignature=${ownerSignature}, ownerKey=${ownerKey})`)
 
@@ -3317,8 +3317,8 @@ export class Spectoda implements SpectodaClass {
    * Changes the network of ALL controllers in the network Spectoda.js is `connect`ed to.
    */
   writeNetworkOwner(
-    ownerSignature: SpectodaTypes.NetworkSignature = '00000000000000000000000000000000',
-    ownerKey: SpectodaTypes.NetworkKey = '00000000000000000000000000000000',
+    ownerSignature: SpectodaTypes['NetworkSignature'] = '00000000000000000000000000000000',
+    ownerKey: SpectodaTypes['NetworkKey'] = '00000000000000000000000000000000',
   ) {
     logging.debug(`writeNetworkOwner(ownerSignature=${ownerSignature}, ownerKey=${ownerKey})`)
 
@@ -3355,7 +3355,7 @@ export class Spectoda implements SpectodaClass {
   /**
    * ! Useful
    */
-  writeControllerName(label: SpectodaTypes.Label) {
+  writeControllerName(label: SpectodaTypes['Label']) {
     logging.debug('> Writing Controller Name...')
 
     const request_uuid = this.#getUUID()
@@ -3421,7 +3421,7 @@ export class Spectoda implements SpectodaClass {
    * @param ioLabel - 5 character IO label (e.g. "BTN_1")
    * @param variant - variant name (max 16 characters)
    */
-  writeControllerIoVariant(ioLabel: SpectodaTypes.Label, variant: string | null) {
+  writeControllerIoVariant(ioLabel: SpectodaTypes['Label'], variant: string | null) {
     logging.debug('> Writing Controller IO Variant...')
 
     const request_uuid = this.#getUUID()
@@ -3443,7 +3443,7 @@ export class Spectoda implements SpectodaClass {
    * @param ioLabel - 5 character IO label (e.g. "BTN_1")
    * @param variant - variant name (max 16 characters)
    */
-  writeNetworkIoVariant(ioLabel: SpectodaTypes.Label, variant: string | null) {
+  writeNetworkIoVariant(ioLabel: SpectodaTypes['Label'], variant: string | null) {
     logging.debug('> Writing Network IO Variant...')
 
     const request_uuid = this.#getUUID()
@@ -3465,7 +3465,7 @@ export class Spectoda implements SpectodaClass {
    * @param ioLabel - 5 character IO label (e.g. "BTN_1")
    * @returns The variant name for the specified IO label
    */
-  readControllerIoVariant(ioLabel: SpectodaTypes.Label) {
+  readControllerIoVariant(ioLabel: SpectodaTypes['Label']) {
     logging.debug('> Reading Controller IO Variant...')
 
     const request_uuid = this.#getUUID()
@@ -3513,7 +3513,7 @@ export class Spectoda implements SpectodaClass {
     })
   }
 
-  writeControllerIoMapping(ioLabel: SpectodaTypes.Label, mapping: SpectodaTypes.Pixels[] | null) {
+  writeControllerIoMapping(ioLabel: SpectodaTypes['Label'], mapping: Array<SpectodaTypes['Pixels']> | null) {
     logging.debug('> Writing Controller IO Mapping...')
 
     const request_uuid = this.#getUUID()
@@ -3534,7 +3534,7 @@ export class Spectoda implements SpectodaClass {
    * @param ioLabel - 5 character IO label (e.g. "BTN_1")
    * @returns The mapping for the specified IO label
    */
-  readControllerIoMapping(ioLabel: SpectodaTypes.Label): Promise<SpectodaTypes.Pixels[]> {
+  readControllerIoMapping(ioLabel: SpectodaTypes['Label']): Promise<Array<SpectodaTypes['Pixels']>> {
     logging.debug('> Reading Controller IO Mapping...')
 
     const request_uuid = this.#getUUID()
@@ -3602,7 +3602,7 @@ export class Spectoda implements SpectodaClass {
   }
 
   //* WIP
-  async WIP_writeIoVariant(ioLabel: SpectodaTypes.Label, variant: string | null): Promise<void> {
+  async WIP_writeIoVariant(ioLabel: SpectodaTypes['Label'], variant: string | null): Promise<void> {
     logging.verbose(`writeIoVariant(ioLabel=${ioLabel}, variant=${variant})`)
 
     logging.info('> Writing IO Variant...')
@@ -3622,7 +3622,7 @@ export class Spectoda implements SpectodaClass {
   }
 
   //* WIP
-  async WIP_writeIoMapping(ioLabel: SpectodaTypes.Label, mapping: number[] | null): Promise<void> {
+  async WIP_writeIoMapping(ioLabel: SpectodaTypes['Label'], mapping: number[] | null): Promise<void> {
     logging.verbose(`writeIoMapping(ioLabel=${ioLabel}, mapping=${mapping})`)
 
     logging.info('> Writing IO Mapping...')
@@ -3644,7 +3644,7 @@ export class Spectoda implements SpectodaClass {
   /**
    * Reads the TNGL variable on given ID from App's WASM
    */
-  readVariable(variable_name: string, id: SpectodaTypes.ID = 255) {
+  readVariable(variable_name: string, id: SpectodaTypes['ID'] = 255) {
     logging.debug('> Reading variable...')
 
     const variable_declarations = this.#parser.getVariableDeclarations()
@@ -3676,7 +3676,7 @@ export class Spectoda implements SpectodaClass {
   /**
    * For FW nerds
    */
-  readVariableAddress(variable_address: number, id: SpectodaTypes.ID = 255) {
+  readVariableAddress(variable_address: number, id: SpectodaTypes['ID'] = 255) {
     logging.debug('> Reading variable address...')
 
     const memory_stack = this.#parser.getMemoryStack()
@@ -3818,7 +3818,7 @@ export class Spectoda implements SpectodaClass {
    *
    * Product Code is a code of a specific product. A product is a defined, specific configuration of inputs and outputs that make up a whole product. E.g. NARA Lamp (two LED outputs of certain length and a touch button), Sunflow Lamp (three LED outputs, push button)
    */
-  writeControllerCodes(pcb_code: SpectodaTypes.PcbCode, product_code: SpectodaTypes.ProductCode) {
+  writeControllerCodes(pcb_code: SpectodaTypes['PcbCode'], product_code: SpectodaTypes['ProductCode']) {
     logging.debug('> Writing controller codes...')
 
     const request_uuid = this.#getUUID()
@@ -3973,7 +3973,7 @@ export class Spectoda implements SpectodaClass {
   /**
    * Save the current uploaded Tngl (via `writeTngl) to the bank in parameter
    */
-  saveTnglBank(tngl_bank: SpectodaTypes.TnglBank) {
+  saveTnglBank(tngl_bank: SpectodaTypes['TnglBank']) {
     logging.debug(`> Saving TNGL to bank ${tngl_bank}...`)
 
     const request_uuid = this.#getUUID()
@@ -3989,7 +3989,7 @@ export class Spectoda implements SpectodaClass {
   /**
    * Load the Tngl from the bank in parameter
    */
-  loadTnglBank(tngl_bank: SpectodaTypes.TnglBank) {
+  loadTnglBank(tngl_bank: SpectodaTypes['TnglBank']) {
     logging.debug(`> Loading TNGL from bank ${tngl_bank}...`)
 
     const request_uuid = this.#getUUID()
@@ -4006,7 +4006,7 @@ export class Spectoda implements SpectodaClass {
   /**
    * Erase the Tngl from the bank in parameter
    */
-  eraseTnglBank(tngl_bank: SpectodaTypes.TnglBank) {
+  eraseTnglBank(tngl_bank: SpectodaTypes['TnglBank']) {
     logging.debug(`> Erasing TNGL bank ${tngl_bank}...`)
 
     const request_uuid = this.#getUUID()
@@ -4019,11 +4019,11 @@ export class Spectoda implements SpectodaClass {
     return this.runtime.execute(command_bytes, undefined)
   }
 
-  getEventStates(event_state_label: SpectodaTypes.Label, event_state_ids: SpectodaTypes.IDs) {
+  getEventStates(event_state_label: SpectodaTypes['Label'], event_state_ids: SpectodaTypes['IDs']) {
     return this.runtime.getEventStates(event_state_label, event_state_ids)
   }
 
-  getEventState(event_state_label: SpectodaTypes.Label, event_state_id: SpectodaTypes.ID) {
+  getEventState(event_state_label: SpectodaTypes['Label'], event_state_id: SpectodaTypes['ID']) {
     return this.runtime.getEventState(event_state_label, event_state_id)
   }
 
@@ -4032,12 +4032,12 @@ export class Spectoda implements SpectodaClass {
   }
 
   /** Refactor suggestion by @mchlkucera registerIDContext */
-  registerDeviceContexts(ids: SpectodaTypes.IDs) {
+  registerDeviceContexts(ids: SpectodaTypes['IDs']) {
     return this.runtime.registerDeviceContexts(ids)
   }
 
   /** Refactor suggestion by @mchlkucera registerIDContext */
-  registerDeviceContext(id: SpectodaTypes.ID) {
+  registerDeviceContext(id: SpectodaTypes['ID']) {
     return this.runtime.registerDeviceContext(id)
   }
 
@@ -4048,7 +4048,7 @@ export class Spectoda implements SpectodaClass {
    * @param ids - Single ID or array of device IDs to get events for
    * @returns Array of events representing the current scene state
    */
-  getEmittedEvents(ids: SpectodaTypes.IDs) {
+  getEmittedEvents(ids: SpectodaTypes['IDs']) {
     logging.verbose('getEmittedEvents(ids=', ids, ')')
 
     logging.info('> Getting emitted events...')
@@ -4171,10 +4171,10 @@ export class Spectoda implements SpectodaClass {
       | Event[]
       | {
           // TODO @immakermatty remove this generic event type, use only SpectodaEvent
-          label: SpectodaTypes.Label
-          type: string | SpectodaTypes.ValueType
+          label: SpectodaTypes['Label']
+          type: string | SpectodaTypes['ValueType']
           value: null | string | number | boolean
-          id: SpectodaTypes.ID
+          id: SpectodaTypes['ID']
           timestamp: number
         }[],
   ) {
@@ -4397,7 +4397,7 @@ export class Spectoda implements SpectodaClass {
           tnglFingerprint: tngl_fingerprint_hex,
           eventStoreFingerprint: event_store_fingerprint_hex,
           configFingerprint: config_fingerprint_hex,
-        } as SpectodaTypes.ControllerInfo
+        } as SpectodaTypes['ControllerInfo']
 
         logging.info('> Controller Info:', info)
         return info

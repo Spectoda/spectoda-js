@@ -275,9 +275,9 @@ export class SpectodaSimulatedConnector {
   }
 
   userSelect(
-    criterium_array: SpectodaTypes.Criterium[],
+    criterium_array: Array<SpectodaTypes['Criterium']>,
     timeout_number: number | typeof DEFAULT_TIMEOUT = DEFAULT_TIMEOUT,
-  ): Promise<SpectodaTypes.Criterium | null> {
+  ): Promise<SpectodaTypes['Criterium'] | null> {
     if (timeout_number === DEFAULT_TIMEOUT) {
       timeout_number = 60000
     }
@@ -307,10 +307,10 @@ export class SpectodaSimulatedConnector {
   }
 
   autoSelect(
-    criterium_array: SpectodaTypes.Criterium[],
+    criterium_array: Array<SpectodaTypes['Criterium']>,
     scan_duration_number: number | typeof DEFAULT_TIMEOUT = DEFAULT_TIMEOUT,
     timeout_number: number | typeof DEFAULT_TIMEOUT = DEFAULT_TIMEOUT,
-  ): Promise<SpectodaTypes.Criterium | null> {
+  ): Promise<SpectodaTypes['Criterium'] | null> {
     if (scan_duration_number === DEFAULT_TIMEOUT) {
       // ? 1200ms seems to be the minimum for the scan_duration if the controller is rebooted
       scan_duration_number = 1500
@@ -344,7 +344,7 @@ export class SpectodaSimulatedConnector {
     })
   }
 
-  selected(): Promise<SpectodaTypes.Criterium | null> {
+  selected(): Promise<SpectodaTypes['Criterium'] | null> {
     logging.verbose('selected()')
 
     return new Promise(async (resolve, reject) => {
@@ -371,9 +371,9 @@ export class SpectodaSimulatedConnector {
   }
 
   scan(
-    criterium_array: SpectodaTypes.Criterium[],
+    criterium_array: Array<SpectodaTypes['Criterium']>,
     scan_duration_number: number | typeof DEFAULT_TIMEOUT = DEFAULT_TIMEOUT,
-  ): Promise<SpectodaTypes.Criterium[]> {
+  ): Promise<Array<SpectodaTypes['Criterium']>> {
     if (scan_duration_number === DEFAULT_TIMEOUT) {
       scan_duration_number = 7000
     }
@@ -391,7 +391,7 @@ export class SpectodaSimulatedConnector {
     return Promise.resolve([])
   }
 
-  connect(timeout_number: number | typeof DEFAULT_TIMEOUT = DEFAULT_TIMEOUT): Promise<SpectodaTypes.Criterium> {
+  connect(timeout_number: number | typeof DEFAULT_TIMEOUT = DEFAULT_TIMEOUT): Promise<SpectodaTypes['Criterium']> {
     if (timeout_number === DEFAULT_TIMEOUT) {
       timeout_number = 20000
     }
@@ -428,7 +428,7 @@ export class SpectodaSimulatedConnector {
     })
   }
 
-  connected(): Promise<SpectodaTypes.Criterium | null> {
+  connected(): Promise<SpectodaTypes['Criterium'] | null> {
     logging.verbose('connected()')
 
     return new Promise(async (resolve, reject) => {
