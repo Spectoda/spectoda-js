@@ -6,7 +6,6 @@
 import { z } from 'zod'
 
 import {
-  IDSchema,
   NetworkSignatureSchema,
   NetworkKeySchema,
   MacAddressSchema,
@@ -16,24 +15,13 @@ import {
   FirmwareVersionFullSchema,
   FingerprintSchema,
   TnglBankSchema,
-  ControllerNameSchema as ControllerNameSchema,
+  ControllerNameSchema,
   FirmwareVersionCodeSchema,
 } from '../schemas/primitives'
-import { NumberSchema, LabelSchema } from '../schemas/values'
-import {
-  TimestampSchema,
-  PercentageSchema,
-  DateSchema,
-  ColorSchema,
-  PixelsSchema,
-  BooleanSchema,
-  NullSchema,
-  UndefinedSchema,
-} from '../schemas/values'
 import { BaseCriteriaSchema, SerialCriteriaSchema, BleCriteriaSchema, DummyCriteriaSchema } from '../schemas/criteria'
-import { VALUE_TYPES } from '../constants/values'
 
-// Criteria
+import { Label, Timestamp, ValueType, Percentage, Date, Color, Pixels, Null, Undefined, ID, IDs } from './values'
+
 type BaseCriteria = z.infer<typeof BaseCriteriaSchema>
 type SerialCriteria = z.infer<typeof SerialCriteriaSchema>
 type BleCriteria = z.infer<typeof BleCriteriaSchema>
@@ -46,7 +34,6 @@ type criteria_dummy = criteria_generic
 type criteria_simulated = criteria_generic
 type criteria = criteria_ble | criteria_serial | criteria_dummy | criteria_simulated
 
-// Primitives
 type TnglBytes = Uint8Array
 type UsedIds = Uint8Array
 type Criterium = criteria
@@ -56,22 +43,6 @@ type Tngl = {
   bytecode: Uint8Array | undefined
 }
 
-// Primitive value types
-type ValueType = (typeof VALUE_TYPES)[keyof typeof VALUE_TYPES]
-type Number = z.infer<typeof NumberSchema>
-type Label = z.infer<typeof LabelSchema>
-type Timestamp = z.infer<typeof TimestampSchema>
-type Percentage = z.infer<typeof PercentageSchema>
-type Date = z.infer<typeof DateSchema>
-type Color = z.infer<typeof ColorSchema>
-type Pixels = z.infer<typeof PixelsSchema>
-type Boolean = z.infer<typeof BooleanSchema>
-type Null = z.infer<typeof NullSchema>
-type Undefined = z.infer<typeof UndefinedSchema>
-type ID = z.infer<typeof IDSchema>
-type IDs = ID | ID[]
-
-// Network and device types
 type NetworkSignature = z.infer<typeof NetworkSignatureSchema>
 type NetworkKey = z.infer<typeof NetworkKeySchema>
 type MacAddress = z.infer<typeof MacAddressSchema>
@@ -83,7 +54,6 @@ type FirmwareVersionCode = z.infer<typeof FirmwareVersionCodeSchema>
 type Fingerprint = z.infer<typeof FingerprintSchema>
 type TnglBank = z.infer<typeof TnglBankSchema>
 
-// Controller types
 type ControllerName = z.infer<typeof ControllerNameSchema>
 type ControllerConnectionCriteria = {
   controllerLabel: Label
@@ -105,6 +75,28 @@ type ControllerMoreData = {
 }
 type ControllerInfo = ControllerConnectionCriteria & ControllerMoreData
 
+export type {
+  BaseCriteria,
+  SerialCriteria,
+  BleCriteria,
+  DummyCriteria,
+  ControllerConnectionCriteria,
+  ControllerMoreData,
+  ControllerInfo,
+  NetworkSignature,
+  NetworkKey,
+  MacAddress,
+  PcbCode,
+  ProductCode,
+  FirmwareVersion,
+  FirmwareVersionFull,
+  FirmwareVersionCode,
+  Fingerprint,
+  TnglBank,
+  ControllerName,
+}
+
+/** @deprecated use individual types instead */
 export type SpectodaTypes = {
   BaseCriteria: BaseCriteria
   SerialCriteria: SerialCriteria

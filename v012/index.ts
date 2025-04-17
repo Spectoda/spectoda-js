@@ -72,7 +72,30 @@ export {
   type SpectodaAppEventMap,
 } from './src/types/app-events'
 
+/** @deprecated Use individual types instead */
 export type { SpectodaTypes } from './src/types/primitives'
+
+export type { ValueType } from './src/types/values'
+export type {
+  BaseCriteria,
+  BleCriteria,
+  ControllerConnectionCriteria,
+  ControllerMoreData,
+  ControllerInfo,
+  NetworkSignature,
+  NetworkKey,
+  MacAddress,
+  PcbCode,
+  ProductCode,
+  FirmwareVersion,
+  FirmwareVersionFull,
+  FirmwareVersionCode,
+  Fingerprint,
+  TnglBank,
+  ControllerName,
+  DummyCriteria,
+  SerialCriteria,
+} from './src/types/primitives'
 
 export type {
   EventState,
