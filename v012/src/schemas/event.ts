@@ -22,43 +22,61 @@ const EventBaseSchema = z.object({
   id: IDSchema,
 })
 
+export const NumberEventSchema = EventBaseSchema.extend({
+  type: z.literal(VALUE_TYPES.NUMBER),
+  value: NumberSchema,
+})
+
+export const LabelEventSchema = EventBaseSchema.extend({
+  type: z.literal(VALUE_TYPES.LABEL),
+  value: LabelSchema,
+})
+
+export const PercentageEventSchema = EventBaseSchema.extend({
+  type: z.literal(VALUE_TYPES.PERCENTAGE),
+  value: PercentageSchema,
+})
+
+export const TimestampEventSchema = EventBaseSchema.extend({
+  type: z.literal(VALUE_TYPES.TIMESTAMP),
+  value: TimestampSchema,
+})
+
+export const ColorEventSchema = EventBaseSchema.extend({
+  type: z.literal(VALUE_TYPES.COLOR),
+  value: ColorSchema,
+})
+
+export const PixelsEventSchema = EventBaseSchema.extend({
+  type: z.literal(VALUE_TYPES.PIXELS),
+  value: PixelsSchema,
+})
+
+export const BooleanEventSchema = EventBaseSchema.extend({
+  type: z.literal(VALUE_TYPES.BOOLEAN),
+  value: BooleanSchema,
+})
+
+export const NullEventSchema = EventBaseSchema.extend({
+  type: z.literal(VALUE_TYPES.NULL),
+  value: NullSchema,
+})
+
+export const UndefinedEventSchema = EventBaseSchema.extend({
+  type: z.literal(VALUE_TYPES.UNDEFINED),
+  value: UndefinedSchema,
+})
+
 export const EventSchema = z.discriminatedUnion('type', [
-  EventBaseSchema.extend({
-    type: z.literal(VALUE_TYPES.NUMBER),
-    value: NumberSchema,
-  }),
-  EventBaseSchema.extend({
-    type: z.literal(VALUE_TYPES.LABEL),
-    value: LabelSchema,
-  }),
-  EventBaseSchema.extend({
-    type: z.literal(VALUE_TYPES.PERCENTAGE),
-    value: PercentageSchema,
-  }),
-  EventBaseSchema.extend({
-    type: z.literal(VALUE_TYPES.TIMESTAMP),
-    value: TimestampSchema,
-  }),
-  EventBaseSchema.extend({
-    type: z.literal(VALUE_TYPES.COLOR),
-    value: ColorSchema,
-  }),
-  EventBaseSchema.extend({
-    type: z.literal(VALUE_TYPES.PIXELS),
-    value: PixelsSchema,
-  }),
-  EventBaseSchema.extend({
-    type: z.literal(VALUE_TYPES.BOOLEAN),
-    value: BooleanSchema,
-  }),
-  EventBaseSchema.extend({
-    type: z.literal(VALUE_TYPES.NULL),
-    value: NullSchema,
-  }),
-  EventBaseSchema.extend({
-    type: z.literal(VALUE_TYPES.UNDEFINED),
-    value: UndefinedSchema,
-  }),
+  NumberEventSchema,
+  LabelEventSchema,
+  PercentageEventSchema,
+  TimestampEventSchema,
+  ColorEventSchema,
+  PixelsEventSchema,
+  BooleanEventSchema,
+  NullEventSchema,
+  UndefinedEventSchema,
 ])
 
 export const AnyEventValueSchema = z.union([
@@ -73,7 +91,9 @@ export const AnyEventValueSchema = z.union([
   UndefinedSchema,
 ])
 
+export type AnyEvent = z.infer<typeof AnyEventSchema>
 export const AnyEventSchema = EventBaseSchema.extend({
+  type: z.nativeEnum(VALUE_TYPES),
   value: AnyEventValueSchema,
 })
 

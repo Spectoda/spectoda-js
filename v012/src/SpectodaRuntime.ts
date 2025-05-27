@@ -446,18 +446,20 @@ export class SpectodaRuntime {
         }
       }
 
-      __process()
-      __render()
+      setTimeout(__process, 0)
+      setTimeout(__render, 0)
     } catch (e) {
       logging.error('Error in runtime:', e)
     }
   }
 
-  #inicilize() {
+  async #initialize(): Promise<void> {
     if (!this.#inicilized) {
       this.#inicilized = true
-      this.#runtimeTask()
+      await this.#runtimeTask()
     }
+
+    await this.spectoda_js.waitForInitilize()
   }
 
   /**
@@ -900,8 +902,7 @@ export class SpectodaRuntime {
 
       // spawn async function to handle the transmittion one item at the time
       ;(async () => {
-        await this.#inicilize()
-        await this.spectoda_js.waitForInitilize()
+        await this.#initialize()
 
         await sleep(0.001) // short delay to let fill up the queue to merge the execute items if possible
 
@@ -1676,10 +1677,56 @@ export class SpectodaRuntime {
     return this.spectoda_js.getClockTimestamp()
   }
 
-  getEventStates(
+  async emitNumber(event_label: string, event_value: number, event_id: number): Promise<boolean> {
+    await this.#initialize()
+    return this.spectoda_js.emitNumber(event_label, event_value, event_id)
+  }
+
+  async emitLabel(event_label: string, event_value: string, event_id: number): Promise<boolean> {
+    await this.#initialize()
+    return this.spectoda_js.emitLabel(event_label, event_value, event_id)
+  }
+
+  async emitTimestamp(event_label: string, event_value: number, event_id: number): Promise<boolean> {
+    await this.#initialize()
+    return this.spectoda_js.emitTimestamp(event_label, event_value, event_id)
+  }
+
+  async emitPercentage(event_label: string, event_value: number, event_id: number): Promise<boolean> {
+    await this.#initialize()
+    return this.spectoda_js.emitPercentage(event_label, event_value, event_id)
+  }
+
+  async emitDate(event_label: string, event_value: string, event_id: number): Promise<boolean> {
+    await this.#initialize()
+    return this.spectoda_js.emitDate(event_label, event_value, event_id)
+  }
+
+  async emitColor(event_label: string, event_value: string, event_id: number): Promise<boolean> {
+    await this.#initialize()
+    return this.spectoda_js.emitColor(event_label, event_value, event_id)
+  }
+
+  async emitPixels(event_label: string, event_value: number, event_id: number): Promise<boolean> {
+    await this.#initialize()
+    return this.spectoda_js.emitPixels(event_label, event_value, event_id)
+  }
+
+  async emitBoolean(event_label: string, event_value: boolean, event_id: number): Promise<boolean> {
+    await this.#initialize()
+    return this.spectoda_js.emitBoolean(event_label, event_value, event_id)
+  }
+
+  async emitNull(event_label: string, event_id: number): Promise<boolean> {
+    await this.#initialize()
+    return this.spectoda_js.emitNull(event_label, event_id)
+  }
+
+  async getEventStates(
     event_state_name: string,
     event_state_ids: SpectodaTypes['IDs'],
-  ): (EventState | undefined)[] {
+  ): Promise<(EventState | undefined)[]> {
+    await this.#initialize()
     if (Array.isArray(event_state_ids)) {
       return event_state_ids.map((id) => this.spectoda_js.getEventState(event_state_name, id))
     } else {
@@ -1687,15 +1734,18 @@ export class SpectodaRuntime {
     }
   }
 
-  getEventState(event_state_name: string, event_state_id: SpectodaTypes['ID']): EventState | undefined {
+  async getEventState(event_state_name: string, event_state_id: SpectodaTypes['ID']): Promise<EventState | undefined> {
+    await this.#initialize()
     return this.spectoda_js.getEventState(event_state_name, event_state_id)
   }
 
-  getDateTime() {
+  async getDateTime(): Promise<{ time: number; date: string }> {
+    await this.#initialize()
     return this.spectoda_js.getDateTime()
   }
 
-  registerDeviceContexts(ids: SpectodaTypes['IDs']): boolean[] {
+  async registerDeviceContexts(ids: SpectodaTypes['IDs']): Promise<boolean[]> {
+    await this.#initialize()
     if (Array.isArray(ids)) {
       return ids.map((id) => this.spectoda_js.registerDeviceContext(id))
     } else {
@@ -1703,7 +1753,8 @@ export class SpectodaRuntime {
     }
   }
 
-  registerDeviceContext(id: SpectodaTypes['ID']): boolean {
+  async registerDeviceContext(id: SpectodaTypes['ID']): Promise<boolean> {
+    await this.#initialize()
     return this.spectoda_js.registerDeviceContext(id)
   }
 

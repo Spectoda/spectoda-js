@@ -1993,8 +1993,8 @@ export class Spectoda implements SpectodaClass {
   ) {
     logging.verbose(`emitEvent(event_label=${event_label},device_ids=${device_ids},force_delivery=${force_delivery})`)
 
-    const func = (id: SpectodaTypes['ID']) => {
-      if (!this.runtime.spectoda_js.emitNull(event_label, id)) {
+    const func = async (id: SpectodaTypes['ID']) => {
+      if (!(await this.runtime.emitNull(event_label, id))) {
         return Promise.reject('EventEmitFailed')
       }
       return Promise.resolve()
@@ -2041,8 +2041,8 @@ export class Spectoda implements SpectodaClass {
       event_value = -86400000
     }
 
-    const func = (id: SpectodaTypes['ID']) => {
-      if (!this.runtime.spectoda_js.emitTimestamp(event_label, event_value, id)) {
+    const func = async (id: SpectodaTypes['ID']) => {
+      if (!(await this.runtime.emitTimestamp(event_label, event_value, id))) {
         return Promise.reject('EventEmitFailed')
       }
       return Promise.resolve()
@@ -2067,7 +2067,11 @@ export class Spectoda implements SpectodaClass {
    * Emits Spectoda Event with color value.
    * Color value must be a string in hex format with or without "#" prefix.
    */
-  emitColor(event_label: SpectodaTypes['Label'], event_value: SpectodaTypes['Color'], device_ids: SpectodaTypes['IDs'] = 255) {
+  emitColor(
+    event_label: SpectodaTypes['Label'],
+    event_value: SpectodaTypes['Color'],
+    device_ids: SpectodaTypes['IDs'] = 255,
+  ) {
     logging.verbose(`emitColor(label=${event_label},value=${event_value},id=${device_ids})`)
 
     event_value = cssColorToHex(event_value)
@@ -2077,8 +2081,8 @@ export class Spectoda implements SpectodaClass {
       event_value = '#000000'
     }
 
-    const func = (id: SpectodaTypes['ID']) => {
-      if (!this.runtime.spectoda_js.emitColor(event_label, event_value, id)) {
+    const func = async (id: SpectodaTypes['ID']) => {
+      if (!(await this.runtime.emitColor(event_label, event_value, id))) {
         return Promise.reject('EventEmitFailed')
       }
       return Promise.resolve()
@@ -2120,8 +2124,8 @@ export class Spectoda implements SpectodaClass {
       event_value = -100
     }
 
-    const func = (id: SpectodaTypes['ID']) => {
-      if (!this.runtime.spectoda_js.emitPercentage(event_label, event_value, id)) {
+    const func = async (id: SpectodaTypes['ID']) => {
+      if (!(await this.runtime.emitPercentage(event_label, event_value, id))) {
         return Promise.reject('EventEmitFailed')
       }
       return Promise.resolve()
@@ -2144,7 +2148,11 @@ export class Spectoda implements SpectodaClass {
   /**
    * E.g. event "anima" to value "a_001"
    */
-  emitLabel(event_label: SpectodaTypes['Label'], event_value: SpectodaTypes['Label'], device_ids: SpectodaTypes['IDs'] = 255) {
+  emitLabel(
+    event_label: SpectodaTypes['Label'],
+    event_value: SpectodaTypes['Label'],
+    device_ids: SpectodaTypes['IDs'] = 255,
+  ) {
     logging.verbose(`emitLabel(label=${event_label},value=${event_value},id=${device_ids})`)
 
     if (typeof event_value !== 'string') {
@@ -2157,8 +2165,8 @@ export class Spectoda implements SpectodaClass {
       event_value = event_value.slice(0, 5)
     }
 
-    const func = (id: SpectodaTypes['ID']) => {
-      if (!this.runtime.spectoda_js.emitLabel(event_label, event_value, id)) {
+    const func = async (id: SpectodaTypes['ID']) => {
+      if (!(await this.runtime.emitLabel(event_label, event_value, id))) {
         return Promise.reject('EventEmitFailed')
       }
       return Promise.resolve()
@@ -4168,7 +4176,7 @@ export class Spectoda implements SpectodaClass {
    */
   emitEvents(
     events:
-      | Event[]
+      | Pick<Event, 'label' | 'type' | 'value' | 'id'>[]
       | {
           // TODO @immakermatty remove this generic event type, use only SpectodaEvent
           label: SpectodaTypes['Label']
@@ -4407,12 +4415,4 @@ export class Spectoda implements SpectodaClass {
       }
     })
   }
-}
-
-// ====== NEW PARADIAGM FUNCTIONS ====== //
-// todo @immakermatty what does new paradigm mean?
-
-if (typeof window !== 'undefined') {
-  // @ts-ignore
-  window.Spectoda = Spectoda
 }

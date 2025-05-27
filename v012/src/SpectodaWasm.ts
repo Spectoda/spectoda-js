@@ -4,10 +4,76 @@ import { logging } from '../logging'
 
 import { MainModule, Uint8Vector } from './types/wasm'
 
-const WASM_VERSION = 'DEBUG_DEV_0.12.6_20250410'
+export const WASM_VERSION = 'DEBUG_UNIVERSAL_0.12.8_20250518'
+export const WEBASSEMBLY_BASE_URL = 'https://webassembly.spectoda.com'
 
 let moduleInitilizing = false
 let moduleInitilized = false
+
+export const loadWasmFromS3 = async (version: string): Promise<MainModule> => {
+  const js_url = `${WEBASSEMBLY_BASE_URL}/${version}.js`
+  const wasm_url = `${WEBASSEMBLY_BASE_URL}/${version}.wasm`
+
+  const [js_response, wasm_response] = await Promise.all([
+    fetch(js_url, {
+      method: 'GET',
+      cache: 'force-cache',
+      credentials: 'omit',
+      headers: {
+        Accept: 'text/javascript',
+      },
+    }),
+    fetch(wasm_url, {
+      method: 'GET',
+      cache: 'force-cache',
+      credentials: 'omit',
+      headers: {
+        Accept: 'application/wasm',
+      },
+    }),
+  ])
+
+  let js_blob_url: string | undefined
+
+  try {
+    const [js_content, wasm_content] = await Promise.all([js_response.text(), wasm_response.arrayBuffer()])
+
+    const js_blob = new Blob([js_content], { type: 'text/javascript' })
+
+    js_blob_url = URL.createObjectURL(js_blob)
+
+    // Both Webpack and Vite try to resolve this dynamic import during build time
+    // Since this is a runtime-only dynamic import we want them to ignore it
+    const imported_module = await import(/* webpackIgnore: true */ /* @vite-ignore */ js_blob_url)
+
+    if (!imported_module.default || typeof imported_module.default !== 'function') {
+      throw new Error(`JS file (${version}.js) did not export a default function as expected.`)
+    }
+
+    const wasm_instance: MainModule = await imported_module.default({
+      wasmBinary: wasm_content,
+      locateFile: (path: string, prefix: string): string => {
+        if (path.endsWith('.wasm')) {
+          return path
+        }
+
+        return prefix + path
+      },
+    })
+
+    return wasm_instance
+  } catch (maybe_error) {
+    if (maybe_error instanceof Error) {
+      throw maybe_error
+    } else {
+      throw new Error(`Could not download ${version}`)
+    }
+  } finally {
+    if (js_blob_url) {
+      URL.revokeObjectURL(js_blob_url)
+    }
+  }
+}
 
 class Wait {
   promise: Promise<void>
@@ -140,19 +206,6 @@ export class SpectodaWasm {
   }
 }
 
-function injectScript(src: string) {
-  return new Promise((resolve, reject) => {
-    if (typeof window !== 'undefined' && document) {
-      const script = document.createElement('script')
-
-      script.src = src
-      script.addEventListener('load', resolve)
-      script.addEventListener('error', reject)
-      document.head.append(script)
-    }
-  })
-}
-
 function onWasmLoad() {
   logging.info('WASM loaded')
 
@@ -163,108 +216,86 @@ function onWasmLoad() {
     waitingQueue = []
   }
 
+  moduleInitilized = true
+
+  logging.info('WASM runtime initilized')
+
+  // static interface_error_t: MainModule["interface_error_t"];
+  // static connector_type_t: MainModule["connector_type_t"];
+  // static connection_rssi_t: MainModule["connection_rssi_t"];
+  // static Connection: MainModule["Connection"];
+  // static Synchronization: MainModule["Synchronization"];
+  // static Uint8Vector: MainModule["Uint8Vector"];
+  // static Spectoda_WASM: MainModule["Spectoda_WASM"];
+  // static IConnector_WASM: MainModule["IConnector_WASM"];
+
+  // ? SpectodaWasm holds the class definitions of the webassembly
+
   // @ts-ignore - Module is a global object of Emscripten
-  Module.onRuntimeInitialized = () => {
-    moduleInitilized = true
+  SpectodaWasm.interface_error_t = Module.interface_error_t
+  // @ts-ignore - Module is a global object of Emscripten
+  SpectodaWasm.connector_type_t = Module.connector_type_t
+  // @ts-ignore - Module is a global object of Emscripten
+  SpectodaWasm.connection_rssi_t = Module.connection_rssi_t
+  // @ts-ignore - Module is a global object of Emscripten
+  SpectodaWasm.Value = Module.Value
+  // @ts-ignore - Module is a global object of Emscripten
+  SpectodaWasm.Connection = Module.Connection
+  // @ts-ignore - Module is a global object of Emscripten
+  SpectodaWasm.Synchronization = Module.Synchronization
+  // @ts-ignore - Module is a global object of Emscripten
+  SpectodaWasm.Uint8Vector = Module.Uint8Vector
+  // @ts-ignore - Module is a global object of Emscripten
+  SpectodaWasm.Spectoda_WASM = Module.Spectoda_WASM
+  // @ts-ignore - Module is a global object of Emscripten
+  SpectodaWasm.IConnector_WASM = Module.IConnector_WASM
 
-    logging.info('WASM runtime initilized')
+  // ? BROWSER: mounting FS
+  if (typeof window !== 'undefined') {
+    // @ts-ignore - FS is a global object of Emscripten
+    Module.FS.mkdir('/littlefs')
+    // @ts-ignore - FS and IDBFS are global objects of Emscripten
+    Module.FS.mount(Module.FS.filesystems.IDBFS, {}, '/littlefs')
+  }
+  // ? NODE.JS: mounting FS
+  else if (!process.env.NEXT_PUBLIC_VERSION) {
+    // TODO make "filesystem" folder in root, if it does not exist
+    // const fs = require("fs");
+    // if (!fs.existsSync("filesystem")) {
+    //   fs.mkdirSync("filesystem");
+    // }
 
-    // static interface_error_t: MainModule["interface_error_t"];
-    // static connector_type_t: MainModule["connector_type_t"];
-    // static connection_rssi_t: MainModule["connection_rssi_t"];
-    // static Connection: MainModule["Connection"];
-    // static Synchronization: MainModule["Synchronization"];
-    // static Uint8Vector: MainModule["Uint8Vector"];
-    // static Spectoda_WASM: MainModule["Spectoda_WASM"];
-    // static IConnector_WASM: MainModule["IConnector_WASM"];
+    // @ts-ignore - FS is a global object of Emscripten
+    Module.FS.mkdir('/littlefs')
+    // @ts-ignore - FS is a global object of Emscripten
+    Module.FS.mount(Module.FS.filesystems.NODEFS, { root: './filesystem' }, '/littlefs')
+  }
 
-    // ? SpectodaWasm holds the class definitions of the webassembly
+  // ? Load WASM filesystem from mounted system filesystem
+  SpectodaWasm.loadFS().finally(() => {
+    resolveWaitingQueue()
+  })
 
-    // @ts-ignore - Module is a global object of Emscripten
-    SpectodaWasm.interface_error_t = Module.interface_error_t
-    // @ts-ignore - Module is a global object of Emscripten
-    SpectodaWasm.connector_type_t = Module.connector_type_t
-    // @ts-ignore - Module is a global object of Emscripten
-    SpectodaWasm.connection_rssi_t = Module.connection_rssi_t
-    // @ts-ignore - Module is a global object of Emscripten
-    SpectodaWasm.Value = Module.Value
-    // @ts-ignore - Module is a global object of Emscripten
-    SpectodaWasm.Connection = Module.Connection
-    // @ts-ignore - Module is a global object of Emscripten
-    SpectodaWasm.Synchronization = Module.Synchronization
-    // @ts-ignore - Module is a global object of Emscripten
-    SpectodaWasm.Uint8Vector = Module.Uint8Vector
-    // @ts-ignore - Module is a global object of Emscripten
-    SpectodaWasm.Spectoda_WASM = Module.Spectoda_WASM
-    // @ts-ignore - Module is a global object of Emscripten
-    SpectodaWasm.IConnector_WASM = Module.IConnector_WASM
-
-    // ? BROWSER: mounting FS
-    if (typeof window !== 'undefined') {
-      // @ts-ignore - FS is a global object of Emscripten
-      Module.FS.mkdir('/littlefs')
-      // @ts-ignore - FS and IDBFS are global objects of Emscripten
-      Module.FS.mount(IDBFS, {}, '/littlefs')
-    }
-    // ? NODE.JS: mounting FS
-    else if (!process.env.NEXT_PUBLIC_VERSION) {
-      // TODO make "filesystem" folder in root, if it does not exist
-      // const fs = require("fs");
-      // if (!fs.existsSync("filesystem")) {
-      //   fs.mkdirSync("filesystem");
-      // }
-
-      // @ts-ignore - FS is a global object of Emscripten
-      Module.FS.mkdir('/littlefs')
-      // @ts-ignore - FS is a global object of Emscripten
-      Module.FS.mount(Module.FS.filesystems.NODEFS, { root: './filesystem' }, '/littlefs')
-    }
-
-    // ? Load WASM filesystem from mounted system filesystem
-    SpectodaWasm.loadFS().finally(() => {
-      resolveWaitingQueue()
+  // ? BROWSER: Save WASM filesystem before window unload
+  if (typeof window !== 'undefined') {
+    window.addEventListener('beforeunload', () => {
+      SpectodaWasm.saveFS()
     })
-
-    // ? BROWSER: Save WASM filesystem before window unload
-    if (typeof window !== 'undefined') {
-      window.addEventListener('beforeunload', () => {
-        SpectodaWasm.saveFS()
-      })
-    }
-    // ? NODE.JS: enviroment save WASM filesystem before app exit
-    else if (!process.env.NEXT_PUBLIC_VERSION) {
-      process.on('exit', () => {
-        SpectodaWasm.saveFS()
-      })
-    }
-
-    // @ts-ignore - Module is a global objects of Emscripten
-    Module.onRuntimeInitialized = undefined
+  }
+  // ? NODE.JS: enviroment save WASM filesystem before app exit
+  else if (!process.env.NEXT_PUBLIC_VERSION) {
+    process.on('exit', () => {
+      SpectodaWasm.saveFS()
+    })
   }
 }
 
 function loadWasm(wasmVersion: string) {
   logging.info('Loading spectoda-js WASM version ' + wasmVersion)
 
-  // BROWSER enviroment
-  if (typeof window !== 'undefined') {
-    // First try to load local version
-    injectScript(`http://localhost:5555/builds/${wasmVersion}.js`)
-      .then(onWasmLoad)
-      .catch((error) => {
-        // logging.error(error);
-        // if local version fails, load public file
-        injectScript(`https://updates.spectoda.com/subdom/updates/webassembly/daily/${wasmVersion}.js`)
-          .then(onWasmLoad)
-          .catch((error) => {
-            logging.error('Failed to fetch WASM', error)
-          })
-      })
-  }
-  // NODE enviroment
-  else if (!process.env.NEXT_PUBLIC_VERSION) {
+  loadWasmFromS3(wasmVersion).then((module_instance) => {
     // @ts-ignore
-    globalThis.Module = require(`../../../webassembly/${wasmVersion}.js`) //! dont know how to declare Module for globalThis in TS
+    globalThis.Module = module_instance
     onWasmLoad()
-  }
+  })
 }

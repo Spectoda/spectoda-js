@@ -1,12 +1,16 @@
 import { z } from 'zod'
 
-import { EventSchema } from '../schemas/event'
+import { EventSchema, EventInputSchema } from '../schemas/event'
 import { VALUE_TYPES } from '../constants/values'
+
+// TODO MOve these to where the schemas are defined
 
 /** @alias EventState */
 export type Event = z.infer<typeof EventSchema>
 export type EventState = Event
-export type EventStateInput = Pick<Event, 'type' | 'value' | 'id' | 'label'>
+/** @alias EventStateInput */
+export type EventInput = z.infer<typeof EventInputSchema>
+export type EventStateInput = EventInput
 
 export type NumberEvent = Extract<Event, { type: typeof VALUE_TYPES.NUMBER }>
 export type LabelEvent = Extract<Event, { type: typeof VALUE_TYPES.LABEL }>
