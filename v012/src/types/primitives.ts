@@ -89,6 +89,8 @@ export type {
   SerialCriteria,
   BleCriteria,
   DummyCriteria,
+  Criteria,
+  Criterium,
   ControllerConnectionCriteria,
   ControllerMoreData,
   ControllerInfo,

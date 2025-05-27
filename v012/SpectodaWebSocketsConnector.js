@@ -1,7 +1,4 @@
 import { io } from 'socket.io-client'
-// import { TimeTrack } from "./TimeTrack.js";
-// import { logging } from "./logging";
-
 import customParser from 'socket.io-msgpack-parser'
 
 import { SpectodaAppEvents } from './src/types/app-events'

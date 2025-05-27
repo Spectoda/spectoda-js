@@ -14,9 +14,6 @@ export const VALUE_TYPES = Object.freeze({
   /** see @link [DateSchema](../schemas/values.ts) for more details. */
   DATE: 28,
 
-  // TODO Add schema, @immakermatty what is the type, please?
-  REAL: 27,
-
   /** see @link [ColorSchema](../schemas/values.ts) for more details. */
   COLOR: 26,
 
@@ -31,4 +28,12 @@ export const VALUE_TYPES = Object.freeze({
 
   /** see @link [UndefinedSchema](../schemas/values.ts) for more details. */
   UNDEFINED: 0,
+})
+
+export type ValueType = (typeof VALUE_TYPES)[keyof typeof VALUE_TYPES]
+
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+const NEXT_VALUE_TYPES = Object.freeze({
+  // TODO Add schema, @immakermatty what is the type, please?
+  REAL: 27,
 })

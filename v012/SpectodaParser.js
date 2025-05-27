@@ -324,8 +324,7 @@ export class TnglCompiler {
         break
 
       default:
-        logging.warn('Unknown token type >', element.type, '<', typeof element.type)
-        break
+        throw new Error(`Unknown token type >${element.type}<`)
     }
   }
 
@@ -1032,8 +1031,7 @@ export class TnglCompiler {
         }
 
         // === unknown ===
-        logging.warn('Unknown word >', word, '<')
-        break
+        throw new Error(`Unknown word >${word}<`)
     }
   }
 

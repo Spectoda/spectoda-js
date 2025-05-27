@@ -90,6 +90,8 @@ export type {
 export type {
   BaseCriteria,
   BleCriteria,
+  Criteria,
+  Criterium,
   ControllerConnectionCriteria,
   ControllerMoreData,
   ControllerInfo,
@@ -131,7 +133,22 @@ export type {
 } from './src/types/connect'
 export type { ControllerError, ControllerWarning } from './src/types/messages'
 
-export { EventSchema, EventInputSchema } from './src/schemas/event'
+export {
+  EventSchema,
+  EventInputSchema,
+  NumberEventSchema,
+  LabelEventSchema,
+  PercentageEventSchema,
+  TimestampEventSchema,
+  ColorEventSchema,
+  PixelsEventSchema,
+  BooleanEventSchema,
+  NullEventSchema,
+  UndefinedEventSchema,
+  AnyEventSchema,
+  AnyEventValueSchema,
+} from './src/schemas/event'
+export type { AnyEvent } from './src/schemas/event'
 
 export {
   FirmwareVersionSchema,
@@ -163,9 +180,11 @@ export {
   UndefinedSchema,
 } from './src/schemas/values'
 
+export { PercentageSchemaWithSuffix, TimeStampSchemaWithSuffix } from './src/schemas/valuesWithSuffixes'
+
 export { CONNECTORS, NO_NETWORK_SIGNATURE, BROADCAST_ID, JS_VALUE_LIMITS } from './src/constants'
 
-export { VALUE_TYPES } from './src/constants/values'
+export { VALUE_TYPES, type ValueType } from './src/constants/values'
 
 export { mockScanResult } from './__mocks__/scan'
 
@@ -222,3 +241,5 @@ export type {
   /** @deprecated Use UndefinedEvent instead */
   UndefinedEvent as SpectodaUndefinedEvent,
 } from './src/types/event'
+
+export { WASM_VERSION } from './src/SpectodaWasm'
